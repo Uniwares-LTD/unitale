@@ -1,5 +1,6 @@
 node_modules/
 .cache/
+.npm-cache/
 .next/
 out/
 dist/
