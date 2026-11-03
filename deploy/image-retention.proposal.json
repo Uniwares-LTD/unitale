@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "project": "unitale",
+  "imageRepository": "ghcr.io/uniwares-ltd/unitale",
+  "environments": {
+    "staging": "staging",
+    "prod": "production"
+  },
+  "automatic": false,
+  "status": "Owner review and explicit Infrastructure enrollment required"
+}

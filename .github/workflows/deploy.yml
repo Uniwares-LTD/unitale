@@ -1,4 +1,4 @@
-name: Release Unibase
+name: "Release Unitale"
 on:
   push:
     branches: [_staging, _prod]

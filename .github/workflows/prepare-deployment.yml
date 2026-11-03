@@ -1,4 +1,4 @@
-name: Prepare protected deployment change
+name: "Prepare protected deployment change"
 on:
   workflow_dispatch:
     inputs:

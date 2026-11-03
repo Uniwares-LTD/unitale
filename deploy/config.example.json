@@ -1,23 +1,23 @@
 {
-  "imageRepository": "ghcr.io/replace-owner/replace-unibase-repository",
+  "imageRepository": "ghcr.io/uniwares-ltd/unitale",
   "staging": {
     "origin": "https://staging.example.invalid",
-    "port": 35101,
-    "firebaseProject": "replace-staging-project",
-    "mongoDatabase": "unibase_staging",
-    "mongoUser": "unibase_staging",
+    "port": 34312,
+    "firebaseProject": "replace-unitale-staging",
+    "mongoDatabase": "unitale_staging",
+    "mongoUser": "unitale_staging",
     "redisImage": "redis@sha256:REPLACE_WITH_VERIFIED_DIGEST",
     "nginxImage": "nginx@sha256:REPLACE_WITH_VERIFIED_DIGEST",
-    "ingressSubnet": "172.29.241.0/24"
+    "ingressSubnet": "172.23.251.128/28"
   },
   "production": {
     "origin": "https://example.invalid",
-    "port": 35102,
-    "firebaseProject": "replace-production-project",
-    "mongoDatabase": "unibase_production",
-    "mongoUser": "unibase_production",
+    "port": 34313,
+    "firebaseProject": "replace-unitale-production",
+    "mongoDatabase": "unitale_production",
+    "mongoUser": "unitale_production",
     "redisImage": "redis@sha256:REPLACE_WITH_VERIFIED_DIGEST",
     "nginxImage": "nginx@sha256:REPLACE_WITH_VERIFIED_DIGEST",
-    "ingressSubnet": "172.29.242.0/24"
+    "ingressSubnet": "172.23.251.144/28"
   }
 }

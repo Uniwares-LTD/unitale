@@ -1,4 +1,4 @@
-name: Provision environment
+name: "Provision environment"
 on:
   workflow_dispatch:
     inputs:

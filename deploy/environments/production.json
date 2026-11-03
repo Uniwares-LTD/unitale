@@ -2,23 +2,23 @@
   "version": 1,
   "environment": "production",
   "runtime": {
-    "DIAGNOSTICS_ENABLED": "false",
     "APP_ENV": "production",
-    "APP_NAME": "Base",
+    "APP_NAME": "Unitale",
     "APP_STYLE": "classic",
     "APP_ORIGIN": null,
     "AUTH_MODE": "firebase",
     "FIREBASE_PROJECT_ID": null,
-    "MONGODB_DATABASE": "unibase_production",
+    "MONGODB_DATABASE": "unitale_production",
     "DIFY_MODE": "disabled",
     "PAYMENTS_MODE": "disabled",
     "MCP_ENABLED": "false",
-    "ASSET_STORE": "mongo"
+    "ASSET_STORE": "mongo",
+    "DIAGNOSTICS_ENABLED": "false"
   },
   "deployment": {
-    "imageRepository": null,
-    "port": 35102,
-    "ingressSubnet": "172.29.242.0/24",
+    "imageRepository": "ghcr.io/uniwares-ltd/unitale",
+    "port": 34313,
+    "ingressSubnet": "172.23.251.144/28",
     "redisImage": null,
     "nginxImage": null,
     "adminImage": null
@@ -39,7 +39,7 @@
   "atlas": {
     "projectId": null,
     "clusterName": null,
-    "mongoUser": "unibase_production",
+    "mongoUser": "unitale_production",
     "vpsEgressCidr": null
   },
   "shared": {

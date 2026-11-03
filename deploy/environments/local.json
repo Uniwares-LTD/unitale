@@ -2,25 +2,25 @@
   "version": 1,
   "environment": "local",
   "runtime": {
-    "DIAGNOSTICS_ENABLED": "false",
     "APP_ENV": "local",
-    "APP_NAME": "Base",
+    "APP_NAME": "Unitale",
     "APP_STYLE": "classic",
     "APP_ORIGIN": "http://localhost:3000",
     "AUTH_MODE": "emulator",
-    "FIREBASE_PROJECT_ID": "demo-unibase",
-    "MONGODB_DATABASE": "unibase_local",
-    "DIFY_MODE": "disabled",
-    "PAYMENTS_MODE": "disabled",
+    "FIREBASE_PROJECT_ID": "demo-unitale",
+    "MONGODB_DATABASE": "unitale_local",
+    "DIFY_MODE": "fake",
+    "PAYMENTS_MODE": "simulation",
     "MCP_ENABLED": "false",
     "ASSET_STORE": "mongo",
     "FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:9099",
-    "MONGODB_URI": "mongodb://127.0.0.1:27017"
+    "MONGODB_URI": "mongodb://127.0.0.1:27017",
+    "DIAGNOSTICS_ENABLED": "false"
   },
   "deployment": {
-    "imageRepository": null,
-    "port": null,
-    "ingressSubnet": null,
+    "imageRepository": "ghcr.io/uniwares-ltd/unitale",
+    "port": 34312,
+    "ingressSubnet": "172.23.251.128/28",
     "redisImage": null,
     "nginxImage": null,
     "adminImage": null
@@ -41,7 +41,7 @@
   "atlas": {
     "projectId": null,
     "clusterName": null,
-    "mongoUser": null,
+    "mongoUser": "unitale_local",
     "vpsEgressCidr": null
   },
   "shared": {

@@ -11,7 +11,7 @@ FROM node:24.16.0-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 ENV NODE_OPTIONS=--require=/app/load-runtime-settings.cjs
-RUN groupadd --gid 1001 unibase && useradd --uid 1001 --gid unibase --no-create-home unibase
+RUN groupadd --gid 1001 unitale && useradd --uid 1001 --gid unitale --no-create-home unitale
 COPY --from=build --chown=1001:1001 /app/.next/standalone ./
 COPY --from=build --chown=1001:1001 /app/.next/static ./.next/static
 COPY --from=build --chown=1001:1001 /app/public ./public

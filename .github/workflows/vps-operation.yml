@@ -1,4 +1,4 @@
-name: Unibase host operation
+name: "Unitale host operation"
 on:
   workflow_call:
     inputs:

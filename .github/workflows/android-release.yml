@@ -1,4 +1,4 @@
-name: Android release
+name: "Android release"
 on:
   workflow_dispatch:
     inputs:

@@ -1,4 +1,4 @@
-name: Advisory quality reports
+name: "Advisory quality reports"
 on:
   push:
   pull_request:

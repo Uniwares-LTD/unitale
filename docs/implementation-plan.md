@@ -1,63 +1,12 @@
 # Implementation plan
 
-This file holds this repository's accepted work and its current state. Accepted
-milestones here authorize implementation without a new issue; everything else
-follows issue policy. Keep it short: current behavior lives in
-[architecture](architecture.md), operations in [deployment](deployment.md), and
-dated evidence in Git history and pull requests, not here.
+Accepted milestones for Unitale. Accepted milestones authorize
+implementation without a new issue; add them here as they are agreed.
 
-Derived projects start with an empty plan; the initializer replaces this file.
+## Current state
 
-## Current state — 2026-11-02
-
-Base is the reusable template (`template.json`, [CHANGELOG](../CHANGELOG.md)).
-It provides accounts and English-only administration, credits and payments,
-private files, notifications, rate limits, diagnostics, MCP, durable Runs with
-Dify orchestrators, personas and saved artifacts, the project extension registry,
-forward-only migrations, removable samples and history-preserving derived
-projects. The staging installation runs the current `main`; see
-[current staging release](deployment.md#current-staging-release).
+Created from template 0.4.0.
 
 ## Open work
 
-### Template
-
-- [ ] Checkpoint 5: make the Runs/Dify/personas/artifacts stack a removable
-  sample. Accepted and deferred; the plan and resume point are in
-  [template readiness](features/template-readiness/implementation-plan.md).
-
-### Base installation
-
-- [ ] Guided derived-deployment initialization acceptance and restricted
-  runtime-secret restoration, following the shared inventory: validate
-  destination identity, preserve conflicting files, resume safely and keep
-  secrets out of logs and artifacts.
-- [ ] Shared gateway: preserve the Firebase helper, trusted headers and streaming.
-- [ ] Shared non-Dify Redis: allocate logical databases and adapt validation and
-  readiness.
-- [ ] App-hosted AI, events and maintenance endpoints and timers: retain leases,
-  retries, accounting and notification duplicate prevention before removing
-  workers.
-- [ ] Production compatibility preserving retained snapshots, then a separately
-  authorized production activation.
-- [ ] Minimum manual backup and restore workflows, protected off-host storage and
-  a disposable MongoDB/GridFS recovery rehearsal before relying on recovery.
-- [ ] Image and configuration rollback rehearsal when a genuine compatible
-  predecessor exists. Back up before destructive operations; never restore a
-  database automatically on failure.
-- [ ] Diagnostics follow-up: run the Redis limiter test against a disposable Redis
-  and verify grant revocation in a browser with Redis.
-
-## Decisions in force
-
-- Administration is English-only and keeps the user's public language preference;
-  see [locale and direction](architecture.md#locale-and-direction).
-- Each environment owns its Dify apps and managed MCP binding; see
-  [Dify environment ownership](architecture.md#dify-environment-ownership).
-- Diagnostic grants are durable in MongoDB with Redis counters only; see the
-  [diagnostics API](diagnostics-api.md).
-- Run result retention verifies original identities before renewing provider
-  links and reports settlement retries as reconciliation; see [runs](runs.md).
-- Template changes follow the [template readiness](features/template-readiness/prd.md)
-  requirements: extensions in `src/project`, samples in `samples.json`, versioned
-  releases with upgrade notes.
+None yet.

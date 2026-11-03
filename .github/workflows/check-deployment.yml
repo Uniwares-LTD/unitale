@@ -1,4 +1,4 @@
-name: Check Unibase deployment
+name: "Check Unitale deployment"
 on:
   workflow_dispatch:
     inputs:
