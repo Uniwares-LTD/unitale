@@ -29,6 +29,9 @@ and the adapter; the table does not require unrelated suites for every task.
   product contract and cross-repository dependencies. Implementation is in progress.
   [Contract compatibility](features/booklet-generation/contracts.md) describes the
   opt-in v1 schemas and the distinction between shape validation and service authorization.
+  The [offline Dify harness](features/booklet-generation/dify-compatibility.md) owns
+  candidate graph/adapter compatibility evidence and `test:booklet-compat`;
+  its fixtures live in [tests/booklet-compat](../tests/booklet-compat), outside production registries.
 
 - Runs module (planned sample): [environment binding](../src/lib/server/runs/environment-binding.ts) owns Dify app
   ownership, managed MCP setup, endpoint identity, graph binding and destination

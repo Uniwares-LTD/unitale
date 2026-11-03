@@ -7,6 +7,7 @@
   },
   "packageManager": "npm@12.0.1",
   "scripts": {
+    "test:booklet-compat": "node --conditions=react-server --import tsx --test tests/booklet-compat/*.test.ts",
     "test:mcp": "node --conditions=react-server --import tsx --test tests/accounts/mcp.test.ts",
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/with-environment.mjs node_modules/next/dist/bin/next build && node scripts/build-worker.mjs",

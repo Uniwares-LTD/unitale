@@ -28,7 +28,7 @@ publication/external acceptance gates. No agent delegation is implied.
 | ID | Owner | Outcome | Dependencies | State |
 | --- | --- | --- | --- | --- |
 | T01 | Both | Versioned catalogs, entitlements, operations, booklet/decision/manifest/workflow contracts and fixtures | None | Complete |
-| T02 | Unitale | Dify parent/child, Human Input, native files and adapter compatibility harness | None | Pending |
+| T02 | Unitale | Offline Dify parent/child, Human Input, native files and adapter compatibility harness | None | Complete (offline scope accepted) |
 | T03 | Unibase | Stripe/Play and Android bridge compatibility harness | None | Pending |
 | T04 | Unibase | Configurable MCP limits and extensible private authorization | T01 | Pending |
 | T05 | Unibase | Execution measurements, evidence, redaction and cleanup | T01 | Pending |
@@ -63,6 +63,12 @@ T20 runs alongside reader/PDF/sharing/storefront. T26 is convergence.
 
 ## Verification and review scope
 
+T02 implements offline candidate graphs, deterministic fake providers, executable
+Code-node/adapter checks and existing-transport integration tests. It requires no
+environment file, database, Dify instance or paid calls. No production registrations,
+endpoints or dispatcher changes are included. Dify engine/plugin and real-provider
+acceptance remain T28 gates. T18–T20 reuse the candidate contracts and checks.
+
 Use focused tests plus `npm.cmd run typecheck`, `npm.cmd run lint`, and
 `npm.cmd run build` for runtime changes. Run applicable `check:docs`, `check:i18n`,
 `check:skills`, `check:env` and migration tests. Verify ownership, full encoded MCP
@@ -75,9 +81,24 @@ cannot stand in for T28. Same-agent read-only reviews must be identified as such
 
 ## Verified progress and resume
 
-Work branches: Unitale `task/booklet-generation`, Unibase `task/booklet-foundation`.
-Accepted PRD and dependency graph persisted. T01 is implemented and reviewed; later
-tasks are not complete.
+T01 work branches were Unitale `task/booklet-generation` and Unibase
+`task/booklet-foundation`; both were merged into their respective main branches.
+T02 work branch: Unitale `task/booklet-dify-compatibility`. Accepted PRD and
+dependency graph are persisted. T01 and offline T02 are implemented; later tasks
+are not complete.
+
+T02 adds [candidate graphs, fake adapters and the compatibility report](dify-compatibility.md).
+`npm.cmd run test:booklet-compat` passes eleven tests. The affected existing Dify
+transport and T01 suites pass 22 tests. Full `typecheck`, lint, `check:docs`,
+`check:i18n` and `check:skills` pass; final test-support fixes also pass typecheck
+and focused lint. No build was required: only test support, a test command and
+documentation changed, with no production imports or dependency changes.
+`handbook:ready` retains the pre-existing unset tracking, issue-language and
+integration-branch warnings. Two consecutive final read-only reviews use the
+same-agent cold-review fallback; no independent reviewer or delegation is claimed.
+The user accepted T02's offline scope on 2026-11-03. Publication remains separate.
+T28 retains actual Dify engine,
+plugin, native-file delivery, live image quality and provider-cost acceptance.
 
 T01 now has opt-in Zod contracts and fixtures for catalog terms, consumption orders,
 subscriptions/promotions, measurements, booklets, productions, immutable revisions,
