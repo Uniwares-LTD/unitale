@@ -113,7 +113,8 @@ Validation of the working changes:
   Unibase `.npm-cache/` directory is outside the product change and must not be staged.
 
 Bases: Unitale `446a6c3a3412a45680e4aa6d996d7ca89986d0b0`; Unibase
-`7b6086ca2c3f368fe934bbec0afafde9d4292dba`. Changes are uncommitted.
+`7b6086ca2c3f368fe934bbec0afafde9d4292dba`. T01 changes are maintained on the
+work branches above; publication and live acceptance remain separate gates.
 
 Dependency installation and validation processes have finished; do not reinstall or
 rerun passing checks unless their inputs change. T02 and T03 are the next independent
