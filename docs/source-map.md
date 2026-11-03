@@ -24,6 +24,12 @@ and the adapter; the table does not require unrelated suites for every task.
 
 ## Components
 
+- [Booklet requirements](features/booklet-generation/prd.md) and
+  [delivery plan](features/booklet-generation/implementation-plan.md) own the accepted
+  product contract and cross-repository dependencies. Implementation is in progress.
+  [Contract compatibility](features/booklet-generation/contracts.md) describes the
+  opt-in v1 schemas and the distinction between shape validation and service authorization.
+
 - Runs module (planned sample): [environment binding](../src/lib/server/runs/environment-binding.ts) owns Dify app
   ownership, managed MCP setup, endpoint identity, graph binding and destination
   prerequisites. [Creation](../src/lib/server/runs/creation.ts) journals exact-version
