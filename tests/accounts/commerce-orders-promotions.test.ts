@@ -1,3 +1,10 @@
+import {
+  beginBilling,
+  createBillingIndexes,
+  reconcileBilling,
+} from "../../src/lib/server/commerce/billing";
+import { StripeBillingProvider } from "../../src/lib/server/commerce/stripe-billing";
+import { PlayBillingProvider } from "../../src/lib/server/commerce/play-billing";
 import { coreMigrations } from "../../src/lib/server/core-migrations";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -838,6 +845,18 @@ test("consumption and promotion transactions", async (t) => {
             finalizePromotion(db, actor.uid, "checkout", "missing"),
           );
           const key = await payment(db, { channel });
+          await assert.rejects(
+            finalizePromotion(db, actor.uid, "checkout", key, {
+              beforePersist: async () => {
+                throw new Error("Provider lease expired");
+              },
+            }),
+            /lease expired/,
+          );
+          assert.equal(
+            await db.collection("promotionPaymentClaims").countDocuments(),
+            0,
+          );
           await Promise.all([
             finalizePromotion(db, actor.uid, "checkout", key),
             finalizePromotion(db, actor.uid, "checkout", key),
@@ -873,6 +892,82 @@ test("consumption and promotion transactions", async (t) => {
             offerId: "purchase:missing",
           }),
         );
+      },
+    );
+    await t.test(
+      "canonical provider reconciliation releases unpaid coupon capacity exactly once",
+      async () => {
+        for (const channel of ["stripe", "google-play"] as const) {
+          const { db, request } = await promotionFixture({}, channel);
+          await createBillingIndexes(db);
+          await reservePromotion(db, actor, request);
+          const intent = await beginBilling(db, actor, {
+            checkoutId: "checkout",
+            offerId: request.offerId,
+            offerRevision: 1,
+          });
+          let terminal = false;
+          const provider =
+            channel === "stripe"
+              ? new StripeBillingProvider(
+                  async () => ({
+                    id: "provider",
+                    livemode: false,
+                    client_reference_id: intent.accountBinding,
+                    metadata: { billingIntent: intent._id },
+                    status: terminal ? "expired" : "open",
+                    payment_status: "unpaid",
+                    subscription: null,
+                    payment_intent: null,
+                    currency: null,
+                    amount_total: null,
+                  }),
+                  false,
+                )
+              : new PlayBillingProvider(
+                  async () => ({
+                    productLineItem: [{ productId: "prod" }],
+                    obfuscatedExternalAccountId: intent.accountBinding,
+                    purchaseStateContext: {
+                      purchaseState: terminal ? "CANCELLED" : "PENDING",
+                    },
+                  }),
+                  "com.example.app",
+                  true,
+                );
+          await reconcileBilling(db, intent._id, "provider", provider);
+          assert.equal(
+            (
+              await db
+                .collection("promotionReservations")
+                .findOne({ uid: actor.uid })
+            )?.state,
+            "reserved",
+          );
+          await assert.rejects(
+            reservePromotion(db, { uid: "other", authTime: 1 }, request),
+          );
+          terminal = true;
+          await reconcileBilling(db, intent._id, "provider", provider);
+          await reconcileBilling(db, intent._id, "provider", provider);
+          assert.equal(
+            (
+              await db
+                .collection("promotionReservations")
+                .findOne({ uid: actor.uid })
+            )?.state,
+            "released",
+          );
+          assert.equal(
+            await db.collection("promotionReleaseEvidence").countDocuments(),
+            1,
+          );
+          assert.equal(
+            await db.collection("billingGrants").countDocuments(),
+            0,
+          );
+          await reservePromotion(db, { uid: "other", authTime: 1 }, request);
+        }
       },
     );
     await t.test(

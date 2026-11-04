@@ -1,3 +1,4 @@
+import { createBillingIndexes } from "../src/lib/server/commerce/billing";
 import { createConsumptionIndexes } from "../src/lib/server/commerce/orders";
 import { createPromotionIndexes } from "../src/lib/server/commerce/promotions";
 import { createCatalogIndexes } from "../src/lib/server/commerce/catalogs";
@@ -42,6 +43,7 @@ async function main() {
       .db(config.database)
       .collection("auditEvents")
       .createIndex({ timestamp: -1, _id: -1 });
+    await createBillingIndexes(client.db(config.database));
     await createCatalogIndexes(client.db(config.database));
     await createConsumptionIndexes(client.db(config.database));
     await createPromotionIndexes(client.db(config.database));

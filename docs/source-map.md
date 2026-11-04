@@ -142,3 +142,9 @@ Deployment changes require configuration ownership classification and operator-i
 The [host release script](../scripts/deploy/vps.sh) delegates disk protection and image maintenance to Infrastructure's installed controller. [The initializer](../scripts/project-initializer.ts) generates a project-specific retention enrollment proposal, never host authorization.
 
 Dated evidence lives in Git history and pull requests, not in current documents.
+
+[Provider billing](features/booklet-foundation/provider-billing.md) owns the catalog
+purchase API, verified Stripe/Play adapters, subscription exclusion, renewal lots,
+provider-action journals and notification/worker reconciliation. Sources live in
+`src/lib/server/commerce/billing*.ts`, `*-billing.ts`, `provider-*.ts` and
+`google-auth.ts`; offline checks are `npm run test:provider-billing`.

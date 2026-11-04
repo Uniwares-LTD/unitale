@@ -15,7 +15,7 @@ class ContractTests(unittest.TestCase):
         self.config = json.loads((ROOT / 'deploy/environments/staging.json').read_text())
 
     def test_unknown_and_private_fields_fail_closed(self):
-        for field in ('MONGODB_URI', 'MCP_TOKEN_DIFY', 'UNKNOWN_SETTING'):
+        for field in ('MONGODB_URI', 'MCP_TOKEN_DIFY', 'PLAY_BILLING_SERVICE_ACCOUNT_JSON', 'UNKNOWN_SETTING'):
             changed = copy.deepcopy(self.config)
             changed['runtime'][field] = 'canary'
             with self.assertRaises(ValueError): project(changed)
