@@ -277,19 +277,21 @@ export async function releasePromotion(
     evidenceId: string;
     outcome: "expired-unpaid" | "cancelled-unpaid";
   },
+  options: { beforePersist?: (session?: ClientSession) => Promise<void> } = {},
 ) {
   z.string().min(1).max(128).parse(uid);
   id.parse(checkoutId);
   const verified = z
     .strictObject({
       channel: z.enum(["stripe", "google-play"]),
-      providerCheckoutId: z.string().min(1).max(512),
+      providerCheckoutId: z.string().min(1).max(4096),
       evidenceId: id,
       outcome: z.enum(["expired-unpaid", "cancelled-unpaid"]),
     })
     .parse(verification);
   await readWallet(db, uid, {
     persist: async (session) => {
+      await options.beforePersist?.(session);
       const row = await reservations(db).findOne(
         { _id: fingerprint([uid, checkoutId]), uid },
         { session },
@@ -346,6 +348,7 @@ export async function finalizePromotion(
   uid: string,
   checkoutId: string,
   paymentId: string,
+  options: { beforePersist?: (session: ClientSession) => Promise<void> } = {},
 ) {
   id.parse(checkoutId);
   id.parse(paymentId);
@@ -377,6 +380,7 @@ export async function finalizePromotion(
     session: ClientSession,
     result: { lotId?: string },
   ) => {
+    await options.beforePersist?.(session);
     const current = await reservations(db).findOne(
       { _id: row._id, uid },
       { session },

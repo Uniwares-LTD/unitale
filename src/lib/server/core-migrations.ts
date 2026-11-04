@@ -1,3 +1,5 @@
+import { createBillingIndexes } from "./commerce/billing";
+import { createCreditIndexes } from "./store/credits";
 import { createConsumptionIndexes } from "./commerce/orders";
 import { createPromotionIndexes } from "./commerce/promotions";
 import { createCatalogIndexes } from "./commerce/catalogs";
@@ -53,6 +55,15 @@ export const coreMigrations: readonly Migration[] = [
     async run(db) {
       await createConsumptionIndexes(db);
       await createPromotionIndexes(db);
+    },
+  },
+  {
+    id: "core:0003-provider-billing",
+    description:
+      "Add verified provider billing and subscription grant indexes.",
+    async run(db) {
+      await createBillingIndexes(db);
+      await createCreditIndexes(db);
     },
   },
 ];

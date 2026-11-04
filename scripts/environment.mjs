@@ -23,6 +23,7 @@ export function loadLocalEnvironment(development = false) {
   const privateKeys = new Set([
     "REDIS_URL",
     "STRIPE_SECRET_KEY",
+    "PLAY_BILLING_SERVICE_ACCOUNT_JSON",
     "STRIPE_WEBHOOK_SECRET",
     "DIFY_MANAGEMENT_KEY",
     "DIFY_CREDENTIAL_ENCRYPTION_KEY",

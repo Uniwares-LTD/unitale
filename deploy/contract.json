@@ -210,6 +210,14 @@
       "owner": "host",
       "type": "string-or-null"
     },
+    "runtime.PLAY_BILLING_PUBSUB_AUDIENCE": {
+      "owner": "host",
+      "type": "string-or-null"
+    },
+    "runtime.PLAY_BILLING_PUBSUB_EMAIL": {
+      "owner": "host",
+      "type": "string-or-null"
+    },
     "runtime.RATE_LIMITS_JSON": {
       "owner": "host",
       "type": "string-or-null"
@@ -279,6 +287,7 @@
     "FIREBASE_SERVICE_ACCOUNT_JSON",
     "MONGODB_URI",
     "PERSONA_COMPLETION_API_KEY",
+    "PLAY_BILLING_SERVICE_ACCOUNT_JSON",
     "REDIS_URL",
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET"

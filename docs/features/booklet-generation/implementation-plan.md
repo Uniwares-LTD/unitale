@@ -35,8 +35,8 @@ publication/external acceptance gates. No agent delegation is implied.
 | T06 | Unibase | Versioned catalogs and trusted product extensions | T01 | Complete in Unibase; imported and verified in Unitale |
 | T07 | Unibase | Upfront consumption, entitlements, concurrency and refunds | T06 | Complete in Unibase; imported and verified in Unitale |
 | T08 | Unibase | Promotions, reservations, limits and bonus grants | T06 | Complete in Unibase; imported and verified in Unitale |
-| T09 | Unibase | Stripe subscriptions, coupons and catalog publication | T03,T06,T08 | Pending |
-| T10 | Unibase | Play verification, acknowledgement, renewals, restore and catalog publication | T03,T06,T08 | Pending |
+| T09 | Unibase | Stripe subscriptions, coupons and catalog publication | T03,T06,T08 | Imported from Unibase; offline verification complete |
+| T10 | Unibase | Play verification, acknowledgement, renewals, restore and catalog publication | T03,T06,T08 | Imported from Unibase; offline verification complete |
 | T11 | Unibase | Android TWA purchase, restore and deferred changes | T10 | Pending |
 | T12 | Unibase | Commerce administration, preview/readback and refunds | T07,T08,T09,T10 | Pending |
 | T13 | Both | Reviewed foundation through normal template integration | T04–T12 | Pending |
@@ -89,6 +89,27 @@ The combined commerce, wallet, Run, payment, booklet-contract and Dify suites pa
 98 tests. The disposable MongoDB fixture required forced shutdown during teardown;
 the runner completed successfully. Typecheck/build and repository checks are recorded
 in the integration PR.
+
+## Provider billing import
+
+Unitale imports Unibase PRs #46 and #47 at
+`4760ecacda76df55c2836cb370a2db77990b4ab5` using the template helper. The import
+includes T09/T10 and the audited fixes for checkout return routes, resumable Stripe
+recovery, Play cancellation during pending plan changes and unpaid coupon release.
+Template version remains 0.4.0. Unitale's configuration, booklet contracts, Dify
+harness and prior project-specific test adaptations are retained.
+
+The combined provider, commerce, wallet, legacy payment, booklet-contract and
+Dify suites pass 102 tests. Deployment checks cover configuration and the provider
+credential boundary; the contract test uses synthetic MCP metadata rather than
+assuming a staging installation. Typecheck, lint, build and repository check
+results are recorded at handoff. See [provider billing](../booklet-foundation/provider-billing.md).
+
+The imported `core:0003-provider-billing` migration adds billing indexes when a
+separately authorized installation runs migrations. No existing database was
+changed, and no providers, purchase catalogs or subscriptions were activated.
+T11/T12 can proceed; T13 remains pending their implementation and integration.
+Live Stripe/Play and Android acceptance remains T28.
 
 ## Verification and review scope
 
@@ -166,7 +187,7 @@ Bases: Unitale `446a6c3a3412a45680e4aa6d996d7ca89986d0b0`; Unibase
 `7b6086ca2c3f368fe934bbec0afafde9d4292dba`. T01 changes are maintained on the
 work branches above; publication and live acceptance remain separate gates.
 
-Dependency installation and validation processes have finished; do not reinstall or
-rerun passing checks unless their inputs change. T02 and T03 are the next independent
-compatibility checkpoints. T04, T05, T06 and T14 now have their T01 prerequisite met.
-The full product remains unimplemented beyond these contracts; no publication has occurred.
+Current resume: T01-T08 are accepted; T09/T10 and their corrective follow-up are
+imported and verified on `task/import-provider-billing`. T11 and T12 are the next
+Unibase tasks. Unitale T14, T18 and T19 also have their prerequisites met. T13 and
+the integrated booklet product remain incomplete; live acceptance remains gated.

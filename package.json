@@ -65,7 +65,8 @@
     "deploy:ops": "python scripts/deploy/operations.py",
     "test:billing-compat": "node --conditions=react-server --import tsx --test tests/billing-compat/*.test.ts",
     "test:booklet-foundation": "node --conditions=react-server --import tsx --test tests/accounts/booklet-foundation.test.ts tests/accounts/mcp-foundation.test.ts",
-    "test:commerce": "node --conditions=react-server --import tsx --test tests/accounts/commerce-orders-promotions.test.ts tests/accounts/booklet-foundation.test.ts tests/commerce-contracts.test.ts"
+    "test:commerce": "node --conditions=react-server --import tsx --test tests/accounts/commerce-orders-promotions.test.ts tests/accounts/booklet-foundation.test.ts tests/commerce-contracts.test.ts",
+    "test:provider-billing": "node --conditions=react-server --import tsx --test tests/accounts/billing-subscriptions.test.ts tests/billing-compat/providers.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1147.0",

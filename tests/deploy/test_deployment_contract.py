@@ -15,13 +15,17 @@ class ContractTests(unittest.TestCase):
         self.config = json.loads((ROOT / 'deploy/environments/staging.json').read_text())
 
     def test_unknown_and_private_fields_fail_closed(self):
-        for field in ('MONGODB_URI', 'MCP_TOKEN_DIFY', 'UNKNOWN_SETTING'):
+        for field in ('MONGODB_URI', 'MCP_TOKEN_DIFY', 'PLAY_BILLING_SERVICE_ACCOUNT_JSON', 'UNKNOWN_SETTING'):
             changed = copy.deepcopy(self.config)
             changed['runtime'][field] = 'canary'
             with self.assertRaises(ValueError): project(changed)
         with self.assertRaises(ValueError): project({**self.config, 'unknown': {}})
 
     def test_diagnostics_projection_does_not_mutate_input(self):
+        # Test preservation with synthetic data, independent of project provisioning.
+        self.config['runtime']['MCP_CLIENTS_JSON'] = json.dumps([
+            {'id': 'fixture', 'tokenEnv': 'MCP_TOKEN_FIXTURE', 'permissions': ['server:read']}
+        ])
         original = copy.deepcopy(self.config)
         result = project(self.config)
         self.assertNotIn('DIAGNOSTICS_ENABLED', result['runtime'])

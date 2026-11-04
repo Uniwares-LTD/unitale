@@ -12,7 +12,9 @@ export type Wallet = {
 export type CreditLot = {
   _id: string;
   uid: string;
-  source: "promotion" | "purchase";
+  source: "promotion" | "purchase" | "subscription";
+  expiredCredits?: number;
+  appliedReversedCredits?: number;
   reference: string;
   originalCredits: number;
   reversedCredits: number;
