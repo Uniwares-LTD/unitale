@@ -20,12 +20,20 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Add upfront consumption orders, revision entitlements, prepaid Run binding and
+  audited refunds; add versioned promotions, fenced redemption reservations and
+  idempotent verified-payment bonuses. Existing billing remains opt-in and unchanged.
+
 - Add offline Stripe/Play/TWA compatibility checks, durable administrator MCP limits,
   namespaced private MCP extensions, versioned catalog services/product validators,
   and per-call measurements with private redacted evidence and protected cleanup.
 - Add opt-in v1 commerce and execution-measurement contracts for immutable catalog terms, consumption orders, entitlements, subscriptions, promotions and provider evidence. Existing runtime behavior and records remain unchanged.
 
 ### Upgrade notes
+
+Apply `core:0002-consumption-promotions` through `npm run db:migrate`. Promotion
+definitions extend the catalog union; consumers must narrow its kind before reading
+purchase/product credits. See [orders and promotions](docs/features/booklet-foundation/orders-promotions.md).
 
 Run `npm run db:migrate` to install additive commerce/execution indexes. Existing
 settings retain prior MCP defaults; raw evidence retention defaults to 90 days.

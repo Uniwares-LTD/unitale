@@ -1,3 +1,5 @@
+import { createConsumptionIndexes } from "./commerce/orders";
+import { createPromotionIndexes } from "./commerce/promotions";
 import { createCatalogIndexes } from "./commerce/catalogs";
 import { createMeasurementIndexes } from "./execution/measurements";
 import "server-only";
@@ -44,5 +46,13 @@ export const coreMigrations: readonly Migration[] = [
     id: "runs:0002-asset-variants",
     description: "Generate thumbnail and preview variants for result images.",
     run: backfillAssetVariants,
+  },
+  {
+    id: "core:0002-consumption-promotions",
+    description: "Add consumption order and promotion redemption indexes.",
+    async run(db) {
+      await createConsumptionIndexes(db);
+      await createPromotionIndexes(db);
+    },
   },
 ];

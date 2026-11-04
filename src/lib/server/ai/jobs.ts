@@ -39,6 +39,7 @@ export type BindingSnapshot = {
   fingerprint: string;
 };
 export type AiJob = {
+  consumption?: { orderId: string; workflowId: string };
   runSuccessorId?: string;
   operatorResolved?: boolean;
   run?: {
@@ -180,6 +181,7 @@ export async function createAiJob(
     | "credits"
   > & {
     pricing?: AiPricing;
+    consumption?: AiJob["consumption"];
     run?: AiJob["run"];
     responder?: AiJob["responder"];
   },
@@ -192,6 +194,18 @@ export async function createAiJob(
     request.credits < 0
   )
     throw new AppError("AI_INVALID_REQUEST", "Invalid execution request.");
+  if (
+    request.consumption &&
+    (request.credits !== 0 ||
+      request.pricing ||
+      request.responder ||
+      request.run?.answerer)
+  )
+    throw new AppError(
+      "AI_PREPAID_PRICE",
+      "Consumption executions cannot reserve or settle additional credits.",
+      409,
+    );
   if (request.pricing) {
     const pricing = aiPricingSchema.parse(request.pricing);
     if (
@@ -235,6 +249,18 @@ export async function createAiJob(
         409,
       );
     await admission?.(session);
+    if (request.consumption) {
+      const { bindConsumptionJob } = await import("../commerce/orders");
+      await bindConsumptionJob(
+        db,
+        actor.uid,
+        request.consumption.orderId,
+        request.consumption.workflowId,
+        jobId,
+        request.run?.target?.id ?? request.source?.id,
+        session,
+      );
+    }
     if (request.run?.predecessorId) {
       const predecessor = await aiJobs(db).findOne(
         { _id: request.run.predecessorId, uid: actor.uid },
@@ -606,6 +632,18 @@ export async function settleAiJob(
 ) {
   const saved = await aiJobs(db).findOne({ _id: job._id, uid: job.uid });
   if (!saved) throw conflict();
+  if (
+    saved.consumption &&
+    (saved.credits !== 0 ||
+      saved.reservationId ||
+      saved.pricing ||
+      saved.run?.answerer)
+  )
+    throw new AppError(
+      "AI_PREPAID_PRICE",
+      "Consumption execution contains conflicting billing state.",
+      409,
+    );
   const pricing = saved.pricing ?? {
     mode: "fixed" as const,
     credits: saved.credits,

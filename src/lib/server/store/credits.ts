@@ -153,9 +153,10 @@ async function append(
       "Credit accounting is temporarily unavailable.",
       503,
     );
+  const ledgerId = randomUUID();
   await ctx.db.collection<LedgerEntry>("creditLedger").insertOne(
     {
-      _id: randomUUID(),
+      _id: ledgerId,
       uid: w._id,
       sequence: w.sequence,
       kind,
@@ -172,6 +173,7 @@ async function append(
     },
     { session: ctx.session },
   );
+  return ledgerId;
 }
 
 async function releaseHold(
@@ -620,7 +622,7 @@ export async function adjustCredits(
     reason?: string;
     expiresAt?: Date | null;
   },
-  options: Pick<MutationOptions, "now"> = {},
+  options: Pick<MutationOptions, "now" | "persist"> = {},
 ) {
   quantity(input.amount);
   const explanation = reason(input.reason);
@@ -677,6 +679,38 @@ export async function adjustCredits(
       return result;
     },
     { ...options, admin, reason: explanation },
+  );
+}
+
+// Trusted product services use this for upfront charges, with atomic domain persistence.
+// Zero supports included/free revision requests without creating a debit.
+export async function spendCredits(
+  db: Db,
+  actor: CreditActor,
+  key: string,
+  amount: number,
+  reference: string,
+  options: Pick<MutationOptions, "now"> & {
+    persist: NonNullable<MutationOptions["persist"]>;
+  },
+) {
+  quantity(amount, true);
+  identifier(reference);
+  return transaction(
+    db,
+    actor.uid,
+    key,
+    ["spend", amount, reference],
+    async (ctx) => {
+      if (!amount) return view(ctx.wallet);
+      requireFunds(ctx.wallet, amount);
+      if (await consumeAvailable(ctx, amount))
+        throw bad("Credit lot balance is inconsistent.");
+      ctx.wallet.balance -= amount;
+      const ledgerId = await append(ctx, "deduction", -amount, 0, reference);
+      return { ...view(ctx.wallet), ledgerId };
+    },
+    { ...options, actor },
   );
 }
 

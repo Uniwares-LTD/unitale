@@ -33,6 +33,11 @@ and the adapter; the table does not require unrelated suites for every task.
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;
   its fixtures live in [tests/booklet-compat](../tests/booklet-compat), outside production registries.
 
+- [Consumption orders and promotions](features/booklet-foundation/orders-promotions.md)
+  describe prepaid Run binding, revision allocations, refunds and verified coupon benefits.
+  Implementations: [orders](../src/lib/server/commerce/orders.ts),
+  [promotions](../src/lib/server/commerce/promotions.ts); verify with `test:commerce`.
+
 - [Foundation services](features/booklet-foundation/services.md) own T03-T06 commerce catalogs,
   private execution evidence and MCP settings. [Billing compatibility](features/booklet-foundation/billing-compatibility.md)
   owns offline provider/Android bridge evidence. Server implementations are in

@@ -33,8 +33,8 @@ publication/external acceptance gates. No agent delegation is implied.
 | T04 | Unibase | Configurable MCP limits and extensible private authorization | T01 | Complete in Unibase; imported and verified in Unitale |
 | T05 | Unibase | Execution measurements, evidence, redaction and cleanup | T01 | Complete in Unibase; imported and verified in Unitale |
 | T06 | Unibase | Versioned catalogs and trusted product extensions | T01 | Complete in Unibase; imported and verified in Unitale |
-| T07 | Unibase | Upfront consumption, entitlements, concurrency and refunds | T06 | Pending |
-| T08 | Unibase | Promotions, reservations, limits and bonus grants | T06 | Pending |
+| T07 | Unibase | Upfront consumption, entitlements, concurrency and refunds | T06 | Complete in Unibase; imported and verified in Unitale |
+| T08 | Unibase | Promotions, reservations, limits and bonus grants | T06 | Complete in Unibase; imported and verified in Unitale |
 | T09 | Unibase | Stripe subscriptions, coupons and catalog publication | T03,T06,T08 | Pending |
 | T10 | Unibase | Play verification, acknowledgement, renewals, restore and catalog publication | T03,T06,T08 | Pending |
 | T11 | Unibase | Android TWA purchase, restore and deferred changes | T10 | Pending |
@@ -77,6 +77,18 @@ its hardcoded template namespace). All 12 deployment configuration tests pass af
 making their database fixtures project-aware. Typecheck, lint, build, docs, i18n,
 skills, template and environment checks pass. No dependency versions changed.
 The full deployment suite and live provider acceptance were not run for this import.
+
+## Orders and promotions import
+
+Unibase PR #45 merged accepted T07-T08 at
+`b2fb215496f2ff6dfcab6f2dd33e4e0b7bd30907`. Unitale imports that exact revision
+through the template helper, retaining project contracts, Dify fixtures and the
+project-aware payment/deployment tests. See [orders and promotions](../booklet-foundation/orders-promotions.md).
+T13 remains pending T09-T12; no live provider activation or deployment is included.
+The combined commerce, wallet, Run, payment, booklet-contract and Dify suites pass
+98 tests. The disposable MongoDB fixture required forced shutdown during teardown;
+the runner completed successfully. Typecheck/build and repository checks are recorded
+in the integration PR.
 
 ## Verification and review scope
 
