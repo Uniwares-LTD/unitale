@@ -29,10 +29,10 @@ publication/external acceptance gates. No agent delegation is implied.
 | --- | --- | --- | --- | --- |
 | T01 | Both | Versioned catalogs, entitlements, operations, booklet/decision/manifest/workflow contracts and fixtures | None | Complete |
 | T02 | Unitale | Offline Dify parent/child, Human Input, native files and adapter compatibility harness | None | Complete (offline scope accepted) |
-| T03 | Unibase | Stripe/Play and Android bridge compatibility harness | None | Pending |
-| T04 | Unibase | Configurable MCP limits and extensible private authorization | T01 | Pending |
-| T05 | Unibase | Execution measurements, evidence, redaction and cleanup | T01 | Pending |
-| T06 | Unibase | Versioned catalogs and trusted product extensions | T01 | Pending |
+| T03 | Unibase | Stripe/Play and Android bridge compatibility harness | None | Complete in Unibase; imported and verified in Unitale |
+| T04 | Unibase | Configurable MCP limits and extensible private authorization | T01 | Complete in Unibase; imported and verified in Unitale |
+| T05 | Unibase | Execution measurements, evidence, redaction and cleanup | T01 | Complete in Unibase; imported and verified in Unitale |
+| T06 | Unibase | Versioned catalogs and trusted product extensions | T01 | Complete in Unibase; imported and verified in Unitale |
 | T07 | Unibase | Upfront consumption, entitlements, concurrency and refunds | T06 | Pending |
 | T08 | Unibase | Promotions, reservations, limits and bonus grants | T06 | Pending |
 | T09 | Unibase | Stripe subscriptions, coupons and catalog publication | T03,T06,T08 | Pending |
@@ -60,6 +60,23 @@ Independent starts: T01/T02/T03. After T01: T04/T05/T06/T14. After T01+T02:
 T18/T19 alongside foundation. After T06: T07/T08. After billing prerequisites:
 T09/T10, then T11. After T13: T15/T16; after both: T17/T21/T22/T23/T25.
 T20 runs alongside reader/PDF/sharing/storefront. T26 is convergence.
+
+## Foundation import
+
+Unibase PR #44 merged T03-T06 at `327bc01ed1ec4ca1dfbacd8ca7cdd64118a5f1b1`.
+The template update imports that pinned revision, including the shared T01 commerce
+and measurement contracts, while retaining Unitale booklet contracts and the T02
+Dify harness. Template version remains 0.4.0; this is a main-commit import, not a
+new template release. T13 remains pending until T07-T12 are integrated.
+See [foundation services](../booklet-foundation/services.md) and
+[billing compatibility](../booklet-foundation/billing-compatibility.md).
+
+Import verification: 65 focused TypeScript tests pass across the foundation, Dify,
+booklet and payment suites (the affected payment suite was rerun after correcting
+its hardcoded template namespace). All 12 deployment configuration tests pass after
+making their database fixtures project-aware. Typecheck, lint, build, docs, i18n,
+skills, template and environment checks pass. No dependency versions changed.
+The full deployment suite and live provider acceptance were not run for this import.
 
 ## Verification and review scope
 

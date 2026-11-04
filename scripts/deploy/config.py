@@ -41,7 +41,7 @@ def validate_mcp(env, catalog):
         permissions = client["permissions"]
         token = env.get(client["tokenEnv"], "")
         if (not isinstance(permissions, list) or not permissions or
-                any(p not in catalog["mcpPermissions"] for p in permissions) or
+                any(not isinstance(p, str) or (p not in catalog["mcpPermissions"] and not re.fullmatch(r"extension:[a-z][a-z0-9-]{1,39}:(read|write)", p)) for p in permissions) or
                 not re.fullmatch(r"[A-Za-z0-9_-]{43,256}", token) or
                 client["id"] in ids or token in tokens):
             raise ValueError("Invalid MCP client configuration")

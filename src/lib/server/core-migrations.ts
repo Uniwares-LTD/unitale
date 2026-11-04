@@ -1,3 +1,5 @@
+import { createCatalogIndexes } from "./commerce/catalogs";
+import { createMeasurementIndexes } from "./execution/measurements";
 import "server-only";
 import type { Migration } from "./migrations";
 import { migrateDomainReferences } from "./domain-migration";
@@ -25,6 +27,14 @@ async function backfillAssetVariants(db: Db) {
 // released; add a new one. Owners other than "core" run only while that
 // module is enabled.
 export const coreMigrations: readonly Migration[] = [
+  {
+    id: "core:0001-commerce-execution-indexes",
+    description: "Add opt-in commerce and execution evidence indexes.",
+    async run(db) {
+      await createCatalogIndexes(db);
+      await createMeasurementIndexes(db);
+    },
+  },
   {
     id: "runs:0001-domain-references",
     description: "Add domain target references to Run jobs and applications.",

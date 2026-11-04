@@ -7,7 +7,14 @@ const clientsSchema = z
     z.strictObject({
       id: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/),
       tokenEnv: z.string().regex(/^MCP_TOKEN_[A-Z0-9_]+$/),
-      permissions: z.array(z.enum(mcpPermissions)).min(1),
+      permissions: z
+        .array(
+          z.union([
+            z.enum(mcpPermissions),
+            z.string().regex(/^extension:[a-z][a-z0-9-]{1,39}:(read|write)$/),
+          ]),
+        )
+        .min(1),
     }),
   )
   .min(1)

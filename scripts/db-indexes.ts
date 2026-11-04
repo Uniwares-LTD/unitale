@@ -1,3 +1,5 @@
+import { createCatalogIndexes } from "../src/lib/server/commerce/catalogs";
+import { createMeasurementIndexes } from "../src/lib/server/execution/measurements";
 import {
   collectionEnabled,
   moduleEnabled,
@@ -38,6 +40,8 @@ async function main() {
       .db(config.database)
       .collection("auditEvents")
       .createIndex({ timestamp: -1, _id: -1 });
+    await createCatalogIndexes(client.db(config.database));
+    await createMeasurementIndexes(client.db(config.database));
     await createCreditIndexes(client.db(config.database));
     await createPurchaseIndexes(client.db(config.database));
     await createRuntimeIndexes(client.db(config.database));

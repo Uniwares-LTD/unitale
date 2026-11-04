@@ -33,6 +33,13 @@ and the adapter; the table does not require unrelated suites for every task.
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;
   its fixtures live in [tests/booklet-compat](../tests/booklet-compat), outside production registries.
 
+- [Foundation services](features/booklet-foundation/services.md) own T03-T06 commerce catalogs,
+  private execution evidence and MCP settings. [Billing compatibility](features/booklet-foundation/billing-compatibility.md)
+  owns offline provider/Android bridge evidence. Server implementations are in
+  [commerce](../src/lib/server/commerce/catalogs.ts) and [execution](../src/lib/server/execution/measurements.ts).
+
+- [Commerce contracts](../src/lib/contracts/commerce.ts) and [execution measurements](../src/lib/contracts/execution-measurements.ts) define opt-in v1 foundation DTOs. Reusable persistence and catalogs are described in [foundation services](features/booklet-foundation/services.md); [contract tests](../tests/commerce-contracts.test.ts) cover validation boundaries.
+
 - Runs module (planned sample): [environment binding](../src/lib/server/runs/environment-binding.ts) owns Dify app
   ownership, managed MCP setup, endpoint identity, graph binding and destination
   prerequisites. [Creation](../src/lib/server/runs/creation.ts) journals exact-version

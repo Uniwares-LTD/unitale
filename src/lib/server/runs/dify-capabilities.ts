@@ -8,7 +8,7 @@ import {
   assertRawResponseForm,
 } from "@/lib/contracts/runs";
 import type { difyJson } from "./dify-console-client";
-import { privateToolPermissions } from "../mcp/private-tools";
+import { privateToolPermissions } from "../mcp/private-catalog";
 
 const graphSchema = z.object({
   nodes: z

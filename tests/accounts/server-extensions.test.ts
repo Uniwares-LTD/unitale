@@ -1,3 +1,5 @@
+import { privatePermissionsFor } from "../../src/lib/server/mcp/private-catalog";
+import { extensionProductTypes } from "../../src/lib/server/extensions";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
@@ -60,5 +62,48 @@ test("server extensions must name a known module and unique tools", () => {
         ["notes"],
       ),
     /must belong to module notes/,
+  );
+});
+
+test("private extension catalog follows module admission and requires explicit Run context", () => {
+  const privateTool = {
+    ...tool,
+    runContext: true,
+    input: z.strictObject({ runContext: z.string() }),
+  };
+  const extension = { ...notes, mcpTools: [privateTool] };
+  assert.equal(
+    privatePermissionsFor([extension], () => true)[tool.name],
+    tool.permission,
+  );
+  assert.equal(
+    privatePermissionsFor([extension], () => false)[tool.name],
+    undefined,
+  );
+  assert.throws(() =>
+    validateServerExtensions(
+      [],
+      [{ ...notes, mcpTools: [{ ...tool, runContext: true }] }],
+      ["notes"],
+    ),
+  );
+});
+test("product-type extensions follow module admission and reject duplicate versions", () => {
+  const type = {
+    id: "notes-product",
+    schemaVersion: 1,
+    fields: z.strictObject({ pages: z.number() }),
+  };
+  const extension = { ...notes, productTypes: [type] };
+  assert.deepEqual(
+    extensionProductTypes([extension], () => true),
+    [type],
+  );
+  assert.deepEqual(
+    extensionProductTypes([extension], () => false),
+    [],
+  );
+  assert.throws(() =>
+    extensionProductTypes([extension, extension], () => true),
   );
 });

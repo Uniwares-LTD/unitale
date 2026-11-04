@@ -90,9 +90,9 @@ token integration, **not** an OAuth authorization server or an end-user consent
 flow. Clients must support custom authorization headers. A service credential
 does not establish an application's end-user identity.
 
-Request bodies and serialized MCP responses are bounded to 64 KiB. Tool output is
+Request bodies and serialized MCP responses default to 64 KiB. Tool output is
 limited to just under 32 KiB because the response includes structured content and
-a JSON text fallback. Execution times out after 10 seconds. Handlers must honor
+a JSON text fallback. Execution defaults to a 10-second timeout. Administrators can change these durable limits in Application settings; see [foundation configuration](features/booklet-foundation/services.md#mcp-configuration-and-extensions). Handlers must honor
 the supplied AbortSignal: the timeout ends the response but cannot preempt
 synchronous CPU loops or undo side effects in an uncooperative handler.
 

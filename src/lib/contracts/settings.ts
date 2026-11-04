@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mcpLimitsSchema } from "./mcp-limits";
 import { publicConfigSchema } from "../config/public";
 import { aiPricingSchema } from "../config/ai-pricing";
 import { externalMcpMappingSchema } from "./environment-binding";
@@ -24,6 +25,12 @@ export const creditPackSchema = z.strictObject({
 export const baseSettingsSchema = z
   .strictObject({
     public: publicConfigSchema,
+    mcp: mcpLimitsSchema.default(() => mcpLimitsSchema.parse({})),
+    execution: z
+      .strictObject({
+        rawLogRetentionDays: z.number().int().min(1).max(3650).default(90),
+      })
+      .default({ rawLogRetentionDays: 90 }),
     credits: z.strictObject({
       packs: z.array(creditPackSchema).max(50),
       holdMinutes: z.number().int().min(1).max(1440),

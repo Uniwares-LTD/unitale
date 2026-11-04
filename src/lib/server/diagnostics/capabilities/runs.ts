@@ -11,7 +11,7 @@ import type { AiJob } from "../../ai/jobs";
 import { jobTarget } from "../../domains";
 import type { Reservation } from "../../store/credit-types";
 import type { WorkerHeartbeat } from "../../worker-heartbeat";
-import { privateToolPermissions } from "../../mcp/private-tools";
+import { privateToolPermissions } from "../../mcp/private-catalog";
 import {
   inspectPrivateContextConfiguration,
   inspectStoredCapability,
