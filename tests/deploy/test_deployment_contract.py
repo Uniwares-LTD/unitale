@@ -22,6 +22,10 @@ class ContractTests(unittest.TestCase):
         with self.assertRaises(ValueError): project({**self.config, 'unknown': {}})
 
     def test_diagnostics_projection_does_not_mutate_input(self):
+        # Test preservation with synthetic data, independent of project provisioning.
+        self.config['runtime']['MCP_CLIENTS_JSON'] = json.dumps([
+            {'id': 'fixture', 'tokenEnv': 'MCP_TOKEN_FIXTURE', 'permissions': ['server:read']}
+        ])
         original = copy.deepcopy(self.config)
         result = project(self.config)
         self.assertNotIn('DIAGNOSTICS_ENABLED', result['runtime'])
