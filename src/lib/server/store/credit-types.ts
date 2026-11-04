@@ -67,6 +67,7 @@ export type WalletView = {
 };
 export type CreditResult = WalletView & {
   lotId?: string;
+  ledgerId?: string;
   reservationId?: string;
   status?: Reservation["status"];
   expiresAt?: string;

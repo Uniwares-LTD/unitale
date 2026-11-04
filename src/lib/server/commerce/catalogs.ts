@@ -5,6 +5,7 @@ import type { Db, ClientSession } from "mongodb";
 import {
   consumptionTermsSchema,
   purchaseTermsSchema,
+  promotionTermsSchema,
 } from "../../contracts/commerce";
 import { accessTransaction } from "../store/access";
 import { AppError } from "../../auth-policy";
@@ -24,9 +25,24 @@ const purchaseDefinition = z.strictObject({
   kind: z.literal("purchase"),
   terms: purchaseTermsSchema,
 });
+const promotionDefinition = z.strictObject({
+  kind: z.literal("promotion"),
+  terms: promotionTermsSchema,
+  eligibility: z
+    .strictObject({
+      accountIds: z
+        .array(z.string().min(1).max(128))
+        .min(1)
+        .max(10000)
+        .nullable(),
+      firstPurchaseOnly: z.boolean(),
+    })
+    .default({ accountIds: null, firstPurchaseOnly: false }),
+});
 export const catalogDefinitionSchema = z.discriminatedUnion("kind", [
   purchaseDefinition,
   productDefinition,
+  promotionDefinition,
 ]);
 type Definition = z.infer<typeof catalogDefinitionSchema>;
 type Actor = { uid: string; auth_time: number };
@@ -170,6 +186,24 @@ export async function publishCatalog(
       if (previous) {
         if (previous.hash !== hash) throw conflict();
         return;
+      }
+      if (definition.kind === "promotion" && definition.terms.code) {
+        const codes = db.collection<{ _id: string; catalogId: string }>(
+          "commercePromotionCodes",
+        );
+        const code = definition.terms.code;
+        const existing = await codes.findOne({ _id: code }, { session });
+        if (existing && existing.catalogId !== id)
+          throw new AppError(
+            "PROMOTION_CODE_CONFLICT",
+            "Coupon code is already assigned.",
+            409,
+          );
+        await codes.updateOne(
+          { _id: code },
+          { $setOnInsert: { catalogId: id } },
+          { upsert: true, session },
+        );
       }
       if (definition.kind === "purchase") {
         const mappingId = fingerprint(

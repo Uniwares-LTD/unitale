@@ -1,3 +1,4 @@
+import { consumptionTermsSchema } from "../../src/lib/contracts/commerce";
 import { coreMigrations } from "../../src/lib/server/core-migrations";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -134,7 +135,9 @@ test("catalogs and execution evidence enforce immutable snapshots, ownership, re
           1,
         );
         assert.equal(
-          (await publishedCatalog(db, saved.id, 1))?.definition.terms.credits,
+          consumptionTermsSchema.parse(
+            (await publishedCatalog(db, saved.id, 1))?.definition.terms,
+          ).credits,
           50,
         );
         await assert.rejects(
@@ -143,11 +146,15 @@ test("catalogs and execution evidence enforce immutable snapshots, ownership, re
         const revised = await previewCatalog(db, actor, saved.id, types);
         await publishCatalog(db, actor, saved.id, 2, revised.hash, types);
         assert.equal(
-          (await publishedCatalog(db, saved.id))?.definition.terms.credits,
+          consumptionTermsSchema.parse(
+            (await publishedCatalog(db, saved.id))?.definition.terms,
+          ).credits,
           80,
         );
         assert.equal(
-          (await publishedCatalog(db, saved.id, 1))?.definition.terms.credits,
+          consumptionTermsSchema.parse(
+            (await publishedCatalog(db, saved.id, 1))?.definition.terms,
+          ).credits,
           50,
         );
       },

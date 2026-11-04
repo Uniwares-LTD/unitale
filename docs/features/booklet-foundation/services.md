@@ -4,9 +4,9 @@
 
 T03-T06 add reusable services for Unitale and other derived projects. Existing
 Run settlement, purchase history and artifact records retain their prior behavior.
-Consumption charging (T07), promotions (T08), live subscription/provider services
-(T09-T10), Android purchase UI (T11), and commerce administration (T12) remain
-subsequent tasks.
+[Consumption orders and promotions](orders-promotions.md) implement T07-T08.
+Live subscription/provider services (T09-T10), Android purchase UI (T11), and
+commerce administration (T12) remain subsequent tasks.
 
 ## Prerequisites
 
