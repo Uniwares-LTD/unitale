@@ -1,4 +1,4 @@
-import { publicSettings } from "@/lib/server/settings";
+import { publicSettings, readSettings } from "@/lib/server/settings";
 import { getConfig } from "@/lib/server/config";
 import { parseMcpConfig } from "@/lib/config/mcp";
 import { handleMcp } from "@/lib/server/mcp/handler";
@@ -12,6 +12,8 @@ async function handle(request: Request) {
   return handleMcp(request, {
     config: parseMcpConfig(process.env, base.server.origin),
     appName: (await publicSettings()).appName,
+    // Durable settings are read per request; replicas do not retain stale limits.
+    loadLimits: async () => (await readSettings()).settings.mcp,
     log: ({ event, started, status, requestId, ...metadata }) => {
       logOperation(event, started, status, requestId, metadata);
     },

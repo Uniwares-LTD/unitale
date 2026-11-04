@@ -1,4 +1,7 @@
 import "server-only";
+import { mcpLimitsSchema, type McpLimits } from "../../contracts/mcp-limits";
+import { authorizedRun } from "../runs/capabilities";
+import { database } from "../mongo";
 import { moduleEnabled, project } from "../../project";
 import { limitRequest, RateLimitError } from "../rate-limit";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
@@ -24,14 +27,16 @@ type Options = {
   log: (event: Event) => void;
   registry?: readonly RegisteredTool[];
   timeoutMs?: number;
+  limits?: McpLimits;
+  loadLimits?: () => Promise<McpLimits>;
 };
 const digest = (value: string) => createHash("sha256").update(value).digest();
-const LIMIT = 64 * 1024;
 
 export async function handleMcp(
   request: Request,
   options: Options,
 ): Promise<Response> {
+  let limits = mcpLimitsSchema.parse(options.limits ?? {});
   const started = performance.now();
   const requestId = randomUUID();
   const log = (event: Event) => {
@@ -80,6 +85,8 @@ export async function handleMcp(
   if (request.method !== "POST") return respond(405, client.id);
 
   try {
+    if (options.loadLimits)
+      limits = mcpLimitsSchema.parse(await options.loadLimits());
     await limitRequest("mcp:" + client.id, "mcp");
   } catch (error) {
     const response = respond(
@@ -94,7 +101,7 @@ export async function handleMcp(
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
-    maxRequestBodySize: LIMIT,
+    maxRequestBodySize: limits.requestBytes,
   });
   for (const tool of options.registry ?? tools) {
     if (!client.permissions.includes(tool.permission)) continue;
@@ -122,9 +129,20 @@ export async function handleMcp(
         try {
           if (!client.permissions.includes(tool.permission)) throw new Error();
           const result = await Promise.race([
-            Promise.resolve().then(() => {
+            Promise.resolve().then(async () => {
               signal.throwIfAborted();
-              return tool.run(tool.input.parse(input), {
+              const parsed = tool.input.parse(input);
+              const ownedRun = tool.runContext
+                ? await authorizedRun(
+                    database(),
+                    String(parsed.runContext),
+                    client.id,
+                    tool.name,
+                  )
+                : undefined;
+              signal.throwIfAborted();
+              return tool.run(parsed, {
+                ownedRun,
                 clientId: client.id,
                 appName: options.appName,
                 requestId: callId,
@@ -136,13 +154,16 @@ export async function handleMcp(
                 outcome = "timeout";
                 controller.abort();
                 reject(new Error());
-              }, options.timeoutMs ?? 10_000);
+              }, options.timeoutMs ?? limits.timeoutMs);
             }),
           ]);
           signal.throwIfAborted();
           const output = tool.output.parse(result);
           const text = JSON.stringify(output);
-          if (Buffer.byteLength(text) > LIMIT / 2 - 1024) throw new Error(); // Output appears in both result forms.
+          if (tool.runContext && text.includes(String(input.runContext)))
+            throw new Error();
+          if (Buffer.byteLength(text) > limits.toolResultBytes)
+            throw new Error(); // Output appears in both result forms.
           return {
             structuredContent: output,
             content: [{ type: "text" as const, text }],
@@ -180,7 +201,7 @@ export async function handleMcp(
     const response = await transport.handleRequest(request);
     // JSON mode completes tool work before returning; consume before disposal.
     const body = await response.arrayBuffer();
-    if (body.byteLength > LIMIT) return respond(500, client.id);
+    if (body.byteLength > limits.responseBytes) return respond(500, client.id);
     const envelope =
       body.byteLength &&
       response.headers.get("content-type")?.includes("application/json")

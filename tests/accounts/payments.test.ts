@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { MongoClient } from "mongodb";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import Stripe from "stripe";
+import { namespace } from "../../src/lib/project";
 import {
   createCreditIndexes,
   readWallet,
@@ -112,7 +113,7 @@ test("Stripe durable orders reconcile duplicates, proportional refunds, disputes
           { price: "price_fixture", quantity: 1 },
         ]);
         assert.deepEqual(options, {
-          idempotencyKey: `unibase-checkout-${order._id}`,
+          idempotencyKey: `${namespace("checkout")}-${order._id}`,
         });
         assert.equal(
           (created as { metadata: { unibaseOrder: string } }).metadata

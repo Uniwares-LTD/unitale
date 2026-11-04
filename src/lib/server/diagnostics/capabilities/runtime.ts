@@ -27,7 +27,7 @@ import {
   WORKER_MAX_AGE_MS,
   type WorkerHeartbeat,
 } from "../../worker-heartbeat";
-import { privateToolPermissions } from "../../mcp/private-tools";
+import { privateToolPermissions } from "../../mcp/private-catalog";
 import { inspectPrivateContextConfiguration } from "../../runs/capabilities";
 import { define, iso, type DiagnosticContext } from "../context";
 

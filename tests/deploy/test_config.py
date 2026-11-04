@@ -10,11 +10,13 @@ config_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(config_module)
 
 def fixture(root):
+    manifest = json.loads((MODULE.parents[2] / "project.config.json").read_text())
+    prefix = manifest["slug"].replace("-", "_")
     config = {"imageRepository": "ghcr.io/test/unibase"}
     for target, port in (("staging", 35101), ("production", 35102)):
         item = {"origin": f"https://{target}.example.test", "port": port,
-                "firebaseProject": f"unibase-{target}-test", "mongoDatabase": f"unibase_{target}",
-                "mongoUser": f"unibase_{target}"}
+                "firebaseProject": f"unibase-{target}-test", "mongoDatabase": f"{prefix}_{target}",
+                "mongoUser": f"{prefix}_{target}"}
         item["redisImage"] = "redis@sha256:" + "b" * 64
         item["nginxImage"] = "nginx@sha256:" + "c" * 64
         item["ingressSubnet"] = "172.29.241.0/24" if target == "staging" else "172.29.242.0/24"
@@ -33,6 +35,16 @@ def fixture(root):
 
 
 class ConfigTests(unittest.TestCase):
+    def test_namespaced_extension_mcp_permissions(self):
+        catalog = {"mcpPermissions": ["server:read"]}
+        def values(permission):
+            return {"MCP_ENABLED": "true", "MCP_TOKEN_FIXTURE": "x" * 43,
+                    "MCP_CLIENTS_JSON": json.dumps([{"id": "fixture", "tokenEnv": "MCP_TOKEN_FIXTURE", "permissions": [permission]}])}
+        config_module.validate_mcp(values("extension:booklets:write"), catalog)
+        for invalid in ("extension:*:write", "extension:booklets:admin", "booklets:write"):
+            with self.assertRaises(ValueError):
+                config_module.validate_mcp(values(invalid), catalog)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="unibase-deploy-test-")
         self.addCleanup(self.temp.cleanup)
@@ -119,7 +131,9 @@ class ConfigTests(unittest.TestCase):
 
     def test_atlas_user_must_match_selected_environment(self):
         env = self.root / "staging/runtime.env"
-        env.write_text(env.read_text().replace("mongodb+srv://unibase_staging:", "mongodb+srv://unibase_production:"))
+        env.write_text(env.read_text().replace(
+            f"mongodb+srv://{self.config['staging']['mongoUser']}:",
+            f"mongodb+srv://{self.config['production']['mongoUser']}:"))
         with self.assertRaises(ValueError):
             config_module.validate(self.root, "staging")
 

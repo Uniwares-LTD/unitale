@@ -11,6 +11,7 @@ export type ServerExtension = {
   // Contributions are disabled when this module is not enabled.
   module: ModuleId;
   mcpTools?: readonly RegisteredTool[];
+  productTypes?: readonly import("./commerce/catalogs").ProductType[];
   domainAdapters?: readonly DomainAdapter[];
   // Idempotent index setup run by db:indexes.
   indexes?: (db: Db) => Promise<void>;
@@ -37,6 +38,20 @@ export function validateServerExtensions(
       if (names.has(tool.name))
         throw new Error(`Duplicate MCP tool ${tool.name}.`);
       names.add(tool.name);
+      if (
+        tool.permission.startsWith("extension:") &&
+        ![
+          "extension:" + extension.module + ":read",
+          "extension:" + extension.module + ":write",
+        ].includes(tool.permission)
+      )
+        throw new Error(
+          `Tool ${tool.name} permission must belong to module ${extension.module}.`,
+        );
+      if (tool.runContext && !tool.input.shape.runContext)
+        throw new Error(
+          `Private MCP tool ${tool.name} must declare runContext.`,
+        );
     }
     for (const migration of extension.migrations ?? [])
       if (!migration.id.startsWith(`${extension.module}:`))
@@ -53,4 +68,17 @@ export function extensionTools(
   return extensions
     .filter((extension) => enabled(extension.module))
     .flatMap((extension) => extension.mcpTools ?? []);
+}
+
+export function extensionProductTypes(
+  extensions: readonly ServerExtension[],
+  enabled: (id: ModuleId) => boolean,
+) {
+  const types = extensions
+    .filter((e) => enabled(e.module))
+    .flatMap((e) => e.productTypes ?? []);
+  const keys = types.map((t) => t.id + ":" + t.schemaVersion);
+  if (new Set(keys).size !== keys.length)
+    throw new Error("Duplicate product type version.");
+  return types;
 }

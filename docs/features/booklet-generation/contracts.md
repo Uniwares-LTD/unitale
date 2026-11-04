@@ -3,7 +3,8 @@
 The opt-in v1 schemas in [contracts.ts](../../../src/project/booklets/contracts.ts)
 and [workflow-contracts.ts](../../../src/project/booklets/workflow-contracts.ts) are
 the project side of T01. Generic commerce and execution measurement schemas originate
-in Unibase; they are not copied into Unitale core ahead of T13.
+in Unibase and are now available through the pinned T03-T06 template import.
+Full T13 integration still depends on the remaining commerce services.
 
 ## Versioning
 

@@ -138,7 +138,7 @@ export async function inspectPrivateContextConfiguration(
   const client = config.enabled
     ? config.clients.find((c) => c.id === clientId)
     : undefined;
-  const { privateToolPermissions } = await import("../mcp/private-tools");
+  const { privateToolPermissions } = await import("../mcp/private-catalog");
   const missingPermissions = client
     ? [
         ...new Set(

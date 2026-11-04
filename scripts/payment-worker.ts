@@ -1,3 +1,4 @@
+import { cleanupEvidence } from "../src/lib/server/execution/measurements";
 import {
   processOneNotification,
   pruneNotifications,
@@ -80,6 +81,7 @@ async function main() {
       try {
         await readSettings(db);
         await pruneNotifications(db);
+        worked = (await cleanupEvidence(db)) > 0 || worked;
         worked = (await processOneFileDeletion(db)) || worked;
         for (let n = 0; n < 10; n++) {
           if (!(await processOneNotification(db))) break;

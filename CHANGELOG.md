@@ -20,11 +20,19 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
-None.
+- Add offline Stripe/Play/TWA compatibility checks, durable administrator MCP limits,
+  namespaced private MCP extensions, versioned catalog services/product validators,
+  and per-call measurements with private redacted evidence and protected cleanup.
+- Add opt-in v1 commerce and execution-measurement contracts for immutable catalog terms, consumption orders, entitlements, subscriptions, promotions and provider evidence. Existing runtime behavior and records remain unchanged.
 
 ### Upgrade notes
 
-None.
+Run `npm run db:migrate` to install additive commerce/execution indexes. Existing
+settings retain prior MCP defaults; raw evidence retention defaults to 90 days.
+Private extension tools declare `runContext: true` and its input; their handlers
+bind project targets to the supplied owned Run. New project permissions use
+`extension:<module>:read|write`. See [foundation services](docs/features/booklet-foundation/services.md).
+No existing financial/Run records are migrated and no provider activation is performed.
 
 ## 0.4.0 — 2026-11-03
 
