@@ -148,3 +148,14 @@ purchase API, verified Stripe/Play adapters, subscription exclusion, renewal lot
 provider-action journals and notification/worker reconciliation. Sources live in
 `src/lib/server/commerce/billing*.ts`, `*-billing.ts`, `provider-*.ts` and
 `google-auth.ts`; offline checks are `npm run test:provider-billing`.
+
+Commerce administration lives in `src/lib/server/commerce/admin.ts`,
+`src/app/admin/commerce` and `src/components/commerce`. Public purchase DTOs are
+`src/lib/contracts/purchase-client.ts`; the browser/native boundary is
+`src/lib/client/play-billing.ts` and `android/billing/CatalogPaymentActivity.java`.
+The [provider billing guide](features/booklet-foundation/provider-billing.md) owns
+setup and recovery. `npm run test:commerce-ui` verifies service and fake-client paths;
+`scripts/android-generate.ts` owns copying the native activity into generated output.
+`android/google-maven.init.gradle` is the opt-in official Google Maven hostname
+fallback; [native build prerequisites](features/booklet-foundation/provider-billing.md#native-build-prerequisites)
+own its invocation and limitations.

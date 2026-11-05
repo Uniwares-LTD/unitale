@@ -6,6 +6,12 @@ import { extensionAdminSections } from "@/lib/extensions";
 export async function adminSections() {
   const sections = [
     {
+      href: "/admin/commerce",
+      label: "Commerce",
+      description:
+        "Purchase offers, products, coupons, publication and refunds.",
+    },
+    {
       href: "/admin/users",
       label: "Users",
       description:

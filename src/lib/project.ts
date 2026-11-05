@@ -94,7 +94,7 @@ const coreModuleDescriptors: Record<
   payments: {
     configuration: ["payments"],
     requires: ["credits"],
-    routes: ["/api/payments"],
+    routes: ["/api/payments", "/admin/commerce", "/api/admin/commerce"],
     workers: ["payment"],
     collections: ["purchaseOrders", "paymentInbox"],
   },

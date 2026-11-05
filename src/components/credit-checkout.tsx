@@ -1,10 +1,9 @@
 "use client";
 import { useFormatter, useTranslations } from "next-intl";
 
-import { namespace } from "@/lib/project";
 import { Notice } from "./page-patterns";
-import { useActionState, useEffect, useState } from "react";
-import { paymentContext } from "@/lib/payment-context";
+import { useActionState } from "react";
+import { usePaymentContext } from "@/lib/client/payment-context";
 import { checkoutCredits } from "@/app/credits/checkout-action";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -45,49 +44,8 @@ export function CreditCheckout({
     checkoutCredits.bind(null, uid),
     { message: "" },
   );
-  const [context, setContext] = useState<"checking" | "web" | "play">(
-    "checking",
-  );
-  useEffect(() => {
-    let active = true;
-    let markedPlay = false;
-    try {
-      markedPlay = sessionStorage.getItem(namespace("play-context")) === "yes";
-    } catch {
-      /* browser storage is optional */
-    }
-    const browser = window as Window & {
-      getDigitalGoodsService?: (provider: string) => Promise<unknown>;
-    };
-    void paymentContext({
-      referrer: document.referrer,
-      search: location.search,
-      markedPlay,
-      digitalGoods: browser.getDigitalGoodsService
-        ? () =>
-            browser.getDigitalGoodsService!("https://play.google.com/billing")
-        : undefined,
-    }).then((value) => {
-      if (!active) return;
-      if (value === "play") {
-        try {
-          sessionStorage.setItem(namespace("play-context"), "yes");
-        } catch {
-          /* retain the in-memory decision */
-        }
-      }
-      setContext(value);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-  if (context === "play")
-    return (
-      <p role="status" className="text-sm text-muted-foreground">
-        {translate("m616340fd038f")}
-      </p>
-    );
+  const context = usePaymentContext();
+  if (context === "play") return null;
   return (
     <Card>
       <CardHeader>

@@ -20,6 +20,15 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Add an opt-in official Google Maven hostname fallback for Android builds,
+  preserving dependency versions and normal repository defaults.
+
+- Add English/LTR commerce administration for versioned purchase, consumption and
+  promotion catalogs, provider previews/publication/readback and audited refunds.
+- Add localized catalog purchases and subscription management, Play context guards,
+  explicit native store quotes/account binding and deferred replacement. Legacy
+  Stripe pack seeds are optional when using administrator-published catalogs.
+
 - Fix provider-catalog checkout return routes, resumable Stripe checkout recovery,
   Play cancellation during a pending deferred change, and idempotent coupon
   capacity release after verified unpaid termination.
@@ -38,6 +47,11 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 - Add opt-in v1 commerce and execution-measurement contracts for immutable catalog terms, consumption orders, entitlements, subscriptions, promotions and provider evidence. Existing runtime behavior and records remain unchanged.
 
 ### Upgrade notes
+
+- Android consumers must regenerate and rebuild the wrapper to receive the custom
+  billing activity and Digital Goods service. Minimum Android API is now 24;
+  Billing Client 8.3.0 and Android Browser Helper billing 1.2.0 must resolve.
+  Installed-device/store acceptance remains required before enabling purchases.
 
 - Apply `core:0003-provider-billing`. Optional Play credentials and host-owned push
   audience/email settings are documented in

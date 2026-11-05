@@ -1,4 +1,5 @@
 "use client";
+import { rememberPlayContext } from "@/lib/client/payment-context";
 import { project } from "@/lib/project";
 import { useEffect } from "react";
 import { diagnostics } from "@/lib/client/diagnostics";
@@ -9,6 +10,7 @@ export function BrowserRuntime({
   preferredLocale: string;
 }) {
   useEffect(() => {
+    rememberPlayContext();
     try {
       localStorage.setItem(`${project.slug}-offline-locale`, preferredLocale);
     } catch {}

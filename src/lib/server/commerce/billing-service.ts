@@ -51,6 +51,7 @@ export async function startCatalogPurchase(
       channel: intent.terms.channel,
       accountBinding: intent.accountBinding,
       product: intent.terms.provider,
+      billing: intent.terms.billing.kind,
     };
   if (!(provider instanceof StripeBillingProvider)) throw missing();
   const action = await prepareBillingAction(
@@ -149,7 +150,22 @@ export async function changeCatalogSubscription(
         provider.fulfillment(intent, intent.providerId),
       ),
     };
-  if (!(provider instanceof StripeBillingProvider))
+  if (!(provider instanceof StripeBillingProvider)) {
+    const snapshot = z
+      .object({
+        nextTerms: z
+          .object({
+            provider: z.object({
+              productId: z.string(),
+              priceId: z.string(),
+              offerId: z.string().nullable(),
+            }),
+          })
+          .nullable(),
+        accountBinding: z.string(),
+        terms: z.object({ provider: z.object({ productId: z.string() }) }),
+      })
+      .parse(action.input);
     return {
       actionId: action._id,
       channel: "google-play",
@@ -158,7 +174,13 @@ export async function changeCatalogSubscription(
           ? "manage-subscription"
           : "deferred-replacement",
       replacementMode: "DEFERRED",
+      checkoutId: intent.checkoutId,
+      accountBinding: snapshot.accountBinding,
+      product: snapshot.nextTerms?.provider,
+      billing: "subscription",
+      oldProductId: snapshot.terms.provider.productId,
     };
+  }
   const result = await executeProviderAction(
     db,
     action._id,
