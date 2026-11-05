@@ -52,7 +52,7 @@ export function parseCreditConfig(
   if (
     !parsed.success ||
     new Set(parsed.data.map((pack) => pack.id)).size !== parsed.data.length ||
-    (mode !== "disabled" && !parsed.data.length) ||
+    (mode === "simulation" && !parsed.data.length) ||
     (mode === "stripe" &&
       parsed.success &&
       parsed.data.some(

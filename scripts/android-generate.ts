@@ -51,9 +51,9 @@ async function main() {
       themeColor: "#98492f",
       navigationColor: "#fff9f3",
       backgroundColor: "#fff9f3",
-      enableNotifications: false,
+      enableNotifications: true,
       enableSiteSettingsShortcut: false,
-      startUrl: "/",
+      startUrl: "/?client=play",
       splashScreenFadeOutDuration: 0,
       iconUrl: `${base}/icon.png`,
       maskableIconUrl: `${base}/maskable.png`,
@@ -62,9 +62,9 @@ async function main() {
       appVersion: config.versionName,
       generatorApp: "bubblewrap-1.25.0",
       fallbackType: "customtabs",
-      minSdkVersion: 23,
+      minSdkVersion: 24,
       shortcuts: [],
-      features: {},
+      features: { playBilling: { enabled: true } },
       additionalTrustedOrigins: [],
     });
     await mkdir("android/project", { recursive: true });
@@ -72,6 +72,29 @@ async function main() {
       "android/project",
       manifest,
       new ConsoleLog(project.slug),
+    );
+    const androidManifestPath =
+      "android/project/app/src/main/AndroidManifest.xml";
+    const generatedManifest = await readFile(androidManifestPath, "utf8");
+    const upstreamActivity =
+      "com.google.androidbrowserhelper.playbilling.provider.PaymentActivity";
+    if (generatedManifest.split(upstreamActivity).length !== 2)
+      throw new Error(
+        "Review the generated Play billing activity before adapting it.",
+      );
+    await writeFile(
+      androidManifestPath,
+      generatedManifest.replace(
+        upstreamActivity,
+        "com.google.androidbrowserhelper.playbilling.provider.CatalogPaymentActivity",
+      ),
+    );
+    const billingSource =
+      "android/project/app/src/main/java/com/google/androidbrowserhelper/playbilling/provider";
+    await mkdir(billingSource, { recursive: true });
+    await writeFile(
+      `${billingSource}/CatalogPaymentActivity.java`,
+      await readFile("android/billing/CatalogPaymentActivity.java", "utf8"),
     );
     manifest.iconUrl = `https://${config.host}/icons/icon-512.png`;
     manifest.maskableIconUrl = `https://${config.host}/icons/maskable-512.png`;
@@ -97,7 +120,7 @@ async function main() {
     await writeFile(
       "android/project/app/build.gradle",
       (await readFile("android/project/app/build.gradle", "utf8")) +
-        '\napply from: "../../release-signing.gradle"\n',
+        '\ndependencies { implementation "com.android.billingclient:billing:8.3.0" }\napply from: "../../release-signing.gradle"\n',
     );
     console.log(
       "Generated Android project from environment identity and android/config.json version. No signing keys created.",

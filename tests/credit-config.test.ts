@@ -69,3 +69,11 @@ test("saved catalog policy is independent of environment connection activation",
     parsePaymentMode({ PAYMENTS_MODE: "simulation" }, "production", "firebase"),
   );
 });
+
+test("versioned Stripe catalogs do not require legacy pack seeds", () => {
+  assert.deepEqual(
+    parseCreditConfig({ PAYMENTS_MODE: "stripe" }, "production", "firebase")
+      .packs,
+    [],
+  );
+});

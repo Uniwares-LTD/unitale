@@ -1,0 +1,13 @@
+// Optional official Google hostname fallback for environments where dl.google.com
+// returns 404. Invoke explicitly with Gradle -I; normal repository defaults stay intact.
+gradle.beforeProject { project ->
+    [project.buildscript.repositories, project.repositories].each { repositories ->
+        repositories.all { repository ->
+            if (repository instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository &&
+                    repository.url.scheme == 'https' && repository.url.host == 'dl.google.com' &&
+                    repository.url.path == '/dl/android/maven2/') {
+                repository.url = uri('https://dl-ssl.google.com/android/maven2/')
+            }
+        }
+    }
+}

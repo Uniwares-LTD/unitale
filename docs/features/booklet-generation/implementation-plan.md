@@ -10,9 +10,9 @@ Handbook baseline: `D:\Projects\handbook` at
 
 ## Execution prerequisites
 
-Local implementation is authorized. No issues, commits, pushes, releases, deployments,
-provider publications or paid calls are authorized. Use fake providers and disposable
-databases. Live acceptance requires configured Dify publications/plugins/credentials
+Local implementation is authorized. Commits, pushes and merges follow explicit
+session authorization. Releases, deployments, provider publications and paid calls
+remain separately gated. Use fake providers and disposable databases. Live acceptance requires configured Dify publications/plugins/credentials
 and a finite approved budget, Stripe test configuration, Play products/notifications/
 signing/internal track, Digital Asset Links and an installed Android device. Admin
 creates actual offers/packages and enables only accepted languages/capabilities.
@@ -37,9 +37,9 @@ publication/external acceptance gates. No agent delegation is implied.
 | T08 | Unibase | Promotions, reservations, limits and bonus grants | T06 | Complete in Unibase; imported and verified in Unitale |
 | T09 | Unibase | Stripe subscriptions, coupons and catalog publication | T03,T06,T08 | Imported from Unibase; offline verification complete |
 | T10 | Unibase | Play verification, acknowledgement, renewals, restore and catalog publication | T03,T06,T08 | Imported from Unibase; offline verification complete |
-| T11 | Unibase | Android TWA purchase, restore and deferred changes | T10 | Pending |
-| T12 | Unibase | Commerce administration, preview/readback and refunds | T07,T08,T09,T10 | Pending |
-| T13 | Both | Reviewed foundation through normal template integration | T04–T12 | Pending |
+| T11 | Unibase | Android TWA purchase, restore and deferred changes | T10 | Imported from Unibase; local verification complete |
+| T12 | Unibase | Commerce administration, preview/readback and refunds | T07,T08,T09,T10 | Imported from Unibase; local verification complete |
+| T13 | Both | Reviewed foundation through normal template integration | T04–T12 | Complete (local foundation integration) |
 | T14 | Unitale | Owned book/production/revision repositories, subjects and indexes | T01 | Pending |
 | T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Pending |
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Pending |
@@ -67,7 +67,7 @@ Unibase PR #44 merged T03-T06 at `327bc01ed1ec4ca1dfbacd8ca7cdd64118a5f1b1`.
 The template update imports that pinned revision, including the shared T01 commerce
 and measurement contracts, while retaining Unitale booklet contracts and the T02
 Dify harness. Template version remains 0.4.0; this is a main-commit import, not a
-new template release. T13 remains pending until T07-T12 are integrated.
+new template release. At this checkpoint, T13 awaited T07-T12 integration.
 See [foundation services](../booklet-foundation/services.md) and
 [billing compatibility](../booklet-foundation/billing-compatibility.md).
 
@@ -84,7 +84,7 @@ Unibase PR #45 merged accepted T07-T08 at
 `b2fb215496f2ff6dfcab6f2dd33e4e0b7bd30907`. Unitale imports that exact revision
 through the template helper, retaining project contracts, Dify fixtures and the
 project-aware payment/deployment tests. See [orders and promotions](../booklet-foundation/orders-promotions.md).
-T13 remains pending T09-T12; no live provider activation or deployment is included.
+At this checkpoint, T13 awaited T09-T12; no live provider activation or deployment was included.
 The combined commerce, wallet, Run, payment, booklet-contract and Dify suites pass
 98 tests. The disposable MongoDB fixture required forced shutdown during teardown;
 the runner completed successfully. Typecheck/build and repository checks are recorded
@@ -108,8 +108,31 @@ results are recorded at handoff. See [provider billing](../booklet-foundation/pr
 The imported `core:0003-provider-billing` migration adds billing indexes when a
 separately authorized installation runs migrations. No existing database was
 changed, and no providers, purchase catalogs or subscriptions were activated.
-T11/T12 can proceed; T13 remains pending their implementation and integration.
+This checkpoint supplied the prerequisites for the T11/T12 import below.
 Live Stripe/Play and Android acceptance remains T28.
+
+## Commerce administration and Android import
+
+Unitale imports [Unibase PR #48](https://github.com/Uniwares-LTD/unibase/pull/48)
+at `cee55c143c9f19a3e2a454c087b7d6fefe9d20dc` through `template:update`.
+The import adds T11 native catalog purchases, restore/deferred changes, and T12
+commerce administration. Template version remains 0.4.0. Project identity,
+booklet contracts, the offline Dify harness and prior project-specific tests are
+preserved. No new dependency version or database migration is introduced.
+
+The imported foundation passes disposable-database commerce, billing, MCP,
+migration, wallet, Run and project contract/payment checks. Unitale Android
+regeneration and offline `:app:assembleDebug` pass with all 31 tasks executed,
+using the verified SDK/cache and fixture identity `test.unitale.billing`.
+See [Android verification](../../android.md#verification-status) for artifact
+identity and remaining real-device gates. Web/build and repository check results
+are recorded in the integration PR. Two same-agent read-only reviews cover the
+final integrated state; no independent-agent review is claimed.
+
+T13's template integration and local compatibility are complete. This does not
+activate providers, create production purchase offers, apply migrations to an
+existing installation or complete the booklet-specific T14-T27 work. Operator
+installation and live acceptance remain separately authorized.
 
 ## Verification and review scope
 
@@ -134,8 +157,8 @@ cannot stand in for T28. Same-agent read-only reviews must be identified as such
 T01 work branches were Unitale `task/booklet-generation` and Unibase
 `task/booklet-foundation`; both were merged into their respective main branches.
 T02 work branch: Unitale `task/booklet-dify-compatibility`. Accepted PRD and
-dependency graph are persisted. T01 and offline T02 are implemented; later tasks
-are not complete.
+dependency graph are persisted. T01 and offline T02 were implemented at this checkpoint; the table above records
+subsequent foundation progress.
 
 T02 adds [candidate graphs, fake adapters and the compatibility report](dify-compatibility.md).
 `npm.cmd run test:booklet-compat` passes eleven tests. The affected existing Dify
@@ -187,7 +210,8 @@ Bases: Unitale `446a6c3a3412a45680e4aa6d996d7ca89986d0b0`; Unibase
 `7b6086ca2c3f368fe934bbec0afafde9d4292dba`. T01 changes are maintained on the
 work branches above; publication and live acceptance remain separate gates.
 
-Current resume: T01-T08 are accepted; T09/T10 and their corrective follow-up are
-imported and verified on `task/import-provider-billing`. T11 and T12 are the next
-Unibase tasks. Unitale T14, T18 and T19 also have their prerequisites met. T13 and
-the integrated booklet product remain incomplete; live acceptance remains gated.
+Current resume: T01-T12 foundation work is implemented and imported, and T13 local
+foundation integration is verified. T14 (booklet repositories), T18 (specialists)
+and T19 (visual reviewer) can proceed independently. T15/T16 also require T14.
+The integrated booklet product remains incomplete; real provider/store/device
+acceptance remains T28.

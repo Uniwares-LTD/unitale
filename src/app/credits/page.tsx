@@ -1,3 +1,5 @@
+import { CatalogPurchases } from "@/components/commerce/catalog-purchases";
+import { moduleEnabled } from "@/lib/project";
 import { PageMessages } from "@/components/page-messages";
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-patterns";
@@ -45,6 +47,7 @@ export default async function CreditsPage({
           historyPath="/credits"
           paged={cursor !== undefined}
         />
+        {moduleEnabled("payments") && <CatalogPurchases key={session.uid} />}
         {catalog.mode === "simulation" ? (
           <PurchaseSimulator
             key={session.uid}
@@ -53,7 +56,7 @@ export default async function CreditsPage({
             packs={catalog.packs}
             orders={orders}
           />
-        ) : catalog.mode === "stripe" ? (
+        ) : catalog.mode === "stripe" && catalog.packs.length > 0 ? (
           <CreditCheckout
             key={session.uid}
             uid={session.uid}
