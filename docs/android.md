@@ -55,30 +55,28 @@ After M4 provides the real HTTPS origin:
 
 ## Verification status
 
-On 2026-11-05, full debug APK assembly passed with Gradle 8.11.1, Android Gradle
-Plugin 8.10.1, JDK 22, SDK Platform 36 revision 2 and Build Tools 35.0.0. All 31
-tasks executed successfully. An offline repeat passed with all 31 tasks up-to-date.
-The SDK archives matched Google's published checksums and were installed under a
-project-local cache; the machine SDK was preserved. Gradle's archive matched its
-official SHA-256. The custom bridge also passed a separate Java 17-targeted
-compilation against the actual pinned billing libraries.
+On 2026-11-05, Unitale regenerated its wrapper and passed full debug APK assembly
+in offline mode with Gradle 8.11.1, Android Gradle Plugin 8.10.1, JDK 22, SDK
+Platform 36 revision 2 and Build Tools 35.0.0. All 31 tasks executed successfully.
+The build reused the checksum-verified SDK and dependency cache prepared during
+Unibase verification; the machine SDK was preserved.
 
-The generated local artifact is `android/project/app/build/outputs/apk/debug/app-debug.apk`
-(5,810,373 bytes), SHA-256
-`5057a859e2c3b4eb0d88442e27b6b483c503c9641a5efc0d59b13d8f0cdf4910`.
-It uses the fixture package `test.unibase.billing`, version code 1, minimum SDK 24
-and target SDK 36. APK inspection confirms `CatalogPaymentActivity`, the Play
-billing permission and Billing Client 8.3.0. Generated output is ignored; this is
-a local debug artifact, not a production-signed or store-published release.
+The local artifact is `android/project/app/build/outputs/apk/debug/app-debug.apk`
+(5,810,377 bytes), SHA-256
+`c74c1dec537ac296ff4850c72b04f1046ba29ad2f6b817ca6aac155565070e24`.
+APK inspection confirms the fixture package `test.unitale.billing`, Unitale label,
+version code 1, minimum SDK 24 and target SDK 36. Generated output is ignored.
+This is a debug fixture artifact, not a production-signed or store-published release.
 
-The 2026-10-03/04 attempts failed because Google's default Maven hostname returned
-404 and SDK Platform 36 was missing. On 2026-11-05, Google's official alternate
-hostname served the required artifacts. The opt-in
+The original upstream build attempts failed because Google's default Maven hostname
+returned 404 and SDK Platform 36 was missing. The official alternate hostname
+served the required artifacts. The opt-in
 [Google Maven fallback](features/booklet-foundation/provider-billing.md#native-build-prerequisites)
-passed an offline repository-isolation check and the full build. It preserves
-dependency versions, TLS verification and other repositories. The same guide
-records the official SDK download workaround. The generator still rejects an
-unexpected upstream plugin template so future Bubblewrap updates require review.
+passed repository-isolation and full online/offline build checks in Unibase, and
+the imported script is used by Unitale's offline build. It preserves dependency
+versions, TLS verification and other repositories. The same guide records the
+official SDK download workaround. The generator rejects an unexpected upstream
+plugin template so future Bubblewrap updates require review.
 
 Production signing, the real Play application/catalog, Digital Asset Links,
 purchase/restore/deferred-change behavior on an installed device, and live provider
