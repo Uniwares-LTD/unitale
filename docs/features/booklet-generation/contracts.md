@@ -4,7 +4,9 @@ The opt-in v1 schemas in [contracts.ts](../../../src/project/booklets/contracts.
 and [workflow-contracts.ts](../../../src/project/booklets/workflow-contracts.ts) are
 the project side of T01. Generic commerce and execution measurement schemas originate
 in Unibase and are now available through the pinned T03-T06 template import.
-Full T13 integration still depends on the remaining commerce services.
+T13 local foundation integration is complete; live acceptance remains T28.
+The [model review and diagram](model.md) describe proposed refinements before T14;
+they must not be confused with the implemented v1 contracts.
 
 ## Versioning
 

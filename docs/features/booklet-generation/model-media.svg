@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="1324" viewBox="0 0 1880 1324" role="img" aria-labelledby="title description">
+<title id="title">Assets, evidence and future delivery references: entities, fields and relationships</title>
+<desc id="description">Proposed logical model, not an implemented database schema. Groups show the entities and review fields for this model view. A relationship register specifies cross-group links. Fixed dark text on light backgrounds avoids theme-dependent unreadable rows.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1880" height="1324" fill="#f1f5f9"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<text x="36" y="48" fill="#0f172a" font-size="32" font-weight="700">Assets, evidence and future delivery references</text>
+<text x="36" y="82" fill="#92400e" font-size="20" font-weight="700">PROPOSED DESIGN — under review, not a collection or migration specification</text>
+<text x="36" y="112" fill="#172033" font-size="17" font-weight="400">PK = primary identity   FK = reference   ? = optional/nullable   [] = list   1:N arrows show one-to-many ownership</text>
+<text x="36" y="138" fill="#172033" font-size="17" font-weight="400">T14: define provenance and deletion boundaries; T16/T23/T24 own later implementation.</text>
+<text x="36" y="180" fill="#0f172a" font-size="24" font-weight="700">1. Content and evidence</text>
+<text x="36" y="208" fill="#172033" font-size="17" font-weight="400">Original bytes are retained before attachment; retrying attachment must not generate another paid image.</text>
+<rect x="36" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M44,228 H348 Q356,228 356,236 V300 H36 V236 Q36,228 44,228Z" fill="#17324d"/>
+<text x="50" y="257" fill="#ffffff" font-size="21" font-weight="700">Original receipt</text>
+<text x="50" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: booklet contract</text>
+<rect x="37" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="325" fill="#172033" font-size="16" font-weight="400">id / ownerId / productionId</text>
+<text x="50" y="349" fill="#172033" font-size="16" font-weight="400">operationId</text>
+<rect x="37" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="373" fill="#172033" font-size="16" font-weight="400">sha256 / bytes / mime</text>
+<text x="50" y="397" fill="#172033" font-size="16" font-weight="400">width / height</text>
+<rect x="37" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="421" fill="#172033" font-size="16" font-weight="400">provider / providerRequestId</text>
+<text x="50" y="445" fill="#172033" font-size="16" font-weight="400">evidenceId / retainedAt</text>
+<rect x="37" y="451" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="469" fill="#172033" font-size="16" font-weight="400">Private storage locator stays server</text>
+<rect x="404" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M412,228 H716 Q724,228 724,236 V300 H404 V236 Q404,228 412,228Z" fill="#17324d"/>
+<text x="418" y="257" fill="#ffffff" font-size="21" font-weight="700">Attachment receipt</text>
+<text x="418" y="281" fill="#e2e8f0" font-size="14" font-weight="400">P: durable application step</text>
+<rect x="405" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="325" fill="#172033" font-size="16" font-weight="400">id / operationId / assetId</text>
+<text x="418" y="349" fill="#172033" font-size="16" font-weight="400">artifactRevisionId</text>
+<rect x="405" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="373" fill="#172033" font-size="16" font-weight="400">expectedArtifactVersion</text>
+<text x="418" y="397" fill="#172033" font-size="16" font-weight="400">idempotencyKey / inputHash</text>
+<rect x="405" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="421" fill="#172033" font-size="16" font-weight="400">state / attachedAt?</text>
+<text x="418" y="445" fill="#172033" font-size="16" font-weight="400">Exact asset hash and source fence</text>
+<rect x="772" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M780,228 H1084 Q1092,228 1092,236 V300 H772 V236 Q772,228 780,228Z" fill="#17324d"/>
+<text x="786" y="257" fill="#ffffff" font-size="21" font-weight="700">Display derivative</text>
+<text x="786" y="281" fill="#e2e8f0" font-size="14" font-weight="400">P: T16 asset relationship</text>
+<rect x="773" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="325" fill="#172033" font-size="16" font-weight="400">id / originalAssetId</text>
+<text x="786" y="349" fill="#172033" font-size="16" font-weight="400">transformVersion</text>
+<rect x="773" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="373" fill="#172033" font-size="16" font-weight="400">width / height / mime</text>
+<text x="786" y="397" fill="#172033" font-size="16" font-weight="400">storageObjectId / sha256</text>
+<rect x="773" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="421" fill="#172033" font-size="16" font-weight="400">Original remains immutable</text>
+<rect x="1140" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M1148,228 H1452 Q1460,228 1460,236 V300 H1140 V236 Q1140,228 1148,228Z" fill="#17324d"/>
+<text x="1154" y="257" fill="#ffffff" font-size="21" font-weight="700">Evidence reference</text>
+<text x="1154" y="281" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase; linking reviewed</text>
+<rect x="1141" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="325" fill="#172033" font-size="16" font-weight="400">id / sha256 / bytes / kind</text>
+<text x="1154" y="349" fill="#172033" font-size="16" font-weight="400">operationId / Run association</text>
+<rect x="1141" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="373" fill="#172033" font-size="16" font-weight="400">prompt, input, output, trace, receipt</text>
+<text x="1154" y="397" fill="#172033" font-size="16" font-weight="400">protected while unresolved</text>
+<rect x="1141" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="421" fill="#172033" font-size="16" font-weight="400">Raw log retention: admin-configured</text>
+<text x="1154" y="445" fill="#172033" font-size="16" font-weight="400">Not approval or billing authority</text>
+<text x="36" y="618" fill="#0f172a" font-size="24" font-weight="700">2. Reserve boundaries; defer delivery design</text>
+<text x="36" y="646" fill="#172033" font-size="17" font-weight="400">These proposed references prevent T14 from tying content to Runs or exposing permanent public asset URLs.</text>
+<rect x="36" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M44,666 H348 Q356,666 356,674 V738 H36 V674 Q36,666 44,666Z" fill="#17324d"/>
+<text x="50" y="695" fill="#ffffff" font-size="21" font-weight="700">Deletion and recovery</text>
+<text x="50" y="719" fill="#e2e8f0" font-size="14" font-weight="400">C + P: retention integration</text>
+<rect x="37" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="763" fill="#172033" font-size="16" font-weight="400">bookletId / deletedAt / recoverUntil</text>
+<text x="50" y="787" fill="#172033" font-size="16" font-weight="400">purgeState? / purgedAt?</text>
+<rect x="37" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="811" fill="#172033" font-size="16" font-weight="400">Protection for unresolved evidence</text>
+<text x="50" y="835" fill="#172033" font-size="16" font-weight="400">Revoke shares immediately</text>
+<rect x="37" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="859" fill="#172033" font-size="16" font-weight="400">Recovery never revives old shares</text>
+<text x="50" y="883" fill="#172033" font-size="16" font-weight="400">Original/content lifetime != logs</text>
+<rect x="404" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M412,666 H716 Q724,666 724,674 V738 H404 V674 Q404,666 412,666Z" fill="#17324d"/>
+<text x="418" y="695" fill="#ffffff" font-size="21" font-weight="700">PDF export</text>
+<text x="418" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: later T23</text>
+<rect x="405" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="763" fill="#172033" font-size="16" font-weight="400">id / manifestRevisionId</text>
+<text x="418" y="787" fill="#172033" font-size="16" font-weight="400">manifestHash / exportProfileVersion</text>
+<rect x="405" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="811" fill="#172033" font-size="16" font-weight="400">outputAssetId / state</text>
+<text x="418" y="835" fill="#172033" font-size="16" font-weight="400">createdAt / evidenceRef?</text>
+<rect x="405" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="859" fill="#172033" font-size="16" font-weight="400">Immutable manifest-bound output</text>
+<rect x="772" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M780,666 H1084 Q1092,666 1092,674 V738 H772 V674 Q772,666 780,666Z" fill="#17324d"/>
+<text x="786" y="695" fill="#ffffff" font-size="21" font-weight="700">Share grant</text>
+<text x="786" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: later T24</text>
+<rect x="773" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="763" fill="#172033" font-size="16" font-weight="400">id / ownerId / bookletId</text>
+<text x="786" y="787" fill="#172033" font-size="16" font-weight="400">manifestRevisionId</text>
+<rect x="773" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="811" fill="#172033" font-size="16" font-weight="400">tokenHash / createdAt / revokedAt?</text>
+<text x="786" y="835" fill="#172033" font-size="16" font-weight="400">allowDownloads: false by default</text>
+<rect x="773" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="859" fill="#172033" font-size="16" font-weight="400">Read-time revocation checks</text>
+<text x="786" y="883" fill="#172033" font-size="16" font-weight="400">Never follows newer revisions</text>
+<rect x="1140" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M1148,666 H1452 Q1460,666 1460,674 V738 H1140 V674 Q1140,666 1148,666Z" fill="#17324d"/>
+<text x="1154" y="695" fill="#ffffff" font-size="21" font-weight="700">Access and audit</text>
+<text x="1154" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: use existing auth/audit</text>
+<rect x="1141" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="763" fill="#172033" font-size="16" font-weight="400">Owner: book/production/asset scope</text>
+<text x="1154" y="787" fill="#172033" font-size="16" font-weight="400">Reader: authorized manifest only</text>
+<rect x="1141" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="811" fill="#172033" font-size="16" font-weight="400">Admin: explicit role + action audit</text>
+<text x="1154" y="835" fill="#172033" font-size="16" font-weight="400">actorId / action / target IDs</text>
+<rect x="1141" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="859" fill="#172033" font-size="16" font-weight="400">reason / timestamp / evidence refs</text>
+<text x="1154" y="883" fill="#172033" font-size="16" font-weight="400">No prompts/costs in public output</text>
+<text x="36" y="1094" fill="#0f172a" font-size="24" font-weight="700">Cross-group relations and invariants</text>
+<text x="36" y="1132" fill="#172033" font-size="16" font-weight="400">Original receipt -&gt; retained private object; Attachment -&gt; exact Revision and Original.</text>
+<text x="36" y="1167" fill="#172033" font-size="16" font-weight="400">Original asset 1 -&gt; many Derivatives; display transformations never replace originals.</text>
+<text x="36" y="1202" fill="#172033" font-size="16" font-weight="400">Operations, Measurements and Quality reviews reference protected Evidence records.</text>
+<text x="36" y="1237" fill="#172033" font-size="16" font-weight="400">Manifest revision -&gt; PDF exports and Share grants; grant checks gate asset/PDF delivery.</text>
+<text x="966" y="1132" fill="#172033" font-size="16" font-weight="400">Booklet deletion -&gt; immediate share revocation, then recovery window and eligible purge.</text>
+<text x="966" y="1167" fill="#172033" font-size="16" font-weight="400">Retention keeps operational/financial audit independently from raw diagnostic logs.</text>
+<text x="966" y="1202" fill="#172033" font-size="16" font-weight="400">Review D10-D12 now: reference fences, ownership, deletion and manifest identity.</text>
+<text x="966" y="1237" fill="#172033" font-size="16" font-weight="400">Detailed export queues, reader UI and share APIs remain T22-T24 work, not T14 scope.</text>
+<text x="36" y="1294" fill="#334155" font-size="17" font-weight="400">Maintained source: scripts/booklet-model-diagram.mjs  |  Guide: docs/features/booklet-generation/model.md</text>
+</g></svg>

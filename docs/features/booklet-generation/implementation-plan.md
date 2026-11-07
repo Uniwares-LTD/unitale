@@ -215,3 +215,7 @@ foundation integration is verified. T14 (booklet repositories), T18 (specialists
 and T19 (visual reviewer) can proceed independently. T15/T16 also require T14.
 The integrated booklet product remains incomplete; real provider/store/device
 acceptance remains T28.
+
+Before T14 implementation, review the [model fields and D01-D12 decisions](model.md#open-questions-and-limits).
+The diagrams distinguish implemented services, contract-only payloads and proposals;
+this discussion does not mark T14 complete or expand its implementation scope.

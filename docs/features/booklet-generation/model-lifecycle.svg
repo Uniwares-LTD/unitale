@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="1324" viewBox="0 0 1880 1324" role="img" aria-labelledby="title description">
+<title id="title">Production lifecycle and revision controls: entities, fields and relationships</title>
+<desc id="description">Proposed logical model, not an implemented database schema. Groups show the entities and review fields for this model view. A relationship register specifies cross-group links. Fixed dark text on light backgrounds avoids theme-dependent unreadable rows.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1880" height="1324" fill="#f1f5f9"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<text x="36" y="48" fill="#0f172a" font-size="32" font-weight="700">Production lifecycle and revision controls</text>
+<text x="36" y="82" fill="#92400e" font-size="20" font-weight="700">PROPOSED DESIGN — under review, not a collection or migration specification</text>
+<text x="36" y="112" fill="#172033" font-size="17" font-weight="400">PK = primary identity   FK = reference   ? = optional/nullable   [] = list   1:N arrows show one-to-many ownership</text>
+<text x="36" y="138" fill="#172033" font-size="17" font-weight="400">T14: agree persisted boundaries now; T15/T20 implement lifecycle and orchestration later.</text>
+<text x="36" y="180" fill="#0f172a" font-size="24" font-weight="700">1. Durable state and concurrency</text>
+<text x="36" y="208" fill="#172033" font-size="17" font-weight="400">Candidate persistence fields; no second scheduler and no replacement for existing Run execution state.</text>
+<rect x="36" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M44,228 H348 Q356,228 356,236 V300 H36 V236 Q36,228 44,228Z" fill="#17324d"/>
+<text x="50" y="257" fill="#ffffff" font-size="21" font-weight="700">Production lifecycle</text>
+<text x="50" y="281" fill="#e2e8f0" font-size="14" font-weight="400">P: refine existing contract</text>
+<rect x="37" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="325" fill="#172033" font-size="16" font-weight="400">id / ownerId / bookletId</text>
+<text x="50" y="349" fill="#172033" font-size="16" font-weight="400">orderId / sourceProductionId?</text>
+<rect x="37" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="373" fill="#172033" font-size="16" font-weight="400">lifecycleState</text>
+<text x="50" y="397" fill="#172033" font-size="16" font-weight="400">currentManifestRevisionId?</text>
+<rect x="37" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="421" fill="#172033" font-size="16" font-weight="400">version / createdAt / updatedAt</text>
+<text x="50" y="445" fill="#172033" font-size="16" font-weight="400">expiresAt? / closedAt?</text>
+<rect x="37" y="451" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="469" fill="#172033" font-size="16" font-weight="400">Separate lifecycle from Run status</text>
+<rect x="404" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M412,228 H716 Q724,228 724,236 V300 H404 V236 Q404,228 412,228Z" fill="#17324d"/>
+<text x="418" y="257" fill="#ffffff" font-size="21" font-weight="700">Stage lock</text>
+<text x="418" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C + P: embedded refinement</text>
+<rect x="405" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="325" fill="#172033" font-size="16" font-weight="400">stage: story, style, references</text>
+<text x="418" y="349" fill="#172033" font-size="16" font-weight="400">operationId / lockedAt</text>
+<rect x="405" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="373" fill="#172033" font-size="16" font-weight="400">acceptedSourceRevisionIds[]?</text>
+<text x="418" y="397" fill="#172033" font-size="16" font-weight="400">Stored atomically before generation</text>
+<rect x="405" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="421" fill="#172033" font-size="16" font-weight="400">Never reopen on uncertain outcome</text>
+<rect x="772" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M780,228 H1084 Q1092,228 1092,236 V300 H772 V236 Q772,228 780,228Z" fill="#17324d"/>
+<text x="786" y="257" fill="#ffffff" font-size="21" font-weight="700">Mutation lease</text>
+<text x="786" y="281" fill="#e2e8f0" font-size="14" font-weight="400">P: service-owned fencing</text>
+<rect x="773" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="325" fill="#172033" font-size="16" font-weight="400">productionId</text>
+<text x="786" y="349" fill="#172033" font-size="16" font-weight="400">activeRunId / workflow identity</text>
+<rect x="773" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="373" fill="#172033" font-size="16" font-weight="400">leaseOwner / leaseExpiresAt</text>
+<text x="786" y="397" fill="#172033" font-size="16" font-weight="400">fencingToken / version</text>
+<rect x="773" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="421" fill="#172033" font-size="16" font-weight="400">Recovery and terminal release rules</text>
+<text x="786" y="445" fill="#172033" font-size="16" font-weight="400">One mutation workflow per production</text>
+<rect x="1140" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M1148,228 H1452 Q1460,228 1460,236 V300 H1140 V236 Q1140,228 1148,228Z" fill="#17324d"/>
+<text x="1154" y="257" fill="#ffffff" font-size="21" font-weight="700">Run binding</text>
+<text x="1154" y="281" fill="#e2e8f0" font-size="14" font-weight="400">P: booklet-to-Run link</text>
+<rect x="1141" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="325" fill="#172033" font-size="16" font-weight="400">productionId / runId / ownerId</text>
+<text x="1154" y="349" fill="#172033" font-size="16" font-weight="400">purpose / continuationOfRunId?</text>
+<rect x="1141" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="373" fill="#172033" font-size="16" font-weight="400">orderId</text>
+<text x="1154" y="397" fill="#172033" font-size="16" font-weight="400">accepted publication identity</text>
+<rect x="1141" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="421" fill="#172033" font-size="16" font-weight="400">createdAt / closedAt?</text>
+<text x="1154" y="445" fill="#172033" font-size="16" font-weight="400">Existing Runs remain authoritative</text>
+<rect x="1508" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M1516,228 H1820 Q1828,228 1828,236 V300 H1508 V236 Q1508,228 1516,228Z" fill="#17324d"/>
+<text x="1522" y="257" fill="#ffffff" font-size="21" font-weight="700">Human input request</text>
+<text x="1522" y="281" fill="#e2e8f0" font-size="14" font-weight="400">P: reuse Run form integration</text>
+<rect x="1509" y="307" width="318" height="24" fill="#eef2f6"/>
+<text x="1522" y="325" fill="#172033" font-size="16" font-weight="400">productionId / runId</text>
+<text x="1522" y="349" fill="#172033" font-size="16" font-weight="400">formId / request identity</text>
+<rect x="1509" y="355" width="318" height="24" fill="#eef2f6"/>
+<text x="1522" y="373" fill="#172033" font-size="16" font-weight="400">presentedRevisionIds[]</text>
+<text x="1522" y="397" fill="#172033" font-size="16" font-weight="400">expectedProductionVersion</text>
+<rect x="1509" y="403" width="318" height="24" fill="#eef2f6"/>
+<text x="1522" y="421" fill="#172033" font-size="16" font-weight="400">question / allowedActions[]</text>
+<text x="1522" y="445" fill="#172033" font-size="16" font-weight="400">state / createdAt / answeredAt?</text>
+<rect x="1509" y="451" width="318" height="24" fill="#eef2f6"/>
+<text x="1522" y="469" fill="#172033" font-size="16" font-weight="400">Decision references submissionId</text>
+<text x="36" y="618" fill="#0f172a" font-size="24" font-weight="700">2. Requests, pricing and repairs</text>
+<text x="36" y="646" fill="#172033" font-size="17" font-weight="400">A user revision request is distinct from the operations and provider attempts used to satisfy it.</text>
+<rect x="36" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M44,666 H348 Q356,666 356,674 V738 H36 V674 Q36,666 44,666Z" fill="#17324d"/>
+<text x="50" y="695" fill="#ffffff" font-size="21" font-weight="700">Revision request</text>
+<text x="50" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: persisted request identity</text>
+<rect x="37" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="763" fill="#172033" font-size="16" font-weight="400">id / productionId / decisionId</text>
+<text x="50" y="787" fill="#172033" font-size="16" font-weight="400">category / subjectIds[]</text>
+<rect x="37" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="811" fill="#172033" font-size="16" font-weight="400">instruction / sourceRevisionIds[]</text>
+<text x="50" y="835" fill="#172033" font-size="16" font-weight="400">quoteId / allocationIds[]</text>
+<rect x="37" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="859" fill="#172033" font-size="16" font-weight="400">idempotencyKey / inputHash</text>
+<text x="50" y="883" fill="#172033" font-size="16" font-weight="400">state / createdAt</text>
+<rect x="37" y="889" width="318" height="24" fill="#eef2f6"/>
+<text x="50" y="907" fill="#172033" font-size="16" font-weight="400">Retries reuse this request</text>
+<rect x="404" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M412,666 H716 Q724,666 724,674 V738 H404 V674 Q404,666 412,666Z" fill="#17324d"/>
+<text x="418" y="695" fill="#ffffff" font-size="21" font-weight="700">Revision quote</text>
+<text x="418" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: binds accepted terms</text>
+<rect x="405" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="763" fill="#172033" font-size="16" font-weight="400">id / productionId / ownerId</text>
+<text x="418" y="787" fill="#172033" font-size="16" font-weight="400">request fingerprint</text>
+<rect x="405" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="811" fill="#172033" font-size="16" font-weight="400">expectedProductionVersion</text>
+<text x="418" y="835" fill="#172033" font-size="16" font-weight="400">exact subjects + source revisions</text>
+<rect x="405" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="859" fill="#172033" font-size="16" font-weight="400">includedUnits / paidUnits</text>
+<text x="418" y="883" fill="#172033" font-size="16" font-weight="400">extraCredits / termsRevision</text>
+<rect x="405" y="889" width="318" height="24" fill="#eef2f6"/>
+<text x="418" y="907" fill="#172033" font-size="16" font-weight="400">expiresAt / acceptedAt?</text>
+<text x="418" y="931" fill="#172033" font-size="16" font-weight="400">Validate stage lock at admission</text>
+<rect x="772" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M780,666 H1084 Q1092,666 1092,674 V738 H772 V674 Q772,666 780,666Z" fill="#17324d"/>
+<text x="786" y="695" fill="#ffffff" font-size="21" font-weight="700">Content reuse acceptance</text>
+<text x="786" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: Decision target application</text>
+<rect x="773" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="763" fill="#172033" font-size="16" font-weight="400">newProductionId</text>
+<text x="786" y="787" fill="#172033" font-size="16" font-weight="400">sourceProductionId</text>
+<rect x="773" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="811" fill="#172033" font-size="16" font-weight="400">sourceRevisionIds[]</text>
+<text x="786" y="835" fill="#172033" font-size="16" font-weight="400">decisionId / acceptedAt</text>
+<rect x="773" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="786" y="859" fill="#172033" font-size="16" font-weight="400">New production explicitly accepts</text>
+<text x="786" y="883" fill="#172033" font-size="16" font-weight="400">reused content; no silent copying</text>
+<rect x="1140" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+<path d="M1148,666 H1452 Q1460,666 1460,674 V738 H1140 V674 Q1140,666 1148,666Z" fill="#17324d"/>
+<text x="1154" y="695" fill="#ffffff" font-size="21" font-weight="700">Repair budget</text>
+<text x="1154" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: bounded service state</text>
+<rect x="1141" y="745" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="763" fill="#172033" font-size="16" font-weight="400">productionId / output identity</text>
+<text x="1154" y="787" fill="#172033" font-size="16" font-weight="400">failedQualityReviewId</text>
+<rect x="1141" y="793" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="811" fill="#172033" font-size="16" font-weight="400">limitSnapshot / usedAttempts</text>
+<text x="1154" y="835" fill="#172033" font-size="16" font-weight="400">execution/spending budget refs</text>
+<rect x="1141" y="841" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="859" fill="#172033" font-size="16" font-weight="400">authorizingOperationId</text>
+<text x="1154" y="883" fill="#172033" font-size="16" font-weight="400">version / exhaustedAt?</text>
+<rect x="1141" y="889" width="318" height="24" fill="#eef2f6"/>
+<text x="1154" y="907" fill="#172033" font-size="16" font-weight="400">Platform-funded; no user allowance</text>
+<text x="36" y="1094" fill="#0f172a" font-size="24" font-weight="700">Cross-group relations and invariants</text>
+<text x="36" y="1132" fill="#172033" font-size="16" font-weight="400">Production 1 -&gt; many Run bindings and Revision requests; only one mutation lease.</text>
+<text x="36" y="1167" fill="#172033" font-size="16" font-weight="400">Human input request -&gt; exact presented Revisions; Decision -&gt; authenticated submission.</text>
+<text x="36" y="1202" fill="#172033" font-size="16" font-weight="400">Revision request -&gt; one accepted Quote and zero or many entitlement Allocations.</text>
+<text x="36" y="1237" fill="#172033" font-size="16" font-weight="400">One request can authorize many Operations; retries retain request and funding identity.</text>
+<text x="966" y="1132" fill="#172033" font-size="16" font-weight="400">Stage lock -&gt; downstream authorizing Operation and the locked upstream sources.</text>
+<text x="966" y="1167" fill="#172033" font-size="16" font-weight="400">Repair Operation -&gt; failed Quality review and separately fenced repair budget.</text>
+<text x="966" y="1202" fill="#172033" font-size="16" font-weight="400">Dispatcher observes only the orchestrator; specialists/reviewer have no direct MCP access.</text>
+<text x="966" y="1237" fill="#172033" font-size="16" font-weight="400">Review D05-D08: lifecycle authority, fencing, requests, reuse and repair accounting.</text>
+<text x="36" y="1294" fill="#334155" font-size="17" font-weight="400">Maintained source: scripts/booklet-model-diagram.mjs  |  Guide: docs/features/booklet-generation/model.md</text>
+</g></svg>
