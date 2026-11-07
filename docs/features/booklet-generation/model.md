@@ -10,21 +10,15 @@ selects persistence boundaries; T14 implementation is still pending.
 - [Simple Mermaid schema](model-core-mermaid.md)
 - [Complete Mermaid schema](model-complete-mermaid.md)
 - [Concrete JSON example](model-document-example.json)
-- [SVG overview](model.svg)
 
 The example is a partial production with two manuscript revisions, a character
 and a page plan containing panels and lettering. Its `collections` wrapper groups
 separate documents for reading; it is not a stored parent document or a seed file.
 External order, Run and evidence references are explicitly identified.
 
-### Detailed review views
-
-| View | Contents |
-| --- | --- |
-| [Creative content](model-content.svg) | One immutable revision document with typed content variants, nested panels/lettering or manifest entries, source and asset references |
-| [Lifecycle](model-lifecycle.svg) | Production with nested index/locks/lease; separate operations, decisions, revision requests and execution history |
-| [Economy](model-economy.svg) | Existing Unibase documents with embedded accepted terms, allowances and product extension fields |
-| [Media](model-media.svg) | Original receipts, attachment, derivatives, evidence and future manifest-bound exports/shares |
+The simple diagram shows core document boundaries. The complete diagram expands
+nested content, lifecycle, economy and media fields, including labeled future
+export/share references. Both are generated from the same maintained definitions.
 
 Boxes show document boundaries or explicitly labeled existing service views.
 Indented `{}` objects and `[]` arrays stay inside their owning document. References
@@ -108,8 +102,8 @@ mapping and versioned contracts where a public shape actually changes.
 [booklet-model-review-data.mjs](../../../scripts/booklet-model-review-data.mjs)
 owns document fields, nesting and cross-document references.
 [booklet-model-diagram.mjs](../../../scripts/booklet-model-diagram.mjs) generates
-SVG views and calls the [Mermaid renderer](../../../scripts/booklet-model-mermaid.mjs).
-Both formats share the same document definitions. Update the canonical definitions,
+both Mermaid views through the [Mermaid renderer](../../../scripts/booklet-model-mermaid.mjs).
+Both views share the same document definitions. Update the canonical definitions,
 this guide and the JSON example when model boundaries or fields change.
 
 ```sh
@@ -118,8 +112,7 @@ npm run check:docs
 ```
 
 The check rejects stale generated views and references to unknown diagram documents.
-It does not infer semantic changes from runtime schemas. Inspect generated SVGs for
-clipping and contrast and Mermaid previews for nesting and relation clarity. Fixed
+It does not infer semantic changes from runtime schemas. Inspect Mermaid previews for readable labels, nesting and relation clarity. Fixed
 colors preserve label contrast. Code generation requires no network or renderer.
 
 ## Open questions and limits

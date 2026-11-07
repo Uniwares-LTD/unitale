@@ -21,7 +21,7 @@ accepted milestones need no retroactive issues. Shared guidance does not transfe
 Preserve local adaptations and resolve actual conflicts explicitly.
 
 For booklet model, schema or persistence changes, update the
-[model guide, SVGs and both Mermaid schema versions](docs/features/booklet-generation/model.md) in the same
+[model guide, JSON example and both Mermaid schema versions](docs/features/booklet-generation/model.md) in the same
 change, or record why they are unaffected. Keep proposals distinct from implemented
 contracts and run `npm run docs:booklet-model` followed by `npm run check:docs`.
 
