@@ -11,7 +11,8 @@
     "files",
     "notifications",
     "artifacts",
-    "notes"
+    "notes",
+    "booklets"
   ],
   "locales": [
     "en",

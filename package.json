@@ -52,7 +52,7 @@
     "check:samples": "node scripts/samples.mjs check",
     "template:update": "node scripts/template-update.mjs",
     "check:template": "node scripts/template-version.mjs",
-    "check:docs": "node scripts/check-docs.mjs && node scripts/environment-docs.mjs --check",
+    "check:docs": "node scripts/check-docs.mjs && node scripts/environment-docs.mjs --check && node scripts/booklet-model-diagram.mjs --check",
     "provision:preview": "python scripts/deploy/provision.py",
     "handbook:setup": "node scripts/handbook.mjs setup",
     "handbook:check": "node scripts/handbook.mjs check",
@@ -67,7 +67,9 @@
     "test:booklet-foundation": "node --conditions=react-server --import tsx --test tests/accounts/booklet-foundation.test.ts tests/accounts/mcp-foundation.test.ts",
     "test:commerce": "node --conditions=react-server --import tsx --test tests/accounts/commerce-orders-promotions.test.ts tests/accounts/booklet-foundation.test.ts tests/commerce-contracts.test.ts",
     "test:provider-billing": "node --conditions=react-server --import tsx --test tests/accounts/billing-subscriptions.test.ts tests/billing-compat/providers.test.ts",
-    "test:commerce-ui": "node --conditions=react-server --import tsx --test tests/accounts/commerce-admin.test.ts tests/play-purchase-client.test.ts tests/credit-config.test.ts"
+    "test:commerce-ui": "node --conditions=react-server --import tsx --test tests/accounts/commerce-admin.test.ts tests/play-purchase-client.test.ts tests/credit-config.test.ts",
+    "docs:booklet-model": "node scripts/booklet-model-diagram.mjs",
+    "test:booklet-repositories": "node --conditions=react-server --import tsx --test tests/accounts/booklet-repositories.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1147.0",

@@ -20,6 +20,11 @@ code before editing. The user's request and accepted milestones define scope;
 accepted milestones need no retroactive issues. Shared guidance does not transfer ownership or expand authority.
 Preserve local adaptations and resolve actual conflicts explicitly.
 
+For booklet model, schema or persistence changes, update the
+[model guide, JSON example and both Mermaid schema versions](docs/features/booklet-generation/model.md) in the same
+change, or record why they are unaffected. Keep proposals distinct from implemented
+contracts and run `npm run docs:booklet-model` followed by `npm run check:docs`.
+
 ## Decision-point rules
 
 - Commits, pushes, PR publication, merges, deployments, releases, permissions and

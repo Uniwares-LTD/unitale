@@ -29,6 +29,11 @@ and the adapter; the table does not require unrelated suites for every task.
   product contract and cross-repository dependencies. Implementation is in progress.
   [Contract compatibility](features/booklet-generation/contracts.md) describes the
   opt-in v1 schemas and the distinction between shape validation and service authorization.
+  [Model review](features/booklet-generation/model.md) owns the accepted document boundaries, nested JSON example, diagrams and remaining T14 decisions;
+  Unitale repositories and schemas live in `src/lib/server/booklets`;
+  `src/project/booklets/extension.ts` and `server.ts` own registration.
+  `npm run test:booklet-repositories` verifies disposable-database behavior.
+  Regenerate the simple/complete Mermaid versions with `npm run docs:booklet-model` whenever model relationships change.
   The [offline Dify harness](features/booklet-generation/dify-compatibility.md) owns
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;
   its fixtures live in [tests/booklet-compat](../tests/booklet-compat), outside production registries.

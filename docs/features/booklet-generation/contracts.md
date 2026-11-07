@@ -4,7 +4,13 @@ The opt-in v1 schemas in [contracts.ts](../../../src/project/booklets/contracts.
 and [workflow-contracts.ts](../../../src/project/booklets/workflow-contracts.ts) are
 the project side of T01. Generic commerce and execution measurement schemas originate
 in Unibase and are now available through the pinned T03-T06 template import.
-Full T13 integration still depends on the remaining commerce services.
+T13 local foundation integration is complete; live acceptance remains T28.
+The accepted [document model](model.md) embeds subjects and artifact identities in
+Production while retaining separate immutable revisions. T14 implements dedicated [persistence schemas](../../../src/lib/server/booklets/documents.ts)
+and date-to-ISO views rather than treating database records as v1 DTOs: an artifact DTO is not a collection declaration,
+and its revision/version fields must not become an independent artifact write fence.
+Production version/fencing governs persistence. No v1 parser changes are made by
+T14; any breaking public shape requires explicit versioning.
 
 ## Versioning
 

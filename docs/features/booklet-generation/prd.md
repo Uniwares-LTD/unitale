@@ -40,9 +40,12 @@ Reused creative content requires explicit acceptance. Test concurrent starts and
 
 ### R03 — Operational schema
 
-Persist Booklet, Production, Artifact, immutable Artifact revision, authenticated
-Decision, Operation, Execution measurement and Quality review. Stable subjects identify
-book/character/location/physical page. A completed book is a book-manifest artifact
+Persist Booklet and Production documents. Production embeds a bounded subject roster
+with nested artifact identities and current/accepted revision pointers; there are no
+separate Subject or Artifact collections. Keep immutable Artifact revisions, authenticated
+Decisions, Operations, Execution measurements and Quality reviews as separate records.
+Use production version/fencing for nested index mutations. Stable subjects identify
+book/character/location/physical page. See the [document model](model.md). A completed book is a book-manifest artifact
 revision containing exact accepted content and ordered cover/page assets, not an Edition
 collection. Store raw prompts, large envelopes and traces in referenced evidence
 storage; no ownership, billing, approval or completion fact may depend on log searches.
