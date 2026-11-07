@@ -1,0 +1,406 @@
+{
+  "example": {
+    "approach": "Embedded production content index",
+    "status": "accepted-document-boundaries-implementation-pending",
+    "documentBoundaries": {
+      "production": "Embeds subjects and their artifact identity/pointer entries; production version fences index updates.",
+      "artifact": "Embedded object addressed by stable id; no artifacts collection or independent artifact version.",
+      "revision": "Separate immutable content document; artifactId resolves into the production subjects[].artifacts[] index."
+    },
+    "notes": [
+      "Concrete illustration of the accepted document boundaries, not runtime DTOs or importable seed data. The collections wrapper represents separate collections; it is not one stored document.",
+      "Partial production example. Package quantities are fixtures, not a seeded production offer. Remaining pages, cover, references and final manifest have not been generated.",
+      "Story revision 1 was approved. The orchestrator produced revision 2 during unlocked story development; it has not been approved. The old decision does not approve revision 2. This is not a customer-requested paid revision.",
+      "The page plan is a provisional text draft referencing revision 2. No page or reference image generation is authorized by this sample; all stage locks remain open.",
+      "Source links, panels, lettering, asset references and decision targets are embedded. Revision and operation histories are separate documents, never growing arrays on production.",
+      "External financial and execution services are referenced rather than duplicated. Hashes, complete execution limits, attempt records and measurements are omitted for readability, not optional in the final validated implementation.",
+      "Timestamps are ISO strings for JSON readability. No real user, provider, storage object or credential is represented."
+    ]
+  },
+  "externalReferences": [
+    {
+      "id": "order_external_001",
+      "service": "Unibase consumption orders",
+      "purpose": "Authoritative accepted commercial terms and existing package charge"
+    },
+    {
+      "id": "run_external_001",
+      "service": "Unibase Runs",
+      "purpose": "Existing orchestrator execution"
+    },
+    {
+      "id": "evidence_external_001",
+      "service": "Unibase evidence storage",
+      "purpose": "Synthetic placeholder for raw input/output evidence; no payload embedded"
+    }
+  ],
+  "collections": {
+    "booklets": [
+      {
+        "_id": "booklet_001",
+        "ownerId": "user_demo_001",
+        "title": "The Lantern Path",
+        "currentProductionId": "production_001",
+        "version": 1,
+        "createdAt": "2026-11-07T09:00:00Z",
+        "deletion": {
+          "deletedAt": null,
+          "recoverUntil": null
+        }
+      }
+    ],
+    "productions": [
+      {
+        "_id": "production_001",
+        "bookletId": "booklet_001",
+        "ownerId": "user_demo_001",
+        "orderId": "order_external_001",
+        "sourceProductionId": null,
+        "brief": {
+          "idea": "A child follows a lantern trail and learns to ask for help.",
+          "audience": "Ages 6 to 8",
+          "language": {
+            "tag": "en",
+            "direction": "ltr"
+          },
+          "characterDescriptions": [
+            "Mira, a curious child with a yellow raincoat"
+          ],
+          "locationDescriptions": [
+            "A wooded path at dusk"
+          ],
+          "visualPreferences": "Warm watercolor with clear lettering"
+        },
+        "creativeConfigSnapshot": {
+          "packageId": "package_demo",
+          "packageRevision": 1,
+          "storyPages": 3,
+          "includeCover": true,
+          "maxCharacters": 2,
+          "maxLocations": 2,
+          "maxPanelsPerPage": 3,
+          "styleSamples": 1,
+          "canvas": {
+            "width": 1024,
+            "height": 1536,
+            "mime": "image/png"
+          },
+          "language": {
+            "tag": "en",
+            "direction": "ltr"
+          },
+          "executionProfile": {
+            "id": "profile_demo",
+            "revision": 1
+          },
+          "repairLimitPerOutput": 1
+        },
+        "lifecycleState": "in-progress",
+        "stageLocks": {
+          "story": null,
+          "style": null,
+          "references": null
+        },
+        "mutationLease": null,
+        "activeRunId": null,
+        "currentManifestRevisionId": null,
+        "subjects": [
+          {
+            "id": "subject_book",
+            "kind": "book",
+            "label": "The Lantern Path",
+            "artifacts": [
+              {
+                "id": "artifact_story",
+                "kind": "manuscript",
+                "currentRevisionId": "revision_story_2",
+                "acceptedRevisionId": "revision_story_1"
+              }
+            ]
+          },
+          {
+            "id": "subject_mira",
+            "kind": "character",
+            "label": "Mira",
+            "artifacts": [
+              {
+                "id": "artifact_mira",
+                "kind": "description",
+                "currentRevisionId": "revision_mira_1",
+                "acceptedRevisionId": null
+              }
+            ]
+          },
+          {
+            "id": "subject_page_1",
+            "kind": "page",
+            "label": "Opening page",
+            "pageRole": "story",
+            "artifacts": [
+              {
+                "id": "artifact_page_1_plan",
+                "kind": "page-plan",
+                "currentRevisionId": "revision_page_1_plan_1",
+                "acceptedRevisionId": null
+              }
+            ]
+          }
+        ],
+        "version": 8,
+        "createdAt": "2026-11-07T09:00:00Z",
+        "updatedAt": "2026-11-07T09:20:00Z",
+        "expiresAt": null
+      }
+    ],
+    "artifactRevisions": [
+      {
+        "_id": "revision_story_1",
+        "productionId": "production_001",
+        "artifactId": "artifact_story",
+        "subjectId": "subject_book",
+        "kind": "manuscript",
+        "ordinal": 1,
+        "operationId": "operation_story_1",
+        "content": {
+          "units": [
+            {
+              "id": "unit_1",
+              "prose": "Mira followed a lantern into the woods.",
+              "characterIds": [
+                "subject_mira"
+              ],
+              "locationIds": []
+            }
+          ]
+        },
+        "sources": [],
+        "assets": [],
+        "provenance": {
+          "runId": "run_external_001",
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
+        },
+        "createdAt": "2026-11-07T09:00:00Z"
+      },
+      {
+        "_id": "revision_story_2",
+        "productionId": "production_001",
+        "artifactId": "artifact_story",
+        "subjectId": "subject_book",
+        "kind": "manuscript",
+        "ordinal": 2,
+        "operationId": "operation_story_2",
+        "content": {
+          "units": [
+            {
+              "id": "unit_1",
+              "prose": "Mira paused at the wooded path. She asked her friend to help find the lantern.",
+              "characterIds": [
+                "subject_mira"
+              ],
+              "locationIds": []
+            }
+          ]
+        },
+        "sources": [
+          {
+            "revisionId": "revision_story_1",
+            "role": "previous-version"
+          }
+        ],
+        "assets": [],
+        "provenance": {
+          "runId": "run_external_001",
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
+        },
+        "createdAt": "2026-11-07T09:20:00Z"
+      },
+      {
+        "_id": "revision_mira_1",
+        "productionId": "production_001",
+        "artifactId": "artifact_mira",
+        "subjectId": "subject_mira",
+        "kind": "description",
+        "ordinal": 1,
+        "operationId": "operation_mira_1",
+        "content": {
+          "name": "Mira",
+          "description": "A curious child wearing a yellow raincoat.",
+          "continuityRules": [
+            "Keep the yellow raincoat in every scene."
+          ]
+        },
+        "sources": [],
+        "assets": [],
+        "provenance": {
+          "runId": "run_external_001",
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
+        },
+        "createdAt": "2026-11-07T09:00:00Z"
+      },
+      {
+        "_id": "revision_page_1_plan_1",
+        "productionId": "production_001",
+        "artifactId": "artifact_page_1_plan",
+        "subjectId": "subject_page_1",
+        "kind": "page-plan",
+        "ordinal": 1,
+        "operationId": "operation_page_plan_1",
+        "content": {
+          "pageSubjectId": "subject_page_1",
+          "role": "story",
+          "panels": [
+            {
+              "id": "panel_1",
+              "region": {
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              },
+              "action": "Mira pauses at the wooded path and asks for help.",
+              "characterIds": [
+                "subject_mira"
+              ],
+              "locationIds": [],
+              "manuscriptUnitIds": [
+                "unit_1"
+              ],
+              "lettering": [
+                {
+                  "id": "lettering_1",
+                  "kind": "speech",
+                  "speakerId": "subject_mira",
+                  "content": "Will you help me find the lantern?",
+                  "placement": {
+                    "x": 0.1,
+                    "y": 0.1,
+                    "width": 0.7,
+                    "height": 0.2
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "sources": [
+          {
+            "revisionId": "revision_story_2",
+            "role": "story"
+          },
+          {
+            "revisionId": "revision_mira_1",
+            "role": "character"
+          }
+        ],
+        "assets": [],
+        "provenance": {
+          "runId": "run_external_001",
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
+        },
+        "createdAt": "2026-11-07T09:20:00Z"
+      }
+    ],
+    "operations": [
+      {
+        "_id": "operation_story_1",
+        "productionId": "production_001",
+        "subjectId": "subject_book",
+        "kind": "generate-manuscript",
+        "state": "succeeded",
+        "idempotencyKey": "operation_story_1-request",
+        "funding": {
+          "kind": "production",
+          "orderId": "order_external_001"
+        },
+        "result": {
+          "revisionIds": [
+            "revision_story_1"
+          ]
+        },
+        "createdAt": "2026-11-07T09:00:00Z"
+      },
+      {
+        "_id": "operation_story_2",
+        "productionId": "production_001",
+        "subjectId": "subject_book",
+        "kind": "generate-manuscript",
+        "state": "succeeded",
+        "idempotencyKey": "operation_story_2-request",
+        "funding": {
+          "kind": "production",
+          "orderId": "order_external_001"
+        },
+        "result": {
+          "revisionIds": [
+            "revision_story_2"
+          ]
+        },
+        "createdAt": "2026-11-07T09:20:00Z"
+      },
+      {
+        "_id": "operation_mira_1",
+        "productionId": "production_001",
+        "subjectId": "subject_mira",
+        "kind": "generate-description",
+        "state": "succeeded",
+        "idempotencyKey": "operation_mira_1-request",
+        "funding": {
+          "kind": "production",
+          "orderId": "order_external_001"
+        },
+        "result": {
+          "revisionIds": [
+            "revision_mira_1"
+          ]
+        },
+        "createdAt": "2026-11-07T09:00:00Z"
+      },
+      {
+        "_id": "operation_page_plan_1",
+        "productionId": "production_001",
+        "subjectId": "subject_page_1",
+        "kind": "generate-page-plan",
+        "state": "succeeded",
+        "idempotencyKey": "operation_page_plan_1-request",
+        "funding": {
+          "kind": "production",
+          "orderId": "order_external_001"
+        },
+        "result": {
+          "revisionIds": [
+            "revision_page_1_plan_1"
+          ]
+        },
+        "createdAt": "2026-11-07T09:20:00Z"
+      }
+    ],
+    "humanDecisions": [
+      {
+        "_id": "decision_story_1",
+        "productionId": "production_001",
+        "actorId": "user_demo_001",
+        "runId": "run_external_001",
+        "submission": {
+          "formId": "form_story_1",
+          "submissionId": "submission_story_1"
+        },
+        "action": "approve",
+        "targets": [
+          {
+            "artifactId": "artifact_story",
+            "revisionId": "revision_story_1"
+          }
+        ],
+        "submittedAt": "2026-11-07T09:10:00Z"
+      }
+    ]
+  }
+}

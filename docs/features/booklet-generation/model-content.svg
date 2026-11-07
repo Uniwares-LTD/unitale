@@ -1,167 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="1762" viewBox="0 0 1880 1762" role="img" aria-labelledby="title description">
-<title id="title">Booklet creative content: entities, fields and relationships</title>
-<desc id="description">Proposed logical model, not an implemented database schema. Groups show the entities and review fields for this model view. A relationship register specifies cross-group links. Fixed dark text on light backgrounds avoids theme-dependent unreadable rows.</desc>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#334155"/></marker></defs>
-<rect width="1880" height="1762" fill="#f1f5f9"/>
-<g font-family="Arial, Helvetica, sans-serif">
-<text x="36" y="48" fill="#0f172a" font-size="32" font-weight="700">Booklet creative content</text>
-<text x="36" y="82" fill="#92400e" font-size="20" font-weight="700">PROPOSED DESIGN — under review, not a collection or migration specification</text>
-<text x="36" y="112" fill="#172033" font-size="17" font-weight="400">PK = primary identity   FK = reference   ? = optional/nullable   [] = list   1:N arrows show one-to-many ownership</text>
-<text x="36" y="138" fill="#172033" font-size="17" font-weight="400">T14: decide stable identities, typed payloads, ordering and revision granularity.</text>
-<text x="36" y="180" fill="#0f172a" font-size="24" font-weight="700">1. Brief and story</text>
-<text x="36" y="208" fill="#172033" font-size="17" font-weight="400">Nested creative content belongs to artifact revisions; boxes are not separate collection proposals.</text>
-<rect x="36" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,228 H348 Q356,228 356,236 V300 H36 V236 Q36,228 44,228Z" fill="#17324d"/>
-<text x="50" y="257" fill="#ffffff" font-size="21" font-weight="700">Creator brief</text>
-<text x="50" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract; shape to review</text>
-<rect x="37" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="325" fill="#172033" font-size="16" font-weight="400">idea / audience</text>
-<text x="50" y="349" fill="#172033" font-size="16" font-weight="400">language: tag + direction</text>
-<rect x="37" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="373" fill="#172033" font-size="16" font-weight="400">characterDescriptions[]</text>
-<text x="50" y="397" fill="#172033" font-size="16" font-weight="400">locationDescriptions[]</text>
-<rect x="37" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="421" fill="#172033" font-size="16" font-weight="400">visualPreferences</text>
-<text x="50" y="445" fill="#172033" font-size="16" font-weight="400">Question: reference subject IDs?</text>
-<rect x="404" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,228 H716 Q724,228 724,236 V300 H404 V236 Q404,228 412,228Z" fill="#17324d"/>
-<text x="418" y="257" fill="#ffffff" font-size="21" font-weight="700">Concept</text>
-<text x="418" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract payload</text>
-<rect x="405" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="325" fill="#172033" font-size="16" font-weight="400">title / premise</text>
-<text x="418" y="349" fill="#172033" font-size="16" font-weight="400">theme / tone</text>
-<rect x="405" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="373" fill="#172033" font-size="16" font-weight="400">constraints[]</text>
-<rect x="772" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,228 H1084 Q1092,228 1092,236 V300 H772 V236 Q772,228 780,228Z" fill="#17324d"/>
-<text x="786" y="257" fill="#ffffff" font-size="21" font-weight="700">Outline</text>
-<text x="786" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract payload</text>
-<rect x="773" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="325" fill="#172033" font-size="16" font-weight="400">summary</text>
-<text x="786" y="349" fill="#172033" font-size="16" font-weight="400">beats[]: id, content</text>
-<rect x="773" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="373" fill="#172033" font-size="16" font-weight="400">Stable beat identities</text>
-<rect x="1140" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,228 H1452 Q1460,228 1460,236 V300 H1140 V236 Q1140,228 1148,228Z" fill="#17324d"/>
-<text x="1154" y="257" fill="#ffffff" font-size="21" font-weight="700">Manuscript</text>
-<text x="1154" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract payload</text>
-<rect x="1141" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="325" fill="#172033" font-size="16" font-weight="400">units[]: id, prose</text>
-<text x="1154" y="349" fill="#172033" font-size="16" font-weight="400">characterIds[] / locationIds[]</text>
-<rect x="1141" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="373" fill="#172033" font-size="16" font-weight="400">Unit IDs survive text revisions</text>
-<text x="36" y="618" fill="#0f172a" font-size="24" font-weight="700">2. Entities and visual direction</text>
-<text x="36" y="646" fill="#172033" font-size="17" font-weight="400">Individual descriptions and an explicit roster are proposals; current contracts store aggregate entity arrays.</text>
-<rect x="36" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,666 H348 Q356,666 356,674 V738 H36 V674 Q36,666 44,666Z" fill="#17324d"/>
-<text x="50" y="695" fill="#ffffff" font-size="21" font-weight="700">Entity description</text>
-<text x="50" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: per-subject revision</text>
-<rect x="37" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="763" fill="#172033" font-size="16" font-weight="400">subjectId -&gt; Subject</text>
-<text x="50" y="787" fill="#172033" font-size="16" font-weight="400">name / description</text>
-<rect x="37" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="811" fill="#172033" font-size="16" font-weight="400">continuityRules[]</text>
-<text x="50" y="835" fill="#172033" font-size="16" font-weight="400">kind: character or location</text>
-<rect x="37" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="859" fill="#172033" font-size="16" font-weight="400">One character/location per artifact</text>
-<rect x="404" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,666 H716 Q724,666 724,674 V738 H404 V674 Q404,666 412,666Z" fill="#17324d"/>
-<text x="418" y="695" fill="#ffffff" font-size="21" font-weight="700">Creative roster</text>
-<text x="418" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: revision payload</text>
-<rect x="405" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="763" fill="#172033" font-size="16" font-weight="400">orderedCharacterIds[]</text>
-<text x="418" y="787" fill="#172033" font-size="16" font-weight="400">orderedLocationIds[]</text>
-<rect x="405" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="811" fill="#172033" font-size="16" font-weight="400">introductionOrder?</text>
-<text x="418" y="835" fill="#172033" font-size="16" font-weight="400">Membership vs accepted revisions</text>
-<rect x="405" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="859" fill="#172033" font-size="16" font-weight="400">Removing referenced subjects?</text>
-<rect x="772" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,666 H1084 Q1092,666 1092,674 V738 H772 V674 Q772,666 780,666Z" fill="#17324d"/>
-<text x="786" y="695" fill="#ffffff" font-size="21" font-weight="700">Style definition</text>
-<text x="786" y="719" fill="#e2e8f0" font-size="14" font-weight="400">C: contract payload</text>
-<rect x="773" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="763" fill="#172033" font-size="16" font-weight="400">direction / palette[]</text>
-<text x="786" y="787" fill="#172033" font-size="16" font-weight="400">typography</text>
-<rect x="773" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="811" fill="#172033" font-size="16" font-weight="400">continuity[]</text>
-<text x="786" y="835" fill="#172033" font-size="16" font-weight="400">Scope: shared production style</text>
-<rect x="1140" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,666 H1452 Q1460,666 1460,674 V738 H1140 V674 Q1140,666 1148,666Z" fill="#17324d"/>
-<text x="1154" y="695" fill="#ffffff" font-size="21" font-weight="700">Reference image</text>
-<text x="1154" y="719" fill="#e2e8f0" font-size="14" font-weight="400">C: contract payload</text>
-<rect x="1141" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="763" fill="#172033" font-size="16" font-weight="400">description / requiredFeatures[]</text>
-<text x="1154" y="787" fill="#172033" font-size="16" font-weight="400">asset: id + sha256</text>
-<rect x="1141" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="811" fill="#172033" font-size="16" font-weight="400">sources: exact revision identities</text>
-<text x="1154" y="835" fill="#172033" font-size="16" font-weight="400">Stable style/character/location ID</text>
-<text x="36" y="1056" fill="#0f172a" font-size="24" font-weight="700">3. Physical pages and completion</text>
-<text x="36" y="1084" fill="#172033" font-size="17" font-weight="400">Page order belongs to an ordered plan/manifest; page identity remains stable across revisions.</text>
-<rect x="36" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,1104 H348 Q356,1104 356,1112 V1176 H36 V1112 Q36,1104 44,1104Z" fill="#17324d"/>
-<text x="50" y="1133" fill="#ffffff" font-size="21" font-weight="700">Page plan</text>
-<text x="50" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">C: contract payload</text>
-<rect x="37" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1201" fill="#172033" font-size="16" font-weight="400">pageSubjectId -&gt; Subject</text>
-<text x="50" y="1225" fill="#172033" font-size="16" font-weight="400">role: cover or story</text>
-<rect x="37" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1249" fill="#172033" font-size="16" font-weight="400">panels[]</text>
-<text x="50" y="1273" fill="#172033" font-size="16" font-weight="400">Source manuscript revisions</text>
-<rect x="37" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1297" fill="#172033" font-size="16" font-weight="400">Package panel/canvas constraints</text>
-<rect x="404" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,1104 H716 Q724,1104 724,1112 V1176 H404 V1112 Q404,1104 412,1104Z" fill="#17324d"/>
-<text x="418" y="1133" fill="#ffffff" font-size="21" font-weight="700">Panel</text>
-<text x="418" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">C: embedded payload</text>
-<rect x="405" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1201" fill="#172033" font-size="16" font-weight="400">id</text>
-<text x="418" y="1225" fill="#172033" font-size="16" font-weight="400">region: x, y, width, height</text>
-<rect x="405" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1249" fill="#172033" font-size="16" font-weight="400">action</text>
-<text x="418" y="1273" fill="#172033" font-size="16" font-weight="400">characterIds[] / locationIds[]</text>
-<rect x="405" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1297" fill="#172033" font-size="16" font-weight="400">manuscriptUnitIds[]</text>
-<text x="418" y="1321" fill="#172033" font-size="16" font-weight="400">lettering[]</text>
-<rect x="405" y="1327" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1345" fill="#172033" font-size="16" font-weight="400">Normalized coordinates: 0..1</text>
-<rect x="772" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,1104 H1084 Q1092,1104 1092,1112 V1176 H772 V1112 Q772,1104 780,1104Z" fill="#17324d"/>
-<text x="786" y="1133" fill="#ffffff" font-size="21" font-weight="700">Lettering</text>
-<text x="786" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">C: embedded payload</text>
-<rect x="773" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1201" fill="#172033" font-size="16" font-weight="400">id / kind / content</text>
-<text x="786" y="1225" fill="#172033" font-size="16" font-weight="400">speakerId?</text>
-<rect x="773" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1249" fill="#172033" font-size="16" font-weight="400">placement</text>
-<text x="786" y="1273" fill="#172033" font-size="16" font-weight="400">narration, speech, thought, title</text>
-<rect x="773" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1297" fill="#172033" font-size="16" font-weight="400">credit, sound-effect, in-scene</text>
-<text x="786" y="1321" fill="#172033" font-size="16" font-weight="400">Exact required text for review</text>
-<rect x="1140" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,1104 H1452 Q1460,1104 1460,1112 V1176 H1140 V1112 Q1140,1104 1148,1104Z" fill="#17324d"/>
-<text x="1154" y="1133" fill="#ffffff" font-size="21" font-weight="700">Book manifest</text>
-<text x="1154" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">C: artifact revision payload</text>
-<rect x="1141" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1201" fill="#172033" font-size="16" font-weight="400">title / language</text>
-<text x="1154" y="1225" fill="#172033" font-size="16" font-weight="400">acceptedSources[]</text>
-<rect x="1141" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1249" fill="#172033" font-size="16" font-weight="400">pages[]: subjectId, role, position</text>
-<text x="1154" y="1273" fill="#172033" font-size="16" font-weight="400">imageRevision: id + hash</text>
-<rect x="1141" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1297" fill="#172033" font-size="16" font-weight="400">asset: id + hash</text>
-<text x="1154" y="1321" fill="#172033" font-size="16" font-weight="400">qualityReviewId</text>
-<rect x="1141" y="1327" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1345" fill="#172033" font-size="16" font-weight="400">approvalDecisionId</text>
-<text x="1154" y="1369" fill="#172033" font-size="16" font-weight="400">Cover first; exact purchased pages</text>
-<text x="36" y="1532" fill="#0f172a" font-size="24" font-weight="700">Cross-group relations and invariants</text>
-<text x="36" y="1570" fill="#172033" font-size="16" font-weight="400">Production owns the brief; story, style and page content live in Artifact revisions.</text>
-<text x="36" y="1605" fill="#172033" font-size="16" font-weight="400">Roster IDs identify Subjects; accepted-source references identify exact Revisions.</text>
-<text x="36" y="1640" fill="#172033" font-size="16" font-weight="400">Manuscript units reference character/location Subjects; panels reference units.</text>
-<text x="36" y="1675" fill="#172033" font-size="16" font-weight="400">Page plan 1 -&gt; many Panels; Panel 1 -&gt; many Lettering entries.</text>
-<text x="966" y="1570" fill="#172033" font-size="16" font-weight="400">Reference and page-image Revisions attach immutable Original assets.</text>
-<text x="966" y="1605" fill="#172033" font-size="16" font-weight="400">Manifest entries bind page Subjects to exact images and acceptance evidence.</text>
-<text x="966" y="1640" fill="#172033" font-size="16" font-weight="400">Review D01-D04: subject identity, per-entity revisions, ordering, content bounds.</text>
-<text x="966" y="1675" fill="#172033" font-size="16" font-weight="400">Raw generated envelopes remain evidence; retain structured content used by the app.</text>
-<text x="36" y="1732" fill="#334155" font-size="17" font-weight="400">Maintained source: scripts/booklet-model-diagram.mjs  |  Guide: docs/features/booklet-generation/model.md</text>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1303" role="img" aria-labelledby="title"><title id="title">Booklet content: documents and nested fields</title><rect width="100%" height="100%" fill="#f1f5f9"/><g font-family="monospace"><text x="26" y="43" font-size="30" fill="#0f172a">Booklet content: documents and nested fields</text><text x="26" y="78" font-size="19" fill="#172033">Accepted production content index; persistence implementation pending T14.</text><text x="26" y="108" font-size="17" fill="#172033">Indented objects and arrays are embedded. I = existing service; other statuses identify pending design details.</text><rect x="26" y="155" width="800" height="772" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="155" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="182" font-size="23" fill="#ffffff" xml:space="preserve">Artifact revision</text>
+<text x="42" y="206" font-size="15" fill="#e2e8f0" xml:space="preserve">Accepted separate immutable document; T14 pending</text>
+<rect x="27" y="231" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="250" font-size="17" fill="#172033" xml:space="preserve">_id / productionId / artifactId / subjectId</text>
+<text x="42" y="274" font-size="17" fill="#172033" xml:space="preserve">kind / ordinal / operationId / createdAt</text>
+<rect x="27" y="279" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="298" font-size="17" fill="#172033" xml:space="preserve">contentHash / schemaVersion</text>
+<text x="42" y="322" font-size="17" fill="#172033" xml:space="preserve">content { one variant by kind</text>
+<rect x="27" y="327" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="346" font-size="17" fill="#172033" xml:space="preserve">  concept {title, premise, theme, tone, constraints[]}</text>
+<text x="42" y="370" font-size="17" fill="#172033" xml:space="preserve">  outline {summary, beats[] {id, content}}</text>
+<rect x="27" y="375" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="394" font-size="17" fill="#172033" xml:space="preserve">  manuscript {units[] {</text>
+<text x="42" y="418" font-size="17" fill="#172033" xml:space="preserve">    id / prose / characterIds[] / locationIds[]</text>
+<rect x="27" y="423" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="442" font-size="17" fill="#172033" xml:space="preserve">  }}</text>
+<text x="42" y="466" font-size="17" fill="#172033" xml:space="preserve">  description {name, description, continuityRules[]}</text>
+<rect x="27" y="471" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="490" font-size="17" fill="#172033" xml:space="preserve">  roster {orderedCharacterIds[], orderedLocationIds[]}</text>
+<text x="42" y="514" font-size="17" fill="#172033" xml:space="preserve">  style {direction, palette[], typography, continuity[]}</text>
+<rect x="27" y="519" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="538" font-size="17" fill="#172033" xml:space="preserve">  reference {description, requiredFeatures[], asset}</text>
+<text x="42" y="562" font-size="17" fill="#172033" xml:space="preserve">  pagePlan {pageSubjectId, role, panels[] {</text>
+<rect x="27" y="567" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="586" font-size="17" fill="#172033" xml:space="preserve">    id / region {x, y, width, height} / action</text>
+<text x="42" y="610" font-size="17" fill="#172033" xml:space="preserve">    characterIds[] / locationIds[] / manuscriptUnitIds[]</text>
+<rect x="27" y="615" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="634" font-size="17" fill="#172033" xml:space="preserve">    lettering[] {id, kind, content, speakerId?, placement}</text>
+<text x="42" y="658" font-size="17" fill="#172033" xml:space="preserve">  }}</text>
+<rect x="27" y="663" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="682" font-size="17" fill="#172033" xml:space="preserve">  pageImage {asset, sourcePlanRevisionId}</text>
+<text x="42" y="706" font-size="17" fill="#172033" xml:space="preserve">  bookManifest {title, language, acceptedSources[], pages[] {</text>
+<rect x="27" y="711" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="730" font-size="17" fill="#172033" xml:space="preserve">    subjectId / role / position</text>
+<text x="42" y="754" font-size="17" fill="#172033" xml:space="preserve">    imageRevision {id, hash} / asset {id, hash}</text>
+<rect x="27" y="759" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="778" font-size="17" fill="#172033" xml:space="preserve">    qualityReviewId / approvalDecisionId</text>
+<text x="42" y="802" font-size="17" fill="#172033" xml:space="preserve">  }}</text>
+<rect x="27" y="807" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="826" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<text x="42" y="850" font-size="17" fill="#172033" xml:space="preserve">sources[] {revisionId, hash, role}</text>
+<rect x="27" y="855" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="874" font-size="17" fill="#172033" xml:space="preserve">assets[] {assetId, hash, role}</text>
+<text x="42" y="898" font-size="17" fill="#172033" xml:space="preserve">provenance {runId, evidenceIds[]}</text>
+<text x="26" y="970" font-size="23" fill="#172033" xml:space="preserve">References between documents (embedded objects have no separate boxes)</text>
+<text x="26" y="1003" font-size="16" fill="#172033" xml:space="preserve">Production -&gt; Artifact revision: subjects[].artifacts[] current and accepted revision IDs</text>
+<text x="26" y="1028" font-size="16" fill="#172033" xml:space="preserve">Artifact revision -&gt; Production: productionId plus embedded artifactId and subjectId</text>
+<text x="26" y="1053" font-size="16" fill="#172033" xml:space="preserve">Artifact revision -&gt; Artifact revision: sources[] exact immutable dependencies</text>
+<text x="26" y="1078" font-size="16" fill="#172033" xml:space="preserve">Operation -&gt; Artifact revision: result.revisionIds[]</text>
+<text x="26" y="1103" font-size="16" fill="#172033" xml:space="preserve">Human decision -&gt; Artifact revision: targets[] exact revisions</text>
+<text x="26" y="1128" font-size="16" fill="#172033" xml:space="preserve">Quality review -&gt; Artifact revision: targetRevisionId and source identities</text>
+<text x="26" y="1153" font-size="16" fill="#172033" xml:space="preserve">Artifact revision -&gt; Original asset receipt: assets[] and manifest page assets</text>
+<text x="26" y="1178" font-size="16" fill="#172033" xml:space="preserve">Attachment receipt -&gt; Artifact revision: artifactRevisionId</text>
+<text x="26" y="1203" font-size="16" fill="#172033" xml:space="preserve">PDF export -&gt; Artifact revision: exact book-manifest revision</text>
+<text x="26" y="1228" font-size="16" fill="#172033" xml:space="preserve">Share grant -&gt; Artifact revision: exact book-manifest revision</text>
+<text x="26" y="1273" font-size="16" fill="#172033" xml:space="preserve">Source: scripts/booklet-model-review-data.mjs | Guide: docs/features/booklet-generation/model.md</text></g></svg>

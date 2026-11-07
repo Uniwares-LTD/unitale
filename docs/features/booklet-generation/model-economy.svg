@@ -1,268 +1,179 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="2200" viewBox="0 0 1880 2200" role="img" aria-labelledby="title description">
-<title id="title">Economy and production configuration: entities, fields and relationships</title>
-<desc id="description">Proposed logical model, not an implemented database schema. Groups show the entities and review fields for this model view. A relationship register specifies cross-group links. Fixed dark text on light backgrounds avoids theme-dependent unreadable rows.</desc>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#334155"/></marker></defs>
-<rect width="1880" height="2200" fill="#f1f5f9"/>
-<g font-family="Arial, Helvetica, sans-serif">
-<text x="36" y="48" fill="#0f172a" font-size="32" font-weight="700">Economy and production configuration</text>
-<text x="36" y="82" fill="#92400e" font-size="20" font-weight="700">PROPOSED DESIGN — under review, not a collection or migration specification</text>
-<text x="36" y="112" fill="#172033" font-size="17" font-weight="400">PK = primary identity   FK = reference   ? = optional/nullable   [] = list   1:N arrows show one-to-many ownership</text>
-<text x="36" y="138" fill="#172033" font-size="17" font-weight="400">Reuse implemented Unibase finance. Discuss booklet fields, immutable snapshots and identity mappings.</text>
-<text x="36" y="180" fill="#0f172a" font-size="24" font-weight="700">1. Purchases and verified grants</text>
-<text x="36" y="208" fill="#172033" font-size="17" font-weight="400">Administrator-managed purchase offers are separate from credit-priced consumption products.</text>
-<rect x="36" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,228 H348 Q356,228 356,236 V300 H36 V236 Q36,228 44,228Z" fill="#17324d"/>
-<text x="50" y="257" fill="#ffffff" font-size="21" font-weight="700">Purchase offer</text>
-<text x="50" y="281" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase terms/catalog</text>
-<rect x="37" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="325" fill="#172033" font-size="16" font-weight="400">identity: id, revision, schemaVersion</text>
-<text x="50" y="349" fill="#172033" font-size="16" font-weight="400">label / credits / price + currency</text>
-<rect x="37" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="373" fill="#172033" font-size="16" font-weight="400">channel: Stripe or Play</text>
-<text x="50" y="397" fill="#172033" font-size="16" font-weight="400">billing: one-time or monthly</text>
-<rect x="37" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="421" fill="#172033" font-size="16" font-weight="400">creditExpiryDays</text>
-<text x="50" y="445" fill="#172033" font-size="16" font-weight="400">provider productId / priceId</text>
-<rect x="37" y="451" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="469" fill="#172033" font-size="16" font-weight="400">offerId?</text>
-<rect x="404" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,228 H716 Q724,228 724,236 V300 H404 V236 Q404,228 412,228Z" fill="#17324d"/>
-<text x="418" y="257" fill="#ffffff" font-size="21" font-weight="700">Promotion</text>
-<text x="418" y="281" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase catalog</text>
-<rect x="405" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="325" fill="#172033" font-size="16" font-weight="400">identity / code?</text>
-<text x="418" y="349" fill="#172033" font-size="16" font-weight="400">startsAt / endsAt</text>
-<rect x="405" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="373" fill="#172033" font-size="16" font-weight="400">offerIds[] / channels[]</text>
-<text x="418" y="397" fill="#172033" font-size="16" font-weight="400">eligibility</text>
-<rect x="405" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="421" fill="#172033" font-size="16" font-weight="400">maxRedemptions / maxPerAccount</text>
-<text x="418" y="445" fill="#172033" font-size="16" font-weight="400">benefit / duration</text>
-<rect x="405" y="451" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="469" fill="#172033" font-size="16" font-weight="400">stacking: false</text>
-<rect x="772" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,228 H1084 Q1092,228 1092,236 V300 H772 V236 Q772,228 780,228Z" fill="#17324d"/>
-<text x="786" y="257" fill="#ffffff" font-size="21" font-weight="700">Subscription</text>
-<text x="786" y="281" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="773" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="325" fill="#172033" font-size="16" font-weight="400">id / ownerId / channel</text>
-<text x="786" y="349" fill="#172033" font-size="16" font-weight="400">providerSubscriptionId</text>
-<rect x="773" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="373" fill="#172033" font-size="16" font-weight="400">acceptedTerms / nextTerms?</text>
-<text x="786" y="397" fill="#172033" font-size="16" font-weight="400">state / periodStart / periodEnd</text>
-<rect x="773" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="421" fill="#172033" font-size="16" font-weight="400">cancelAtPeriodEnd</text>
-<text x="786" y="445" fill="#172033" font-size="16" font-weight="400">lastVerifiedPaymentId?</text>
-<rect x="1140" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,228 H1452 Q1460,228 1460,236 V300 H1140 V236 Q1140,228 1148,228Z" fill="#17324d"/>
-<text x="1154" y="257" fill="#ffffff" font-size="21" font-weight="700">Credit lot</text>
-<text x="1154" y="281" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase wallet</text>
-<rect x="1141" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="325" fill="#172033" font-size="16" font-weight="400">id / uid / source / reference</text>
-<text x="1154" y="349" fill="#172033" font-size="16" font-weight="400">originalCredits / reversedCredits</text>
-<rect x="1141" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="373" fill="#172033" font-size="16" font-weight="400">remaining / reserved</text>
-<text x="1154" y="397" fill="#172033" font-size="16" font-weight="400">expiresAt? / createdAt</text>
-<rect x="1141" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="421" fill="#172033" font-size="16" font-weight="400">Subscription grant expiry: 90 days</text>
-<text x="1154" y="445" fill="#172033" font-size="16" font-weight="400">Purchased one-time credits: no expiry</text>
-<rect x="1508" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1516,228 H1820 Q1828,228 1828,236 V300 H1508 V236 Q1508,228 1516,228Z" fill="#17324d"/>
-<text x="1522" y="257" fill="#ffffff" font-size="21" font-weight="700">Wallet</text>
-<text x="1522" y="281" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="1509" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="325" fill="#172033" font-size="16" font-weight="400">id = account identity</text>
-<text x="1522" y="349" fill="#172033" font-size="16" font-weight="400">balance / reserved / debt</text>
-<rect x="1509" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="373" fill="#172033" font-size="16" font-weight="400">sequence / revision / updatedAt</text>
-<text x="1522" y="397" fill="#172033" font-size="16" font-weight="400">Available balance is derived</text>
-<rect x="1509" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="421" fill="#172033" font-size="16" font-weight="400">Provider verification precedes grant</text>
-<text x="36" y="618" fill="#0f172a" font-size="24" font-weight="700">2. Payment and reservation records</text>
-<text x="36" y="646" fill="#172033" font-size="17" font-weight="400">Existing finance records are shown for integration; T14 does not redesign provider billing.</text>
-<rect x="36" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,666 H348 Q356,666 356,674 V738 H36 V674 Q36,666 44,666Z" fill="#17324d"/>
-<text x="50" y="695" fill="#ffffff" font-size="21" font-weight="700">Billing intent</text>
-<text x="50" y="719" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase billing</text>
-<rect x="37" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="763" fill="#172033" font-size="16" font-weight="400">id / uid / checkoutId / hash</text>
-<text x="50" y="787" fill="#172033" font-size="16" font-weight="400">offerId / offerRevision / terms</text>
-<rect x="37" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="811" fill="#172033" font-size="16" font-weight="400">state / providerId?</text>
-<text x="50" y="835" fill="#172033" font-size="16" font-weight="400">accountBinding</text>
-<rect x="37" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="859" fill="#172033" font-size="16" font-weight="400">nextTerms? / nextEffectiveAt?</text>
-<text x="50" y="883" fill="#172033" font-size="16" font-weight="400">periodEnd? / cancelAtPeriodEnd</text>
-<rect x="37" y="889" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="907" fill="#172033" font-size="16" font-weight="400">createdAt</text>
-<rect x="404" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,666 H716 Q724,666 724,674 V738 H404 V674 Q404,666 412,666Z" fill="#17324d"/>
-<text x="418" y="695" fill="#ffffff" font-size="21" font-weight="700">Verified payment</text>
-<text x="418" y="719" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="405" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="763" fill="#172033" font-size="16" font-weight="400">channel / providerPaymentId</text>
-<text x="418" y="787" fill="#172033" font-size="16" font-weight="400">uid / checkoutId</text>
-<rect x="405" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="811" fill="#172033" font-size="16" font-weight="400">offerId / offerRevision</text>
-<text x="418" y="835" fill="#172033" font-size="16" font-weight="400">subscriptionId? / sequence</text>
-<rect x="405" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="859" fill="#172033" font-size="16" font-weight="400">paidAt / providerPromotionId?</text>
-<text x="418" y="883" fill="#172033" font-size="16" font-weight="400">evidenceId / hash</text>
-<rect x="405" y="889" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="907" fill="#172033" font-size="16" font-weight="400">Provider-verified, never model claims</text>
-<rect x="772" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,666 H1084 Q1092,666 1092,674 V738 H772 V674 Q772,666 780,666Z" fill="#17324d"/>
-<text x="786" y="695" fill="#ffffff" font-size="21" font-weight="700">Promotion reservation</text>
-<text x="786" y="719" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="773" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="763" fill="#172033" font-size="16" font-weight="400">id / uid / checkoutId / hash</text>
-<text x="786" y="787" fill="#172033" font-size="16" font-weight="400">promotion snapshot</text>
-<rect x="773" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="811" fill="#172033" font-size="16" font-weight="400">offerId / offerRevision / channel</text>
-<text x="786" y="835" fill="#172033" font-size="16" font-weight="400">state: reserved, redeemed, released</text>
-<rect x="773" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="859" fill="#172033" font-size="16" font-weight="400">expiresAt / subscriptionId?</text>
-<text x="786" y="883" fill="#172033" font-size="16" font-weight="400">createdAt / releaseHash?</text>
-<rect x="1140" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,666 H1452 Q1460,666 1460,674 V738 H1140 V674 Q1140,666 1148,666Z" fill="#17324d"/>
-<text x="1154" y="695" fill="#ffffff" font-size="21" font-weight="700">Credit reservation</text>
-<text x="1154" y="719" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase; not package charging</text>
-<rect x="1141" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="763" fill="#172033" font-size="16" font-weight="400">id / uid / amount</text>
-<text x="1154" y="787" fill="#172033" font-size="16" font-weight="400">allocations[]: lotId, amount</text>
-<rect x="1141" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="811" fill="#172033" font-size="16" font-weight="400">status / createdAt / expiresAt</text>
-<text x="1154" y="835" fill="#172033" font-size="16" font-weight="400">managedJobId? / committedCredits?</text>
-<rect x="1141" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="859" fill="#172033" font-size="16" font-weight="400">Existing generic wallet holds</text>
-<text x="1154" y="883" fill="#172033" font-size="16" font-weight="400">Booklet order charges once at start</text>
-<text x="36" y="1056" fill="#0f172a" font-size="24" font-weight="700">3. Consumption and the audit trail</text>
-<text x="36" y="1084" fill="#172033" font-size="17" font-weight="400">No separate Unitale wallet, charge journal or editable entitlement balance.</text>
-<rect x="36" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,1104 H348 Q356,1104 356,1112 V1176 H36 V1112 Q36,1104 44,1104Z" fill="#17324d"/>
-<text x="50" y="1133" fill="#ffffff" font-size="21" font-weight="700">Consumption product</text>
-<text x="50" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">I: catalog; booklet fields P</text>
-<rect x="37" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1201" fill="#172033" font-size="16" font-weight="400">identity / productType</text>
-<text x="50" y="1225" fill="#172033" font-size="16" font-weight="400">productSchemaVersion</text>
-<rect x="37" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1249" fill="#172033" font-size="16" font-weight="400">credits / entitlementDays?</text>
-<text x="50" y="1273" fill="#172033" font-size="16" font-weight="400">allowances[]: category, unit</text>
-<rect x="37" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1297" fill="#172033" font-size="16" font-weight="400">included / extraCredits?</text>
-<text x="50" y="1321" fill="#172033" font-size="16" font-weight="400">fields: validated product extension</text>
-<rect x="404" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,1104 H716 Q724,1104 724,1112 V1176 H404 V1112 Q404,1104 412,1104Z" fill="#17324d"/>
-<text x="418" y="1133" fill="#ffffff" font-size="21" font-weight="700">Consumption order</text>
-<text x="418" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="405" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1201" fill="#172033" font-size="16" font-weight="400">id / ownerId / targetId</text>
-<text x="418" y="1225" fill="#172033" font-size="16" font-weight="400">terms: frozen consumption snapshot</text>
-<rect x="405" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1249" fill="#172033" font-size="16" font-weight="400">idempotencyKey / inputHash</text>
-<text x="418" y="1273" fill="#172033" font-size="16" font-weight="400">state / chargedCredits</text>
-<rect x="405" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1297" fill="#172033" font-size="16" font-weight="400">refundedCredits / chargeLedgerId?</text>
-<text x="418" y="1321" fill="#172033" font-size="16" font-weight="400">startedAt? / expiresAt? / createdAt</text>
-<rect x="772" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,1104 H1084 Q1092,1104 1092,1112 V1176 H772 V1112 Q772,1104 780,1104Z" fill="#17324d"/>
-<text x="786" y="1133" fill="#ffffff" font-size="21" font-weight="700">Entitlement allocation</text>
-<text x="786" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="773" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1201" fill="#172033" font-size="16" font-weight="400">id / orderId / ownerId</text>
-<text x="786" y="1225" fill="#172033" font-size="16" font-weight="400">requestId / category / subjectId?</text>
-<rect x="773" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1249" fill="#172033" font-size="16" font-weight="400">funding: included ordinal</text>
-<text x="786" y="1273" fill="#172033" font-size="16" font-weight="400">or paid orderId</text>
-<rect x="773" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1297" fill="#172033" font-size="16" font-weight="400">inputHash / createdAt</text>
-<text x="786" y="1321" fill="#172033" font-size="16" font-weight="400">Multiple affected subjects can</text>
-<rect x="773" y="1327" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1345" fill="#172033" font-size="16" font-weight="400">require multiple allocations</text>
-<rect x="1140" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,1104 H1452 Q1460,1104 1460,1112 V1176 H1140 V1112 Q1140,1104 1148,1104Z" fill="#17324d"/>
-<text x="1154" y="1133" fill="#ffffff" font-size="21" font-weight="700">Ledger entry</text>
-<text x="1154" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="1141" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1201" fill="#172033" font-size="16" font-weight="400">id / uid / sequence / kind</text>
-<text x="1154" y="1225" fill="#172033" font-size="16" font-weight="400">delta / reservedDelta</text>
-<rect x="1141" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1249" fill="#172033" font-size="16" font-weight="400">balanceAfter / reservedAfter</text>
-<text x="1154" y="1273" fill="#172033" font-size="16" font-weight="400">debtAfter / reference / operationId</text>
-<rect x="1141" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1297" fill="#172033" font-size="16" font-weight="400">actorUid? / reason? / timestamp</text>
-<text x="1154" y="1321" fill="#172033" font-size="16" font-weight="400">Refunds link to original charges</text>
-<rect x="1508" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1516,1104 H1820 Q1828,1104 1828,1112 V1176 H1508 V1112 Q1508,1104 1516,1104Z" fill="#17324d"/>
-<text x="1522" y="1133" fill="#ffffff" font-size="21" font-weight="700">Catalog publication</text>
-<text x="1522" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase</text>
-<rect x="1509" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="1201" fill="#172033" font-size="16" font-weight="400">catalogId / revision / definition</text>
-<text x="1522" y="1225" fill="#172033" font-size="16" font-weight="400">hash / publishedAt / actorUid</text>
-<rect x="1509" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="1249" fill="#172033" font-size="16" font-weight="400">Provider publication journal:</text>
-<text x="1522" y="1273" fill="#172033" font-size="16" font-weight="400">previewHash / channel / state</text>
-<rect x="1509" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="1297" fill="#172033" font-size="16" font-weight="400">providerIds[] / evidenceIds[]</text>
-<text x="1522" y="1321" fill="#172033" font-size="16" font-weight="400">Unknown writes require readback</text>
-<path d="M359,1274 H399" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="364" y="1264" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<path d="M727,1274 H767" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="732" y="1264" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<text x="36" y="1494" fill="#0f172a" font-size="24" font-weight="700">4. Booklet configuration boundaries</text>
-<text x="36" y="1522" fill="#172033" font-size="17" font-weight="400">These are versioned accepted settings, not live lookups that alter already purchased productions.</text>
-<rect x="36" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,1542 H348 Q356,1542 356,1550 V1614 H36 V1550 Q36,1542 44,1542Z" fill="#17324d"/>
-<text x="50" y="1571" fill="#ffffff" font-size="21" font-weight="700">Booklet package fields</text>
-<text x="50" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">C: split from commercial terms</text>
-<rect x="37" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1639" fill="#172033" font-size="16" font-weight="400">storyPages / includeCover</text>
-<text x="50" y="1663" fill="#172033" font-size="16" font-weight="400">maxCharacters / maxLocations</text>
-<rect x="37" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1687" fill="#172033" font-size="16" font-weight="400">maxPanelsPerPage / styleSamples</text>
-<text x="50" y="1711" fill="#172033" font-size="16" font-weight="400">canvas: width, height, mime</text>
-<rect x="37" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1735" fill="#172033" font-size="16" font-weight="400">languages[]: tag, direction</text>
-<text x="50" y="1759" fill="#172033" font-size="16" font-weight="400">executionProfileId + revision</text>
-<rect x="37" y="1765" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1783" fill="#172033" font-size="16" font-weight="400">repairLimitPerOutput</text>
-<text x="50" y="1807" fill="#172033" font-size="16" font-weight="400">finite calls/steps/time/spend limits</text>
-<rect x="404" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,1542 H716 Q724,1542 724,1550 V1614 H404 V1550 Q404,1542 412,1542Z" fill="#17324d"/>
-<text x="418" y="1571" fill="#ffffff" font-size="21" font-weight="700">Execution profile</text>
-<text x="418" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">C: capacity; publications P</text>
-<rect x="405" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1639" fill="#172033" font-size="16" font-weight="400">id / revision</text>
-<text x="418" y="1663" fill="#172033" font-size="16" font-weight="400">max pages, entities, panels, samples</text>
-<rect x="405" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1687" fill="#172033" font-size="16" font-weight="400">canvases[] / languages[]</text>
-<text x="418" y="1711" fill="#172033" font-size="16" font-weight="400">coverSupported</text>
-<rect x="405" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1735" fill="#172033" font-size="16" font-weight="400">Publication bindings to review:</text>
-<text x="418" y="1759" fill="#172033" font-size="16" font-weight="400">orchestrator / text / image / reviewer</text>
-<rect x="405" y="1765" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1783" fill="#172033" font-size="16" font-weight="400">Exact versions, no credentials</text>
-<rect x="772" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,1542 H1084 Q1092,1542 1092,1550 V1614 H772 V1550 Q772,1542 780,1542Z" fill="#17324d"/>
-<text x="786" y="1571" fill="#ffffff" font-size="21" font-weight="700">Quality policy</text>
-<text x="786" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">P: full versioned definition</text>
-<rect x="773" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1639" fill="#172033" font-size="16" font-weight="400">id / revision / reviewerPublication</text>
-<text x="786" y="1663" fill="#172033" font-size="16" font-weight="400">required lettering/content rules</text>
-<rect x="773" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1687" fill="#172033" font-size="16" font-weight="400">continuity / usability criteria</text>
-<text x="786" y="1711" fill="#172033" font-size="16" font-weight="400">finding codes / blocking policy</text>
-<rect x="773" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1735" fill="#172033" font-size="16" font-weight="400">Evidence-bound disposition</text>
-<text x="786" y="1759" fill="#172033" font-size="16" font-weight="400">Subjective aesthetics stay human</text>
-<text x="36" y="1970" fill="#0f172a" font-size="24" font-weight="700">Cross-group relations and invariants</text>
-<text x="36" y="2008" fill="#172033" font-size="16" font-weight="400">Purchase offer + optional Promotion -&gt; verified payment -&gt; Credit lot -&gt; Wallet.</text>
-<text x="36" y="2043" fill="#172033" font-size="16" font-weight="400">Subscription renewal -&gt; verified payment -&gt; idempotent expiring Credit lot grant.</text>
-<text x="36" y="2078" fill="#172033" font-size="16" font-weight="400">Consumption product -&gt; frozen Order -&gt; one paid Production; Ledger records the charge.</text>
-<text x="36" y="2113" fill="#172033" font-size="16" font-weight="400">Revision request -&gt; Allocations; paid allocations reference additional consumption Orders.</text>
-<text x="966" y="2008" fill="#172033" font-size="16" font-weight="400">Production references authoritative Order terms and freezes booklet creative configuration.</text>
-<text x="966" y="2043" fill="#172033" font-size="16" font-weight="400">Catalog revisions and provider publication journals are distinct; preview precedes publish.</text>
-<text x="966" y="2078" fill="#172033" font-size="16" font-weight="400">Existing payment verification, redemption reservations and refund services are reused.</text>
-<text x="966" y="2113" fill="#172033" font-size="16" font-weight="400">Review D09: snapshot boundaries and stable IDs; product prices are not reopened here.</text>
-<text x="36" y="2170" fill="#334155" font-size="17" font-weight="400">Maintained source: scripts/booklet-model-diagram.mjs  |  Guide: docs/features/booklet-generation/model.md</text>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="2665" role="img" aria-labelledby="title"><title id="title">Booklet economy: documents and nested fields</title><rect width="100%" height="100%" fill="#f1f5f9"/><g font-family="monospace"><text x="26" y="43" font-size="30" fill="#0f172a">Booklet economy: documents and nested fields</text><text x="26" y="78" font-size="19" fill="#172033">Accepted production content index; persistence implementation pending T14.</text><text x="26" y="108" font-size="17" fill="#172033">Indented objects and arrays are embedded. I = existing service; other statuses identify pending design details.</text><rect x="26" y="155" width="800" height="340" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="155" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="182" font-size="23" fill="#ffffff" xml:space="preserve">Catalog head</text>
+<text x="42" y="206" font-size="15" fill="#e2e8f0" xml:space="preserve">I: commerceCatalogs</text>
+<rect x="27" y="231" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="250" font-size="17" fill="#172033" xml:space="preserve">_id / revision / publishedRevision / updatedAt</text>
+<text x="42" y="274" font-size="17" fill="#172033" xml:space="preserve">draft { kind, terms, fields? }</text>
+<rect x="27" y="279" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="298" font-size="17" fill="#172033" xml:space="preserve">kind: purchase, consumption, promotion</text>
+<text x="42" y="322" font-size="17" fill="#172033" xml:space="preserve">terms contain price, credit, channel or allowance data</text>
+<rect x="27" y="327" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="346" font-size="17" fill="#172033" xml:space="preserve">fields contain validated booklet package configuration</text>
+<rect x="854" y="155" width="800" height="340" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="155" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="182" font-size="23" fill="#ffffff" xml:space="preserve">Catalog version</text>
+<text x="870" y="206" font-size="15" fill="#e2e8f0" xml:space="preserve">I: commerceCatalogVersions</text>
+<rect x="855" y="231" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="250" font-size="17" fill="#172033" xml:space="preserve">_id / catalogId / revision / hash / publishedAt / actorUid</text>
+<text x="870" y="274" font-size="17" fill="#172033" xml:space="preserve">definition {</text>
+<rect x="855" y="279" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="298" font-size="17" fill="#172033" xml:space="preserve">  purchase {credits, price, currency, channel, billing,</text>
+<text x="870" y="322" font-size="17" fill="#172033" xml:space="preserve">    expiry}</text>
+<rect x="855" y="327" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="346" font-size="17" fill="#172033" xml:space="preserve">  consumption {credits, entitlementDays?, allowances[]}</text>
+<text x="870" y="370" font-size="17" fill="#172033" xml:space="preserve">  promotion {code?, dates, eligibility, limits, benefit,</text>
+<rect x="855" y="375" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="394" font-size="17" fill="#172033" xml:space="preserve">    duration}</text>
+<text x="870" y="418" font-size="17" fill="#172033" xml:space="preserve">  fields? {booklet package extension}</text>
+<rect x="855" y="423" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="442" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<text x="870" y="466" font-size="17" fill="#172033" xml:space="preserve">Definition is one kind, not three stored catalogs</text>
+<rect x="26" y="523" width="800" height="220" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="523" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="550" font-size="23" fill="#ffffff" xml:space="preserve">Billing intent</text>
+<text x="42" y="574" font-size="15" fill="#e2e8f0" xml:space="preserve">I: billingIntents; subscription lifecycle here</text>
+<rect x="27" y="599" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="618" font-size="17" fill="#172033" xml:space="preserve">_id / uid / checkoutId / hash</text>
+<text x="42" y="642" font-size="17" fill="#172033" xml:space="preserve">offerId / offerRevision / terms {accepted purchase terms}</text>
+<rect x="27" y="647" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="666" font-size="17" fill="#172033" xml:space="preserve">state / providerId? / accountBinding</text>
+<text x="42" y="690" font-size="17" fill="#172033" xml:space="preserve">nextTerms? / nextEffectiveAt?</text>
+<rect x="27" y="695" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="714" font-size="17" fill="#172033" xml:space="preserve">periodEnd? / cancelAtPeriodEnd / createdAt</text>
+<rect x="854" y="523" width="800" height="220" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="523" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="550" font-size="23" fill="#ffffff" xml:space="preserve">Verified payment</text>
+<text x="870" y="574" font-size="15" fill="#e2e8f0" xml:space="preserve">I: commerceVerifiedPayments</text>
+<rect x="855" y="599" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="618" font-size="17" fill="#172033" xml:space="preserve">channel / providerPaymentId / uid / checkoutId</text>
+<text x="870" y="642" font-size="17" fill="#172033" xml:space="preserve">offerId / offerRevision / subscriptionId? / sequence</text>
+<rect x="855" y="647" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="666" font-size="17" fill="#172033" xml:space="preserve">paidAt / providerPromotionId? / evidenceId / hash</text>
+<rect x="26" y="771" width="800" height="196" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="771" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="798" font-size="23" fill="#ffffff" xml:space="preserve">Promotion reservation</text>
+<text x="42" y="822" font-size="15" fill="#e2e8f0" xml:space="preserve">I: promotionReservations</text>
+<rect x="27" y="847" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="866" font-size="17" fill="#172033" xml:space="preserve">id / uid / checkoutId / hash</text>
+<text x="42" y="890" font-size="17" fill="#172033" xml:space="preserve">promotion {accepted snapshot}</text>
+<rect x="27" y="895" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="914" font-size="17" fill="#172033" xml:space="preserve">offerId / offerRevision / channel / state</text>
+<text x="42" y="938" font-size="17" fill="#172033" xml:space="preserve">expiresAt / subscriptionId? / createdAt / releaseHash?</text>
+<rect x="854" y="771" width="800" height="196" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="771" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="798" font-size="23" fill="#ffffff" xml:space="preserve">Wallet</text>
+<text x="870" y="822" font-size="15" fill="#e2e8f0" xml:space="preserve">I: Unibase wallet</text>
+<rect x="855" y="847" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="866" font-size="17" fill="#172033" xml:space="preserve">_id / balance / reserved / debt</text>
+<text x="870" y="890" font-size="17" fill="#172033" xml:space="preserve">sequence / revision / updatedAt</text>
+<rect x="26" y="995" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="995" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="1022" font-size="23" fill="#ffffff" xml:space="preserve">Credit lot</text>
+<text x="42" y="1046" font-size="15" fill="#e2e8f0" xml:space="preserve">I: creditLots</text>
+<rect x="27" y="1071" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1090" font-size="17" fill="#172033" xml:space="preserve">_id / uid / source / reference</text>
+<text x="42" y="1114" font-size="17" fill="#172033" xml:space="preserve">originalCredits / reversedCredits / remaining / reserved</text>
+<rect x="27" y="1119" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1138" font-size="17" fill="#172033" xml:space="preserve">expiresAt? / createdAt</text>
+<rect x="854" y="995" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="995" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="1022" font-size="23" fill="#ffffff" xml:space="preserve">Credit reservation</text>
+<text x="870" y="1046" font-size="15" fill="#e2e8f0" xml:space="preserve">I: generic wallet holds; not booklet charges</text>
+<rect x="855" y="1071" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1090" font-size="17" fill="#172033" xml:space="preserve">_id / uid / amount / status</text>
+<text x="870" y="1114" font-size="17" fill="#172033" xml:space="preserve">allocations[] {lotId, amount}</text>
+<rect x="855" y="1119" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1138" font-size="17" fill="#172033" xml:space="preserve">createdAt / expiresAt / managedJobId? / committedCredits?</text>
+<rect x="26" y="1195" width="800" height="244" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="1195" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="1222" font-size="23" fill="#ffffff" xml:space="preserve">Ledger entry</text>
+<text x="42" y="1246" font-size="15" fill="#e2e8f0" xml:space="preserve">I: Unibase financial history</text>
+<rect x="27" y="1271" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1290" font-size="17" fill="#172033" xml:space="preserve">_id / uid / sequence / kind / delta / reservedDelta</text>
+<text x="42" y="1314" font-size="17" fill="#172033" xml:space="preserve">balanceAfter / reservedAfter / debtAfter</text>
+<rect x="27" y="1319" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1338" font-size="17" fill="#172033" xml:space="preserve">reference / operationId / actorUid? / reason? / timestamp</text>
+<rect x="854" y="1195" width="800" height="244" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="1195" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="1222" font-size="23" fill="#ffffff" xml:space="preserve">Consumption order</text>
+<text x="870" y="1246" font-size="15" fill="#e2e8f0" xml:space="preserve">I: consumptionOrders</text>
+<rect x="855" y="1271" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1290" font-size="17" fill="#172033" xml:space="preserve">_id</text>
+<text x="870" y="1314" font-size="17" fill="#172033" xml:space="preserve">value {id, ownerId, targetId, terms, state}</text>
+<rect x="855" y="1319" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1338" font-size="17" fill="#172033" xml:space="preserve">value {chargedCredits, refundedCredits, chargeLedgerId?}</text>
+<text x="870" y="1362" font-size="17" fill="#172033" xml:space="preserve">value {idempotencyKey, inputHash, startedAt?, expiresAt?}</text>
+<rect x="855" y="1367" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1386" font-size="17" fill="#172033" xml:space="preserve">fields {validated product extension snapshot}</text>
+<text x="870" y="1410" font-size="17" fill="#172033" xml:space="preserve">locks[] / activeWorkflow?</text>
+<rect x="26" y="1467" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="1467" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="1494" font-size="23" fill="#ffffff" xml:space="preserve">Entitlement allocation</text>
+<text x="42" y="1518" font-size="15" fill="#e2e8f0" xml:space="preserve">I: consumptionAllocations</text>
+<rect x="27" y="1543" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1562" font-size="17" fill="#172033" xml:space="preserve">_id / orderId / ownerId / requestId / subjectId?</text>
+<text x="42" y="1586" font-size="17" fill="#172033" xml:space="preserve">category / funding {includedOrdinal? or paidOrderId}</text>
+<rect x="27" y="1591" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1610" font-size="17" fill="#172033" xml:space="preserve">chargeId / revoked / inputHash / createdAt</text>
+<rect x="854" y="1467" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="1467" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="1494" font-size="23" fill="#ffffff" xml:space="preserve">Consumption workflow</text>
+<text x="870" y="1518" font-size="15" fill="#e2e8f0" xml:space="preserve">I: consumptionWorkflows</text>
+<rect x="855" y="1543" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1562" font-size="17" fill="#172033" xml:space="preserve">_id / orderId / uid / inputHash / state / jobId? / outcome?</text>
+<rect x="26" y="1667" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="1667" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="1694" font-size="23" fill="#ffffff" xml:space="preserve">Consumption charge</text>
+<text x="42" y="1718" font-size="15" fill="#e2e8f0" xml:space="preserve">I: consumptionCharges</text>
+<rect x="27" y="1743" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1762" font-size="17" fill="#172033" xml:space="preserve">_id / uid / orderId / kind / amount / refunded / ledgerId?</text>
+<rect x="854" y="1667" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="1667" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="1694" font-size="23" fill="#ffffff" xml:space="preserve">Provider action</text>
+<text x="870" y="1718" font-size="15" fill="#e2e8f0" xml:space="preserve">I: billingProviderActions; publication journal</text>
+<rect x="855" y="1743" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1762" font-size="17" fill="#172033" xml:space="preserve">id / subjectId / channel / kind / state</text>
+<text x="870" y="1786" font-size="17" fill="#172033" xml:space="preserve">request snapshot / previewHash / providerIds[] / evidenceIds[]</text>
+<rect x="855" y="1791" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1810" font-size="17" fill="#172033" xml:space="preserve">Separate from published application catalog version</text>
+<rect x="26" y="1867" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="1867" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="1894" font-size="23" fill="#ffffff" xml:space="preserve">Execution profile</text>
+<text x="42" y="1918" font-size="15" fill="#e2e8f0" xml:space="preserve">Contract capacity; publication bindings proposed</text>
+<rect x="27" y="1943" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1962" font-size="17" fill="#172033" xml:space="preserve">id / revision / limits {pages, entities, panels, samples}</text>
+<text x="42" y="1986" font-size="17" fill="#172033" xml:space="preserve">canvases[] / languages[] / coverSupported</text>
+<rect x="27" y="1991" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="2010" font-size="17" fill="#172033" xml:space="preserve">publications {orchestrator, text, image, reviewer}</text>
+<rect x="854" y="1867" width="800" height="172" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="1867" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="1894" font-size="23" fill="#ffffff" xml:space="preserve">Quality policy</text>
+<text x="870" y="1918" font-size="15" fill="#e2e8f0" xml:space="preserve">Proposed versioned workflow policy</text>
+<rect x="855" y="1943" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1962" font-size="17" fill="#172033" xml:space="preserve">id / revision / reviewerPublication</text>
+<text x="870" y="1986" font-size="17" fill="#172033" xml:space="preserve">criteria {lettering, content, continuity, usability}</text>
+<rect x="855" y="1991" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="2010" font-size="17" fill="#172033" xml:space="preserve">findingCodes[] / blockingPolicy</text>
+<text x="26" y="2082" font-size="23" fill="#172033" xml:space="preserve">References between documents (embedded objects have no separate boxes)</text>
+<text x="26" y="2115" font-size="16" fill="#172033" xml:space="preserve">Revision request -&gt; Entitlement allocation: allocationIds[]</text>
+<text x="26" y="2140" font-size="16" fill="#172033" xml:space="preserve">Quality review -&gt; Quality policy: policyRevisionId</text>
+<text x="26" y="2165" font-size="16" fill="#172033" xml:space="preserve">Catalog head -&gt; Catalog version: publishedRevision</text>
+<text x="26" y="2190" font-size="16" fill="#172033" xml:space="preserve">Billing intent -&gt; Catalog version: accepted purchase snapshot</text>
+<text x="26" y="2215" font-size="16" fill="#172033" xml:space="preserve">Billing intent -&gt; Verified payment: verified payments and renewals</text>
+<text x="26" y="2240" font-size="16" fill="#172033" xml:space="preserve">Verified payment -&gt; Credit lot: verified grant</text>
+<text x="26" y="2265" font-size="16" fill="#172033" xml:space="preserve">Promotion reservation -&gt; Catalog version: promotion snapshot</text>
+<text x="26" y="2290" font-size="16" fill="#172033" xml:space="preserve">Verified payment -&gt; Promotion reservation: finalizes redemption</text>
+<text x="26" y="2315" font-size="16" fill="#172033" xml:space="preserve">Credit lot -&gt; Wallet: account identity</text>
+<text x="26" y="2340" font-size="16" fill="#172033" xml:space="preserve">Credit reservation -&gt; Credit lot: allocations[].lotId</text>
+<text x="26" y="2365" font-size="16" fill="#172033" xml:space="preserve">Ledger entry -&gt; Wallet: account audit trail</text>
+<text x="26" y="2390" font-size="16" fill="#172033" xml:space="preserve">Consumption order -&gt; Catalog version: accepted consumption snapshot</text>
+<text x="26" y="2415" font-size="16" fill="#172033" xml:space="preserve">Consumption order -&gt; Production: value.targetId</text>
+<text x="26" y="2440" font-size="16" fill="#172033" xml:space="preserve">Entitlement allocation -&gt; Consumption order: orderId</text>
+<text x="26" y="2465" font-size="16" fill="#172033" xml:space="preserve">Entitlement allocation -&gt; Production: subjectId resolves inside production</text>
+<text x="26" y="2490" font-size="16" fill="#172033" xml:space="preserve">Consumption workflow -&gt; Consumption order: orderId</text>
+<text x="26" y="2515" font-size="16" fill="#172033" xml:space="preserve">Consumption charge -&gt; Consumption order: orderId</text>
+<text x="26" y="2540" font-size="16" fill="#172033" xml:space="preserve">Consumption charge -&gt; Ledger entry: ledgerId</text>
+<text x="26" y="2565" font-size="16" fill="#172033" xml:space="preserve">Provider action -&gt; Catalog version: catalog publication identity</text>
+<text x="26" y="2590" font-size="16" fill="#172033" xml:space="preserve">Production -&gt; Execution profile: snapshotted profile identity</text>
+<text x="26" y="2635" font-size="16" fill="#172033" xml:space="preserve">Source: scripts/booklet-model-review-data.mjs | Guide: docs/features/booklet-generation/model.md</text></g></svg>

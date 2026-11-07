@@ -40,7 +40,7 @@ publication/external acceptance gates. No agent delegation is implied.
 | T11 | Unibase | Android TWA purchase, restore and deferred changes | T10 | Imported from Unibase; local verification complete |
 | T12 | Unibase | Commerce administration, preview/readback and refunds | T07,T08,T09,T10 | Imported from Unibase; local verification complete |
 | T13 | Both | Reviewed foundation through normal template integration | T04–T12 | Complete (local foundation integration) |
-| T14 | Unitale | Owned book/production/revision repositories, subjects and indexes | T01 | Pending |
+| T14 | Unitale | Owned book/production/revision repositories with embedded subjects/artifact index | T01 | Pending |
 | T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Pending |
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Pending |
 | T17 | Unitale | MCP-only booklet tools | T15,T16 | Pending |
@@ -216,6 +216,10 @@ and T19 (visual reviewer) can proceed independently. T15/T16 also require T14.
 The integrated booklet product remains incomplete; real provider/store/device
 acceptance remains T28.
 
-Before T14 implementation, review the [model fields and D01-D12 decisions](model.md#open-questions-and-limits).
-The diagrams distinguish implemented services, contract-only payloads and proposals;
-this discussion does not mark T14 complete or expand its implementation scope.
+T14 uses the accepted [document model](model.md): embed subjects and artifact
+identities/pointers in Production, store immutable revisions separately, and fence
+index writes with the production version. Do not create Subject/Artifact collections
+or independent artifact versions. The [remaining D01-D12 details](model.md#open-questions-and-limits)
+cover bounded persistence, concurrency and downstream integrations. Update the
+example and diagrams with T14 implementation. No Unibase change/import is required
+for this boundary decision. T14 remains incomplete.

@@ -1,375 +1,216 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="2340" viewBox="0 0 1880 2340" role="img" aria-labelledby="title description">
-<title id="title">Unitale booklet model: entities, fields and relationships</title>
-<desc id="description">Proposed logical model, not an implemented database schema. Groups show the entities and review fields for this model view. A relationship register specifies cross-group links. Fixed dark text on light backgrounds avoids theme-dependent unreadable rows.</desc>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#334155"/></marker></defs>
-<rect width="1880" height="2340" fill="#f1f5f9"/>
-<g font-family="Arial, Helvetica, sans-serif">
-<text x="36" y="48" fill="#0f172a" font-size="32" font-weight="700">Unitale booklet model</text>
-<text x="36" y="82" fill="#92400e" font-size="20" font-weight="700">PROPOSED DESIGN — under review, not a collection or migration specification</text>
-<text x="36" y="112" fill="#172033" font-size="17" font-weight="400">PK = primary identity   FK = reference   ? = optional/nullable   [] = list   1:N arrows show one-to-many ownership</text>
-<text x="36" y="138" fill="#172033" font-size="17" font-weight="400">Overview only. I = implemented service; C = contract only; P = proposed. See the guide for detailed review views.</text>
-<text x="36" y="180" fill="#0f172a" font-size="24" font-weight="700">1. Creative content</text>
-<text x="36" y="208" fill="#172033" font-size="17" font-weight="400">A stable subject has several creative responsibilities; each artifact has immutable revisions.</text>
-<rect x="36" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,228 H348 Q356,228 356,236 V300 H36 V236 Q36,228 44,228Z" fill="#17324d"/>
-<text x="50" y="257" fill="#ffffff" font-size="21" font-weight="700">Booklet</text>
-<text x="50" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract only</text>
-<rect x="37" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="325" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="50" y="349" fill="#172033" font-size="16" font-weight="400">ownerId</text>
-<rect x="37" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="373" fill="#172033" font-size="16" font-weight="400">title</text>
-<text x="50" y="397" fill="#172033" font-size="16" font-weight="400">currentProductionId [FK]</text>
-<rect x="37" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="421" fill="#172033" font-size="16" font-weight="400">version</text>
-<text x="50" y="445" fill="#172033" font-size="16" font-weight="400">createdAt</text>
-<rect x="37" y="451" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="469" fill="#172033" font-size="16" font-weight="400">deletedAt?</text>
-<text x="50" y="493" fill="#172033" font-size="16" font-weight="400">recoverUntil?</text>
-<rect x="404" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,228 H716 Q724,228 724,236 V300 H404 V236 Q404,228 412,228Z" fill="#17324d"/>
-<text x="418" y="257" fill="#ffffff" font-size="21" font-weight="700">Production</text>
-<text x="418" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract; refinement proposed</text>
-<rect x="405" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="325" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="418" y="349" fill="#172033" font-size="16" font-weight="400">bookletId [FK]</text>
-<rect x="405" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="373" fill="#172033" font-size="16" font-weight="400">orderId [FK]</text>
-<text x="418" y="397" fill="#172033" font-size="16" font-weight="400">sourceProductionId? [FK]</text>
-<rect x="405" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="421" fill="#172033" font-size="16" font-weight="400">creativeConfigSnapshot</text>
-<text x="418" y="445" fill="#172033" font-size="16" font-weight="400">brief</text>
-<rect x="405" y="451" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="469" fill="#172033" font-size="16" font-weight="400">lifecycleState</text>
-<text x="418" y="493" fill="#172033" font-size="16" font-weight="400">stageLocks</text>
-<rect x="405" y="499" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="517" fill="#172033" font-size="16" font-weight="400">activeRunId? [FK]</text>
-<text x="418" y="541" fill="#172033" font-size="16" font-weight="400">currentManifestRevisionId? [FK]</text>
-<rect x="405" y="547" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="565" fill="#172033" font-size="16" font-weight="400">version / createdAt / expiresAt?</text>
-<rect x="772" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,228 H1084 Q1092,228 1092,236 V300 H772 V236 Q772,228 780,228Z" fill="#17324d"/>
-<text x="786" y="257" fill="#ffffff" font-size="21" font-weight="700">Subject</text>
-<text x="786" y="281" fill="#e2e8f0" font-size="14" font-weight="400">P: proposed entity</text>
-<rect x="773" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="325" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="786" y="349" fill="#172033" font-size="16" font-weight="400">productionId [FK]</text>
-<rect x="773" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="373" fill="#172033" font-size="16" font-weight="400">kind</text>
-<text x="786" y="397" fill="#172033" font-size="16" font-weight="400">label</text>
-<rect x="773" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="421" fill="#172033" font-size="16" font-weight="400">pageRole?</text>
-<text x="786" y="445" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="773" y="451" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="469" fill="#172033" font-size="16" font-weight="400">Kinds: book, character, location,</text>
-<text x="786" y="493" fill="#172033" font-size="16" font-weight="400">style-sample, page</text>
-<text x="786" y="517" fill="#172033" font-size="16" font-weight="400"></text>
-<text x="786" y="541" fill="#172033" font-size="16" font-weight="400">Stable identity; no page position.</text>
-<rect x="1140" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,228 H1452 Q1460,228 1460,236 V300 H1140 V236 Q1140,228 1148,228Z" fill="#17324d"/>
-<text x="1154" y="257" fill="#ffffff" font-size="21" font-weight="700">Artifact</text>
-<text x="1154" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract; refinement proposed</text>
-<rect x="1141" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="325" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="1154" y="349" fill="#172033" font-size="16" font-weight="400">subjectId [FK]</text>
-<rect x="1141" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="373" fill="#172033" font-size="16" font-weight="400">kind</text>
-<text x="1154" y="397" fill="#172033" font-size="16" font-weight="400">currentRevisionId? [FK]</text>
-<rect x="1141" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="421" fill="#172033" font-size="16" font-weight="400">acceptedRevisionId? [FK]</text>
-<text x="1154" y="445" fill="#172033" font-size="16" font-weight="400">version</text>
-<text x="1154" y="469" fill="#172033" font-size="16" font-weight="400"></text>
-<text x="1154" y="493" fill="#172033" font-size="16" font-weight="400">Examples: description, reference,</text>
-<rect x="1141" y="499" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="517" fill="#172033" font-size="16" font-weight="400">manuscript, page-plan, page-image,</text>
-<text x="1154" y="541" fill="#172033" font-size="16" font-weight="400">book-manifest</text>
-<rect x="1508" y="228" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1516,228 H1820 Q1828,228 1828,236 V300 H1508 V236 Q1508,228 1516,228Z" fill="#17324d"/>
-<text x="1522" y="257" fill="#ffffff" font-size="21" font-weight="700">Artifact revision</text>
-<text x="1522" y="281" fill="#e2e8f0" font-size="14" font-weight="400">C: contract; refined shape P</text>
-<rect x="1509" y="307" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="325" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="1522" y="349" fill="#172033" font-size="16" font-weight="400">artifactId [FK]</text>
-<rect x="1509" y="355" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="373" fill="#172033" font-size="16" font-weight="400">operationId [FK]</text>
-<text x="1522" y="397" fill="#172033" font-size="16" font-weight="400">ordinal</text>
-<rect x="1509" y="403" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="421" fill="#172033" font-size="16" font-weight="400">typedContent</text>
-<text x="1522" y="445" fill="#172033" font-size="16" font-weight="400">contentHash</text>
-<rect x="1509" y="451" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="469" fill="#172033" font-size="16" font-weight="400">evidenceRefs[]</text>
-<text x="1522" y="493" fill="#172033" font-size="16" font-weight="400">createdAt</text>
-<text x="1522" y="517" fill="#172033" font-size="16" font-weight="400"></text>
-<text x="1522" y="541" fill="#172033" font-size="16" font-weight="400">Immutable content and provenance.</text>
-<path d="M359,398 H399" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="364" y="388" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<path d="M727,398 H767" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="732" y="388" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<path d="M1095,398 H1135" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="1100" y="388" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<path d="M1463,398 H1503" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="1468" y="388" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<text x="36" y="618" fill="#0f172a" font-size="24" font-weight="700">2. Work and measurements</text>
-<text x="36" y="646" fill="#172033" font-size="17" font-weight="400">One authorized operation may have several attempts. Retrying never silently creates another customer charge.</text>
-<rect x="36" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,666 H348 Q356,666 356,674 V738 H36 V674 Q36,666 44,666Z" fill="#17324d"/>
-<text x="50" y="695" fill="#ffffff" font-size="21" font-weight="700">Run</text>
-<text x="50" y="719" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase service</text>
-<rect x="37" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="763" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="50" y="787" fill="#172033" font-size="16" font-weight="400">ownerId</text>
-<rect x="37" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="811" fill="#172033" font-size="16" font-weight="400">executionState</text>
-<text x="50" y="835" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="37" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="859" fill="#172033" font-size="16" font-weight="400">Hosts execution attempts.</text>
-<text x="50" y="883" fill="#172033" font-size="16" font-weight="400">Several Runs may continue</text>
-<rect x="37" y="889" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="907" fill="#172033" font-size="16" font-weight="400">the same paid production.</text>
-<rect x="404" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,666 H716 Q724,666 724,674 V738 H404 V674 Q404,666 412,666Z" fill="#17324d"/>
-<text x="418" y="695" fill="#ffffff" font-size="21" font-weight="700">Operation</text>
-<text x="418" y="719" fill="#e2e8f0" font-size="14" font-weight="400">C: contract; refinement proposed</text>
-<rect x="405" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="763" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="418" y="787" fill="#172033" font-size="16" font-weight="400">productionId [FK]</text>
-<rect x="405" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="811" fill="#172033" font-size="16" font-weight="400">subjectId [FK]</text>
-<text x="418" y="835" fill="#172033" font-size="16" font-weight="400">kind / state</text>
-<rect x="405" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="859" fill="#172033" font-size="16" font-weight="400">idempotencyKey / inputHash</text>
-<text x="418" y="883" fill="#172033" font-size="16" font-weight="400">fundingKind</text>
-<rect x="405" y="889" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="907" fill="#172033" font-size="16" font-weight="400">allocationId? [FK]</text>
-<text x="418" y="931" fill="#172033" font-size="16" font-weight="400">failedReviewId? [FK]</text>
-<rect x="405" y="937" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="955" fill="#172033" font-size="16" font-weight="400">repairOrdinal?</text>
-<text x="418" y="979" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="405" y="985" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1003" fill="#172033" font-size="16" font-weight="400">Funding: production, revision, repair</text>
-<rect x="772" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,666 H1084 Q1092,666 1092,674 V738 H772 V674 Q772,666 780,666Z" fill="#17324d"/>
-<text x="786" y="695" fill="#ffffff" font-size="21" font-weight="700">Execution attempt</text>
-<text x="786" y="719" fill="#e2e8f0" font-size="14" font-weight="400">P: proposed entity</text>
-<rect x="773" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="763" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="786" y="787" fill="#172033" font-size="16" font-weight="400">operationId [FK]</text>
-<rect x="773" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="811" fill="#172033" font-size="16" font-weight="400">runId [FK]</text>
-<text x="786" y="835" fill="#172033" font-size="16" font-weight="400">attemptNumber</text>
-<rect x="773" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="859" fill="#172033" font-size="16" font-weight="400">invocationId</text>
-<text x="786" y="883" fill="#172033" font-size="16" font-weight="400">workflowRunId?</text>
-<rect x="773" y="889" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="907" fill="#172033" font-size="16" font-weight="400">publicationId</text>
-<text x="786" y="931" fill="#172033" font-size="16" font-weight="400">outcome</text>
-<rect x="773" y="937" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="955" fill="#172033" font-size="16" font-weight="400">startedAt? / completedAt?</text>
-<text x="786" y="979" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="773" y="985" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1003" fill="#172033" font-size="16" font-weight="400">Unknown outcomes need reconciliation.</text>
-<rect x="1140" y="666" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,666 H1452 Q1460,666 1460,674 V738 H1140 V674 Q1140,666 1148,666Z" fill="#17324d"/>
-<text x="1154" y="695" fill="#ffffff" font-size="21" font-weight="700">Execution measurement</text>
-<text x="1154" y="719" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase; attempt link P</text>
-<rect x="1141" y="745" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="763" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="1154" y="787" fill="#172033" font-size="16" font-weight="400">operationId [FK] / attemptId [FK]</text>
-<rect x="1141" y="793" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="811" fill="#172033" font-size="16" font-weight="400">provider / model? / requestId?</text>
-<text x="1154" y="835" fill="#172033" font-size="16" font-weight="400">inputTokens? / outputTokens?</text>
-<rect x="1141" y="841" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="859" fill="#172033" font-size="16" font-weight="400">additionalUsage[]</text>
-<text x="1154" y="883" fill="#172033" font-size="16" font-weight="400">reportedCost? / estimatedCost?</text>
-<rect x="1141" y="889" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="907" fill="#172033" font-size="16" font-weight="400">pricing provenance / currency</text>
-<text x="1154" y="931" fill="#172033" font-size="16" font-weight="400">queuedAt? / startedAt? / completedAt?</text>
-<rect x="1141" y="937" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="955" fill="#172033" font-size="16" font-weight="400">elapsedMs? / providerDurationMs?</text>
-<text x="1154" y="979" fill="#172033" font-size="16" font-weight="400">outcome / authority / scope</text>
-<rect x="1141" y="985" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1003" fill="#172033" font-size="16" font-weight="400">evidenceRefs[]</text>
-<path d="M727,836 H767" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="732" y="826" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<path d="M1095,836 H1135" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="1100" y="826" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<text x="36" y="1056" fill="#0f172a" font-size="24" font-weight="700">3. Decisions, quality and original bytes</text>
-<text x="36" y="1084" fill="#172033" font-size="17" font-weight="400">Approval and quality bind exact revisions. Original assets are durable content, not disposable diagnostic logs.</text>
-<rect x="36" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,1104 H348 Q356,1104 356,1112 V1176 H36 V1112 Q36,1104 44,1104Z" fill="#17324d"/>
-<text x="50" y="1133" fill="#ffffff" font-size="21" font-weight="700">Human decision</text>
-<text x="50" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">C: contract; refined shape P</text>
-<rect x="37" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1201" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="50" y="1225" fill="#172033" font-size="16" font-weight="400">productionId [FK]</text>
-<rect x="37" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1249" fill="#172033" font-size="16" font-weight="400">actorId [FK]</text>
-<text x="50" y="1273" fill="#172033" font-size="16" font-weight="400">runId [FK]</text>
-<rect x="37" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1297" fill="#172033" font-size="16" font-weight="400">formId / submissionId</text>
-<text x="50" y="1321" fill="#172033" font-size="16" font-weight="400">action</text>
-<rect x="37" y="1327" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1345" fill="#172033" font-size="16" font-weight="400">answerOrInstruction?</text>
-<text x="50" y="1369" fill="#172033" font-size="16" font-weight="400">quoteId? [FK]</text>
-<rect x="37" y="1375" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1393" fill="#172033" font-size="16" font-weight="400">submittedAt</text>
-<text x="50" y="1417" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="37" y="1423" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1441" fill="#172033" font-size="16" font-weight="400">Actions: approve, clarify, revise</text>
-<rect x="404" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,1104 H716 Q724,1104 724,1112 V1176 H404 V1112 Q404,1104 412,1104Z" fill="#17324d"/>
-<text x="418" y="1133" fill="#ffffff" font-size="21" font-weight="700">Decision target</text>
-<text x="418" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">P: embedded relationship</text>
-<rect x="405" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1201" fill="#172033" font-size="16" font-weight="400">decisionId [FK]</text>
-<text x="418" y="1225" fill="#172033" font-size="16" font-weight="400">revisionId [FK]</text>
-<text x="418" y="1249" fill="#172033" font-size="16" font-weight="400"></text>
-<text x="418" y="1273" fill="#172033" font-size="16" font-weight="400">A decision can concern many</text>
-<rect x="405" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1297" fill="#172033" font-size="16" font-weight="400">exact artifact revisions.</text>
-<text x="418" y="1321" fill="#172033" font-size="16" font-weight="400">Clarification may have no target.</text>
-<rect x="772" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,1104 H1084 Q1092,1104 1092,1112 V1176 H772 V1112 Q772,1104 780,1104Z" fill="#17324d"/>
-<text x="786" y="1133" fill="#ffffff" font-size="21" font-weight="700">Quality review</text>
-<text x="786" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">C: contract only</text>
-<rect x="773" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1201" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="786" y="1225" fill="#172033" font-size="16" font-weight="400">productionId [FK]</text>
-<rect x="773" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1249" fill="#172033" font-size="16" font-weight="400">targetRevisionId [FK]</text>
-<text x="786" y="1273" fill="#172033" font-size="16" font-weight="400">operationId [FK]</text>
-<rect x="773" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1297" fill="#172033" font-size="16" font-weight="400">policyRevisionId [FK]</text>
-<text x="786" y="1321" fill="#172033" font-size="16" font-weight="400">asset identity + source identities</text>
-<rect x="773" y="1327" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1345" fill="#172033" font-size="16" font-weight="400">disposition</text>
-<text x="786" y="1369" fill="#172033" font-size="16" font-weight="400">findings[] / evidenceRefs[]</text>
-<rect x="773" y="1375" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1393" fill="#172033" font-size="16" font-weight="400">createdAt</text>
-<text x="786" y="1417" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="773" y="1423" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1441" fill="#172033" font-size="16" font-weight="400">Disposition: pass, repair, blocked</text>
-<rect x="1140" y="1104" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,1104 H1452 Q1460,1104 1460,1112 V1176 H1140 V1112 Q1140,1104 1148,1104Z" fill="#17324d"/>
-<text x="1154" y="1133" fill="#ffffff" font-size="21" font-weight="700">Original asset receipt</text>
-<text x="1154" y="1157" fill="#e2e8f0" font-size="14" font-weight="400">C: receipt; reuse storage</text>
-<rect x="1141" y="1183" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1201" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="1154" y="1225" fill="#172033" font-size="16" font-weight="400">operationId [FK]</text>
-<rect x="1141" y="1231" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1249" fill="#172033" font-size="16" font-weight="400">storageObjectId [FK; private]</text>
-<text x="1154" y="1273" fill="#172033" font-size="16" font-weight="400">sha256 / mime / bytes</text>
-<rect x="1141" y="1279" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1297" fill="#172033" font-size="16" font-weight="400">width / height</text>
-<text x="1154" y="1321" fill="#172033" font-size="16" font-weight="400">provenanceEvidenceRef</text>
-<rect x="1141" y="1327" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1345" fill="#172033" font-size="16" font-weight="400">retainedAt</text>
-<text x="1154" y="1369" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="1141" y="1375" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1393" fill="#172033" font-size="16" font-weight="400">Storage locator stays server-side.</text>
-<text x="1154" y="1417" fill="#172033" font-size="16" font-weight="400">Display derivatives are separate.</text>
-<path d="M359,1274 H399" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="364" y="1264" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<text x="36" y="1494" fill="#0f172a" font-size="24" font-weight="700">4. Commerce and bounded relationships</text>
-<text x="36" y="1522" fill="#172033" font-size="17" font-weight="400">Orders and allocations reuse Unibase. Relationship rows can be embedded arrays; they do not imply collections.</text>
-<rect x="36" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M44,1542 H348 Q356,1542 356,1550 V1614 H36 V1550 Q36,1542 44,1542Z" fill="#17324d"/>
-<text x="50" y="1571" fill="#ffffff" font-size="21" font-weight="700">Consumption order</text>
-<text x="50" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase service</text>
-<rect x="37" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1639" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="50" y="1663" fill="#172033" font-size="16" font-weight="400">ownerId</text>
-<rect x="37" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1687" fill="#172033" font-size="16" font-weight="400">acceptedTermsSnapshot</text>
-<text x="50" y="1711" fill="#172033" font-size="16" font-weight="400">chargedCredits</text>
-<rect x="37" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1735" fill="#172033" font-size="16" font-weight="400">state</text>
-<text x="50" y="1759" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="37" y="1765" width="318" height="24" fill="#eef2f6"/>
-<text x="50" y="1783" fill="#172033" font-size="16" font-weight="400">Authoritative commercial terms</text>
-<text x="50" y="1807" fill="#172033" font-size="16" font-weight="400">and charge identity.</text>
-<rect x="404" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M412,1542 H716 Q724,1542 724,1550 V1614 H404 V1550 Q404,1542 412,1542Z" fill="#17324d"/>
-<text x="418" y="1571" fill="#ffffff" font-size="21" font-weight="700">Entitlement allocation</text>
-<text x="418" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">I: Unibase service</text>
-<rect x="405" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1639" fill="#172033" font-size="16" font-weight="400">id [PK]</text>
-<text x="418" y="1663" fill="#172033" font-size="16" font-weight="400">orderId [FK]</text>
-<rect x="405" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1687" fill="#172033" font-size="16" font-weight="400">requestId</text>
-<text x="418" y="1711" fill="#172033" font-size="16" font-weight="400">subjectId</text>
-<rect x="405" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1735" fill="#172033" font-size="16" font-weight="400">category / units / state</text>
-<text x="418" y="1759" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="405" y="1765" width="318" height="24" fill="#eef2f6"/>
-<text x="418" y="1783" fill="#172033" font-size="16" font-weight="400">Categories: story, style,</text>
-<text x="418" y="1807" fill="#172033" font-size="16" font-weight="400">reference, page</text>
-<text x="418" y="1831" fill="#172033" font-size="16" font-weight="400"></text>
-<text x="418" y="1855" fill="#172033" font-size="16" font-weight="400">Idempotent allocation per subject.</text>
-<rect x="772" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M780,1542 H1084 Q1092,1542 1092,1550 V1614 H772 V1550 Q772,1542 780,1542Z" fill="#17324d"/>
-<text x="786" y="1571" fill="#ffffff" font-size="21" font-weight="700">Revision source</text>
-<text x="786" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">P: embedded relationship</text>
-<rect x="773" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1639" fill="#172033" font-size="16" font-weight="400">revisionId [FK]</text>
-<text x="786" y="1663" fill="#172033" font-size="16" font-weight="400">sourceRevisionId [FK]</text>
-<rect x="773" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1687" fill="#172033" font-size="16" font-weight="400">role</text>
-<text x="786" y="1711" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="773" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1735" fill="#172033" font-size="16" font-weight="400">Exact dependency identity.</text>
-<text x="786" y="1759" fill="#172033" font-size="16" font-weight="400">Roles: story, style, character,</text>
-<rect x="773" y="1765" width="318" height="24" fill="#eef2f6"/>
-<text x="786" y="1783" fill="#172033" font-size="16" font-weight="400">location, layout</text>
-<rect x="1140" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1148,1542 H1452 Q1460,1542 1460,1550 V1614 H1140 V1550 Q1140,1542 1148,1542Z" fill="#17324d"/>
-<text x="1154" y="1571" fill="#ffffff" font-size="21" font-weight="700">Revision asset</text>
-<text x="1154" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">P: embedded relationship</text>
-<rect x="1141" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1639" fill="#172033" font-size="16" font-weight="400">revisionId [FK]</text>
-<text x="1154" y="1663" fill="#172033" font-size="16" font-weight="400">assetId [FK]</text>
-<rect x="1141" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1687" fill="#172033" font-size="16" font-weight="400">role</text>
-<text x="1154" y="1711" fill="#172033" font-size="16" font-weight="400"></text>
-<rect x="1141" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="1154" y="1735" fill="#172033" font-size="16" font-weight="400">Roles: original, reference</text>
-<text x="1154" y="1759" fill="#172033" font-size="16" font-weight="400">Hashes fence the original bytes.</text>
-<rect x="1508" y="1542" width="320" height="350" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
-<path d="M1516,1542 H1820 Q1828,1542 1828,1550 V1614 H1508 V1550 Q1508,1542 1516,1542Z" fill="#17324d"/>
-<text x="1522" y="1571" fill="#ffffff" font-size="21" font-weight="700">Manifest page entry</text>
-<text x="1522" y="1595" fill="#e2e8f0" font-size="14" font-weight="400">C: embedded manifest payload</text>
-<rect x="1509" y="1621" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="1639" fill="#172033" font-size="16" font-weight="400">subjectId [FK]</text>
-<text x="1522" y="1663" fill="#172033" font-size="16" font-weight="400">role / position</text>
-<rect x="1509" y="1669" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="1687" fill="#172033" font-size="16" font-weight="400">imageRevisionId [FK]</text>
-<text x="1522" y="1711" fill="#172033" font-size="16" font-weight="400">assetId [FK]</text>
-<rect x="1509" y="1717" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="1735" fill="#172033" font-size="16" font-weight="400">qualityReviewId [FK]</text>
-<text x="1522" y="1759" fill="#172033" font-size="16" font-weight="400">approvalDecisionId [FK]</text>
-<text x="1522" y="1783" fill="#172033" font-size="16" font-weight="400"></text>
-<text x="1522" y="1807" fill="#172033" font-size="16" font-weight="400">Manifest typedContent also holds</text>
-<rect x="1509" y="1813" width="318" height="24" fill="#eef2f6"/>
-<text x="1522" y="1831" fill="#172033" font-size="16" font-weight="400">title, language, accepted sources.</text>
-<text x="1522" y="1855" fill="#172033" font-size="16" font-weight="400">No separate Edition collection.</text>
-<path d="M359,1712 H399" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="364" y="1702" fill="#334155" font-size="13" font-weight="700">1:N</text>
-<text x="36" y="1970" fill="#0f172a" font-size="24" font-weight="700">Cross-group relations and invariants</text>
-<text x="36" y="2008" fill="#172033" font-size="16" font-weight="400">Booklet 1 -&gt; many Productions; each Production has one owning Booklet.</text>
-<text x="36" y="2043" fill="#172033" font-size="16" font-weight="400">Production 1 -&gt; many Subjects, Operations and Human decisions.</text>
-<text x="36" y="2078" fill="#172033" font-size="16" font-weight="400">Production 1 -&gt; many Runs through the owned continuation binding.</text>
-<text x="36" y="2113" fill="#172033" font-size="16" font-weight="400">Subject 1 -&gt; many Artifacts; Artifact 1 -&gt; many immutable Revisions.</text>
-<text x="36" y="2148" fill="#172033" font-size="16" font-weight="400">Operation 1 -&gt; many Attempts and resulting Artifact revisions.</text>
-<text x="36" y="2183" fill="#172033" font-size="16" font-weight="400">Run 1 -&gt; many Attempts; Attempt 1 -&gt; many per-call Measurements.</text>
-<text x="36" y="2218" fill="#172033" font-size="16" font-weight="400">Decision 1 -&gt; many Targets; each Target references one exact Revision.</text>
-<text x="36" y="2253" fill="#172033" font-size="16" font-weight="400">Revision 1 -&gt; many Quality reviews; each review names its operation.</text>
-<text x="966" y="2008" fill="#172033" font-size="16" font-weight="400">Revision sources reference other exact Revisions (dependency graph).</text>
-<text x="966" y="2043" fill="#172033" font-size="16" font-weight="400">Revision asset links connect Revisions to retained Original assets.</text>
-<text x="966" y="2078" fill="#172033" font-size="16" font-weight="400">Consumption order 1 -&gt; zero or one Production, and many Allocations.</text>
-<text x="966" y="2113" fill="#172033" font-size="16" font-weight="400">Allocation 1 -&gt; many funded Operations; other funding has no allocation.</text>
-<text x="966" y="2148" fill="#172033" font-size="16" font-weight="400">Manifest revision 1 -&gt; many ordered entries with exact acceptance evidence.</text>
-<text x="966" y="2183" fill="#172033" font-size="16" font-weight="400">Current/accepted pointers refer to revisions of the same owned Artifact.</text>
-<text x="966" y="2218" fill="#172033" font-size="16" font-weight="400">Production source points to an earlier Production, never to itself.</text>
-<text x="966" y="2253" fill="#172033" font-size="16" font-weight="400">Ownership and reference validity are enforced by services, not by arrows.</text>
-<text x="36" y="2310" fill="#334155" font-size="17" font-weight="400">Maintained source: scripts/booklet-model-diagram.mjs  |  Guide: docs/features/booklet-generation/model.md</text>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="3390" role="img" aria-labelledby="title"><title id="title">Booklet document boundaries</title><rect width="100%" height="100%" fill="#f1f5f9"/><g font-family="monospace"><text x="26" y="43" font-size="30" fill="#0f172a">Booklet document boundaries</text><text x="26" y="78" font-size="19" fill="#172033">Accepted production content index; persistence implementation pending T14.</text><text x="26" y="108" font-size="17" fill="#172033">Indented objects and arrays are embedded. I = existing service; other statuses identify pending design details.</text><rect x="26" y="155" width="800" height="940" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="155" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="182" font-size="23" fill="#ffffff" xml:space="preserve">Booklet</text>
+<text x="42" y="206" font-size="15" fill="#e2e8f0" xml:space="preserve">Accepted boundary; T14 pending</text>
+<rect x="27" y="231" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="250" font-size="17" fill="#172033" xml:space="preserve">_id / ownerId / title / version</text>
+<text x="42" y="274" font-size="17" fill="#172033" xml:space="preserve">currentProductionId? -&gt; Production</text>
+<rect x="27" y="279" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="298" font-size="17" fill="#172033" xml:space="preserve">createdAt</text>
+<text x="42" y="322" font-size="17" fill="#172033" xml:space="preserve">deletion {</text>
+<rect x="27" y="327" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="346" font-size="17" fill="#172033" xml:space="preserve">  deletedAt? / recoverUntil?</text>
+<text x="42" y="370" font-size="17" fill="#172033" xml:space="preserve">  purgeState? / purgedAt?</text>
+<rect x="27" y="375" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="394" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<rect x="854" y="155" width="800" height="940" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="155" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="182" font-size="23" fill="#ffffff" xml:space="preserve">Production</text>
+<text x="870" y="206" font-size="15" fill="#e2e8f0" xml:space="preserve">Accepted embedded index; T14 pending</text>
+<rect x="855" y="231" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="250" font-size="17" fill="#172033" xml:space="preserve">_id / ownerId / bookletId / orderId</text>
+<text x="870" y="274" font-size="17" fill="#172033" xml:space="preserve">sourceProductionId? / lifecycleState</text>
+<rect x="855" y="279" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="298" font-size="17" fill="#172033" xml:space="preserve">version / createdAt / updatedAt</text>
+<text x="870" y="322" font-size="17" fill="#172033" xml:space="preserve">expiresAt? / closedAt?</text>
+<rect x="855" y="327" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="346" font-size="17" fill="#172033" xml:space="preserve">currentManifestRevisionId?</text>
+<text x="870" y="370" font-size="17" fill="#172033" xml:space="preserve">brief {</text>
+<rect x="855" y="375" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="394" font-size="17" fill="#172033" xml:space="preserve">  idea / audience / language {tag, direction}</text>
+<text x="870" y="418" font-size="17" fill="#172033" xml:space="preserve">  characterDescriptions[] / locationDescriptions[]</text>
+<rect x="855" y="423" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="442" font-size="17" fill="#172033" xml:space="preserve">  visualPreferences</text>
+<text x="870" y="466" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<rect x="855" y="471" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="490" font-size="17" fill="#172033" xml:space="preserve">creativeConfigSnapshot {</text>
+<text x="870" y="514" font-size="17" fill="#172033" xml:space="preserve">  packageId / packageRevision</text>
+<rect x="855" y="519" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="538" font-size="17" fill="#172033" xml:space="preserve">  storyPages / includeCover</text>
+<text x="870" y="562" font-size="17" fill="#172033" xml:space="preserve">  maxCharacters / maxLocations</text>
+<rect x="855" y="567" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="586" font-size="17" fill="#172033" xml:space="preserve">  maxPanelsPerPage / styleSamples</text>
+<text x="870" y="610" font-size="17" fill="#172033" xml:space="preserve">  canvas {width, height, mime} / language</text>
+<rect x="855" y="615" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="634" font-size="17" fill="#172033" xml:space="preserve">  executionProfile {id, revision}</text>
+<text x="870" y="658" font-size="17" fill="#172033" xml:space="preserve">  repairLimitPerOutput / finiteExecutionLimits</text>
+<rect x="855" y="663" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="682" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<text x="870" y="706" font-size="17" fill="#172033" xml:space="preserve">subjects[] {</text>
+<rect x="855" y="711" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="730" font-size="17" fill="#172033" xml:space="preserve">  id / kind / label / pageRole?</text>
+<text x="870" y="754" font-size="17" fill="#172033" xml:space="preserve">  artifacts[] {</text>
+<rect x="855" y="759" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="778" font-size="17" fill="#172033" xml:space="preserve">    id / kind</text>
+<text x="870" y="802" font-size="17" fill="#172033" xml:space="preserve">    currentRevisionId? / acceptedRevisionId?</text>
+<rect x="855" y="807" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="826" font-size="17" fill="#172033" xml:space="preserve">  }</text>
+<text x="870" y="850" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<rect x="855" y="855" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="874" font-size="17" fill="#172033" xml:space="preserve">stageLocks {</text>
+<text x="870" y="898" font-size="17" fill="#172033" xml:space="preserve">  story?, style?, references? {</text>
+<rect x="855" y="903" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="922" font-size="17" fill="#172033" xml:space="preserve">    operationId / lockedAt / sourceRevisionIds[]</text>
+<text x="870" y="946" font-size="17" fill="#172033" xml:space="preserve">  }</text>
+<rect x="855" y="951" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="970" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<text x="870" y="994" font-size="17" fill="#172033" xml:space="preserve">mutationLease? {</text>
+<rect x="855" y="999" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1018" font-size="17" fill="#172033" xml:space="preserve">  runId / leaseOwner / leaseExpiresAt / fence</text>
+<text x="870" y="1042" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<rect x="855" y="1047" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1066" font-size="17" fill="#172033" xml:space="preserve">activeRunId?</text>
+<rect x="26" y="1123" width="800" height="772" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="1123" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="1150" font-size="23" fill="#ffffff" xml:space="preserve">Artifact revision</text>
+<text x="42" y="1174" font-size="15" fill="#e2e8f0" xml:space="preserve">Accepted separate immutable document; T14 pending</text>
+<rect x="27" y="1199" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1218" font-size="17" fill="#172033" xml:space="preserve">_id / productionId / artifactId / subjectId</text>
+<text x="42" y="1242" font-size="17" fill="#172033" xml:space="preserve">kind / ordinal / operationId / createdAt</text>
+<rect x="27" y="1247" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1266" font-size="17" fill="#172033" xml:space="preserve">contentHash / schemaVersion</text>
+<text x="42" y="1290" font-size="17" fill="#172033" xml:space="preserve">content { one variant by kind</text>
+<rect x="27" y="1295" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1314" font-size="17" fill="#172033" xml:space="preserve">  concept {title, premise, theme, tone, constraints[]}</text>
+<text x="42" y="1338" font-size="17" fill="#172033" xml:space="preserve">  outline {summary, beats[] {id, content}}</text>
+<rect x="27" y="1343" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1362" font-size="17" fill="#172033" xml:space="preserve">  manuscript {units[] {</text>
+<text x="42" y="1386" font-size="17" fill="#172033" xml:space="preserve">    id / prose / characterIds[] / locationIds[]</text>
+<rect x="27" y="1391" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1410" font-size="17" fill="#172033" xml:space="preserve">  }}</text>
+<text x="42" y="1434" font-size="17" fill="#172033" xml:space="preserve">  description {name, description, continuityRules[]}</text>
+<rect x="27" y="1439" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1458" font-size="17" fill="#172033" xml:space="preserve">  roster {orderedCharacterIds[], orderedLocationIds[]}</text>
+<text x="42" y="1482" font-size="17" fill="#172033" xml:space="preserve">  style {direction, palette[], typography, continuity[]}</text>
+<rect x="27" y="1487" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1506" font-size="17" fill="#172033" xml:space="preserve">  reference {description, requiredFeatures[], asset}</text>
+<text x="42" y="1530" font-size="17" fill="#172033" xml:space="preserve">  pagePlan {pageSubjectId, role, panels[] {</text>
+<rect x="27" y="1535" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1554" font-size="17" fill="#172033" xml:space="preserve">    id / region {x, y, width, height} / action</text>
+<text x="42" y="1578" font-size="17" fill="#172033" xml:space="preserve">    characterIds[] / locationIds[] / manuscriptUnitIds[]</text>
+<rect x="27" y="1583" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1602" font-size="17" fill="#172033" xml:space="preserve">    lettering[] {id, kind, content, speakerId?, placement}</text>
+<text x="42" y="1626" font-size="17" fill="#172033" xml:space="preserve">  }}</text>
+<rect x="27" y="1631" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1650" font-size="17" fill="#172033" xml:space="preserve">  pageImage {asset, sourcePlanRevisionId}</text>
+<text x="42" y="1674" font-size="17" fill="#172033" xml:space="preserve">  bookManifest {title, language, acceptedSources[], pages[] {</text>
+<rect x="27" y="1679" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1698" font-size="17" fill="#172033" xml:space="preserve">    subjectId / role / position</text>
+<text x="42" y="1722" font-size="17" fill="#172033" xml:space="preserve">    imageRevision {id, hash} / asset {id, hash}</text>
+<rect x="27" y="1727" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1746" font-size="17" fill="#172033" xml:space="preserve">    qualityReviewId / approvalDecisionId</text>
+<text x="42" y="1770" font-size="17" fill="#172033" xml:space="preserve">  }}</text>
+<rect x="27" y="1775" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1794" font-size="17" fill="#172033" xml:space="preserve">}</text>
+<text x="42" y="1818" font-size="17" fill="#172033" xml:space="preserve">sources[] {revisionId, hash, role}</text>
+<rect x="27" y="1823" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="1842" font-size="17" fill="#172033" xml:space="preserve">assets[] {assetId, hash, role}</text>
+<text x="42" y="1866" font-size="17" fill="#172033" xml:space="preserve">provenance {runId, evidenceIds[]}</text>
+<rect x="854" y="1123" width="800" height="772" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="1123" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="1150" font-size="23" fill="#ffffff" xml:space="preserve">Operation</text>
+<text x="870" y="1174" font-size="15" fill="#e2e8f0" xml:space="preserve">Contract; persistence details pending</text>
+<rect x="855" y="1199" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1218" font-size="17" fill="#172033" xml:space="preserve">_id / productionId / subjectId / kind / state</text>
+<text x="870" y="1242" font-size="17" fill="#172033" xml:space="preserve">idempotencyKey / inputHash / createdAt</text>
+<rect x="855" y="1247" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1266" font-size="17" fill="#172033" xml:space="preserve">funding {kind, orderId?, allocationId?}</text>
+<text x="870" y="1290" font-size="17" fill="#172033" xml:space="preserve">repair? {failedReviewId, outputId, ordinal}</text>
+<rect x="855" y="1295" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="1314" font-size="17" fill="#172033" xml:space="preserve">result {revisionIds[], assetIds[]}</text>
+<text x="870" y="1338" font-size="17" fill="#172033" xml:space="preserve">evidenceIds[]</text>
+<rect x="26" y="1923" width="800" height="244" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="1923" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="1950" font-size="23" fill="#ffffff" xml:space="preserve">Human decision</text>
+<text x="42" y="1974" font-size="15" fill="#e2e8f0" xml:space="preserve">Contract; persistence pending</text>
+<rect x="27" y="1999" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="2018" font-size="17" fill="#172033" xml:space="preserve">_id / productionId / actorId / runId</text>
+<text x="42" y="2042" font-size="17" fill="#172033" xml:space="preserve">submission {formId, submissionId}</text>
+<rect x="27" y="2047" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="2066" font-size="17" fill="#172033" xml:space="preserve">action / answerOrInstruction? / submittedAt</text>
+<text x="42" y="2090" font-size="17" fill="#172033" xml:space="preserve">targets[] {artifactId, revisionId}</text>
+<rect x="27" y="2095" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="2114" font-size="17" fill="#172033" xml:space="preserve">acceptedQuote? {requestId, quoteFingerprint}</text>
+<text x="42" y="2138" font-size="17" fill="#172033" xml:space="preserve">reuse? {sourceProductionId, sourceRevisionIds[]}</text>
+<rect x="854" y="1923" width="800" height="244" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="1923" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="1950" font-size="23" fill="#ffffff" xml:space="preserve">Quality review</text>
+<text x="870" y="1974" font-size="15" fill="#e2e8f0" xml:space="preserve">Contract; separate review history</text>
+<rect x="855" y="1999" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="2018" font-size="17" fill="#172033" xml:space="preserve">_id / productionId / targetRevisionId / operationId</text>
+<text x="870" y="2042" font-size="17" fill="#172033" xml:space="preserve">policyRevisionId / disposition / createdAt</text>
+<rect x="855" y="2047" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="2066" font-size="17" fill="#172033" xml:space="preserve">inputs {assetIdentity, sourceRevisionIdentities[]}</text>
+<text x="870" y="2090" font-size="17" fill="#172033" xml:space="preserve">findings[] {code, severity, message, evidenceRefs[]}</text>
+<rect x="855" y="2095" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="2114" font-size="17" fill="#172033" xml:space="preserve">evidenceRefs[]</text>
+<rect x="26" y="2195" width="800" height="244" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="26" y="2195" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="42" y="2222" font-size="23" fill="#ffffff" xml:space="preserve">Original asset receipt</text>
+<text x="42" y="2246" font-size="15" fill="#e2e8f0" xml:space="preserve">Contract; T16 persistence pending</text>
+<rect x="27" y="2271" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="2290" font-size="17" fill="#172033" xml:space="preserve">_id / ownerId / productionId / operationId</text>
+<text x="42" y="2314" font-size="17" fill="#172033" xml:space="preserve">storageObjectId (private) / sha256 / bytes / mime</text>
+<rect x="27" y="2319" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="2338" font-size="17" fill="#172033" xml:space="preserve">dimensions {width, height}</text>
+<text x="42" y="2362" font-size="17" fill="#172033" xml:space="preserve">provenance {provider, providerRequestId, evidenceId}</text>
+<rect x="27" y="2367" width="798" height="24" fill="#eef2f6"/>
+<text x="42" y="2386" font-size="17" fill="#172033" xml:space="preserve">retainedAt</text>
+<rect x="854" y="2195" width="800" height="244" rx="8" fill="#ffffff" stroke="#64748b"/>
+<rect x="854" y="2195" width="800" height="66" rx="8" fill="#17324d"/>
+<text x="870" y="2222" font-size="23" fill="#ffffff" xml:space="preserve">Consumption order</text>
+<text x="870" y="2246" font-size="15" fill="#e2e8f0" xml:space="preserve">I: consumptionOrders</text>
+<rect x="855" y="2271" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="2290" font-size="17" fill="#172033" xml:space="preserve">_id</text>
+<text x="870" y="2314" font-size="17" fill="#172033" xml:space="preserve">value {id, ownerId, targetId, terms, state}</text>
+<rect x="855" y="2319" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="2338" font-size="17" fill="#172033" xml:space="preserve">value {chargedCredits, refundedCredits, chargeLedgerId?}</text>
+<text x="870" y="2362" font-size="17" fill="#172033" xml:space="preserve">value {idempotencyKey, inputHash, startedAt?, expiresAt?}</text>
+<rect x="855" y="2367" width="798" height="24" fill="#eef2f6"/>
+<text x="870" y="2386" font-size="17" fill="#172033" xml:space="preserve">fields {validated product extension snapshot}</text>
+<text x="870" y="2410" font-size="17" fill="#172033" xml:space="preserve">locks[] / activeWorkflow?</text>
+<text x="26" y="2482" font-size="23" fill="#172033" xml:space="preserve">References between documents (embedded objects have no separate boxes)</text>
+<text x="26" y="2515" font-size="16" fill="#172033" xml:space="preserve">Booklet -&gt; Production: currentProductionId; one booklet has many productions</text>
+<text x="26" y="2540" font-size="16" fill="#172033" xml:space="preserve">Production -&gt; Artifact revision: subjects[].artifacts[] current and accepted revision IDs</text>
+<text x="26" y="2565" font-size="16" fill="#172033" xml:space="preserve">Artifact revision -&gt; Production: productionId plus embedded artifactId and subjectId</text>
+<text x="26" y="2590" font-size="16" fill="#172033" xml:space="preserve">Artifact revision -&gt; Artifact revision: sources[] exact immutable dependencies</text>
+<text x="26" y="2615" font-size="16" fill="#172033" xml:space="preserve">Production -&gt; Operation: productionId on each operation</text>
+<text x="26" y="2640" font-size="16" fill="#172033" xml:space="preserve">Operation -&gt; Artifact revision: result.revisionIds[]</text>
+<text x="26" y="2665" font-size="16" fill="#172033" xml:space="preserve">Operation -&gt; Execution attempt: operationId</text>
+<text x="26" y="2690" font-size="16" fill="#172033" xml:space="preserve">Run binding -&gt; Production: productionId</text>
+<text x="26" y="2715" font-size="16" fill="#172033" xml:space="preserve">Human decision -&gt; Production: productionId</text>
+<text x="26" y="2740" font-size="16" fill="#172033" xml:space="preserve">Human decision -&gt; Artifact revision: targets[] exact revisions</text>
+<text x="26" y="2765" font-size="16" fill="#172033" xml:space="preserve">Revision request -&gt; Human decision: decisionId</text>
+<text x="26" y="2790" font-size="16" fill="#172033" xml:space="preserve">Revision request -&gt; Operation: authorizes work</text>
+<text x="26" y="2815" font-size="16" fill="#172033" xml:space="preserve">Quality review -&gt; Artifact revision: targetRevisionId and source identities</text>
+<text x="26" y="2840" font-size="16" fill="#172033" xml:space="preserve">Quality review -&gt; Quality policy: policyRevisionId</text>
+<text x="26" y="2865" font-size="16" fill="#172033" xml:space="preserve">Repair budget -&gt; Quality review: failedQualityReviewId</text>
+<text x="26" y="2890" font-size="16" fill="#172033" xml:space="preserve">Repair budget -&gt; Operation: bounded authorizing operation</text>
+<text x="26" y="2915" font-size="16" fill="#172033" xml:space="preserve">Artifact revision -&gt; Original asset receipt: assets[] and manifest page assets</text>
+<text x="26" y="2940" font-size="16" fill="#172033" xml:space="preserve">Attachment receipt -&gt; Artifact revision: artifactRevisionId</text>
+<text x="26" y="2965" font-size="16" fill="#172033" xml:space="preserve">Attachment receipt -&gt; Original asset receipt: assetId</text>
+<text x="26" y="2990" font-size="16" fill="#172033" xml:space="preserve">Display derivative -&gt; Original asset receipt: originalAssetId</text>
+<text x="26" y="3015" font-size="16" fill="#172033" xml:space="preserve">Operation -&gt; Evidence reference: evidenceRefs[]</text>
+<text x="26" y="3040" font-size="16" fill="#172033" xml:space="preserve">Quality review -&gt; Evidence reference: evidenceRefs[]</text>
+<text x="26" y="3065" font-size="16" fill="#172033" xml:space="preserve">PDF export -&gt; Artifact revision: exact book-manifest revision</text>
+<text x="26" y="3090" font-size="16" fill="#172033" xml:space="preserve">Share grant -&gt; Artifact revision: exact book-manifest revision</text>
+<text x="26" y="3115" font-size="16" fill="#172033" xml:space="preserve">Share grant -&gt; Booklet: ownership and deletion checks</text>
+<text x="26" y="3140" font-size="16" fill="#172033" xml:space="preserve">Audit event -&gt; Booklet: audited target identity</text>
+<text x="26" y="3165" font-size="16" fill="#172033" xml:space="preserve">Consumption order -&gt; Catalog version: accepted consumption snapshot</text>
+<text x="26" y="3190" font-size="16" fill="#172033" xml:space="preserve">Consumption order -&gt; Production: value.targetId</text>
+<text x="26" y="3215" font-size="16" fill="#172033" xml:space="preserve">Entitlement allocation -&gt; Consumption order: orderId</text>
+<text x="26" y="3240" font-size="16" fill="#172033" xml:space="preserve">Entitlement allocation -&gt; Production: subjectId resolves inside production</text>
+<text x="26" y="3265" font-size="16" fill="#172033" xml:space="preserve">Consumption workflow -&gt; Consumption order: orderId</text>
+<text x="26" y="3290" font-size="16" fill="#172033" xml:space="preserve">Consumption charge -&gt; Consumption order: orderId</text>
+<text x="26" y="3315" font-size="16" fill="#172033" xml:space="preserve">Production -&gt; Execution profile: snapshotted profile identity</text>
+<text x="26" y="3360" font-size="16" fill="#172033" xml:space="preserve">Source: scripts/booklet-model-review-data.mjs | Guide: docs/features/booklet-generation/model.md</text></g></svg>

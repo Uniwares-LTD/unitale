@@ -1,164 +1,168 @@
-# Booklet model review
+# Booklet document model
 
 ## Outcome
 
-Review entities, fields and relationships before implementing T14. The diagram uses
-fixed dark text on light rows and light text on dark headers, independent of the
-chat or editor theme. Open the SVG directly to zoom without losing detail.
+The accepted model uses a **production document with an embedded content index**.
+Subjects and artifacts are nested identities, not independent collections. Immutable
+content revisions and growing histories remain separate documents. This decision
+selects persistence boundaries; T14 implementation is still pending.
 
-[Open the model diagram](model.svg)
+- [Simple Mermaid schema](model-core-mermaid.md)
+- [Complete Mermaid schema](model-complete-mermaid.md)
+- [Concrete JSON example](model-document-example.json)
+- [SVG overview](model.svg)
 
-Mermaid versions: [simple core schema](model-core-mermaid.md) and
-[complete review schema](model-complete-mermaid.md). Open their Markdown preview
-in a Mermaid-capable viewer. The complete version includes every review card and
-field summary, grouped by domain; the simple version selects core records and
-identity fields. Both use explicit colors for readable labels.
-
-![Proposed booklet entities, fields and relationships](model.svg)
+The example is a partial production with two manuscript revisions, a character
+and a page plan containing panels and lettering. Its `collections` wrapper groups
+separate documents for reading; it is not a stored parent document or a seed file.
+External order, Run and evidence references are explicitly identified.
 
 ### Detailed review views
 
-| View                                             | Models and fields to discuss                                                                                                                                                                                           | Scope now                                                                                    |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [Creative content](model-content.svg)            | Brief, concept, outline, manuscript, individual entities, roster, style, references, panels, lettering and manifest                                                                                                    | T14 identity, revision granularity and typed payload boundaries                              |
-| [Lifecycle and revisions](model-lifecycle.svg)   | Production lifecycle, stage locks, mutation lease, Run binding, human requests, revision requests/quotes, reuse acceptance and repair budget                                                                           | Agree durable references and concurrency boundaries; behavior belongs to T15/T20             |
-| [Economy and configuration](model-economy.svg)   | Purchase offers, promotions, subscriptions, billing intents/payments, reservations, wallet/lots/ledger, consumption products/orders/allocations, publications, booklet fields, execution profiles and quality policies | Reuse Unibase; agree booklet extensions and frozen snapshots                                 |
-| [Media, retention and delivery](model-media.svg) | Original receipts, attachment, derivatives, evidence, deletion/recovery, manifest-bound exports, shares and access/audit                                                                                               | Agree ownership/provenance/deletion references; detailed delivery design remains T16/T22-T24 |
+| View | Contents |
+| --- | --- |
+| [Creative content](model-content.svg) | One immutable revision document with typed content variants, nested panels/lettering or manifest entries, source and asset references |
+| [Lifecycle](model-lifecycle.svg) | Production with nested index/locks/lease; separate operations, decisions, revision requests and execution history |
+| [Economy](model-economy.svg) | Existing Unibase documents with embedded accepted terms, allowances and product extension fields |
+| [Media](model-media.svg) | Original receipts, attachment, derivatives, evidence and future manifest-bound exports/shares |
 
-**Status legend:** **I** means an implemented Unibase capability to reuse; **C**
-means a booklet contract/payload exists but persistence or behavior is not yet
-implemented; **P** means a proposed addition or refinement. Mixed labels identify
-an existing contract/service with a proposed extension. An I label does not assert
-that the displayed summary is a literal database collection or full stored shape.
-The diagrams contain review candidates, not newly approved requirements.
+Boxes show document boundaries or explicitly labeled existing service views.
+Indented `{}` objects and `[]` arrays stay inside their owning document. References
+between documents use stable IDs, not relational joins or collection-per-object
+assumptions. `I` marks existing Unibase capabilities. Other labels distinguish
+accepted-but-unimplemented boundaries, current contracts and later proposals.
+The economy view covers domain integration, not every internal Unibase collection.
 
 ## Scope
 
-This is a **proposed logical model**, not the current database schema. It preserves
-the earlier discussion while keeping proposed refinements visible. The accepted
-[PRD](prd.md) governs product behavior; [contract compatibility](contracts.md) and
-the linked source schemas describe implemented contracts. Field lists are summaries,
-not complete DTOs or security specifications. Repeated owner/production identifiers,
-timestamps, expected-version checks and lease fences must still be specified for
-persistence. Diagram arrows do not establish authorization.
+The [PRD](prd.md) governs behavior. This is the selected persistence design, not a
+claim that the current [v1 contracts](contracts.md) already implement it. Field lists
+are operational summaries, not exhaustive DTOs. Later execution, quality and delivery
+proposals retain their review status; accepting the index does not approve all of them.
+No migration, production registration or provider call is introduced by these docs.
 
 ## Approach
 
-- **Subject** is a proposed explicit identity shared by an entity's description,
-  reference image and other creative responsibilities. Current contracts embed a
-  subject value instead. Individual character/location artifacts and a roster are
-  proposed refinements to today's aggregate character/location arrays.
-- **Artifact** identifies one responsibility. **Artifact revision** is immutable
-  typed content with exact sources and original assets. Current and accepted
-  revision pointers remain distinct. Stable page identity does not encode position;
-  the manifest records accepted order.
-- **Execution attempt** is proposed separately from logical operations. Existing
-  operation contracts currently hold attempt/workflow fields together. Unibase
-  measurements already link to operations; an attempt link requires a reviewed
-  contract change. Missing provider IDs/usage/cost remain unknown until observed.
-- **Orders, allocations, Runs and measurements** reuse Unibase. Their displayed
-  fields are conceptual summaries, not replacements for the existing contracts.
-  Booklet creative configuration must not become a second editable source of prices
-  or entitlement balances.
-- **Decision targets, revision sources/assets and manifest entries** are bounded
-  relationships that can be embedded. Boxes do not imply separate collections.
-  Approval targets exact revisions; clarification can have none. Repairs use their
-  own funding/budget and do not consume a customer revision again.
-- **Book manifest** is an artifact revision, not an Edition collection. Its ordered
-  entries bind accepted images, original assets and quality/approval evidence.
-- **Original assets** survive diagnostic cleanup. Raw prompts, provider envelopes
-  and traces live in referenced evidence storage. Operational creative content stays
-  structured when the editor, orchestrator, reviewer or reader consumes it.
+### Document boundaries
+
+- **Booklet** owns identity, owner, current-production pointer and nested deletion/
+  recovery metadata. Paid productions remain separate documents.
+- **Production** embeds the brief, frozen creative configuration, stage locks,
+  mutation lease and bounded `subjects[]`. Each subject contains `id`, `kind`,
+  `label`, optional page role and `artifacts[]`. Each artifact entry contains its
+  stable `id`, responsibility `kind`, `currentRevisionId` and `acceptedRevisionId`.
+  There is no independent artifact version or Subject/Artifact collection.
+- **Artifact revision** is a separate immutable document with `productionId`,
+  `artifactId`, `subjectId`, kind, ordinal, content hash and operation provenance.
+  Its typed content embeds panels and lettering, story units, or accepted manifest
+  entries. Sources and asset identities are bounded embedded references. Raw prompts
+  and provider envelopes stay in evidence storage.
+- **Operations, revisions, decisions, reviews and measurements** stay separate;
+  their history must not accumulate inside Production. Customer revision requests
+  are separate records with an embedded accepted quote snapshot. Attempt/budget
+  implementation details remain pending lifecycle review.
+- **Manifest** is a revision kind, not an Edition collection. Its nested page
+  entries bind order, exact image revisions, original assets, quality and approval.
+- **Economy** reuses existing Unibase documents. Production references its order;
+  it does not embed a second mutable wallet, charge journal or entitlement balance.
+
+### Identity, concurrency and growth
+
+Stable subject and artifact IDs are scoped to a production. Revision reads resolve
+`productionId` first and validate `subjectId` and `artifactId` against its embedded
+index, owner and artifact kind. Current/accepted pointers must refer to revisions
+of that same artifact. Artifact IDs are unique within the production; subject IDs
+are unique in the roster; an artifact responsibility is unique within its subject.
+These nested-array uniqueness checks require service validation, not an assumed
+MongoDB unique index on elements of a single document.
+
+All index/pointer mutations use the production's expected version and active mutation
+fence. There is one active mutation workflow per production. Insert an immutable
+revision and advance the corresponding pointer transactionally; never hold the
+transaction open while calling a provider. Stage locks and downstream authorization
+must be atomic. Unknown provider outcomes need reconciliation, not automatic replay.
+
+Enforce package-derived subject/artifact counts and encoded document-size bounds
+before persistence. Never silently truncate content or split a production into a
+second implicit index. Large content, revision histories, raw evidence and media
+bytes stay outside the index. Production versions themselves are not embedded in
+Booklet. Bound choices and rejection tests belong to T14 implementation.
+
+### Unibase compatibility
+
+Read-only inspection of Unibase's `src/lib/server/commerce/orders.ts`, commerce
+contracts and execution evidence services found no requirement for standalone
+booklet artifacts. Orders address an opaque `targetId`; allocations retain stable
+`subjectId` values; the admission hook accepts the existing database transaction.
+Unitale can resolve those IDs into its embedded production index without changing
+Unibase's finance, Run or measurement storage.
+
+**No Unibase change or template import is required for this boundary decision.**
+Any later discovered shared-contract change must first be implemented and reviewed
+in Unibase, then imported into Unitale after the user's review. Existing T01 DTOs
+are not silently redefined as persistence documents; T14 adds explicit repository
+mapping and versioned contracts where a public shape actually changes.
 
 ## Maintenance and validation
 
-The renderer and overview source are
-[booklet-model-diagram.mjs](../../../scripts/booklet-model-diagram.mjs); detailed
-view definitions live in [booklet-model-review-data.mjs](../../../scripts/booklet-model-review-data.mjs).
-The [Mermaid renderer](../../../scripts/booklet-model-mermaid.mjs) reuses those
-entity/field definitions and owns the labeled Mermaid relationships and core
-selection. Update those relationships when references change; never edit generated
-Mermaid Markdown directly.
-Edit the relevant entity/field lists, relationships and proposal labels, then run:
+[booklet-model-review-data.mjs](../../../scripts/booklet-model-review-data.mjs)
+owns document fields, nesting and cross-document references.
+[booklet-model-diagram.mjs](../../../scripts/booklet-model-diagram.mjs) generates
+SVG views and calls the [Mermaid renderer](../../../scripts/booklet-model-mermaid.mjs).
+Both formats share the same document definitions. Update the canonical definitions,
+this guide and the JSON example when model boundaries or fields change.
 
 ```sh
 npm run docs:booklet-model
 npm run check:docs
 ```
 
-`check:docs` checks that all five generated SVGs and both Mermaid documents match
-their sources, and rejects Mermaid relationships with unknown entities. It does not infer
-semantic changes from Zod schemas. Any booklet model, relationship or persistence
-change must update this guide, SVGs and both Mermaid versions in the same change, or explicitly record
-why the model is unaffected. Keep current implementation and proposed design clearly
-distinguished; do not mark a proposal implemented until code and verification agree.
-
-After regeneration, inspect the SVG at full size for readable labels, clipped text,
-relation clarity and contrast. No diagram-generation dependency or network access
-is needed. This change creates no collection, migration or workflow registration.
+The check rejects stale generated views and references to unknown diagram documents.
+It does not infer semantic changes from runtime schemas. Inspect generated SVGs for
+clipping and contrast and Mermaid previews for nesting and relation clarity. Fixed
+colors preserve label contrast. Code generation requires no network or renderer.
 
 ## Open questions and limits
 
-The following is the T14 discussion agenda. Recommendations are provisional; the
-accepted commercial rules, stage windows, human authority and single-orchestrator
-architecture remain in force. No numerical price or capacity is chosen here.
+Document boundaries are settled; remaining implementation details do not reopen
+separate Subject or Artifact collections.
 
-| ID  | Decision                       | Fields / constraints to resolve                                                                                             | Starting recommendation                                                                                                                            |
-| --- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D01 | Stable subjects                | `subjectId`, `productionId`, `kind`, `pageRole`; uniqueness and cross-production reuse                                      | Persist subjects per production; preserve source lineage rather than sharing mutable identities between paid versions                              |
-| D02 | Artifact granularity           | `subjectId`, `kind`, current/accepted revision pointers                                                                     | One artifact per subject/responsibility; per-character/location description and reference; book-scoped roster                                      |
-| D03 | Revision and ordering          | `ordinal`, `contentHash`, source revision identities; manuscript unit/panel/lettering IDs; manifest position                | Immutable revisions, stable content IDs, position in ordered plans/manifests rather than subject identity                                          |
-| D04 | Content versus evidence        | Typed payloads, bounded strings/arrays, `evidenceRefs`, asset hashes                                                        | Store fields used by the product; keep raw prompts/envelopes/traces in evidence; derive bounds from validated package/profile settings             |
-| D05 | Lifecycle authority            | Production lifecycle, `activeRunId`, Run execution status, completion/closure timestamps                                    | Separate enduring paid production lifecycle from transient Run states; completion requires accepted manifest evidence                              |
-| D06 | Concurrent mutation            | `version`, expected version, lease owner/expiry, fencing token, stage-lock source identities                                | Atomic admission and stage locks; fence stale writers even after a lease expires; unknown provider outcomes require reconciliation                 |
-| D07 | Revision requests and attempts | Request/quote IDs, subject set, `allocationIds`, operation/attempt IDs, invocation/publication identities                   | One durable customer request may fund many operations; retries retain its allocations; provider attempts retain separate identities                |
-| D08 | Reuse and repairs              | Explicit reuse decision targets; failed review/output identity, repair ordinal, snapshotted limit and budget counters       | Link accepted old content into the new production explicitly; track repairs independently of customer allowances                                   |
-| D09 | Economy integration            | Order `targetId` to production mapping; product extension schema; accepted terms/profile snapshots; paid-revision order IDs | Keep commercial terms and balances authoritative in Unibase; snapshot validated booklet configuration without an independently editable price copy |
-| D10 | Media provenance               | Retained asset receipt, private storage object, attachment idempotency, exact revision/hash, derivative parent              | Retention and attachment are separate durable steps; preserve original bytes; no provider replay after an attachment failure                       |
-| D11 | Ownership and deletion         | Owner/production scope, authenticated actor, `deletedAt`, `recoverUntil`, protected evidence, purge state                   | Server-derived ownership on all operations; 30-day recovery and immediate share revocation; no restoration of old share grants                     |
-| D12 | Completion identity            | Manifest revision/hash, page and source revision IDs, quality/approval IDs, downstream export/share references              | Keep one immutable manifest revision as the completion anchor; defer export/share collections and API details                                      |
+| ID | Status and follow-up |
+| --- | --- |
+| D01 | Selected: stable subjects embedded per production; cross-production reuse retains explicit source lineage |
+| D02 | Selected: artifacts embedded under subjects with independent current/accepted pointers; responsibility variants remain typed |
+| D03 | Selected: immutable separate revisions, ordering in plans/manifests; finalize canonical hashing and ordinal allocation in T14 |
+| D04 | Embedded operational content and referenced evidence; finalize validated array/string/document bounds |
+| D05 | Separate production lifecycle from Run status; finalize state transitions in T15 |
+| D06 | Selected: production version/fence governs index changes; verify transaction, lease expiry and stale-writer behavior |
+| D07 | Separate customer request, embedded accepted quote, reusable allocations; finalize attempt integration |
+| D08 | Explicit reuse decisions and separate platform-funded repair budget; finalize durable accounting |
+| D09 | Reuse Unibase order terms and stable IDs; finalize booklet product extension validation |
+| D10 | Separate retention and attachment; use expectedProductionVersion and fencing token for attachment admission |
+| D11 | Owner-scoped records, embedded deletion/recovery, immediate revocation; implement cleanup protections later |
+| D12 | Immutable manifest revision anchors completion and future exports/shares |
 
 ### Persistence rules to settle with D01-D12
 
-These are proposed repository requirements, not an implemented index plan:
-
-- Decide which bounded relationships are embedded: revision sources/assets,
-  decision targets, page panels/lettering and manifest entries are candidates.
-  Do not embed unbounded Run, operation, revision or measurement histories in a
-  production document.
-- Define canonical identifiers and representations: UTC timestamps at transport
-  boundaries, native database dates where appropriate, integer credits, precise
-  provider decimal costs, schema versions and a server-computed canonical content
-  hash. Missing usage is null/unknown, not zero.
-- Scope candidate unique indexes: `(productionId, subjectId, artifactKind)`,
-  `(artifactId, ordinal)`, scoped operation idempotency, and authenticated form
-  submission identity. Choose ownership/production indexes for paginated reads.
-  Reference existence, owner equality and matching artifact/revision kinds require
-  service validation; a valid foreign ID string is insufficient.
-- Define transaction boundaries for revision insertion plus pointer update,
-  stage locking plus downstream admission, quote acceptance plus entitlement
-  allocation, and manifest acceptance. Do not hold a database transaction while
-  calling a provider. Existing Unibase financial transactions remain authoritative.
-- Add bounded lists, explicit stale-version conflicts and recovery behavior before
-  exposing repository operations. T14 must not silently introduce a scheduler or
-  let an MCP caller fabricate human approval.
+T14 must define production/owner read indexes, unique revision identity
+`(productionId, artifactId, ordinal)`, scoped idempotency and submission identities.
+Enforce embedded uniqueness in transactions. Preserve UTC timestamp conventions,
+integer credits, precise provider costs and unknown usage instead of zero. Keep
+financial transactions authoritative in Unibase and human approval authoritative
+in authenticated Run submissions.
 
 ### Existing sources to reuse
 
 - [Booklet contracts](../../../src/project/booklets/contracts.ts) and
-  [workflow contracts](../../../src/project/booklets/workflow-contracts.ts): C fields
-  and current source/asset identity envelopes.
+  [workflow contracts](../../../src/project/booklets/workflow-contracts.ts).
 - [Commerce contracts](../../../src/lib/contracts/commerce.ts),
+  [orders](../../../src/lib/server/commerce/orders.ts),
   [catalogs](../../../src/lib/server/commerce/catalogs.ts),
   [billing](../../../src/lib/server/commerce/billing.ts),
   [promotions](../../../src/lib/server/commerce/promotions.ts) and
-  [wallet types](../../../src/lib/server/store/credit-types.ts): implemented financial
-  records and services, with existing schemas authoritative over diagram shorthand.
+  [wallet types](../../../src/lib/server/store/credit-types.ts).
 - [Measurements](../../../src/lib/contracts/execution-measurements.ts) and
-  [evidence service](../../../src/lib/server/execution/measurements.ts): existing
-  per-call measurements, evidence retention and protections.
+  [evidence service](../../../src/lib/server/execution/measurements.ts).
 
-T14 does not implement provider publications, human form execution, visual evaluation,
-reader UI, PDF rendering or share delivery. Their references are shown so the core
-records can support later tasks. Recording fields here does not approve new runtime
-behavior or change the accepted PRD.
+T14 remains incomplete. Specialists, visual evaluation, Human Input execution,
+reader, PDF and sharing remain their assigned delivery tasks.

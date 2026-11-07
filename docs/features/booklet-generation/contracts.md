@@ -5,8 +5,12 @@ and [workflow-contracts.ts](../../../src/project/booklets/workflow-contracts.ts)
 the project side of T01. Generic commerce and execution measurement schemas originate
 in Unibase and are now available through the pinned T03-T06 template import.
 T13 local foundation integration is complete; live acceptance remains T28.
-The [model review and diagram](model.md) describe proposed refinements before T14;
-they must not be confused with the implemented v1 contracts.
+The accepted [document model](model.md) embeds subjects and artifact identities in
+Production while retaining separate immutable revisions. T14 must map these records
+to the opt-in v1 DTOs explicitly: an artifact DTO is not a collection declaration,
+and its revision/version fields must not become an independent artifact write fence.
+Production version/fencing governs persistence. No v1 parser changes are made by
+this documentation decision; any breaking public shape requires explicit versioning.
 
 ## Versioning
 
