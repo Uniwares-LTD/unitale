@@ -4,8 +4,8 @@
 
 The accepted model uses a **production document with an embedded content index**.
 Subjects and artifacts are nested identities, not independent collections. Immutable
-content revisions and growing histories remain separate documents. This decision
-selects persistence boundaries; T14 implementation is still pending.
+content revisions and growing histories remain separate documents. T14 implements these repositories and their transaction boundaries. Lifecycle,
+approval, execution and media integration remain later tasks.
 
 - [Simple Mermaid schema](model-core-mermaid.md)
 - [Complete Mermaid schema](model-complete-mermaid.md)
@@ -23,17 +23,18 @@ export/share references. Both are generated from the same maintained definitions
 Boxes show document boundaries or explicitly labeled existing service views.
 Indented `{}` objects and `[]` arrays stay inside their owning document. References
 between documents use stable IDs, not relational joins or collection-per-object
-assumptions. `I` marks existing Unibase capabilities. Other labels distinguish
-accepted-but-unimplemented boundaries, current contracts and later proposals.
+assumptions. `I` marks implemented capabilities in the named owner. Other labels distinguish
+current contracts and later proposals.
 The economy view covers domain integration, not every internal Unibase collection.
 
 ## Scope
 
-The [PRD](prd.md) governs behavior. This is the selected persistence design, not a
-claim that the current [v1 contracts](contracts.md) already implement it. Field lists
+The [PRD](prd.md) governs behavior. Dedicated persistence schemas are separate from the unchanged
+[v1 workflow contracts](contracts.md). Field lists
 are operational summaries, not exhaustive DTOs. Later execution, quality and delivery
 proposals retain their review status; accepting the index does not approve all of them.
-No migration, production registration or provider call is introduced by these docs.
+T14 registers a namespaced index migration and an extension with no routes,
+MCP tools, navigation or workers. It introduces no provider calls or charges.
 
 ## Approach
 
@@ -80,7 +81,9 @@ Enforce package-derived subject/artifact counts and encoded document-size bounds
 before persistence. Never silently truncate content or split a production into a
 second implicit index. Large content, revision histories, raw evidence and media
 bytes stay outside the index. Production versions themselves are not embedded in
-Booklet. Bound choices and rejection tests belong to T14 implementation.
+Booklet. Default BSON ceilings are 1 MiB per production and 4 MiB per revision;
+trusted server options may override them within 1 KiB?8 MiB. These are storage
+safeguards, separate from package capacity.
 
 ### Unibase compatibility
 
@@ -94,8 +97,8 @@ Unibase's finance, Run or measurement storage.
 **No Unibase change or template import is required for this boundary decision.**
 Any later discovered shared-contract change must first be implemented and reviewed
 in Unibase, then imported into Unitale after the user's review. Existing T01 DTOs
-are not silently redefined as persistence documents; T14 adds explicit repository
-mapping and versioned contracts where a public shape actually changes.
+are not silently redefined as persistence documents; T14 uses separate persistence schemas and explicit date-to-ISO views without
+changing public v1 payloads or exposing a new API.
 
 ## Maintenance and validation
 
@@ -115,34 +118,67 @@ The check rejects stale generated views and references to unknown diagram docume
 It does not infer semantic changes from runtime schemas. Inspect Mermaid previews for readable labels, nesting and relation clarity. Fixed
 colors preserve label contrast. Code generation requires no network or renderer.
 
-## Open questions and limits
+## Repository interfaces and limits
 
-Document boundaries are settled; remaining implementation details do not reopen
-separate Subject or Artifact collections.
+[bookletRepository](../../../src/lib/server/booklets/repository.ts) takes a database,
+verified server actor and optional trusted clock/storage limits. It exposes owned
+book/production/artifact/revision reads; bounded lists; createBook/createProduction;
+addSubject/addArtifact; appendRevision; and acquire/renew/releaseLease.
 
-| ID | Status and follow-up |
+`createProduction` reads an existing owned `consumptionOrders` record with matching
+`targetId` and product type `booklet`. Creative fields come from the frozen order
+extension; authoritative terms supply package identity and validation allowances.
+The trusted caller supplies matching execution capacity. Only queued/started,
+unexpired orders can create productions. T15 must integrate admission/charging;
+draft persistence does not authorize generation or spend credits.
+
+Creation can participate in an existing MongoDB transaction. The order must already
+have been inserted in that transaction. Unibase's order-creation admission callback
+runs before insertion, so T15 must compose at a compatible boundary rather than
+assuming the callback can read a not-yet-inserted order. Results are usable only
+after the caller commits. Transactions serialize account-access changes.
+
+Every write has a scoped stable key and normalized input hash. Original results
+live in `bookletRepositoryWrites`; identical retries return the original result
+after current access/ownership checks. Different input conflicts. Receipts are
+operational history, not generation operations or customer charges.
+
+A production lease lasts 1?300 seconds. Acquisition/takeover increments a durable
+fence; every creative write checks expected version, holder, fence and expiry.
+Renewal and release are versioned/idempotent. Revisions and pointer updates commit
+together. No API mutates an accepted pointer, stage lock, lifecycle or completion.
+T15 owns those transitions and their decision/quality checks.
+
+Lists accept 1?100 items (default 25). Book/production pages use stable ID order;
+revision history uses increasing ordinal. Cursors are query/account scoped and
+never substitute for ownership filters. Completed/closed/expired productions reject
+new mutations; committed idempotent retries remain readable with authorization.
+
+### Implemented and remaining decisions
+
+| ID | Status |
 | --- | --- |
-| D01 | Selected: stable subjects embedded per production; cross-production reuse retains explicit source lineage |
-| D02 | Selected: artifacts embedded under subjects with independent current/accepted pointers; responsibility variants remain typed |
-| D03 | Selected: immutable separate revisions, ordering in plans/manifests; finalize canonical hashing and ordinal allocation in T14 |
-| D04 | Embedded operational content and referenced evidence; finalize validated array/string/document bounds |
-| D05 | Separate production lifecycle from Run status; finalize state transitions in T15 |
-| D06 | Selected: production version/fence governs index changes; verify transaction, lease expiry and stale-writer behavior |
-| D07 | Separate customer request, embedded accepted quote, reusable allocations; finalize attempt integration |
-| D08 | Explicit reuse decisions and separate platform-funded repair budget; finalize durable accounting |
-| D09 | Reuse Unibase order terms and stable IDs; finalize booklet product extension validation |
-| D10 | Separate retention and attachment; use expectedProductionVersion and fencing token for attachment admission |
-| D11 | Owner-scoped records, embedded deletion/recovery, immediate revocation; implement cleanup protections later |
-| D12 | Immutable manifest revision anchors completion and future exports/shares |
+| D01/D02 | Implemented embedded identities and per-subject responsibilities; no separate artifacts collection |
+| D03 | Implemented immutable revisions, transactional ordinals and canonical hashVersion 1 over content/identity/sources/assets |
+| D04 | Implemented package counts, strict payload validation and BSON size ceilings; raw evidence remains external |
+| D05 | Lifecycle transitions remain T15; new productions are drafts |
+| D06 | Implemented production version, lease/fence, rollback and replay receipts |
+| D07/D08 | Request/attempt/repair orchestration and explicit cross-production reuse remain later work |
+| D09 | Implemented owned order association and frozen creative snapshot; no Unibase changes |
+| D10 | T14 validates declared asset identities only; T16 verifies retained bytes and ownership |
+| D11 | Implemented owner scope and rejection of deleted books; delete/recovery/cleanup services remain later work |
+| D12 | Implemented manifest draft checks; approval, quality and completion remain T15/T17 |
 
-### Persistence rules to settle with D01-D12
+Source dependencies are restricted to the same production. V1 aggregate character
+and location payloads are rejected by persistence; individual description and roster
+variants are explicit. Manifest review/approval IDs and operation/Run/evidence
+provenance are claims for future service verification, never authority. A stored
+manifest draft cannot complete a production or make content public.
 
-T14 must define production/owner read indexes, unique revision identity
-`(productionId, artifactId, ordinal)`, scoped idempotency and submission identities.
-Enforce embedded uniqueness in transactions. Preserve UTC timestamp conventions,
-integer credits, precise provider costs and unknown usage instead of zero. Keep
-financial transactions authoritative in Unibase and human approval authoritative
-in authenticated Run submissions.
+Indexes cover owner reads, unique order association, unique production/artifact/
+ordinal, source lookups and scoped idempotency. The forward-only migration is
+`booklets:0001-repositories`; it converts no old records and creates no sample data.
+Run `npm run test:booklet-repositories` for disposable replica-set tests.
 
 ### Existing sources to reuse
 
@@ -157,5 +193,5 @@ in authenticated Run submissions.
 - [Measurements](../../../src/lib/contracts/execution-measurements.ts) and
   [evidence service](../../../src/lib/server/execution/measurements.ts).
 
-T14 remains incomplete. Specialists, visual evaluation, Human Input execution,
+T14 persistence is implemented. Specialists, visual evaluation, Human Input execution,
 reader, PDF and sharing remain their assigned delivery tasks.

@@ -6,11 +6,11 @@ the project side of T01. Generic commerce and execution measurement schemas orig
 in Unibase and are now available through the pinned T03-T06 template import.
 T13 local foundation integration is complete; live acceptance remains T28.
 The accepted [document model](model.md) embeds subjects and artifact identities in
-Production while retaining separate immutable revisions. T14 must map these records
-to the opt-in v1 DTOs explicitly: an artifact DTO is not a collection declaration,
+Production while retaining separate immutable revisions. T14 implements dedicated [persistence schemas](../../../src/lib/server/booklets/documents.ts)
+and date-to-ISO views rather than treating database records as v1 DTOs: an artifact DTO is not a collection declaration,
 and its revision/version fields must not become an independent artifact write fence.
 Production version/fencing governs persistence. No v1 parser changes are made by
-this documentation decision; any breaking public shape requires explicit versioning.
+T14; any breaking public shape requires explicit versioning.
 
 ## Versioning
 

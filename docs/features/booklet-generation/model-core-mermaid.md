@@ -4,16 +4,16 @@
 
 [Canonical model](model.md) ? [Concrete JSON example](model-document-example.json)
 
-The embedded production content index is accepted. Persistence remains T14 work. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
+The embedded production content index and repositories are implemented in T14. Later service work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
 
 Core document boundaries and selected nested fields. Complete details: [complete schema](model-complete-mermaid.md).
 
 ```mermaid
 %%{init: {"theme":"base","themeVariables":{"primaryColor":"#f1f5f9","primaryTextColor":"#172033","primaryBorderColor":"#64748b","lineColor":"#64748b","edgeLabelBackground":"#ffffff"},"flowchart":{"htmlLabels":false,"useMaxWidth":false}}}%%
 flowchart TB
-  Booklet["Booklet<br/>Accepted boundary; T14 pending<br/>_id / ownerId / title / version<br/>currentProductionId? -&gt; Production<br/>createdAt<br/>deletion {"]
-  Production["Production<br/>Accepted embedded index; T14 pending<br/>_id / bookletId / orderId / version<br/>brief {} / creativeConfigSnapshot {}<br/>subjects[] {<br/>  id / kind / label<br/>  artifacts[] {id, kind, currentRevisionId, acceptedRevisionId}<br/>}<br/>stageLocks {} / mutationLease? {}"]
-  Artifact_revision["Artifact revision<br/>Accepted separate immutable document; T14 pending<br/>_id / productionId / artifactId / subjectId<br/>kind / ordinal / contentHash<br/>content {panels[] {lettering[]} or other typed payload}<br/>sources[] / assets[] / provenance {}"]
+  Booklet["Booklet<br/>I: T14 bookletBooks<br/>_id / documentVersion / ownerId / title / version<br/>currentProductionId? -&gt; Production<br/>createdAt / updatedAt<br/>deletion {deletedAt?, recoverUntil?}"]
+  Production["Production<br/>I: T14 bookletProductions; lifecycle T15<br/>_id / bookletId / orderId / version<br/>brief {} / creativeConfigSnapshot {}<br/>subjects[] {<br/>  id / kind / label<br/>  artifacts[] {id, kind, currentRevisionId, acceptedRevisionId}<br/>}<br/>stageLocks {} / mutationLease? {}"]
+  Artifact_revision["Artifact revision<br/>I: T14 bookletRevisions; immutable drafts<br/>_id / productionId / artifactId / subjectId<br/>kind / ordinal / contentHash<br/>content {panels[] {lettering[]} or other typed payload}<br/>sources[] / assets[] / provenance {}"]
   Operation["Operation<br/>Contract; persistence details pending<br/>_id / productionId / subjectId / kind / state<br/>idempotencyKey / inputHash / createdAt<br/>funding {kind, orderId?, allocationId?}<br/>repair? {failedReviewId, outputId, ordinal}"]
   Human_decision["Human decision<br/>Contract; persistence pending<br/>_id / productionId / actorId / runId<br/>submission {formId, submissionId}<br/>action / answerOrInstruction? / submittedAt<br/>targets[] {artifactId, revisionId}"]
   Quality_review["Quality review<br/>Contract; separate review history<br/>_id / productionId / targetRevisionId / operationId<br/>policyRevisionId / disposition / createdAt<br/>inputs {assetIdentity, sourceRevisionIdentities[]}<br/>findings[] {code, severity, message, evidenceRefs[]}"]

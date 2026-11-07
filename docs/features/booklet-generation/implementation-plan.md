@@ -40,7 +40,7 @@ publication/external acceptance gates. No agent delegation is implied.
 | T11 | Unibase | Android TWA purchase, restore and deferred changes | T10 | Imported from Unibase; local verification complete |
 | T12 | Unibase | Commerce administration, preview/readback and refunds | T07,T08,T09,T10 | Imported from Unibase; local verification complete |
 | T13 | Both | Reviewed foundation through normal template integration | T04–T12 | Complete (local foundation integration) |
-| T14 | Unitale | Owned book/production/revision repositories with embedded subjects/artifact index | T01 | Pending |
+| T14 | Unitale | Owned book/production/revision repositories with embedded subjects/artifact index | T01 | Implemented; local verification complete |
 | T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Pending |
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Pending |
 | T17 | Unitale | MCP-only booklet tools | T15,T16 | Pending |
@@ -210,16 +210,37 @@ Bases: Unitale `446a6c3a3412a45680e4aa6d996d7ca89986d0b0`; Unibase
 `7b6086ca2c3f368fe934bbec0afafde9d4292dba`. T01 changes are maintained on the
 work branches above; publication and live acceptance remain separate gates.
 
-Current resume: T01-T12 foundation work is implemented and imported, and T13 local
-foundation integration is verified. T14 (booklet repositories), T18 (specialists)
-and T19 (visual reviewer) can proceed independently. T15/T16 also require T14.
-The integrated booklet product remains incomplete; real provider/store/device
-acceptance remains T28.
+Current resume: T01-T13 foundation work and T14 repository implementation are
+locally verified. T15 (lifecycle) and T16 (original media) can now proceed in parallel;
+T18/T19 remain independently available. The integrated product is incomplete and
+real provider/store/device acceptance remains T28.
 
-T14 uses the accepted [document model](model.md): embed subjects and artifact
-identities/pointers in Production, store immutable revisions separately, and fence
-index writes with the production version. Do not create Subject/Artifact collections
-or independent artifact versions. The [remaining D01-D12 details](model.md#open-questions-and-limits)
-cover bounded persistence, concurrency and downstream integrations. Update the
-example and diagrams with T14 implementation. No Unibase change/import is required
-for this boundary decision. T14 remains incomplete.
+### T14 repository checkpoint
+
+Implemented four Unitale-owned collections: `bookletBooks`, `bookletProductions`,
+`bookletRevisions` and `bookletRepositoryWrites`. The production embeds subjects
+and artifact pointers; there are no separate subject/artifact collections or
+independent artifact versions. Strict persistence schemas are separate from v1
+workflow DTOs. See the [model and remaining integration work](model.md#implemented-and-remaining-decisions).
+
+Owned reads, scoped cursor pagination, order-bound creation, mutation leases,
+monotonic fencing and transactional revision/pointer/idempotency writes are implemented.
+Production/revision BSON defaults are 1 MiB/4 MiB. Manifest records remain unapproved
+drafts; there is no API for approval, charging, stage transitions or completion.
+Creation accepts an existing transaction containing its order. The namespaced
+`booklets:0001-repositories` migration only creates indexes; no existing data is
+converted. No Unibase change/import or live migration was performed.
+
+Verification on 2026-11-07:
+
+- `npm run test:booklet-repositories`: 16 tests pass, including the canonical JSON
+  example, concurrent writes, rollback, replay, ownership, bounds and fencing.
+- Existing booklet contracts, offline compatibility, MCP foundation, migration and
+  legacy artifact revision suites: 32 tests pass.
+- Typecheck, lint, build, documentation, environment, i18n and skill checks pass.
+- Broader `npm test`: 106/107 pass. The pre-existing auth-policy test expects
+  `demo-unibase` instead of Unitale's `demo-unitale`; its source is unchanged from
+  HEAD. This is a baseline test expectation, not a T14 regression.
+- Handbook readiness retains the existing tracking/preference warnings.
+- Final review uses two consecutive same-agent read-only passes; no independent
+  reviewer or delegated review is claimed. Commit/merge remain separately authorized.
