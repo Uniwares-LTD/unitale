@@ -9,23 +9,28 @@ optimization; orchestration changes should normally be confined to Manager.
 
 Status: ownership and delivery decisions below are accepted in the design session
 on 2026-11-08. Technical working decisions and recommendations are distinguished
-below; detailed wire schemas and live feasibility remain open.
+below; selected technical resolutions are now recorded in the package specification.
+Executable schemas and live feasibility remain unimplemented/unverified.
 This document owns workflow-specific decisions, integration gaps and open questions;
 the [PRD](prd.md) owns product requirements, [contracts](contracts.md) describes
 current compatibility, and the existing [delivery plan](implementation-plan.md)
-retains historical milestone context. No new implementation plan is being prepared
-or accepted in this documentation update.
+owns the semantic 01-12 checkpoints as well as historical milestone context.
+The user selected workflow-first delivery with the provider plugin: 01-06 deliver a
+candidate package and detailed app-change handoff, then stop before application changes
+at 07. The local environment and plan are prepared; package implementation starts
+only when explicitly requested in its implementation session.
 Update these sections in place as decisions are made; do not append a session log.
 The [first-package specification](workflow-package-spec.md) expands the operation
 mapping, proposed wire/content fields, Manager behavior, MCP/UI requirements and configuration inputs.
 
 ## Scope and authority
 
-The current session authorizes documentation and read-only investigation only.
-No application, schema, migration, workflow or adapter implementation may begin
-until the user explicitly authorizes implementation. Plan acceptance alone does
-not grant that authorization. Commits, pushes, PR publication, Dify writes/publication,
-deployments and paid execution retain their separate approval gates.
+This handoff authorizes local environment preparation and documentation finalization,
+including commit/push. It creates no package or application implementation. An explicit
+01-06 implementation goal authorizes package-local contracts, workflows, tests and the
+narrow plugin within the delivery plan; app changes require the post-06 gate.
+PR publication, Dify writes/publication, deployment and paid execution retain their
+separate approval gates.
 
 In scope for the eventual delivery: all seven workflows, minimal runtime integration,
 current secret-free exports and a minimum usable flow to start, review,
@@ -173,7 +178,7 @@ resolutions must be checked against the accepted ownership boundary above.
 Booklet changes belong in project extensions. If Run/card/transport extension points
 need reusable core changes, implement them in Unibase and import through reviewed
 template integration. An upstream dependency is not permission to patch copied core
-locally or publish changes. The exact upstream scope remains to be determined.
+locally or publish changes. The selected upstream scope is recorded in A20 of the package specification; implementation and reviewed import remain pending.
 
 ## Contract design working decisions
 
@@ -215,7 +220,7 @@ explicitly marked; technical proposals do not imply user approval or live feasib
   assessments, correction counters and its saved continuation checkpoint. Lists are
   paginated and record bodies use bounded reads; do not return full history by default.
 - Human response lookup is scoped by the authenticated parent Run and stable request
-  identity. It reports pending/submitting/submitted/unknown states and exact target
+  identity. It reports pending/submitted/stale/closed/reconciling states and exact target
   revisions. A submission race must yield pending/reconciliation, not an inferred ID.
 - Reacquire a valid lease/fence after long human or provider waits. Do not hold a MongoDB
   transaction across an external call. Revalidate identities before committing results.
@@ -350,12 +355,12 @@ explicit revalidation of retained content against the exact replacement source s
 with assessment evidence where its policy requires it. App verifies identities and
 product locks, not the creative conclusion. The new lineage/acceptance must be an
 immutable record; the original revision and earlier acceptance remain readable.
-Until this record shape is finalized, current strict source-freshness checks cannot
-be presented as supporting this reuse behavior.
+The package specification chooses a new revision with `revalidatedFrom`; current
+strict source-freshness checks do not yet implement this reuse behavior.
 
-Recommended elapsed-time interpretation: enforce a finite active-execution budget
-and a separate overall expiry; human waiting must not consume model-execution time.
-Name and document the clocks explicitly before altering the existing package field.
+The planned v2 clock contract is defined in the package specification: finite active
+parent-execution time across attempts, excluding human waits/durable pauses, with
+existing entitlement expiry separate. Preserve v1 duration-field semantics.
 Provider deadlines, workflow-step limits, correction counts and currency ceilings
 are different limits and must not be substituted for one another.
 
@@ -378,8 +383,8 @@ project extension to the shared resolver. Do not insert booklet IDs into the Run
 asset route without the corresponding ownership contract. Reusable Run rendering,
 media-resolution or lifecycle hooks belong upstream in Unibase if current extension
 points cannot support them. Booklet routes, view models and product policies remain
-in Unitale. Exact upstream changes are an implementation prerequisite, not yet a
-confirmed capability.
+in Unitale. The selected A20 interface delta is an implementation prerequisite, not
+a claim that those extension points already exist.
 
 ### Closure criteria
 
@@ -409,7 +414,7 @@ existing app's ownership. No console app may be adopted solely from its display 
 The existing server extension contract already supports product-type registration,
 so registering booklet consumption fields belongs in the Unitale extension rather
 than a new commerce framework. Existing Run UI cards and media authorization still
-require an explicit integration design; no extensibility is assumed from comments alone.
+follow A19-A20 of the package specification; no implemented extensibility is assumed from comments alone.
 
 ## Validation and acceptance
 
@@ -436,30 +441,77 @@ Current evidence is limited: administrative Dify reads succeeded on 2026-11-08, 
 the observed `Unitale [staging]` app has `app:unibase-staging` metadata, not verified
 Unitale ownership. Targeted Human Input/Loop/Tool default queries returned empty
 objects (Human Input initially had a transient network failure). This does not prove
-capability absence or successful execution. The offline compatibility command failed
-to start: sandbox subprocess `EPERM`, then missing `tsx` outside the sandbox. Earlier
-documented passing runs are historical, not fresh validation in this checkout.
+capability absence or successful execution. Earlier offline checks were blocked by
+sandbox `EPERM` and missing dependencies. Environment preparation on 2026-11-08 resolved
+the local setup: all 11 existing compatibility tests and typecheck now pass outside
+the sandbox. The delivery plan records current tooling/check evidence; none proves
+new candidate graphs or deployed composition.
 
 ## Open questions and limits
 
-| Decision or proof still needed | Resolution owner / blocked work |
-| --- | --- |
-| Review detailed service/content definitions | Defined in the [package specification](workflow-package-spec.md); executable schemas follow implementation authorization |
-| Manager acceptance vs human-response vs assessment records and compatibility | Defined in the package specification; preserve v1 readers and do not reinterpret or silently migrate historical records |
-| Usage evidence and safeguard integration | Policy settled: Manager controls dispatch; app records actual/estimated/unknown usage and applies per-production safeguards; verify evidence ingestion |
-| Manager-owned quality/correction policy snapshot across continuation | Defined in the package specification; immutable chain bindings, no counter reset; implementation pending |
-| Source-change revalidation without rewriting provenance | Proposed new revision with retained content hash, replacement sources and revalidation lineage; implementation pending |
-| Human response transport, booklet image display and Run extension points | Existing raw response contract identified; domain admission, readable bounded cards and media resolution changes itemized in the package specification |
-| Compatible provider/tool or narrow adapter, with no Booklet callbacks or child app access | Technical investigation; blocks target graph construction dependent on that contract |
-| Owned staging Manager creation path, managed MCP permissions and effective child bindings | User/operator plus read-only evidence; blocks registration/publication |
-| Real nested calls, Human Input, native files and bounded control on deployed Dify | Separately authorized staging feasibility probe; blocks claims of composition readiness |
-| Verify reference-model settings/capabilities; select acceptance brief/package, languages and finite spend | Reference models selected; user/operator approves activation and paid cases, with no inferred spend |
+### Implementation-readiness audit
 
-Before paid/live work, prepare the exact proposed target, configuration, probe and
-finite budget for approval. Publish/read back children and synchronize their Workflow
-Tools before Manager composition/registration. Pinning Manager does not transitively
-pin children. Preserve accepted/in-flight identities and verify affected behavior after
-tool updates. Exports must match actual publications, not merely current drafts.
+**Status: technical resolutions selected and documented; implementation and target
+verification pending.** The selected workflow-first order is
+[01-12](implementation-plan.md#issue-10-deliverables-and-dependency-map), replacing the
+application-first C0-C10 sequence. 01-06 author/validate candidate workflows against
+package-local contracts; 07-12 implement the app and establish integrated/live proof.
+This register records design resolution, not completed implementation, executable
+schema validation or compatibility evidence. No implementation is authorized by this
+update. The [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22)
+is canonical for the detailed resolutions.
+
+A IDs are design findings; G01-G17 remain implementation gaps; E1-E6 remain evidence
+and setup gates. A resolved design can still depend on a failed/unrun probe before
+its final target binding is usable. Do not describe the entire package as ready for
+unattended staging execution solely because this table is populated.
+
+| ID | Original gap and selected resolution | Canonical contract | Implementation / proof |
+| --- | --- | --- | --- |
+| A01 | Freeze strict v2 envelopes, item/batch status, persisted kinds/subjects, null rules and code-point lettering spans; balanced optional creative detail | [Wire/content](workflow-package-spec.md#a01-a03---wire-storage-and-identity) | 01 contracts; 03-05 workflow fixtures; 07 runtime schemas |
+| A02 | Explicit record/index map; separate repeated assessments from unchanged v1 quality uniqueness; versioned reads and rollback | [Storage](workflow-package-spec.md#a01-a03---wire-storage-and-identity) | 01/06 storage proposal; 07 migration/read tests |
+| A03 | App-issued stable IDs, local-key remap before persistence, exact canonical projections and Unicode/order vectors | [Identity](workflow-package-spec.md#a01-a03---wire-storage-and-identity) | 01 cross-runtime vectors; 03-05 remap fixtures; 07 persistence |
+| A04 | Nineteen v2 tools; dispatch/observation/checkpoint ownership, scoped cursors, permissions and fences | [MCP](workflow-package-spec.md#a04---mcp-transition-ownership) | 01/05 proposed tool fixtures; 09 actual handlers |
+| A05 | Idempotent queue-order then production then start/enqueue sequence; existing unbound abandonment and bound release | [Admission](workflow-package-spec.md#a05-a07---admission-and-crash-recovery) | 01/06 admission handoff; 09 boundary fault tests |
+| A06 | Lost parent is not terminated; unknown child allows independent same-parent work; partial recovery uses checkpoints, successful-result application remains separate | [Recovery](workflow-package-spec.md#a05-a07---admission-and-crash-recovery) | 05 partial/unknown fixtures; 09-10 actual recovery |
+| A07 | Durable dispatching before paid node; late evidence resolves unknown; call/item separation and no blind replay | [Dispatch](workflow-package-spec.md#a05-a07---admission-and-crash-recovery) | 02/05 dispatch fixtures; 09 crash/partial-output tests |
+| A08 | Adapter receipts through Manager and verified observer; lost evidence stays unknown, known execution survives retention failure; no durable Dify spool | [Trusted evidence](workflow-package-spec.md#a08-a09---trusted-receipts-and-effective-usage) | 02 receipts/probes; 05 fixture observer; 08-09 verified runtime path |
+| A09 | One effective amount per call, actual over estimate, explicit conflicts/currency, late observation lifecycle and active-time union | [Accounting](workflow-package-spec.md#a08-a09---trusted-receipts-and-effective-usage) | 01/05 accounting fixtures; 09 clocks/duplicates/late-cost tests |
+| A10 | Target/family/allocation correction roots; dispatch increment, proven no-dispatch release, grouping/candidate/resume rules | [Corrections](workflow-package-spec.md#a10-a12---corrections-revalidation-and-retention) | 01/03-05 counter fixtures; 07/09 durable transactions |
+| A11 | Immutable same-content/assets revalidation; new sources/acceptance; no locked creative-change bypass | [Revalidation](workflow-package-spec.md#a10-a12---corrections-revalidation-and-retention) | 01/05 revalidation fixtures; 07/09 source/lock tests |
+| A12 | Restricted trusted retention/reconciliation after cancellation/expiry/refund; no new entitlement or revived capability | [Retention](workflow-package-spec.md#a10-a12---corrections-revalidation-and-retention) | 05 restricted-recovery fixtures; 09 capability/cleanup tests |
+| A13 | Remove stateful file utility; native MCP image content inbound and restricted Dify downloader outbound | [Files](workflow-package-spec.md#original-byte-transfer-protocol) | 02 provisional probe; 08-09 native bridge; 11-12 final round trip |
+| A14 | Explicit candidate 8 MiB image/256 KiB carrier bounds; sectioned JSON, bounded role context and paginated history; transport bytes and model budgets measured separately | [Transport bounds](workflow-package-spec.md#original-byte-transfer-protocol), [context](workflow-package-spec.md#a17-a18---manager-control-and-reviewer-coverage) | 01 bounds; 02/04/06 capacity fixtures; 11-12 target measurement |
+| A15 | Immutable suite-specific app/tool identities with explicit publication bindings; check admission/resume, preserve old suites | [Pinning](workflow-package-spec.md#a15-a16---immutable-suite-bindings-and-provenance) | 02 disposable binding probe; 06 slots; 12 paused-old-suite evidence |
+| A16 | Narrow provider adapter, reference mapping, zero retries; validate actual graph parameters, empty/native files and credentials; select final answer before validation | [Adapter](workflow-package-spec.md#graph-conventions-and-technical-dependency-boundary), [provenance](workflow-package-spec.md#a15-a16---immutable-suite-bindings-and-provenance) | 02 adapter/ABI; 03-06 actual graphs; 12 installed-host evidence |
+| A17 | 64-action/64 KiB bounds and operational-state precedence; reuse by call identity, intentional identical-input candidates allowed; bounded no-progress detection | [Manager](workflow-package-spec.md#a17-a18---manager-control-and-reviewer-coverage) | 01 action table; 05 same-call/candidate/pending-work journeys |
+| A18 | Exact artifact/source coverage, per-kind dimensions and cover criteria; four-page windows and recurring-subject comparisons | [Reviewer](workflow-package-spec.md#a17-a18---manager-control-and-reviewer-coverage) | 03-04 calibration fixtures; 05 coverage orchestration; 12 actual pixels |
+| A19 | Request/attempt/presentation/revision/form correlation; first valid authentic submission; paged cards and UI states | [Human/UI](workflow-package-spec.md#a19-a20---human-correlation-and-minimal-upstream-seams) | 01/05 correlation fixtures; 10 browser/race tests; 12 actual resume |
+| A20 | Minimal optional domain/client/MCP/file/observation seams upstream; Unitale owns booklet routes and policies | [Upstream delta](workflow-package-spec.md#a19-a20---human-correlation-and-minimal-upstream-seams) | 01/06 precise handoff; 08 reviewed import and generic fallback tests |
+| A21 | Harness loads seven actual exports/Code nodes; string carrier tests; synthetic v1 harness remains regression-only | [Export verification](workflow-package-spec.md#a21-a22---actual-export-verification-and-configuration-ownership) | 03-06 actual candidate YAML/Code tests; 11 app integration |
+| A22 | Separate 02 provisional probes from final reruns; configuration ownership, explicit capacities, numeric live caps | [Configuration](workflow-package-spec.md#a21-a22---actual-export-verification-and-configuration-ownership), [plan](implementation-plan.md#issue-10-deliverables-and-dependency-map) | 02 provisional probes; 06 candidate evidence; 11-12 final gates |
+
+Remaining gates are concrete verification and operator inputs: dependency baseline,
+target-runtime behavior, reviewed upstream import, owned Manager registration,
+publication readback and finite paid acceptance. Product capacities and deployment IDs
+must be supplied/verified at their named gates; this document invents neither launch
+packages nor spending authority. Existing model choices, optional human review policy,
+Manager-only gateway and safeguard ownership are not reopened.
+
+The [agentic-poc lessons audit](https://github.com/karpishe-experiments/agentic-poc/blob/587f1b7775e316f4c58461dd3fda773af6d5dc2e/docs/accepted/2026-09-27_dify-booklet-runner/LESSONS-LEARNED.md)
+refines these selected designs, not the seven-workflow architecture. Reuse Unitale's
+terminal-evidence recovery, media retention and success-only result application;
+keep partial work in Manager checkpoints. Separate execution, output validity and
+retention outcomes. No new scheduler, Dify-local receipt store or app-owned creative routing is
+selected. Receipt-loss handling promises safe uncertainty/no replay, not recovery of
+data Dify never exposed. The [delivery plan](implementation-plan.md#issue-10-deliverables-and-dependency-map)
+assigns targeted probes/regressions to 01-12; compatibility and live acceptance remain
+pending, and clean journeys cannot be replaced by repaired historical evidence.
+
+A bounded authorized 02 prototype can obtain missing evidence before production
+integration exists. Do not demand final 11/12 evidence to authorize the prototype,
+or mistake prototype success for final-target proof. Any discovered incompatibility
+must be recorded and resolved before dependent binding work proceeds.
 
 ## Sources and maintenance
 
@@ -469,7 +521,7 @@ tool updates. Exports must match actual publications, not merely current drafts.
 
 Keep accepted decisions, proposals, code observations and live evidence distinct.
 Record new decisions here and reconcile PRD/contract/model implications. The existing
-delivery plan records that new implementation planning is deferred. Do not mark a gap resolved without implementation or
-verification evidence. Future exports belong in `workflow-package/` with one current
+delivery plan defines 01-12 checkpoints and explicit execution gates. Do not mark G
+implementation gaps complete or E evidence gates passed without their required proof. Future exports belong in `workflow-package/` with one current
 secret-free DSL and README per workflow plus root README/provenance manifest; no
-placeholder export is created during this documentation-only phase.
+placeholder export is created during this environment/documentation handoff.

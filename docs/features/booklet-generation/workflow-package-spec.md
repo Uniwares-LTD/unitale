@@ -7,7 +7,8 @@ and integrate it. This is a documentation-only requirements specification, not w
 DSL, executable schemas or proof of live compatibility. The accepted
 [workflow design](workflow-design.md) owns policy decisions; this document owns
 the detailed proposed contracts and configuration inputs. This document records
-requirements and decisions, not an implementation plan; sequencing is deferred. Package release 1 uses new v2
+requirements and decisions; the [delivery plan](implementation-plan.md#issue-10-deliverables-and-dependency-map)
+owns sequencing, checkpoints and verification. Package release 1 uses new v2
 contracts where necessary; package version and wire-schema version are independent.
 
 ## Scope
@@ -20,15 +21,20 @@ calls or shared-plugin changes are authorized by this document.
 
 ## Acceptance
 
+The [readiness register](workflow-design.md#implementation-readiness-audit) maps
+A01-A22 to the technical resolutions below. These are selected implementation
+requirements, not executable schemas or evidence that staging compatibility passed.
+The environment/plan handoff does not start package implementation. Checkpoints 01-12 in the
+[delivery plan](implementation-plan.md#issue-10-deliverables-and-dependency-map)
+deliver the local candidate package at 06, then gate application changes at 07 and live acceptance at 12.
+
+- [x] Service boundaries, technical decisions and verification gates recorded.
 - [x] Every reference responsibility has a target operation or explicit exclusion.
-- [x] Structured content, identities, review coverage and execution outcomes have
-  defined semantics, including parallel-compatible item accounting.
-- [x] Manager behavior is specified for creation, clarification, review, correction,
-  resume, revision and recovery; execution is not yet implemented.
-- [x] App updates and candidate reusable Unibase dependencies are identified.
-- [ ] Actual provider/file/child/Human Input feasibility is recorded separately.
-- [ ] Generated exports have exact bindings, secret-free provenance and acceptance
-  fixtures; configured publications and paid acceptance require separate approval.
+- [x] Manager owns orchestration, quality policy and optional human checkpoints.
+- [ ] Package-local schemas, provider plugin and seven candidate workflows implemented (01-06).
+- [ ] Application contracts, migrations, gateway and Run UI integrated (07-11).
+- [ ] Actual provider/file/child/Human Input feasibility verified on the target.
+- [ ] Current secret-free exports match publications and paid acceptance evidence.
 
 ## Source-to-service mapping
 
@@ -87,7 +93,7 @@ copy internal database documents or Dify credentials into child inputs.
 
 The result echoes invocation and input binding, then returns item outcomes with
 `itemId`, `status`, proposals, evidence/receipt references and limitations. Statuses:
-`succeeded`, `needs_input`, `invalid_input`, `failed`, `unknown`. Missing scope is
+`succeeded`, `partial`, `needs_input`, `invalid_input`, `failed`, `unknown`. Missing scope is
 explicit; a batch envelope cannot turn absent items into success. `needs_input`
 describes missing facts/conflicts for Manager, not a child-issued human question.
 Errors include machine-readable code and a bounded diagnostic; no automatic retry
@@ -244,8 +250,8 @@ revision has its own purchased allocation, not a disguised platform correction.
 For grouped work, retain per-target coverage and counters rather than resetting the
 whole group after one failed item. Do not interpret a reviewer score as authorization.
 
-Returning to a paused Run resumes its existing Dify execution when valid. A terminal
-or lost workflow requires a new bound attempt with the same production, accounting
+Returning to a paused Run resumes its existing Dify execution when valid. Only verified
+termination/release permits a successor attempt with the same production, accounting
 scope and durable checkpoint, using booklet admission rather than generic restart.
 Unknown paid work is reconciled before replay. Cancellation stops new dispatch and
 requests provider/Dify cancellation where supported; already incurred costs and
@@ -259,13 +265,13 @@ selection, never a human approval. Store immutable decisions and a current selec
 pointer. Human responses retain authenticated actor, request/presentation identity,
 displayed revisions, raw response and submission timestamp independently.
 
-For source changes, retain old content/provenance. Recommended representation is a
+For source changes, retain old content/provenance. The planned representation is a
 new revision with unchanged content hash but explicit new source identities and a
 `revalidatedFrom` link to the original revision; Manager acceptance selects it.
 Manager supplies the revalidation reason and evidence. This avoids retroactive
-lineage edits and works with immutable revision readers. It still needs an explicit
-v2 schema and rules allowing platform correction/revalidation without customer
-revision consumption. App checks product locks and funding, not creative impact.
+lineage edits and works with immutable revision readers. A11 below fixes the same-content/
+asset and lock rules for its v2 implementation. Platform correction/revalidation does
+not consume customer revision allocations; app checks locks/funding, not creative impact.
 
 ## App, MCP and UI change inventory
 
@@ -294,7 +300,7 @@ catalogs on the new Manager merely for convenience. No new public tool endpoint.
 | `record_acceptance` | apply_decision conflates approval | Explicit Manager selection; no human fabrication |
 | `checkpoint` | Missing | Opaque versioned Manager state with fencing |
 | `complete` | complete | Structural manifest, selected revisions, ownership and bytes; remove pass/approval gates |
-| `execution_status` | Incomplete | Record bounded step/time consumption and pause/terminal intent without scheduling work |
+| `execution_status` | Incomplete | Read observer-recorded step/time consumption and execution facts; no writes or scheduling |
 
 ### Usage accounting and safeguards
 
@@ -327,40 +333,66 @@ does not constitute a v1 readiness blocker under the accepted policy.
 
 ### Original-byte transfer protocol
 
-Keep app calls in Manager and binary conversion in a deterministic file utility
-with no application credentials. Proposed inbound path: Manager resolves exact
-sources, reads verified chunks through MCP, passes bytes plus manifest to the
-utility, verifies whole-file hash/length, then supplies resulting Dify native files
-to children in the recorded order. Outbound path: child returns native output files
-and receipts; Manager's utility reads original bytes and hashes them, Manager writes
-the chunks through MCP and obtains verified retention/attachment receipts.
+A13-A14 select native MCP image content and the existing restricted Dify downloader;
+there is no stateful chunk-materialization plugin or eighth workflow.
 
-The utility never generates images and never fetches arbitrary model-selected URLs.
-It must support bounded buffering/staging and retryable materialization by immutable
-hash. Dify file IDs/URLs are transient handles, not source identities. Expired handles
-are recreated from retained bytes; they do not trigger regeneration. Persist generated
-originals promptly before optional human waits and do not assume provider files live
-as long as the production. If byte retention fails after generation, checkpoint the
-original execution/file handles and reconcile; never repeat generation to fix storage.
+Inbound: Manager calls `sources` for one exact original; Unitale returns metadata
+and MCP image content, which Dify materializes as a native file. Manager supplies
+files to children in the recorded order. Outbound: Manager passes the returned native
+Dify tool-file handle to `retain_original`; Unitale verifies its configured origin,
+restricted path, signature fields, MIME, byte length, dimensions and hash before
+retention. No arbitrary URL fetch, child callback or normalized substitute is allowed.
+The reusable MCP content extension and downloader extraction originate in Unibase.
 
-Existing limits are 8 KiB chunks, 4 MiB revision JSON, 1 MiB per evidence record and
-64 MiB image transfer. The revision transfer must include all source/asset metadata.
-Negotiate larger chunks only within verified MCP/Dify payload and memory limits;
-no hardcoded 100-item manifest cap. Until changed, account for actual chunk overhead:
-1 MiB needs 128 data calls each direction, and 64 MiB needs 8,192. This affects step,
-time and rate budgets and may make current transport infeasible for a package.
-Record an empirical maximum and reject unsupported packages before purchase/admission;
-never truncate data. Existing generic Run image download supports a restricted Dify
-tool-file path but is not yet an intermediate booklet native-file bridge.
+Dify 1.17.1's [MCP implementation](https://raw.githubusercontent.com/langgenius/dify/1.17.1/api/core/tools/mcp_tool/tool.py)
+converts image content into blob messages. This is source evidence for the design,
+not a successful deployed round trip. Metadata may appear in structured/text output;
+do not duplicate image base64 in both representations when accounting response bytes.
+
+| Candidate transport bound | Value |
+| --- | --- |
+| Inbound original per MCP response | One image, 8 MiB |
+| MCP request / tool result / total response | 1 / 16 / 24 MiB |
+| Child request or result JSON carrier | 256 KiB UTF-8 |
+| Document/evidence transfer chunk | 64 KiB decoded |
+| Persisted revision | Existing 4 MiB |
+| Manager checkpoint | 64 KiB |
+
+These are explicit candidate execution-profile settings, not current deployed
+configuration or universal product limits. Preserve the existing larger storage
+capability; enable only package/profile combinations proven to fit transport and
+provider capacity. Never shrink an accepted package or resize originals to fit.
+
+Large documents use ordered sections with an assembly identity, section position,
+content hash and a final complete-part manifest. Manager supplies bounded sections;
+Unitale assembles and validates the full revision, including sources/assets/provenance.
+Only ordered sequence fields such as manuscript units, outline beats and layout pages
+are partitioned; a scalar field must fit its field/carrier bounds. No partial assembly
+becomes an accepted revision. Dify never reconstructs a 4 MiB document in one Code
+output. Retain bounded transfer for JSON; do not use thousands of 8 KiB image calls.
+
+Recreate expired inbound handles from retained original bytes. Retain generated
+originals before human waits. After generation/storage failure, save the execution and
+file identities and retry retention only; unavailable evidence becomes unresolved,
+never permission to regenerate. E2 measures two distinct PNGs, configured maximum
+reference sets, 8 MiB boundary files, large JSON sections and over-limit rejection.
+Require exact hash/order preservation and completion within configured step/time
+limits before enabling capacity. No throughput or 64 MiB transport claim is made.
 
 ### Operation lifecycle and error handling
 
-Work item state is separate from the production and Dify Run state:
-`registered -> dispatched -> succeeded | failed | unknown`. Registered work may
-be cancelled before dispatch; a timeout after dispatch is unknown unless trusted
+Paid-call state is separate from item outcomes and production/Dify Run state:
+`registered -> dispatching -> succeeded | failed | unknown`. Persist dispatching before
+the paid node; registered work may be cancelled before dispatch. A timeout is unknown unless trusted
 evidence establishes a terminal failure. Output retention and revision attachment
 are separately idempotent steps after execution. Result success does not imply
 creative acceptance, and attachment failure does not imply provider failure.
+
+Keep execution outcome, output validity and retention outcome distinct within these
+existing contracts, not a new generalized state machine. Dify workflow success alone
+does not establish usable content. Select the provider's final answer before schema
+validation; do not concatenate commentary/reasoning or salvage truncated JSON. Preserve
+verified usage and refusal/incomplete diagnostics even when no usable proposal exists.
 
 | Condition | Contract response | Manager behavior |
 | --- | --- | --- |
@@ -412,6 +444,135 @@ explicit domain-version check for v2 instead of bypassing that service.
 
 ## Dify construction and configuration inputs
 
+### Graph conventions and technical dependency boundary
+
+Use a JSON string named `request` and an explicitly ordered native-file collection
+named `references` for child Start inputs; End returns JSON string `result` plus
+native `files`. This is the chosen transport encoding, not a model-specific service
+schema. Pair each file position with its immutable manifest entry and every output
+with its unique output key. Validate and unpack only fields needed at a node; keep
+large nested content in the bounded JSON carrier. Do not depend on undocumented
+automatic nested-object coercion in Workflow Tools. Checkpoint 02 probes actual wrappers and
+records the selectors needed to carry these values without altering their semantics.
+
+Use native structured model output where supported and validate the parsed result
+against the operation schema. Provider/model compatibility includes that capability;
+do not interpret an arbitrary free-text answer as a trusted result. Dify Code nodes
+perform pure validation, hashing, routing and serialization. They are not file or
+network workers. The official [Code documentation](https://docs.dify.ai/en/cloud/use-dify/nodes/code)
+describes sandbox restrictions and output bounds; verify the deployed bounds instead
+of copying cloud limits into a product contract.
+
+Use [Iteration](https://docs.dify.ai/en/cloud/use-dify/nodes/iteration) for explicit
+independent item sets, serial initially. Preserve failed-item slots and pack explicit
+outcomes; never use removal of failed results to make a partial group look complete.
+Use [Loop](https://docs.dify.ai/en/cloud/use-dify/nodes/loop) only in Manager for
+dependent progression/correction, with both an explicit stop condition and a maximum
+count. Checkpoint before reaching the bound and return partial with a resume reason.
+Loop bounds protect execution; durable correction counters separately protect the
+creative task across Runs. Do not use the documentation's example quality score as
+a quality policy. These are design choices based on official node semantics, not
+proof that the installed version executes the proposed composition.
+
+The selected execution dependency is a separately owned
+`unitale/provider-execution` plugin, initial version `0.1.0`, under
+`dify/plugins/provider-execution/`. Its text/vision and image tools accept plain
+Dify-authored requests/native files and return parsed content, original native files
+and deterministic receipts. No creative templates, Unitale endpoints, private Run
+context, progression or automatic paid retries belong in it. Do not modify the
+installed experiment packages. This selects a narrow adapter rather than leaving
+an implementer to choose a provider framework.
+
+Candidate build baseline: Python 3.12, `dify-plugin==0.11.0`; lock transitive
+dependencies during the authorized build and prove compatibility before installation.
+[SDK metadata](https://pypi.org/pypi/dify-plugin/json) establishes package availability,
+not compatibility with the target daemon. Text uses the published Responses request
+mapping; images use the published generation/edit mapping. Preserve the selected
+reference models/settings below as configuration, not service-contract enums.
+HTTP/SDK/node retries are zero. Initial text/image request deadlines are 120/270
+seconds; configured Dify tool/parent deadlines must accommodate them and packaging.
+
+Before paid journeys, validate actual generated graph parameters against the installed
+adapter/host: required request and structured-output settings, JSON carriers, ordered
+native files, empty reference conversion and credential-provider binding. Cover every
+operation, including Reviewer and report-producing paths; a successful first image
+does not prove the later nodes. Checkpoint 02 establishes disposable bindings where authorized; 06 checks candidate exports and 11/12 repeat
+the checks on actual candidate/publication exports. Record version-specific findings;
+do not hard-code an experiment's provider-type workaround as a portable contract.
+
+Adapter receipts contain call/input/request IDs and hashes, dispatch state,
+requested/observed model, nullable provider request ID, usage and its basis, timing,
+output keys/hashes and sanitized failure information. Provider usage plus calculated
+pricing is an estimate, not provider-reported cost. Model-written content cannot
+populate the receipt. Each adapter execution handles its explicit call; focused
+workflows can execute several Manager-supplied calls without changing contracts.
+
+Each model/tool call carries a Manager-assigned work identity. Observed execution
+identity comes from Dify/provider execution evidence, not an LLM echo. A child may
+return several call receipts and several output items; they are separate arrays.
+Invocation/result input hashes and item IDs prevent accidental cross-assignment.
+Disable automatic retries at every paid layer, including provider SDK settings,
+tool nodes, HTTP nodes and outer workflow retry policy. Known failure can return to
+Manager; lost dispatch remains unknown. Infrastructure may redeliver an observation,
+but must not turn that redelivery into another paid call.
+
+Manager supplies the permitted call scope/settings in `executionConstraints` before
+invocation. Children do not invent an unbounded paid plan: an operation exceeding
+that scope returns a capacity/missing-scope result to Manager. The first package
+normally uses one paid execution for a scoped item, while the envelope permits
+multiple explicitly authorized calls and output items. Manager reasoning and review
+are also registered paid work; bootstrap/context retrieval and deterministic routing
+do not require an unrecorded planning call. This is Manager policy and call accounting,
+not a permanent one-call service restriction.
+
+### Concrete runtime record and UI decisions
+
+- Keep v1 and v2 domain bindings distinct. Select the parser/catalog from the accepted
+  binding, not from whichever schema is newest. V2 records use a version discriminator;
+  application-phase migrations (07) create indexes/optional storage fields without changing v1
+  acceptance history. A user returning to v1 uses its original contract; creating a
+  new v2 production from owned old sources requires explicit validated copying and
+  provenance, not reinterpreting v1 JSON as v2. Automatic conversion is not required.
+- Store usage evidence append-only. The effective-cost projection groups by production
+  and stable call identity, selects reported cost when available, else an estimate
+  using the snapshotted pricing basis, else unknown. A09 defines conflicts and refinement.
+  A receipt duplicate with the same hash
+  is a no-op; the same evidence identity with changed bytes is a conflict. A later
+  observation has a new evidence ID linked to the same call. Parent summary amounts
+  remain diagnostic when their leaf calls are included. Use decimal currency amounts,
+  never floating point; reject mixed-currency addition rather than inventing exchange
+  rates. Store estimate basis/pricing revision and reported currency explicitly.
+- Booklet admission exposes `create`, `continue` and `revise` intents through the
+  existing Run start/detail surface. `create` supplies the brief and a published
+  booklet consumption product identified by `catalogId`, `revision` and the confirmed
+  `quoteHash`, plus an idempotency key. Purchase offers fund credits and are not
+  booklet admission inputs. Revalidate the publication and capacity server-side
+  through existing `queueConsumption` admission before charging/dispatch;
+  `continue` supplies an owned production; `revise` additionally supplies the scoped
+  user request and existing purchased allocation/quote confirmation as applicable.
+  Browser-supplied order/owner/price/allowance claims are not authority. Repeated
+  idempotency keys must return the original result or conflict on different inputs.
+- Readable review cards identify exact revision/request IDs and load bounded pages
+  through authorized server resolvers. A display page cursor is bound to owner and
+  immutable revision so edits cannot silently change the reviewed content. Keep raw
+  human response separate from Manager interpretation and actual financial consent.
+  No extra chatbot, editor, gallery workspace or arbitrary component execution.
+- Short leases protect mutation only. Never hold a lease across provider work or
+  human waits. Register dispatch/source identities under the fence, release, then
+  reacquire and compare before attachment/selection. Retain stale outputs as evidence;
+  Manager decides whether to reuse/revalidate. This supports future independent
+  concurrency without adding parallel scheduling in v1.
+- V2 names its duration allowance `maxActiveExecutionSeconds`. Accumulate trusted
+  active parent-execution intervals across attempts, excluding recorded Human Input
+  waits and durable pauses; do not sum nested child durations again. Unknown interval
+  boundaries remain unresolved, not zero. A new attempt does not reset consumption.
+  Product `expiresAt` remains the separate entitlement wall-clock boundary; do not
+  invent a new mandatory expiry. Provider request deadlines and per-attempt Dify
+  node/loop limits remain distinct suite settings. Preserve v1 `maxElapsedSeconds`
+  semantics for v1 bindings; no silent reinterpretation of purchased snapshots.
+  Verify long human waits, resumed active time, unknown termination and overlapping
+  child calls with fake clocks before live acceptance.
+
 Each child graph follows Start -> validate operation/input -> scoped branch -> Dify
 prompt/request construction -> authorized execution where paid -> validate and pack
 result -> End. Manager alone contains human interaction, scheduling and correction
@@ -419,20 +580,21 @@ loops. Disable automatic retries around paid nodes; retained-byte storage retrie
 separate. Disable HTTP-node default retries explicitly if that node is used for paid
 dispatch. Never send private `runContext` through a code node or child parameter.
 
-Use a JSON-string envelope plus separate native-file input/output collections if the
-deployed Workflow Tool cannot preserve nested structured values. Canonical envelope
-semantics stay the same across this transport encoding. Verify actual wrapper output
+Use the JSON-string envelope plus separate native-file input/output collections
+defined above. Canonical envelope semantics stay the same across this transport
+encoding. Verify actual wrapper output
 types, file propagation and size limits before freezing DSL node selectors.
 
 Reuse the existing app-facing Run result envelope independently of the child v2
 contract: version 1, success/partial/failed outcome, bounded text/cards, optional
 checkpoint and failure. Manager's End output reports retained manifest/result
 identities, not an inline book or duplicate base64 originals. A partial/paused outcome
-must not falsely call `complete`. Choose one converged End node or globally unique
-output names compatible with the existing parser.
+must not falsely call `complete`. Use one converged End node with the app parser's
+`result` name; internal branches produce the same discriminated result shape.
 
-For Human Input, the local [UI decision example](../../../dify/orchestrators/ui-decision.yaml)
-and Run templates provide a concrete node shape: WebApp delivery, one paragraph
+For Human Input, the current [JSON Run templates](../../../src/lib/server/runs/templates/README.md)
+are the canonical local source; historical YAML is not a new binding authority.
+Use the verified node shape: WebApp delivery, one paragraph
 input named `response`, `continue` action and the literal output placeholder used
 by the Generative UI envelope. `raw-v1` accepts at most 4,000 response characters;
 long displayed artifacts use bounded views, not an enlarged reply blob. Manager
@@ -494,10 +656,439 @@ Read-only Workflow Tool lookup for the reference J01 app on 2026-11-08 returned
 it supplies no existing nested-tool schema to copy and does not prove that Dify
 cannot expose the target service as a Workflow Tool.
 
+## Technical resolutions for A01-A22
+
+This section freezes the technical choices requested after the readiness audit.
+The sections above own creative semantics and source mapping; these definitions own
+wire precision, state transitions and integration deltas. All are proposed v2 behavior,
+not descriptions of existing v1 code. E1-E6 remain unpassed until actual evidence exists.
+
+### A01-A03 - Wire, storage and identity
+
+Strict v2 request fields are `contractVersion: 2`, `service`,
+`serviceContractVersion`, `invocationId`, `operationId`,
+`publicationBinding`, `inputHash`, `items`, `sources`,
+`references` and `executionConstraints`. Existing ID syntax remains
+ASCII, 1-128 characters; hashes are lowercase 64-character SHA-256. Schema versions
+are positive integers; deployment/configuration revisions remain distinct identities.
+
+Each item has a unique `itemId`, operation, `intent: create | revise`,
+subject/target binding, typed operation input, constraints and feedback. Revision
+intent additionally requires its baseline revision and scoped feedback. Required
+source roles are those in the source-to-service table; missing roles produce
+`invalid_input` or `needs_input`, never implicit current/latest lookup.
+`executionConstraints.calls` declares call IDs, covered item IDs, configuration
+binding and permitted output counts. Children may execute several explicit calls;
+they cannot invent additional calls or downstream services.
+
+Result fields echo invocation/input binding and contain separate item outcomes,
+proposals, call receipts, file/output keys and limitations. Exactly one outcome is
+required per input item; duplicate, missing or unknown item IDs fail validation.
+Item statuses are `succeeded | partial | needs_input | invalid_input | failed | unknown`.
+Batch status is the common status when all items agree, otherwise `partial`.
+Every returned original maps to one call/output key; each selected image revision
+identifies exactly one original. A call can return multiple outputs; item success
+requires its requested output scope, not merely one successful sibling.
+
+Omitted optional fields mean not supplied; null is reserved for explicitly unavailable
+execution facts. Empty lists are meaningful, not absent data. Retain the existing
+65,536-character individual text bound and enforce aggregate byte limits separately.
+Do not trim exact visible text. Text-span offsets are zero-based half-open Unicode
+code-point offsets. Required spans cover source text once, in order, with no gaps or
+duplication. Lettering aliases migrate to existing `sound-effect`/`in-scene`.
+Optional regions use integers on a normalized 10,000-unit canvas with positive width/
+height and no overflow; preserve v1 float-region parsing separately.
+
+| Persisted v2 kind | Subject | Required content |
+| --- | --- | --- |
+| concept | book | title, premise, audience, tone, requirements |
+| outline | book | summary; ordered beat IDs, descriptions, subject references |
+| description | character/location | name, narrative role/purpose, description, established facts, continuity constraints |
+| roster | book | ordered character IDs and location IDs |
+| manuscript | book | ordered unit IDs, action, subjects, exact text items with IDs/kind and applicable speaker |
+| style | book | direction, reusable style text, lettering direction, exclusions, continuity constraints |
+| image-spec | sample/character/location | image kind, purpose, required features, style/source bindings |
+| book-layout | book | ordered page/panel IDs, text routing, canvas, reading direction |
+| page-spec | page | layout binding, ordered compositions, subjects, exact lettering or no-text |
+| reference | sample/character/location | prepared-request identity and one retained original |
+| page-image | page | prepared-request identity and one retained original |
+| book-manifest | book | title/language, ordered selected pages, Manager acceptance references |
+
+Use existing subject kind `style-sample` for samples; only `page` has a
+cover/story role. Optional palette, lighting, emotional beats and similar creative
+fields remain optional. Do not add print/bleed units or mandatory design taxonomies.
+
+| Collection/record | V2 change and uniqueness |
+| --- | --- |
+| Existing books/productions/revisions/assets | Version-discriminated readers; retain embedded subject/artifact index and immutable revisions/originals |
+| bookletGenerations | V2 per-call dispatch/item/output bindings and effective-usage projection; unique owner/production/operation/call |
+| bookletReviewRequests | Versioned request/presentation and authentic decision correlation; unique request identity |
+| bookletServiceWrites | Idempotency receipts including admission recovery; same key/input returns original result |
+| Production checkpoint/current pointers | Bounded checkpoint under production version/fence; history remains separate |
+| New bookletAssessments | Immutable repeated scoped assessments; unique owner/production/assessment ID; indexed target history |
+| New bookletAcceptances | Immutable Manager selections; unique owner/production/acceptance ID |
+| New bookletCorrectionChains | Durable target/family/allocation counters; unique owner/production/target/family/allocation |
+
+Keep v1 `bookletQualityReviews` and its unique target index unchanged. Add indexes
+for unresolved calls, target history and request state. New unique indexes on shared
+collections use v2 partial filters, so missing v2 keys on historical v1 records do not
+collide. Receipt plus associated
+pointer/counter updates are atomic. Do not add a generic event store or group collection.
+Readers choose versions from accepted bindings; no in-flight migration or automatic
+v1 creative conversion. Rollback disables new v2 admission but retains v2-capable
+read/recovery code. Existing model guide/example/diagrams remain implemented-v1
+references until 07 updates application code and documentation together; 01's package-local
+schemas remain proposals for the app.
+
+Unitale issues persisted IDs from stable idempotency registrations; children emit
+invocation-local keys only. Validate local keys, register stable subject/artifact IDs,
+remap all references, hash, then persist. Changed inputs under a reused key conflict.
+
+Canonical encoding: UTF-8, sorted ASCII property names, preserved array order, no
+insignificant whitespace, no Unicode normalization. Reject invalid Unicode, unsafe
+integers and non-finite numbers. Monetary decimals are strings; v2 regions are integer
+units. Preserve exact prompt/lettering bytes. Hash projections are:
+
+- Content: versioned typed content only; exclude provenance and selected source metadata.
+- Input: service/operation, meaningful item inputs, selected identities, ordered references
+  and execution configuration; exclude self-hash, transient handles and transport timestamps.
+- Image request: exact prompt, meaningful settings/configuration, ordered reference hashes
+  and specification/source identities; exclude expiring file URLs.
+- Presentation: exact question, response contract, displayed revisions and presentation data.
+
+Cross-runtime fixtures include omitted/null fields, reordering, changed settings,
+remapping and Unicode. Canonical `{"a":1,"b":"é"}` with literal UTF-8 e-acute
+hashes to `09ad9fd2fb648cb2f62141215828ea00a62c299db05d20aa9ade2f527a301cc6`.
+Canonical `{"references":["a","b"],"settings":{"n":1}}` hashes to
+`1e85a602fa45e8de0fffa55164950fea6f696d180cc15dcdbffeb7754fd5a764`;
+reversing that array hashes to
+`c94655b531ae23e5fc86c32ce358bf3cf84dd6e169ffe9371e3437055606ce0a`.
+These are encoding vectors, not a claim that Dify's implementation has been tested.
+
+### A04 - MCP transition ownership
+
+All names are `booklet_<name>_v2`. Common results use a success/error union;
+errors distinguish invalid input, conflict, stale fence, unavailable source, capacity,
+entitlement, limit and unknown outcome. Owner/production come from private context,
+not browser/model claims. Read tools require read permission; all mutations require
+write permission. Bind Start context directly to managed MCP nodes, never via Code.
+
+| Tool | Inputs beyond private context | Result / sole transition responsibility |
+| --- | --- | --- |
+| context | optional summary cursors | product/locks/policy/usage/checkpoint summary |
+| read_document | immutable revision and section/cursor | bounded content, hash and completeness metadata |
+| list_records | record type/filter/cursor | scoped history page |
+| lease | acquire/renew/release | short Run-owned fence |
+| index | local keys and subject/artifact definitions, fence | stable ID map |
+| begin_work | register descriptors or mark selected call IDs dispatching, fence | durable operation/call identity; no spending reservation |
+| transfer | begin/write/finalize bounded document/evidence parts | verified transfer receipt |
+| retain_original | call/output key and restricted native handle | verified asset receipt |
+| save_revision | typed content or complete transfer, sources/provenance, fence | immutable revision |
+| request_human | question/presentation/targets/response contract, fence | request ID and presentation hash |
+| read_human_response | request ID | pending/submitted/stale/closed/reconciling and authentic response |
+| record_evidence | diagnostic body or transfer receipt | non-authoritative evidence reference |
+| record_assessment | assessment plus verified execution reference | immutable assessment, no acceptance side effect |
+| sources | exact selected revision/asset identities | source metadata and native-file material |
+| reconcile_work | operation/call and execution locator | observer-verified outcomes/effective usage |
+| record_acceptance | exact selection/evidence references, fence | immutable Manager selection/current pointer |
+| checkpoint | expected version/fence and bounded state | checkpoint version, not execution fact |
+| complete | selected manifest identity, fence | structural/product completion only |
+| execution_status | optional operation IDs/cursor | observed execution/limit facts; never scheduling |
+
+Cursors bind owner, production, filter and revision/snapshot. Size accounting includes
+encoded binary and JSON overhead. Immutable evidence/retention use scoped idempotency;
+attachment/selection reacquire the short fence. Never hold a lease during provider work.
+`begin_work` owns dispatch transitions; observers own measured outcomes;
+`checkpoint` stores Manager intent. `execution_status` is read-only, replacing
+its earlier ambiguous description as a writer of step/time or pause/terminal intent.
+
+Active entitled Manager capabilities permit the corresponding tools, subject to
+locks/limits. At the ceiling, new paid dispatch is blocked but read, retention,
+attachment and reconciliation remain available. Cancellation/expiry/refund recovery
+uses the restricted trusted path in A12, not a revived Manager capability.
+
+### A05-A07 - Admission and crash recovery
+
+Persist the admission input hash and deterministic book/order/production/workflow/job
+identities in idempotency receipts before advancing. Use existing service transactions,
+not one database transaction spanning provider calls.
+
+| Intent | Ordered sequence |
+| --- | --- |
+| create | validate confirmed consumption-product quote/capacity; create/reuse book; queue order; create production; start consumption; enqueue bound Manager |
+| continue | inspect/resume existing valid parent, otherwise verify termination and release; continue consumption; enqueue successor sharing production/checkpoint/accounting |
+| revise | validate scope/locks; obtain and confirm existing revision quote/allocation; start revision; enqueue bound Manager |
+
+`queueConsumption` calls admission before order insertion; that callback validates
+eligibility and must not create the production. Production creation follows the
+committed queued order. Revalidate quote/capacity before charging. Changed quotes
+require refreshed confirmation. Queued unstarted cancellation stays free. Failure
+after debit retries enqueue with the same IDs, never another charge. Deliberately
+abandoned unbound work uses `abandonUnboundWorkflow`; bound work uses verified
+termination/release. No automatic refund or changed customer-rights policy is added.
+
+| Observed state | Recovery |
+| --- | --- |
+| Parent running/paused | reconnect/resume that parent |
+| Parent lost/unobservable | reconcile; no competing successor |
+| Parent verified terminal | release, then admit successor |
+| Operator-resolved parent | existing audited resolution/release rules |
+| Child unknown | preserve uncertainty; independent work may continue under the same parent |
+| Generation succeeded, retention failed | retry retention/attachment only |
+
+Paid-call sequence is `registered -> dispatching -> succeeded | failed | unknown`.
+Durably mark `dispatching` before invoking any provider-capable node. Lost
+acknowledgement thereafter is unknown, not permission to replay. Repeated dispatch
+requests return existing state without authorizing another call. Registration alone
+is not proof of a paid call. Proven adapter rejection before provider dispatch may
+become `not_dispatched`. Track item outcomes separately, retain partial successful
+outputs, and allow verified late evidence to resolve unknown without overwriting
+conflicts. A stale checkpoint cannot roll execution state backwards.
+
+Recovery reuses three existing mechanisms with different responsibilities:
+`ai/worker.ts` recovers saved terminal execution evidence without redispatch;
+booklet media retention/attachment retries preserve existing call/output identities;
+`domain-results.ts` and the Run `retry-application` command apply saved successful
+results. The latter is not a partial-work recovery queue: it requires a succeeded job,
+and application is queued only for a successful Run result. Partial booklet work stays
+in retained artifacts and Manager checkpoints. Manager's idempotent `complete` tool
+does not become implicit in Run application, and neither path regenerates content.
+
+Prepare bounded external reads and downloads outside MongoDB transactions; commit
+short fenced writes with fresh authorization. Preserve existing immutable-byte caches
+and their fresh access checks. Keep provider execution, observation and application
+budgets separate; verify nested Dify deadlines accommodate the selected provider call
+and packaging. Do not increase every timeout or add a second recovery scheduler.
+
+### A08-A09 - Trusted receipts and effective usage
+
+The selected channel is deterministic adapter receipt -> child system execution IDs
+-> Manager Workflow Tool output -> Unitale server observer -> measurement/assessment.
+The observer corroborates the actual Manager node execution against its pinned graph,
+input hash, tool binding and receipt. It never dispatches a child or accepts an LLM's
+claimed usage. Dify [node response fields](https://raw.githubusercontent.com/langgenius/dify/1.17.1/api/fields/workflow_run_fields.py)
+include inputs, outputs, execution metadata and truncation flags; E1/E3 must verify
+the deployed response and selectors. Missing/truncated data stays unverified.
+
+Receipt delivery is not guaranteed before native-file storage succeeds. If Dify loses
+the receipt and output after possible provider dispatch, preserve durable dispatch
+intent and classify the unavailable execution evidence as unknown. Never infer zero
+cost, authorize replay or invent an original. Persist any independently verified
+receipt even if retention fails; retry retention only while the original is available.
+Known execution remains known when only retention is uncertain. Later trusted evidence
+may reconcile the record; independent work follows existing Manager/ceiling policy.
+The first package does not guarantee recovery of bytes or usage Dify never durably exposed.
+Do not add a Dify-local receipt store, spool, file-storage plugin or child callback.
+Checkpoint 02 fault probes prove safe classification/no replay, not guaranteed receipt survival.
+
+Booklet attempt IDs remain distinct from logical Run IDs used by execution evidence.
+Retain both plus observed parent node and child workflow/run identities. Provider
+request IDs may be null. Authoritative assessment storage requires matching input/
+output evidence and the measured reviewer call; diagnostics alone cannot establish it.
+Redact credentials, private context, signed URLs and opaque provider reasoning.
+
+Stable call key is production + operation + call ID. Keep append-only observations
+and one effective amount per call. Actual provider-reported cost supersedes an estimate;
+provider token usage with calculated pricing is still a versioned estimate. Identical
+evidence is a no-op. Conflicting actual values require reconciliation: use the larger
+amount once for the safeguard until resolved, never sum both. Parent summaries remain
+diagnostic when leaf calls are counted. Missing cost is unknown; currencies are never
+silently added or converted. Estimate basis/pricing revision is snapshotted; improved
+usage can refine that estimate without silently choosing a new price table.
+
+Late observations have their own execution-evidence operation lifecycle linked to
+the original call, so closed creative work need not reopen. Persist observation and
+projection idempotently before closing that evidence operation; unresolved execution
+retains its existing holds. Trusted observations count Manager/Reviewer/text/image
+calls and workflow steps. Active seconds are the union of active parent intervals
+across attempts, excluding recorded human waits/pauses; do not add child duration again.
+Unknown boundaries remain unresolved. Reconcile at each Manager iteration/dispatch;
+limits are safeguards, not atomic provider-spend reservations.
+
+### A10-A12 - Corrections, revalidation and retention
+
+Chain key: production, stable target, work family and customer allocation (if any).
+The policy snapshot retains three text/request corrections and one image correction
+after the initial attempt. Increment on durable dispatch intent, then release the
+increment only on trusted proof that no provider dispatch occurred.
+
+| Event | Counter treatment |
+| --- | --- |
+| Initial execution | initial attempt |
+| Text / prepared-request / image correction | increment the corresponding counter |
+| Review only | no correction increment |
+| Proven pre-provider rejection | no correction consumed |
+| Provider refusal or invalid output | attempted call consumed |
+| Unknown | consumed pending proof; no blind replay |
+| New candidate/resume/split/merge | preserve existing target chain |
+| Confirmed new customer revision | new allocation-bound chain |
+
+One grouped call increments each affected target once; multiple outputs from that
+call do not multiply the increment, additional calls do. Manager selects affected
+targets; app checks existing chains/funding/limits, not semantic creative impact.
+
+Revalidation creates a new immutable same-artifact revision with identical content
+and asset hashes, explicit new sources, `revalidatedFrom`, reason/evidence and
+new Manager acceptance. Changed creative content is not revalidation. Preserve product
+locks; locked creative changes follow existing new-production rules where required.
+Revalidation cannot erase a lock, reset allowances or reuse an inapplicable assessment.
+Check ownership, source identity/freshness, acyclicity and the existing bounded
+source traversal. For example, unchanged page pixels may gain a new source binding
+only through explicit Manager revalidation; changed dialogue requires manuscript and
+page revisions, not relabelling old pixels as a content-identical correction.
+
+After cancellation/expiry/refund, trusted recovery may retain/reconcile outputs only
+for recorded prior dispatches. It may not generate, select new creative results or
+complete a production without entitlement. Revoked Manager capabilities stay revoked;
+server recovery observes the recorded Manager execution and uses operation-scoped
+retention rights. Existing owner-visible history, deletion/recovery rules and holds
+remain. No new customer entitlement or paid-call authority is created by retention.
+
+### A15-A16 - Immutable suite bindings and provenance
+
+Use suite-specific app/tool identities with explicit published-version bindings.
+Never update a tool registration used by accepted work in place. Dify's
+[Workflow Tool provider](https://raw.githubusercontent.com/langgenius/dify/1.17.1/api/core/tools/workflow_as_tool/provider.py)
+passes the stored workflow version into execution; a mutable registration still needs
+operational protection. Check effective bindings at registration, admission and resume.
+Missing/changed bindings block paid dispatch rather than falling back to latest.
+
+Publish children, create versioned tools, compose Manager, then register. Rollback
+changes new-admission selection and preserves old resources for accepted/unresolved
+work. The manifest uses explicit package/contract versions, source commit/path/hash
+entries, seven role/app/publication/tool/schema bindings, plugin package/build hashes,
+configuration/policy snapshots and evidence IDs. IDs/hashes are strings; versions and
+limits are integers; monetary values are decimal strings. Unknown deployment IDs stay
+absent in authoring metadata, not fabricated published identities.
+
+Hash raw exported files separately from canonical graph/features/non-secret
+configuration projections. Record each redacted field path; exclude secret values,
+private context, user artifacts and signed URLs. Distinguish authoring source,
+candidate exports and publication-matched exports; bind prompts to source selectors
+and current graph nodes. Exact build/export hashes are execution outputs, not values
+to invent during documentation.
+
+### A17-A18 - Manager control and Reviewer coverage
+
+Initial serial loop maximum is 64 actions per attempt. Checkpoint and return partial
+before exhaustion. This is a versioned Manager setting, not a service/app one-call rule.
+Action union: `invoke | review | repair | revalidate | accept | ask | pause | complete`.
+Each variant has explicit target IDs and its typed payload; no arbitrary tool names or
+application endpoints. Manager reasoning is registered paid work before the LLM node.
+
+Deterministic order: prevent new paid work on cancellation/expiry/limits; reconcile
+and retain available outputs; resolve authentic human responses; repair stale/invalid
+prerequisites or pause; perform the selected action; complete only after Manager
+policy and structural requirements. Review precedes acceptance/downstream use.
+Mandatory exact-request image preflight, actual-pixel review and whole-book review
+remain Manager policy. Ask only when needed or explicitly requested; group questions.
+An inconclusive result seeks evidence or pauses, not automatic regeneration.
+
+Checkpoint: version, suite/policy hashes, intent, selected revision/acceptance IDs,
+pending work/human IDs and chain references, bounded to 64 KiB with history cursors.
+It never contains full history or app-interpreted scheduling instructions. Operational
+records win on disagreement. Persist around dispatch/result retention and human waits.
+
+Reuse is keyed by stable production/operation/call identity, not input hash alone.
+Manager may deliberately register a new candidate with identical inputs under the
+existing allowances and durable correction chain; changing candidate/call IDs cannot
+reset those limits or disguise replay of an uncertain call. Keep a small checkpoint
+marker for the last attempted action, its relevant target/source state and outcome.
+If Manager repeats an ineffective action with no relevant state change, checkpoint
+and return partial with a recovery reason. Pending observation and intentional new
+candidates are not accidental repetition. Proven pre-provider preparation failures
+consume no creative correction; a possibly dispatched call retains its counter until
+trusted non-dispatch evidence. Keep the 64-action bound; add no retry engine or
+mandatory human checkpoint, and do not let the app choose creative next actions.
+
+Supply each service only its task, exact required text, current relevant sources and
+applicable findings. Use bounded projections and paginated history/section reads, not
+full historical prompts or proof records. Acknowledgements carry identities/status,
+not duplicate documents. Measure serialized transport bytes (including escaping and
+base64) separately from model input/output budgets. Reject insufficient capacity
+explicitly rather than truncate. This does not expand mandatory creative fields.
+
+Reviewer assessments bind exact targets/request/sources, reviewer/policy publication,
+coverage, findings, limitations and measured execution. Display precedence is blocked,
+repair, inconclusive, pass; completeness is independently required. Advisory findings
+are not confirmed defects. Changed relevant sources/settings invalidate applicability;
+old reports remain historical. No pass covers omitted pixels, text spans or criteria.
+
+Whole-book windows contain up to four consecutive pages with one-page overlap. Add
+explicit comparisons between consecutive appearances of recurring subjects and between
+the first and each later appearance; deduplicate identical pairs. Supply actual pages
+and relevant reference pixels for every comparison. The coverage certificate lists
+all required pages, text spans and continuity comparisons with their assessment IDs.
+Aggregation cannot claim unseen-image inspection. Calibration fixtures include exact
+lettering defects, identity drift, missing pixels, unresolved ambiguity, advisory-only
+findings and corrected targets with regression checks; expected Manager action is part
+of each fixture, not an arbitrary quality score.
+
+Validate complete target/source/asset relationships, not separate ID allowlists.
+Distinguish inherited context from editable content and cover requirements from story
+page requirements; a title-only cover must not acquire a dialogue requirement from
+another artifact. Compare actual retained image dimensions to the approved request
+and per-kind canvas. Reviewer prose cannot override measurable mismatches or claim
+coverage of unseen artifacts. Record clean acceptance journeys separately from runs
+that succeeded after repair or recovery.
+
+### A19-A20 - Human correlation and minimal upstream seams
+
+Human correlation is request ID + attempt ID + presentation hash + displayed revision
+IDs. Put it in validated native-form UI metadata and bind it to the observed Dify
+form/node plus existing `runDecisions`. The first valid authenticated submission
+wins; identical retries return it, changed retries conflict. Changed targets are stale.
+Manager reads the authentic stored response; interpretation never replaces the record.
+
+Use versioned booklet cards carrying production/request/revision IDs with authorized
+paged content/media resolvers. Read cursors bind immutable displayed revisions. Keep
+raw response at 4,000 characters and financial confirmation separate. Pending shows
+response controls; submitted shows the recorded response; reconciling offers safe
+recovery without regeneration; stale loads the replacement request; exhausted shows
+findings and permitted continuation/revision paths. No new creator workspace.
+
+Minimal reusable Unibase delta: optional versioned domain hooks for pre-dispatch
+binding validation, verified execution observations, domain-aware commands and decision
+correlation; client registration for domain admission/detail/cards; bounded MCP image
+content; restricted downloader extraction; bounded execution-observation/measurement
+linkage. Registry key remains adapter ID/version, duplicates rejected. Generic domains
+retain current behavior when hooks are absent. Call hooks from the existing dispatcher,
+verified event/recovery path, Run command handler and decision validation respectively;
+perform external observation outside MongoDB transactions and persist idempotently.
+
+Unitale owns booklet admission endpoints, card/media resolvers and these domain
+implementations. No copied-core patch, generic creative scheduler, new dispatcher or
+new billing engine. Exact upstream commit identity is later reviewed-import evidence.
+
+### A21-A22 - Actual-export verification and configuration ownership
+
+The v2 harness reads the seven delivered candidate/current DSL files, inspects their
+selectors and runs their actual Code-node logic against expected fixtures. Existing
+self-generated v1 graphs remain labelled regression tests. Test JSON-string carriers
+as strings, native files separately, and preserve engine/paid-quality evidence as
+separate gates. Every operation/revision intent and cross-cutting failure below needs
+an expected result/control decision, including provider-independent replacement.
+
+| Configuration owner | Values and snapshot rule |
+| --- | --- |
+| Product | explicit purchased counts, canvas pixels, languages, allowances, entitlement and execution capacities; frozen at admission |
+| Manager policy | optional human checkpoints, review policy, three/one correction defaults, 64-action attempt bound; versioned and preserved across continuation |
+| Dify provider | reference model/settings, 120/270-second text/image deadlines, zero retries; slot/configuration binding snapshot |
+| Unitale | auth, identity, structural checks, per-production usage safeguard and retention; accepted terms remain stable |
+| Operator | actual environment/app/tool/plugin identities, credentials and numeric paid-test caps; verified before activation |
+
+Checkpoint 02 live probes are disposable, provisional and separately authorized. Repeat file,
+receipt, child-binding and human
+correlation checks against 11/12's final integration. Test the smallest/largest enabled
+package and maximum configured references; no invented launch package, limit or budget.
+An acceptance request must name target operations, exact fixtures/settings, numeric
+money/call caps and stop/pass criteria. Stop paid replay of unknown items; independent
+work remains subject to remaining approved scope. Preserve E1-E6 until evidence exists.
+
 ## Validation requirements
 
-These are acceptance requirements, not an implementation sequence. The user has
-requested decision documentation only; a package/app implementation plan is deferred.
+These acceptance requirements will be implemented and verified through the delivery
+plan's 01-12 checkpoints. Documentation/planning authority does not authorize execution.
 
 Fixtures must cover zero optional subjects, package maxima, cover/no cover, multiple
 panels, explicit no-text, English/Arabic reading order and exact text, grouped partial
@@ -515,17 +1106,21 @@ does not need production parallel orchestration to pass its serial journey tests
 
 ## Open questions and limits
 
-Design details above are ready for review; they are not all user-approved wire fields.
+The selected design resolutions are recorded above; executable schemas and
+target-runtime proof remain deliverables.
 Human checkpoint policy and initial model-selection approach are settled above.
 Remaining technical evidence: compatible execution and usage reporting, native file bridge, actual
 Workflow Tool shapes, Human Input/loop composition and effective publication pinning.
 No live probe or installed-plugin mutation is authorized in this session. Record any
 failed capability as a concrete dependency rather than fabricating a working DSL.
 
-The package can be authored only after implementation authorization; final executable
-node bindings additionally need the configuration/probe evidence above. App updates
-are necessary for the target journey: generating seven YAML files alone cannot meet
-the agreed requirements.
+The candidate package can be authored after package implementation authorization,
+using package-local contracts and fixture app responses. Checkpoints 01-06 may finish
+without application implementation or live acceptance, but must disclose unresolved
+deployment bindings. Final executable target bindings still need the configuration/
+probe evidence above; known incompatibilities must be resolved, not hidden. App updates
+in 07-11 remain necessary for the integrated journey. Candidate completion at 06 is not
+completion of the issue or permission to start those application changes.
 
 ### Remaining evidence gates
 
@@ -536,17 +1131,17 @@ the agreed requirements.
 | E3 composition | Actual child input/result wrapper, observed execution identity, Human Input resume, bounded control and tool publication behavior | Claims that candidate graphs execute correctly on staging |
 | E4 app ownership | Unitale staging identity, owned Manager import journal, managed MCP permissions and suite/reviewer bindings | Registration and environment activation |
 | E5 acceptance configuration | Exact package/brief/languages/cases, reference-model settings and finite call/money cap | Paid end-to-end acceptance |
-| E6 local baseline | Locked dependency setup, fresh affected checks and separate reviews | Fresh runtime verification claims |
+| E6 local baseline | Current-source setup/compatibility/typecheck pass; fresh affected checks and separate reviews remain required for new implementation (see delivery plan) | New-code verification claims |
 
 These gates are explicit missing evidence, not unanswered product-preference questions.
 Do not mark them passed from inventory or source inspection. Signed grants and
 atomic executor claims are explicitly excluded from these evidence requirements.
-Read-only investigation has not established a compatible off-the-shelf adapter.
+A16 selects the isolated provider-execution adapter; E1 must prove that candidate on the target.
 
 ### Feasibility evidence requirements
 
-The scenarios below define needed evidence, not scheduled work or an implementation
-plan. Live writes/publications and paid calls require separate approval; use isolated
+The scenarios below define provisional 02 evidence and final 11/12 reruns. Live writes/publications and paid
+calls require separate approval; use isolated
 apps rather than changing the observed staging app or shared plugins.
 
 | Probe | Procedure | Pass evidence |
@@ -554,7 +1149,7 @@ apps rather than changing the observed staging app or shared plugins.
 | Structured child | Publish a deterministic echo child; expose/synchronize its Workflow Tool; invoke it from a parent with two independently identified items | Exact fields and Unicode preserved; effective tool/publication and observed child Run identity recorded; no model required |
 | Bounded control | Execute finite iteration over successful/failed item fixtures, then exercise a bounded pause/continuation path | Termination and partial results preserved; no unbounded loop or repeated completed item |
 | Human Input | Present existing Run cards with exact request/target IDs; submit once and repeat the same submission request | One authenticated response, same target binding, successful resume and no synthetic approval |
-| Files | Round-trip two distinct original PNGs through app MCP, Manager file utility, child echo and app retention; repeat at the maximum proposed size | Byte hashes, lengths, MIME and reference order identical; measured chunk count/time; failed attachment retries do not invoke generation |
+| Files | Round-trip two distinct original PNGs through app MCP image content, native files, child echo and restricted app retention; repeat at the maximum proposed size | Byte hashes, lengths, MIME and reference order identical; measured call/step count and time; failed attachment retries do not invoke generation |
 | Publication binding | Capture child/tool binding, change only a disposable child publication and inspect/update its tool | Detection of changed effective binding; accepted/in-flight suite cannot silently switch |
 | Usage safeguards | Exercise repeated measurement receipts, estimated then reported cost, ceiling reached during in-flight work and an unknown child alongside independent work | No accounting duplication; estimate replaced; new paid work blocked at ceiling; retention allowed; overage visible; no replay of uncertain item; independent work allowed below ceiling |
 | Model compatibility | Separately approve one bounded text call, one image generation/edit path and one actual-pixel review with the selected reference models | Trusted usage/request identities, declared settings honored, original bytes retained and no extra hidden paid calls |
@@ -565,9 +1160,10 @@ with timestamps, exact bindings, sanitized inputs/results, checksums and measure
 limits. Record failures without changing the requirements to match them.
 
 Package sizes must fit proven limits; do not infer support for arbitrary long books
-from pagination. No implementation sequence or task breakdown is adopted here.
+from pagination. The delivery plan owns the task breakdown.
 
-Documentation verification on 2026-11-08: local links/commands/model diagrams and
-skill checks pass. The i18n check cannot start because `typescript` is absent; prior
-runtime compatibility execution likewise lacks `tsx`. Dependencies were not installed
-in this documentation-only session. No runtime pass is claimed from these doc checks.
+Environment handoff on 2026-11-08: locked Node dependencies, Python 3.12 and the local
+Dify tooling are prepared. Documentation/model-diagram, i18n and skill checks pass;
+the existing 11-test compatibility baseline and full typecheck pass outside the sandbox.
+The delivery plan owns exact versions, commands and limitations. No new v2 candidate
+or deployed Dify compatibility is claimed by this setup evidence.

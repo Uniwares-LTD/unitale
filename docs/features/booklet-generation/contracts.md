@@ -4,7 +4,10 @@ This guide describes the existing v1 contract and implementation boundaries.
 The accepted [workflow design](workflow-design.md) changes the target ownership of
 human approvals, quality gates and Manager acceptance, and records the required
 versioned extensions. Those changes are not implemented. Preserve v1 parsing and
-historical records until explicit compatibility/migration decisions are made.
+historical records. The [package specification](workflow-package-spec.md#concrete-runtime-record-and-ui-decisions)
+defines the planned v1/v2 compatibility boundary; package-local schemas are authored
+in 01 and runtime implementation follows 07 in the
+[delivery plan](implementation-plan.md#07---application-contracts--persistence).
 
 The target usage policy trusts Manager dispatch controls. App usage tracking and
 per-production ceilings are safeguards; signed execution grants and provider-spend
@@ -24,6 +27,17 @@ and date-to-ISO views rather than treating database records as v1 DTOs: an artif
 and its revision/version fields must not become an independent artifact write fence.
 Production version/fencing governs persistence. No v1 parser changes are made by
 T14; any breaking public shape requires explicit versioning.
+
+## Planned v2 boundary
+
+The [technical resolutions](workflow-package-spec.md#technical-resolutions-for-a01-a22)
+freeze v2 envelope/content identities, storage/index deltas, hashing, MCP ownership,
+admission/recovery, trusted observations, correction/revalidation and UI correlation.
+V1 quality uniqueness and parsing stay unchanged. New assessments, Manager acceptance
+and correction chains remain application proposals until 07-09; 01 may implement
+package-local contract fixtures without changing runtime schemas.
+The model guide/example/Mermaid diagrams continue to describe implemented v1 state;
+07 must update all of them together with executable persistence changes.
 
 ## Versioning
 

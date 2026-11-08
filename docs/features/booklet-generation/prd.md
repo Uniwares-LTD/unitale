@@ -3,8 +3,19 @@
 The [workflow design](workflow-design.md) records the accepted issue #10 delivery
 and ownership decisions. It supersedes the earlier application-enforced human/quality
 gates for the target design. Existing T14-T17 code still implements those older guards;
-the design is not an implementation claim. The current session permits documentation
-and read-only investigation only, until explicit implementation authorization.
+the design is not an implementation claim. Environment preparation and plan finalization
+are complete for handoff; package implementation requires the explicit 01-06 request,
+and application implementation remains behind the post-06 gate.
+
+The [A01-A22 technical resolutions](workflow-package-spec.md#technical-resolutions-for-a01-a22)
+and [01-12 checkpoints](implementation-plan.md#issue-10-deliverables-and-dependency-map)
+record workflow-first delivery: complete the candidate package and application-change
+handoff at 06, then require explicit authorization before app implementation at 07.
+The first phase includes the narrow Dify plugin, but no Unitale/Unibase runtime changes.
+These checkpoints do not
+mark G implementation gaps or E evidence gates complete. Native MCP image transfer
+replaces the proposed stateful file utility; a lost parent must be reconciled before
+successor admission. These refinements preserve the accepted product boundaries.
 
 ## Outcome and users
 
@@ -207,7 +218,7 @@ budgets, MCP and retention settings.
 ## Decisions and sources
 
 Accepted product requirements and the [workflow design decisions](workflow-design.md)
-govern R01–R14. The current session does not authorize implementation. The original
+govern R01–R14. The environment/plan handoff does not begin package implementation. The original
 foundation used [agentic-poc at its pinned revision](https://github.com/karpishe-experiments/agentic-poc/tree/baa9dda25c041b2d7a77853f9f6c3daa73161217).
 Issue #10 uses the newer published package pinned in the
 [workflow design sources](workflow-design.md#sources-and-maintenance), not story-panel.
@@ -224,7 +235,13 @@ acceptance. No publication, live configuration or paid calls follow from plan ap
 ## Open decisions and readiness
 
 The original product baseline is accepted. Issue #10's workflow ownership changes are
-accepted as documented in [workflow design](workflow-design.md); detailed service,
-usage-evidence, compatibility and minimum UI contracts remain open there. Admin values,
+accepted as documented in [workflow design](workflow-design.md). The
+[package specification](workflow-package-spec.md) defines the planned service,
+usage-evidence, compatibility and minimum UI contracts; the
+[delivery plan](implementation-plan.md#issue-10-deliverables-and-dependency-map)
+defines implementation checkpoints and unpassed technical/live evidence gates. Admin values,
 environment provisioning and live evidence are explicit release prerequisites, not
 permission to invent launch configuration.
+The [readiness register](workflow-design.md#implementation-readiness-audit) maps each
+A01-A22 resolution to its contract and required proof. Selected design decisions do
+not establish runtime compatibility or authorize implementation.

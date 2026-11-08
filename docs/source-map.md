@@ -30,10 +30,22 @@ and the adapter; the table does not require unrelated suites for every task.
   [Workflow package design](features/booklet-generation/workflow-design.md) owns
   issue #10's accepted Manager/app/service boundaries, integration gap assessment and
   open contract decisions. It distinguishes the target from current code and limits
-  the current design session to documentation/read-only investigation.
+  the environment/plan handoff to tooling and documentation, before package implementation.
   [First-package specification](features/booklet-generation/workflow-package-spec.md)
   owns the detailed operation mapping, proposed contracts, configuration inputs and
   app/MCP/UI change inventory for generating the seven workflows.
+  The delivery plan's 01-12 checkpoints own issue #10 sequencing, per-gap coverage,
+  exact validation commands and implementation/publication/paid-acceptance gates.
+  01-06 deliver a candidate package before application changes; 07-12 are gated
+  application integration and staging acceptance. Its execution procedure owns slice
+  order, two-pass review, evidence/resume records and dependency reassessment.
+  Package-local contract schemas are proposals for the app; implemented model docs
+  remain unchanged until 07. The package integration handoff is created in 01 and
+  closed in 06, without a second application implementation queue.
+  [Implementation-readiness audit](features/booklet-generation/workflow-design.md#implementation-readiness-audit)
+  maps A01-A22 to selected technical resolutions and their remaining verification gates.
+  The package specification owns the wire/storage/transport/recovery/UI details;
+  design closure is distinct from G implementation gaps and E1-E6 runtime evidence.
   [Contract compatibility](features/booklet-generation/contracts.md) describes the
   opt-in v1 schemas and the distinction between shape validation and service authorization.
   [Model review](features/booklet-generation/model.md) owns the accepted document boundaries, nested JSON example, diagrams and implemented lifecycle/media boundaries;
