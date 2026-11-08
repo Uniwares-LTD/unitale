@@ -2,18 +2,26 @@
 
 ## Contract and decisions
 
-Implement the accepted [R01–R14 PRD](prd.md). Preserve existing records and the
-single-orchestrator dispatcher. Unibase changes originate in its repository and
+The accepted [R01–R14 PRD](prd.md) and [issue #10 workflow design](workflow-design.md)
+define the target. The latter owns current decisions, gaps and unresolved contracts;
+it explicitly replaces earlier app/Executor human-approval and quality gates.
+Preserve existing records and the single-orchestrator dispatcher. Unibase changes originate in its repository and
 reach Unitale through reviewed template integration. No production catalog seeds.
-Handbook baseline: `D:\Projects\handbook` at
-`6205b01d94153824f02b678957ef51af18419015`.
+For the current issue #10 design handoff, the Handbook baseline is
+`D:\misc\code\uniwares\handbook` at
+`71891a9031eeebee1ff8d2a66494bdeb10ad5d3f` (usable cached revision).
+Earlier implementation evidence below retains its historical scope.
 
 ## Execution prerequisites
 
-Local implementation is authorized. Commits, pushes and merges follow explicit
-session authorization. Releases, deployments, provider publications and paid calls
-remain separately gated. Use fake providers and disposable databases. Live acceptance requires configured Dify publications/plugins/credentials
-and a finite approved budget, Stripe test configuration, Play products/notifications/
+For the current session, only documentation and read-only investigation are authorized.
+Do not implement application code, schemas, migrations, workflows or adapters until
+the user explicitly authorizes implementation. This restriction supersedes the older
+local implementation authorization for this session. Commits, pushes and merges follow
+explicit session authorization. Releases, deployments, provider publications and paid calls
+remain separately gated. Use fake providers and disposable databases. Full-product T28
+acceptance requires configured Dify publications/plugins/credentials and a finite
+approved budget, Stripe test configuration, Play products/notifications/
 signing/internal track, Digital Asset Links and an installed Android device. Admin
 creates actual offers/packages and enables only accepted languages/capabilities.
 
@@ -45,7 +53,7 @@ publication/external acceptance gates. No agent delegation is implied.
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Implemented; local verification complete |
 | T17 | Unitale | MCP-only booklet tools | T15,T16 | Implemented; manifest transport-limit review finding remains; verification notes below |
 | T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Pending |
-| T19 | Unitale | Versioned visual reviewer and bounded repair contract | T01,T02 | Pending |
+| T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | Pending |
 | T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Pending |
 | T21 | Unitale | Creator brief, quotes, progress, decisions, revisions and history | T15,T16 | Pending |
 | T22 | Unitale | Private reader and image downloads | T15,T16 | Pending |
@@ -55,6 +63,35 @@ publication/external acceptance gates. No agent delegation is implied.
 | T26 | Both | Integrated simulated journeys and compatibility | T20,T21,T24,T25 | Pending |
 | T27 | Both | Migration/recovery rehearsal, documentation and final reviews | T26 | Pending |
 | T28 | Both | Authorized real provider/store/device acceptance | T27 + external prerequisites | Gated |
+
+### Issue #10 design and delivery boundary
+
+Deliver the seven workflows together: complete focused services with a simple serial
+Manager, rather than incremental user-facing product slices. T18 covers the focused
+creative/image services, T19 expands to all independent assessment modes, and T20
+owns Manager progression and app integration. Start/review/resume/revision uses the
+existing Run UI; no separate booklet pages are included. Contracts must support
+Manager-controlled grouping and independent parallel calls, even though the initial
+Manager may execute serially. The broader T21 creator workspace and T22-T25 features are not pulled in.
+Booklet-only staging acceptance is part of issue #10 and does not wait for unrelated
+Stripe/Play/device acceptance or imply completion of the full T28 milestone.
+
+Current session status: record accepted decisions, requirements and verified gaps in
+[workflow design](workflow-design.md) and the [package specification](workflow-package-spec.md).
+The user has deferred a new implementation plan; the plan proposed in conversation
+is not adopted as a repository execution sequence. Existing milestone dependencies
+and implementation evidence below remain historical context.
+
+Latest decisions: Manager controls paid dispatch; app usage ceilings are safeguards
+per production, shared across continuation/corrections. Include labelled estimates
+until reported costs arrive, avoid double counting, and allow independent work while
+an unknown item is reconciled without replay. Signed grants, provider-spend reservations
+and executor-level replay protection are not required. Purchase/credit, entitlement
+and product-lock rules remain hard app boundaries.
+
+No implementation has begun in this design session. Current runtime validation is
+unavailable because dependencies including `tsx` and `typescript` are missing;
+previous test results below are historical evidence, not fresh passing runs.
 
 Independent starts: T01/T02/T03. After T01: T04/T05/T06/T14. After T01+T02:
 T18/T19 alongside foundation. After T06: T07/T08. After billing prerequisites:

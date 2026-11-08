@@ -1,5 +1,12 @@
 # Booklet document model
 
+This guide, its JSON example and both Mermaid views describe implemented persistence.
+The accepted [workflow design](workflow-design.md) changes future acceptance/quality
+ownership and identifies schema gaps, but does not select or implement new stored
+fields. The example and diagrams are therefore unchanged by this documentation-only
+decision record. Update all model artifacts together when concrete schema changes
+are authorized; do not relabel existing approval/quality records as Manager acceptance.
+
 ## Outcome
 
 The accepted model uses a **production document with an embedded content index**.
@@ -32,7 +39,10 @@ The [PRD](prd.md) governs behavior. Dedicated persistence schemas are separate f
 [v1 workflow contracts](contracts.md). Field lists
 are operational summaries, not exhaustive DTOs. Later execution, quality and delivery
 proposals retain their review status; accepting the index does not approve all of them.
-The booklets extension registers namespaced index migrations and a Run domain adapter. It has no routes, MCP tools, navigation or workers. Lifecycle services use existing Unibase charging and enqueue only the parent orchestrator; they make no generation calls.
+The booklets extension registers namespaced index migrations, a Run domain adapter
+and the T17 MCP catalog. It has no routes, navigation or workers. Lifecycle services
+use existing Unibase charging and enqueue only the parent orchestrator; they make
+no generation calls.
 
 ## Approach
 

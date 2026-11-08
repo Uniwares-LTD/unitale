@@ -27,6 +27,13 @@ and the adapter; the table does not require unrelated suites for every task.
 - [Booklet requirements](features/booklet-generation/prd.md) and
   [delivery plan](features/booklet-generation/implementation-plan.md) own the accepted
   product contract and cross-repository dependencies. Implementation is in progress.
+  [Workflow package design](features/booklet-generation/workflow-design.md) owns
+  issue #10's accepted Manager/app/service boundaries, integration gap assessment and
+  open contract decisions. It distinguishes the target from current code and limits
+  the current design session to documentation/read-only investigation.
+  [First-package specification](features/booklet-generation/workflow-package-spec.md)
+  owns the detailed operation mapping, proposed contracts, configuration inputs and
+  app/MCP/UI change inventory for generating the seven workflows.
   [Contract compatibility](features/booklet-generation/contracts.md) describes the
   opt-in v1 schemas and the distinction between shape validation and service authorization.
   [Model review](features/booklet-generation/model.md) owns the accepted document boundaries, nested JSON example, diagrams and implemented lifecycle/media boundaries;

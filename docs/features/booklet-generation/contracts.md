@@ -1,5 +1,18 @@
 # Booklet contract compatibility
 
+This guide describes the existing v1 contract and implementation boundaries.
+The accepted [workflow design](workflow-design.md) changes the target ownership of
+human approvals, quality gates and Manager acceptance, and records the required
+versioned extensions. Those changes are not implemented. Preserve v1 parsing and
+historical records until explicit compatibility/migration decisions are made.
+
+The target usage policy trusts Manager dispatch controls. App usage tracking and
+per-production ceilings are safeguards; signed execution grants and provider-spend
+reservations are not required. Reported costs replace labelled estimates for the same
+call without double counting. Unknown calls are not replayed, but independent work
+may continue. These decisions do not alter existing purchase/credit or entitlement
+contracts and are not implemented by the current v1 schemas.
+
 The opt-in v1 schemas in [contracts.ts](../../../src/project/booklets/contracts.ts)
 and [workflow-contracts.ts](../../../src/project/booklets/workflow-contracts.ts) are
 the project side of T01. Generic commerce and execution measurement schemas originate
@@ -36,10 +49,12 @@ human submissions, fence revisions and budget mutations in transactions. MCP mus
 accept owner identity or decision provenance merely because a DTO parses. Diagnostics
 are references, not arbitrary provider envelopes inside operational content.
 
-Package capacity validation uses a versioned execution profile; numbers in tests are
-fixtures, not supported production limits. Manifest validation enforces purchased page
-counts, order and language. Completion must additionally verify accepted revisions,
-quality evidence, original bytes and ownership from durable records.
+Current v1 package capacity validation uses a versioned execution profile; test numbers
+are fixtures, not supported production limits. Manifest validation enforces purchased page
+counts, order and language. The implemented lifecycle additionally verifies accepted
+revisions, quality evidence, original bytes and ownership from durable records. The
+target design removes app-enforced human/quality prerequisites, retains structural,
+identity, original-byte and product checks, and records Manager acceptance explicitly.
 
 ## Immutability and measurements
 
