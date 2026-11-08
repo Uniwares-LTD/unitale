@@ -1,13 +1,14 @@
 {
   "example": {
-    "status": "T14 persistence example; not seed data",
+    "status": "T14 draft plus T15/T16 independent service-record examples; not seed data",
     "notes": [
       "collections groups independent documents; only subjects and artifact entries are embedded in Production.",
       "This is a draft production. No human approval, image generation, charge or completion is implied. Accepted pointers stay null.",
       "Prices and package quantities are synthetic fixtures. The authoritative order remains in Unibase.",
       "Database Date values are represented as ISO strings. Revision hashes follow hashVersion 1.",
       "Only a repository receipt excerpt is shown; earlier create/index/lease receipts are omitted.",
-      "Provenance IDs are external future-service references, not proof of execution or approval."
+      "Provenance IDs are external service references, not proof of execution or approval.",
+      "serviceRecordExamples illustrate persisted fields at later stages independently from the draft collections; they do not claim this draft has executed or passed review."
     ]
   },
   "externalReferences": [
@@ -21,7 +22,7 @@
     },
     {
       "id": "operation_external_001",
-      "service": "future booklet operation admission"
+      "service": "bookletGenerations or measured text operation"
     },
     {
       "id": "evidence_external_001",
@@ -53,6 +54,7 @@
         "bookletId": "booklet_001",
         "orderId": "order_external_001",
         "sourceProductionId": null,
+        "revisionChargeId": null,
         "brief": {
           "idea": "A child follows a lantern trail.",
           "audience": "Ages 6 to 8",
@@ -343,5 +345,141 @@
         "createdAt": "2026-11-07T09:00:00.000Z"
       }
     ]
+  },
+  "serviceRecordExamples": {
+    "bookletReviewRequests": {
+      "_id": "12345678-1234-4234-9234-123456789abc",
+      "documentVersion": 1,
+      "ownerId": "owner_demo",
+      "productionId": "production_001",
+      "runId": "run_external_001",
+      "targets": [
+        {
+          "artifactId": "artifact_story",
+          "revisionId": "revision_story_2",
+          "sha256": "f53761e7c60622bade8768c286a52080bdee9f0a9c175174aaa021266f77a086"
+        }
+      ],
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "presentationHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "createdAt": "2026-11-07T10:00:00.000Z",
+      "appliedDecisionId": null,
+      "sourceProductionId": null
+    },
+    "bookletGenerations": {
+      "_id": "generation_example",
+      "documentVersion": 1,
+      "ownerId": "owner_demo",
+      "productionId": "production_001",
+      "runId": "run_external_001",
+      "artifactId": "artifact_image_example",
+      "sources": [
+        {
+          "artifactId": "artifact_story",
+          "revisionId": "revision_story_2",
+          "sha256": "f53761e7c60622bade8768c286a52080bdee9f0a9c175174aaa021266f77a086"
+        }
+      ],
+      "state": "authorized",
+      "createdAt": "2026-11-07T10:00:00.000Z",
+      "revisionId": null,
+      "repairRoot": null,
+      "revisionAllocationId": null
+    },
+    "bookletAssets": {
+      "_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "documentVersion": 1,
+      "ownerId": "owner_demo",
+      "productionId": "production_001",
+      "operationId": "generation_example",
+      "outputKey": "original",
+      "inputHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "bytes": 2048,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "state": "staging",
+      "storage": {
+        "kind": "mongo"
+      },
+      "sourceRevisions": [
+        {
+          "artifactId": "artifact_story",
+          "revisionId": "revision_story_2",
+          "sha256": "f53761e7c60622bade8768c286a52080bdee9f0a9c175174aaa021266f77a086"
+        }
+      ],
+      "originalAssetId": null,
+      "attachments": [],
+      "fence": 0,
+      "createdAt": "2026-11-07T10:00:00.000Z"
+    },
+    "bookletServiceWrites": {
+      "_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "ownerId": "owner_demo",
+      "productionId": "production_001",
+      "inputHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "result": {
+        "operationId": "generation_example",
+        "version": 9
+      },
+      "createdAt": "2026-11-07T10:00:00.000Z"
+    },
+    "bookletReuseAcceptances": {
+      "_id": "1111111111111111111111111111111111111111111111111111111111111111",
+      "ownerId": "owner_demo",
+      "productionId": "production_002",
+      "sourceProductionId": "production_001",
+      "revisionId": "revision_story_2",
+      "requestId": "12345678-1234-4234-9234-123456789abc",
+      "runId": "run_second_production"
+    },
+    "bookletQualityReviews": {
+      "_id": "2222222222222222222222222222222222222222222222222222222222222222",
+      "ownerId": "owner_demo",
+      "productionId": "production_001",
+      "value": {
+        "schemaVersion": 1,
+        "id": "review_example",
+        "productionId": "production_001",
+        "operationId": "review_operation",
+        "target": {
+          "artifactId": "artifact_image_example",
+          "revisionId": "revision_image_example",
+          "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+        },
+        "asset": {
+          "assetId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "sources": [
+          {
+            "artifactId": "artifact_story",
+            "revisionId": "revision_story_2",
+            "sha256": "f53761e7c60622bade8768c286a52080bdee9f0a9c175174aaa021266f77a086"
+          }
+        ],
+        "policy": {
+          "id": "visual",
+          "revision": 1,
+          "publicationId": "reviewer_publication"
+        },
+        "disposition": "repair",
+        "findings": [
+          {
+            "code": "lettering",
+            "blocking": true,
+            "description": "Required lettering is unreadable.",
+            "action": "Repair the lettering using the approved page plan."
+          }
+        ],
+        "evidenceIds": [
+          "review_input",
+          "review_output"
+        ],
+        "createdAt": "2026-11-07T10:00:00.000Z"
+      }
+    }
   }
 }

@@ -105,6 +105,7 @@ export const productionDocumentSchema = z.strictObject({
   bookletId: id,
   orderId: id,
   sourceProductionId: id.nullable(),
+  revisionChargeId: id.nullable().default(null),
   brief: briefSchema,
   creativeConfigSnapshot: creativeSnapshotSchema,
   lifecycleState: z.enum(["draft", "in-progress", "completed", "closed"]),

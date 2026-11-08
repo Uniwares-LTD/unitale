@@ -4,7 +4,7 @@
 
 [Canonical model](model.md) ? [Concrete JSON example](model-document-example.json)
 
-The embedded production content index and repositories are implemented in T14. Later service work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
+The embedded production index, lifecycle and media services are implemented in T14-T16. Later workflow/delivery work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
 
 All maintained domain document summaries are shown. Economy reuses Unibase; this is not a complete inventory of its internal collections. Later-task proposals and unresolved execution details retain explicit labels.
 
@@ -12,21 +12,15 @@ All maintained domain document summaries are shown. Economy reuses Unibase; this
 %%{init: {"theme":"base","themeVariables":{"primaryColor":"#f1f5f9","primaryTextColor":"#172033","primaryBorderColor":"#64748b","lineColor":"#64748b","edgeLabelBackground":"#ffffff"},"flowchart":{"htmlLabels":false,"useMaxWidth":false}}}%%
 flowchart TB
   Booklet["Booklet<br/>I: T14 bookletBooks<br/>_id / documentVersion / ownerId / title / version<br/>currentProductionId? -&gt; Production<br/>createdAt / updatedAt<br/>deletion {deletedAt?, recoverUntil?}"]
-  Production["Production<br/>I: T14 bookletProductions; lifecycle T15<br/>_id / documentVersion / ownerId / bookletId / orderId<br/>sourceProductionId? (T15 reuse) / lifecycleState<br/>version / fenceCounter / createdAt / updatedAt / expiresAt?<br/>currentManifestRevisionId? (T15 completion)<br/>brief {<br/>  idea / audience / language {tag, direction}<br/>  characters[] / locations[] / visualPreferences<br/>}<br/>creativeConfigSnapshot {<br/>  id / revision / storyPages / includeCover<br/>  maxCharacters / maxLocations / maxPanelsPerPage<br/>  styleSamples / canvas {width, height, mime}<br/>  languages[] {tag, direction}<br/>  executionProfileId / executionProfileRevision<br/>  repairLimitPerOutput<br/>  execution {maxTextCalls, maxImageCalls, maxWorkflowSteps,<br/>    maxElapsedSeconds, spendingCeiling {amountMinor, currency}}<br/>}<br/>subjects[] {<br/>  id / kind / label / pageRole?<br/>  artifacts[] {id, kind, currentRevisionId?, acceptedRevisionId?}<br/>}<br/>stageLocks {story?, style?, references? {<br/>  operationId / lockedAt / sourceRevisionIds[]<br/>}} (T15 transitions)<br/>mutationLease? {holderId, fence, expiresAt}"]
-  Artifact_revision["Artifact revision<br/>I: T14 bookletRevisions; immutable drafts<br/>_id / documentVersion / ownerId / productionId<br/>artifactId / subjectId / kind / ordinal / createdAt<br/>contentHash (canonical hashVersion 1)<br/>content { one variant by kind<br/>  concept {title, premise, theme, tone, constraints[]}<br/>  outline {summary, beats[] {id, content}}<br/>  manuscript {units[] {<br/>    id / prose / characterIds[] / locationIds[]<br/>  }}<br/>  description {name, description, continuityRules[]}<br/>  roster {characterIds[], locationIds[]}<br/>  style {direction, palette[], typography, continuity[]}<br/>  reference {description, requiredFeatures[], asset}<br/>  page-plan {panels[] {<br/>    id / region {x, y, width, height} / action<br/>    characterIds[] / locationIds[] / manuscriptUnitIds[]<br/>    lettering[] {id, kind, content, speakerId?, placement}<br/>  }}<br/>  page-image {asset}<br/>  book-manifest {title, language, acceptedSources[], pages[] {<br/>    subjectId / role / index<br/>    revision {artifactId, revisionId, sha256} / asset {assetId, sha256}<br/>    qualityReviewId / approvalDecisionId<br/>  }}<br/>}<br/>sources[] {artifactId, revisionId, sha256}<br/>assets[] {assetId, sha256}<br/>provenance {operationId, runId, evidenceIds[]}"]
+  Production["Production<br/>I: bookletProductions; T14/T15<br/>_id / documentVersion / ownerId / bookletId / orderId<br/>sourceProductionId? / revisionChargeId? / lifecycleState<br/>version / fenceCounter / createdAt / updatedAt / expiresAt?<br/>currentManifestRevisionId?<br/>brief {<br/>  idea / audience / language {tag, direction}<br/>  characters[] / locations[] / visualPreferences<br/>}<br/>creativeConfigSnapshot {<br/>  id / revision / storyPages / includeCover<br/>  maxCharacters / maxLocations / maxPanelsPerPage<br/>  styleSamples / canvas {width, height, mime}<br/>  languages[] {tag, direction}<br/>  executionProfileId / executionProfileRevision<br/>  repairLimitPerOutput<br/>  execution {maxTextCalls, maxImageCalls, maxWorkflowSteps,<br/>    maxElapsedSeconds, spendingCeiling {amountMinor, currency}}<br/>}<br/>subjects[] {<br/>  id / kind / label / pageRole?<br/>  artifacts[] {id, kind, currentRevisionId?, acceptedRevisionId?}<br/>}<br/>stageLocks {story?, style?, references? {<br/>  operationId / lockedAt / sourceRevisionIds[]<br/>}}<br/>mutationLease? {holderId, fence, expiresAt}"]
+  Artifact_revision["Artifact revision<br/>I: bookletRevisions; immutable content<br/>_id / documentVersion / ownerId / productionId<br/>artifactId / subjectId / kind / ordinal / createdAt<br/>contentHash (canonical hashVersion 1)<br/>content { one variant by kind<br/>  concept {title, premise, theme, tone, constraints[]}<br/>  outline {summary, beats[] {id, content}}<br/>  manuscript {units[] {<br/>    id / prose / characterIds[] / locationIds[]<br/>  }}<br/>  description {name, description, continuityRules[]}<br/>  roster {characterIds[], locationIds[]}<br/>  style {direction, palette[], typography, continuity[]}<br/>  reference {description, requiredFeatures[], asset}<br/>  page-plan {panels[] {<br/>    id / region {x, y, width, height} / action<br/>    characterIds[] / locationIds[] / manuscriptUnitIds[]<br/>    lettering[] {id, kind, content, speakerId?, placement}<br/>  }}<br/>  page-image {asset}<br/>  book-manifest {title, language, acceptedSources[], pages[] {<br/>    subjectId / role / index<br/>    revision {artifactId, revisionId, sha256} / asset {assetId, sha256}<br/>    qualityReviewId / approvalDecisionId<br/>  }}<br/>}<br/>sources[] {artifactId, revisionId, sha256}<br/>assets[] {assetId, sha256}<br/>provenance {operationId, runId, evidenceIds[]}"]
   Repository_write_receipt["Repository write receipt<br/>I: T14 bookletRepositoryWrites<br/>_id / ownerId / scope / key / inputHash<br/>result {id, version, revisionId?, ordinal?, fence?, expiresAt?}<br/>createdAt<br/>Internal idempotency; not a charge or operation"]
-  Operation["Operation<br/>Contract; persistence details pending<br/>_id / productionId / subjectId / kind / state<br/>idempotencyKey / inputHash / createdAt<br/>funding {kind, orderId?, allocationId?}<br/>repair? {failedReviewId, outputId, ordinal}<br/>result {revisionIds[], assetIds[]}<br/>evidenceIds[]"]
-  Execution_attempt["Execution attempt<br/>Proposed separate execution history<br/>_id / operationId / runId / attemptNumber<br/>invocationId / workflowRunId? / publicationId<br/>outcome / startedAt? / completedAt?<br/>Unknown provider outcome requires reconciliation"]
-  Run_binding["Run binding<br/>Proposed Unitale link; reuse Unibase Run<br/>productionId / runId / ownerId / orderId<br/>purpose / continuationOfRunId?<br/>publicationIdentity / createdAt / closedAt?"]
-  Human_decision["Human decision<br/>Contract; persistence pending<br/>_id / productionId / actorId / runId<br/>submission {formId, submissionId}<br/>action / answerOrInstruction? / submittedAt<br/>targets[] {artifactId, revisionId}<br/>acceptedQuote? {requestId, quoteFingerprint}<br/>reuse? {sourceProductionId, sourceRevisionIds[]}"]
-  Revision_request["Revision request<br/>Proposed separate customer request<br/>_id / productionId / decisionId<br/>category / subjectIds[] / instruction<br/>sourceRevisionIds[] / allocationIds[]<br/>idempotencyKey / inputHash / state / createdAt<br/>acceptedQuote {<br/>  fingerprint / expectedProductionVersion<br/>  subjects[] / includedUnits / paidUnits<br/>  extraCredits / termsRevision / expiresAt / acceptedAt<br/>}"]
-  Quality_review["Quality review<br/>Contract; separate review history<br/>_id / productionId / targetRevisionId / operationId<br/>policyRevisionId / disposition / createdAt<br/>inputs {assetIdentity, sourceRevisionIdentities[]}<br/>findings[] {code, severity, message, evidenceRefs[]}<br/>evidenceRefs[]"]
-  Repair_budget["Repair budget<br/>Proposed separate bounded counters<br/>productionId / outputIdentity / version<br/>failedQualityReviewId / limitSnapshot / usedAttempts<br/>executionBudgetRef / spendingBudgetRef<br/>authorizingOperationId / exhaustedAt?"]
-  Run["Run<br/>I: existing Unibase service view<br/>id / ownerId / executionState<br/>Human Input integration {<br/>  request {formId, presentedRevisionIds[], question}<br/>  allowedActions[] / expectedProductionVersion<br/>  state / createdAt / answeredAt?<br/>}<br/>Booklet form metadata is a future integration"]
-  Execution_measurement["Execution measurement<br/>I: Unibase; attempt linkage proposed<br/>id / operationId / attemptId? / provider / model?<br/>requestId? / workflowIdentity / publicationIdentity<br/>usage {inputTokens?, outputTokens?, additional[]}<br/>cost {reported?, estimated?, currency?, pricingProvenance?}<br/>timing {queuedAt?, startedAt?, completedAt?}<br/>elapsedMs? / providerDurationMs?<br/>outcome / authority / scope / evidenceRefs[]"]
-  Original_asset_receipt["Original asset receipt<br/>Contract; T16 persistence pending<br/>_id / ownerId / productionId / operationId<br/>storageObjectId (private) / sha256 / bytes / mime<br/>dimensions {width, height}<br/>provenance {provider, providerRequestId, evidenceId}<br/>retainedAt"]
-  Attachment_receipt["Attachment receipt<br/>Proposed durable attachment step<br/>_id / operationId / assetId / artifactRevisionId<br/>expectedProductionVersion / fencingToken<br/>idempotencyKey / inputHash / state / attachedAt?"]
-  Display_derivative["Display derivative<br/>Proposed T16 asset record<br/>_id / originalAssetId / transformVersion<br/>width / height / mime / storageObjectId / sha256"]
+  Operation["Operation<br/>I: bookletGenerations; image admission<br/>_id / documentVersion / ownerId / productionId / runId<br/>artifactId / state / createdAt / revisionId? / repairRoot?<br/>sources[] {artifactId, revisionId, sha256}<br/>revisionAllocationId? (one output root per allocation/artifact)<br/>Repair count derived by repairRoot; no separate budget document<br/>Provider calls/usage are execution measurements"]
+  Human_decision["Human decision<br/>I: existing runDecisions<br/>_id / uid / jobId / status / answerSource {type}<br/>approval {artifactId: review request ID, revision: 1, contentHash, action, requireHuman}<br/>form {form_content, inputs[], user_actions[], ...}<br/>intent {key, hash, action, inputs} / confirmedAction?"]
+  Quality_review["Quality review<br/>I: bookletQualityReviews<br/>_id / ownerId / productionId<br/>value {schemaVersion, id, operationId, productionId, createdAt,<br/>  target {artifactId, revisionId, sha256}, asset {assetId, sha256},<br/>  sources[] {artifactId, revisionId, sha256},<br/>  policy {id, revision, publicationId}, disposition,<br/>  findings[] {code, blocking, description, action}, evidenceIds[]}"]
+  Run["Run<br/>I: existing aiJobs / consumptionWorkflows<br/>_id / uid / status / consumption {orderId, workflowId}<br/>run {logicalId, attempt, predecessorId?, target {adapter, version, kind, id},<br/>  orchestrator {}, configurationRevision, settingsRevision, ...}<br/>credits: 0 / reservationId: null for prepaid booklet Runs<br/>Human submissions remain separate runDecisions"]
+  Execution_measurement["Execution measurement<br/>I: Unibase executionMeasurements<br/>_id / uid / hash<br/>value {id, operationId, runId, provider, model?, requestId?,<br/>  workflowRunId, publicationId, scope, authority,<br/>  usage {inputTokens?, outputTokens?, additional[]},<br/>  reportedCost?, estimatedCost? {amount, currency, pricingRevision},<br/>  queuedAt?, startedAt?, completedAt?, elapsedMs?, providerDurationMs?,<br/>  outcome, evidence[] {id, sha256, bytes, kind}}"]
+  Original_asset_receipt["Original asset receipt<br/>I: bookletAssets; originals and derivatives<br/>_id / documentVersion / ownerId / productionId / operationId<br/>outputKey / inputHash / sha256 / bytes / mime / width / height<br/>state: staging or ready / originalAssetId? / createdAt<br/>storage {kind: mongo} or {kind: object, object {storeId, key, versionId?}}<br/>sourceRevisions[] {artifactId, revisionId, sha256}<br/>attachments[] revision IDs / fence<br/>Original buffers remain unchanged; derivatives are separate documents"]
   Evidence_reference["Evidence reference<br/>I: Unibase evidence metadata; bytes separate<br/>id / operationId / runId / sha256 / bytes / kind<br/>retention {expiresAt, protectedWhileUnresolved}<br/>Private payload storage; no prompts in product documents"]
   PDF_export["PDF export<br/>Proposed later T23<br/>_id / manifestRevisionId / manifestHash<br/>exportProfileVersion / outputAssetId / state<br/>createdAt / evidenceRef?"]
   Share_grant["Share grant<br/>Proposed later T24<br/>_id / ownerId / bookletId / manifestRevisionId<br/>tokenHash / createdAt / revokedAt?<br/>allowDownloads (default false)"]
@@ -47,31 +41,20 @@ flowchart TB
   Provider_action["Provider action<br/>I: billingProviderActions; publication journal<br/>id / subjectId / channel / kind / state<br/>request snapshot / previewHash / providerIds[] / evidenceIds[]<br/>Separate from published application catalog version"]
   Execution_profile["Execution profile<br/>Contract capacity; publication bindings proposed<br/>id / revision / limits {pages, entities, panels, samples}<br/>canvases[] / languages[] / coverSupported<br/>publications {orchestrator, text, image, reviewer}"]
   Quality_policy["Quality policy<br/>Proposed versioned workflow policy<br/>id / revision / reviewerPublication<br/>criteria {lettering, content, continuity, usability}<br/>findingCodes[] / blockingPolicy"]
+  Review_request["Review request<br/>I: bookletReviewRequests<br/>_id / documentVersion / ownerId / productionId / runId<br/>targets[] {artifactId, revisionId, sha256}<br/>contentHash / presentationHash / sourceProductionId?<br/>appliedDecisionId? / createdAt"]
+  Reuse_acceptance["Reuse acceptance<br/>I: bookletReuseAcceptances<br/>_id / ownerId / productionId / sourceProductionId<br/>revisionId / requestId / runId"]
+  Service_write_receipt["Service write receipt<br/>I: bookletServiceWrites<br/>_id / ownerId / productionId / inputHash / createdAt<br/>result {original typed service response}"]
+  Local_asset_part["Local asset part<br/>I: bookletAssetBytes<br/>_id / assetId / index / sha256 / bytes (BSON Binary)<br/>Fixed 1 MiB chunks, final chunk may be shorter"]
   Booklet -->|"currentProductionId; one booklet has many productions"| Production
   Production -->|"subjects[].artifacts[] current and accepted revision IDs"| Artifact_revision
   Artifact_revision -->|"productionId plus embedded artifactId and subjectId"| Production
   Artifact_revision -->|"sources[] exact immutable dependencies"| Artifact_revision
   Production -->|"productionId on each operation"| Operation
-  Operation -->|"result.revisionIds[]"| Artifact_revision
-  Operation -->|"operationId"| Execution_attempt
-  Execution_attempt -->|"runId"| Run
-  Execution_attempt -->|"per-call measurement linkage proposed"| Execution_measurement
-  Run_binding -->|"productionId"| Production
-  Run_binding -->|"runId"| Run
-  Human_decision -->|"productionId"| Production
-  Human_decision -->|"targets[] exact revisions"| Artifact_revision
-  Revision_request -->|"decisionId"| Human_decision
-  Revision_request -->|"allocationIds[]"| Entitlement_allocation
-  Revision_request -->|"authorizes work"| Operation
+  Operation -->|"revisionId"| Artifact_revision
   Quality_review -->|"targetRevisionId and source identities"| Artifact_revision
   Quality_review -->|"policyRevisionId"| Quality_policy
-  Repair_budget -->|"failedQualityReviewId"| Quality_review
-  Repair_budget -->|"bounded authorizing operation"| Operation
   Artifact_revision -->|"assets[] and manifest page assets"| Original_asset_receipt
-  Attachment_receipt -->|"artifactRevisionId"| Artifact_revision
-  Attachment_receipt -->|"assetId"| Original_asset_receipt
-  Display_derivative -->|"originalAssetId"| Original_asset_receipt
-  Operation -->|"evidenceRefs[]"| Evidence_reference
+  Operation -->|"via measured provider calls"| Evidence_reference
   Execution_measurement -->|"evidenceRefs[]"| Evidence_reference
   Quality_review -->|"evidenceRefs[]"| Evidence_reference
   PDF_export -->|"exact book-manifest revision"| Artifact_revision
@@ -93,9 +76,23 @@ flowchart TB
   Entitlement_allocation -->|"subjectId resolves inside production"| Production
   Consumption_workflow -->|"orderId"| Consumption_order
   Consumption_charge -->|"orderId"| Consumption_order
+  Production -->|"revisionChargeId (retained across continuations)"| Consumption_charge
   Consumption_charge -->|"ledgerId"| Ledger_entry
   Provider_action -->|"catalog publication identity"| Catalog_version
   Production -->|"snapshotted profile identity"| Execution_profile
   Repository_write_receipt -->|"scope and original result identity"| Production
   Repository_write_receipt -->|"original result.revisionId"| Artifact_revision
+  Review_request -->|"productionId"| Production
+  Review_request -->|"targets[] exact revisions"| Artifact_revision
+  Review_request -->|"appliedDecisionId"| Human_decision
+  Review_request -->|"runId"| Run
+  Reuse_acceptance -->|"requestId"| Review_request
+  Reuse_acceptance -->|"revisionId in source production"| Artifact_revision
+  Reuse_acceptance -->|"paid destination productionId"| Production
+  Service_write_receipt -->|"productionId"| Production
+  Original_asset_receipt -->|"attachments[]"| Artifact_revision
+  Original_asset_receipt -->|"originalAssetId for derivatives"| Original_asset_receipt
+  Local_asset_part -->|"assetId"| Original_asset_receipt
+  Operation -->|"operationId and runId"| Execution_measurement
+  Operation -->|"runId"| Run
 ```

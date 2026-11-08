@@ -4,7 +4,7 @@
 
 [Canonical model](model.md) ? [Concrete JSON example](model-document-example.json)
 
-The embedded production content index and repositories are implemented in T14. Later service work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
+The embedded production index, lifecycle and media services are implemented in T14-T16. Later workflow/delivery work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
 
 Core document boundaries and selected nested fields. Complete details: [complete schema](model-complete-mermaid.md).
 
@@ -12,22 +12,24 @@ Core document boundaries and selected nested fields. Complete details: [complete
 %%{init: {"theme":"base","themeVariables":{"primaryColor":"#f1f5f9","primaryTextColor":"#172033","primaryBorderColor":"#64748b","lineColor":"#64748b","edgeLabelBackground":"#ffffff"},"flowchart":{"htmlLabels":false,"useMaxWidth":false}}}%%
 flowchart TB
   Booklet["Booklet<br/>I: T14 bookletBooks<br/>_id / documentVersion / ownerId / title / version<br/>currentProductionId? -&gt; Production<br/>createdAt / updatedAt<br/>deletion {deletedAt?, recoverUntil?}"]
-  Production["Production<br/>I: T14 bookletProductions; lifecycle T15<br/>_id / bookletId / orderId / version<br/>brief {} / creativeConfigSnapshot {}<br/>subjects[] {<br/>  id / kind / label<br/>  artifacts[] {id, kind, currentRevisionId, acceptedRevisionId}<br/>}<br/>stageLocks {} / mutationLease? {}"]
-  Artifact_revision["Artifact revision<br/>I: T14 bookletRevisions; immutable drafts<br/>_id / productionId / artifactId / subjectId<br/>kind / ordinal / contentHash<br/>content {panels[] {lettering[]} or other typed payload}<br/>sources[] / assets[] / provenance {}"]
-  Operation["Operation<br/>Contract; persistence details pending<br/>_id / productionId / subjectId / kind / state<br/>idempotencyKey / inputHash / createdAt<br/>funding {kind, orderId?, allocationId?}<br/>repair? {failedReviewId, outputId, ordinal}"]
-  Human_decision["Human decision<br/>Contract; persistence pending<br/>_id / productionId / actorId / runId<br/>submission {formId, submissionId}<br/>action / answerOrInstruction? / submittedAt<br/>targets[] {artifactId, revisionId}"]
-  Quality_review["Quality review<br/>Contract; separate review history<br/>_id / productionId / targetRevisionId / operationId<br/>policyRevisionId / disposition / createdAt<br/>inputs {assetIdentity, sourceRevisionIdentities[]}<br/>findings[] {code, severity, message, evidenceRefs[]}"]
-  Original_asset_receipt["Original asset receipt<br/>Contract; T16 persistence pending<br/>_id / ownerId / productionId / operationId<br/>storageObjectId (private) / sha256 / bytes / mime<br/>dimensions {width, height}<br/>provenance {provider, providerRequestId, evidenceId}"]
+  Production["Production<br/>I: bookletProductions; T14/T15<br/>_id / bookletId / orderId / revisionChargeId? / version<br/>brief {} / creativeConfigSnapshot {}<br/>subjects[] {<br/>  id / kind / label<br/>  artifacts[] {id, kind, currentRevisionId, acceptedRevisionId}<br/>}<br/>stageLocks {} / mutationLease? {}"]
+  Artifact_revision["Artifact revision<br/>I: bookletRevisions; immutable content<br/>_id / productionId / artifactId / subjectId<br/>kind / ordinal / contentHash<br/>content {panels[] {lettering[]} or other typed payload}<br/>sources[] / assets[] / provenance {}"]
+  Operation["Operation<br/>I: bookletGenerations; image admission<br/>_id / documentVersion / ownerId / productionId / runId<br/>artifactId / state / createdAt / revisionId? / repairRoot?<br/>sources[] {artifactId, revisionId, sha256}<br/>revisionAllocationId? (one output root per allocation/artifact)"]
+  Quality_review["Quality review<br/>I: bookletQualityReviews<br/>_id / ownerId / productionId<br/>value {schemaVersion, id, operationId, productionId, createdAt,<br/>  target {artifactId, revisionId, sha256}, asset {assetId, sha256},<br/>  sources[] {artifactId, revisionId, sha256},"]
+  Original_asset_receipt["Original asset receipt<br/>I: bookletAssets; originals and derivatives<br/>_id / documentVersion / ownerId / productionId / operationId<br/>outputKey / inputHash / sha256 / bytes / mime / width / height<br/>state: staging or ready / originalAssetId? / createdAt<br/>storage {kind: mongo} or {kind: object, object {storeId, key, versionId?}}"]
   Consumption_order["Consumption order<br/>I: consumptionOrders<br/>_id<br/>value {id, ownerId, targetId, terms, state}<br/>value {chargedCredits, refundedCredits, chargeLedgerId?}<br/>value {idempotencyKey, inputHash, startedAt?, expiresAt?}"]
+  Review_request["Review request<br/>I: bookletReviewRequests<br/>_id / documentVersion / ownerId / productionId / runId<br/>targets[] {artifactId, revisionId, sha256}<br/>contentHash / presentationHash / sourceProductionId?<br/>appliedDecisionId? / createdAt"]
   Booklet -->|"currentProductionId; one booklet has many productions"| Production
   Production -->|"subjects[].artifacts[] current and accepted revision IDs"| Artifact_revision
   Artifact_revision -->|"productionId plus embedded artifactId and subjectId"| Production
   Artifact_revision -->|"sources[] exact immutable dependencies"| Artifact_revision
   Production -->|"productionId on each operation"| Operation
-  Operation -->|"result.revisionIds[]"| Artifact_revision
-  Human_decision -->|"productionId"| Production
-  Human_decision -->|"targets[] exact revisions"| Artifact_revision
+  Operation -->|"revisionId"| Artifact_revision
   Quality_review -->|"targetRevisionId and source identities"| Artifact_revision
   Artifact_revision -->|"assets[] and manifest page assets"| Original_asset_receipt
   Consumption_order -->|"value.targetId"| Production
+  Review_request -->|"productionId"| Production
+  Review_request -->|"targets[] exact revisions"| Artifact_revision
+  Original_asset_receipt -->|"attachments[]"| Artifact_revision
+  Original_asset_receipt -->|"originalAssetId for derivatives"| Original_asset_receipt
 ```
