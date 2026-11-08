@@ -1,6 +1,6 @@
 {
   "example": {
-    "status": "T14 draft plus T15/T16 independent service-record examples; not seed data",
+    "status": "T14 draft plus T15-T17 independent service-record examples; not seed data",
     "notes": [
       "collections groups independent documents; only subjects and artifact entries are embedded in Production.",
       "This is a draft production. No human approval, image generation, charge or completion is implied. Accepted pointers stay null.",
@@ -62,9 +62,7 @@
             "tag": "en",
             "direction": "ltr"
           },
-          "characters": [
-            "Mira, a child with a yellow raincoat"
-          ],
+          "characters": ["Mira, a child with a yellow raincoat"],
           "locations": [],
           "visualPreferences": "Warm watercolor"
         },
@@ -177,9 +175,7 @@
             {
               "id": "unit_1",
               "prose": "Mira follows a lantern.",
-              "characterIds": [
-                "subject_mira"
-              ],
+              "characterIds": ["subject_mira"],
               "locationIds": []
             }
           ]
@@ -189,9 +185,7 @@
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": [
-            "evidence_external_001"
-          ]
+          "evidenceIds": ["evidence_external_001"]
         },
         "contentHash": "baecd155311e35601a91f6b9a65679306753faf34bb8f5d2dde7718d70bd1459",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -211,9 +205,7 @@
             {
               "id": "unit_1",
               "prose": "Mira pauses and asks for help finding the lantern.",
-              "characterIds": [
-                "subject_mira"
-              ],
+              "characterIds": ["subject_mira"],
               "locationIds": []
             }
           ]
@@ -229,9 +221,7 @@
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": [
-            "evidence_external_001"
-          ]
+          "evidenceIds": ["evidence_external_001"]
         },
         "contentHash": "f53761e7c60622bade8768c286a52080bdee9f0a9c175174aaa021266f77a086",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -249,18 +239,14 @@
           "kind": "description",
           "name": "Mira",
           "description": "A child with a yellow raincoat.",
-          "continuityRules": [
-            "Keep the raincoat yellow."
-          ]
+          "continuityRules": ["Keep the raincoat yellow."]
         },
         "sources": [],
         "assets": [],
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": [
-            "evidence_external_001"
-          ]
+          "evidenceIds": ["evidence_external_001"]
         },
         "contentHash": "713c336394f520a5a272b6396c4ba2befa22b3881b6388d8638fd4a44da392d5",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -286,13 +272,9 @@
                 "height": 1
               },
               "action": "Mira asks for help.",
-              "characterIds": [
-                "subject_mira"
-              ],
+              "characterIds": ["subject_mira"],
               "locationIds": [],
-              "manuscriptUnitIds": [
-                "unit_1"
-              ],
+              "manuscriptUnitIds": ["unit_1"],
               "lettering": [
                 {
                   "id": "lettering_1",
@@ -321,9 +303,7 @@
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": [
-            "evidence_external_001"
-          ]
+          "evidenceIds": ["evidence_external_001"]
         },
         "contentHash": "e6b46756c0e51a33d4efdac35b15f25c9f8612ba7e7b84b0321dbc404de3a693",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -347,6 +327,41 @@
     ]
   },
   "serviceRecordExamples": {
+    "bookletMcpTransfers": {
+      "_id": "transfer_fingerprint",
+      "ownerId": "owner_demo",
+      "productionId": "production_001",
+      "key": "story-input-001",
+      "kind": "revision",
+      "bytes": 2,
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "createdAt": "2026-11-08T00:00:00.000Z",
+      "fence": 1
+    },
+    "bookletMcpTransferParts": {
+      "_id": "part_fingerprint",
+      "transferId": "transfer_fingerprint",
+      "index": 0,
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "data": { "$binary": { "base64": "e30=", "subType": "00" } }
+    },
+    "bookletMcpTransferBudgets": {
+      "_id": "budget_fingerprint",
+      "ownerId": "owner_demo",
+      "productionId": "production_001",
+      "bytes": 2
+    },
+    "bookletWorkflowPolicies": {
+      "profileId": "profile_demo",
+      "profileRevision": 1,
+      "orchestratorId": "booklet",
+      "configurationRevision": 1,
+      "reviewer": {
+        "id": "visual-review",
+        "revision": 1,
+        "publicationId": "example-only-not-published"
+      }
+    },
     "bookletReviewRequests": {
       "_id": "12345678-1234-4234-9234-123456789abc",
       "documentVersion": 1,
@@ -474,10 +489,7 @@
             "action": "Repair the lettering using the approved page plan."
           }
         ],
-        "evidenceIds": [
-          "review_input",
-          "review_output"
-        ],
+        "evidenceIds": ["review_input", "review_output"],
         "createdAt": "2026-11-07T10:00:00.000Z"
       }
     }

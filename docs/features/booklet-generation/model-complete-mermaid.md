@@ -4,7 +4,7 @@
 
 [Canonical model](model.md) ? [Concrete JSON example](model-document-example.json)
 
-The embedded production index, lifecycle and media services are implemented in T14-T16. Later workflow/delivery work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
+The embedded production index, lifecycle, media and MCP services are implemented in T14-T17. Later workflow/delivery work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.
 
 All maintained domain document summaries are shown. Economy reuses Unibase; this is not a complete inventory of its internal collections. Later-task proposals and unresolved execution details retain explicit labels.
 
@@ -45,6 +45,15 @@ flowchart TB
   Reuse_acceptance["Reuse acceptance<br/>I: bookletReuseAcceptances<br/>_id / ownerId / productionId / sourceProductionId<br/>revisionId / requestId / runId"]
   Service_write_receipt["Service write receipt<br/>I: bookletServiceWrites<br/>_id / ownerId / productionId / inputHash / createdAt<br/>result {original typed service response}"]
   Local_asset_part["Local asset part<br/>I: bookletAssetBytes<br/>_id / assetId / index / sha256 / bytes (BSON Binary)<br/>Fixed 1 MiB chunks, final chunk may be shorter"]
+  MCP_transfer["MCP transfer<br/>I: T17 bookletMcpTransfers<br/>_id / ownerId / productionId / key / kind / createdAt<br/>bytes / sha256 / fence / evidenceInputHash?<br/>completedEvidence? {inputHash, result}"]
+  MCP_transfer_part["MCP transfer part<br/>I: T17 bookletMcpTransferParts<br/>_id / transferId / index / sha256<br/>data? (BSON Binary, at most 8 KiB)<br/>Evidence completion removes raw data; retry hashes remain"]
+  MCP_transfer_budget["MCP transfer budget<br/>I: T17 bookletMcpTransferBudgets<br/>_id / ownerId / productionId / bytes<br/>Cumulative reservation; transactionally enforced"]
+  Workflow_policy_binding["Workflow policy binding<br/>I: T17 bookletWorkflowPolicies; provisioning T19/T20<br/>profileId / profileRevision<br/>orchestratorId / configurationRevision<br/>reviewer {id, revision, publicationId}<br/>Server-owned immutable publication binding"]
+  MCP_transfer -->|"owned productionId"| Production
+  MCP_transfer_part -->|"transferId"| MCP_transfer
+  MCP_transfer_budget -->|"productionId; frozen execution ceilings"| Production
+  Workflow_policy_binding -->|"frozen execution profile/revision"| Production
+  Workflow_policy_binding -->|"required measured reviewer publication"| Quality_review
   Booklet -->|"currentProductionId; one booklet has many productions"| Production
   Production -->|"subjects[].artifacts[] current and accepted revision IDs"| Artifact_revision
   Artifact_revision -->|"productionId plus embedded artifactId and subjectId"| Production
