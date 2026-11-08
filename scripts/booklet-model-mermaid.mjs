@@ -14,7 +14,7 @@ export function renderMermaid(documents, relationships, complete) {
     "",
     "[Canonical model](model.md) ? [Concrete JSON example](model-document-example.json)",
     "",
-    "The embedded production content index and repositories are implemented in T14. Later service work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.",
+    "The embedded production index, lifecycle and media services are implemented in T14-T16. Later workflow/delivery work retains explicit labels. Each box is a document boundary or a labeled existing service view; indented objects and arrays belong inside it. There are no separate Subject or Artifact collections. Arrows are cross-document references, not execution order.",
     "",
     complete
       ? "All maintained domain document summaries are shown. Economy reuses Unibase; this is not a complete inventory of its internal collections. Later-task proposals and unresolved execution details retain explicit labels."
@@ -29,7 +29,7 @@ export function renderMermaid(documents, relationships, complete) {
     if (!complete) {
       if (doc.name === "Production")
         fields = [
-          "_id / bookletId / orderId / version",
+          "_id / bookletId / orderId / revisionChargeId? / version",
           "brief {} / creativeConfigSnapshot {}",
           "subjects[] {",
           "  id / kind / label",

@@ -41,8 +41,8 @@ publication/external acceptance gates. No agent delegation is implied.
 | T12 | Unibase | Commerce administration, preview/readback and refunds | T07,T08,T09,T10 | Imported from Unibase; local verification complete |
 | T13 | Both | Reviewed foundation through normal template integration | T04–T12 | Complete (local foundation integration) |
 | T14 | Unitale | Owned book/production/revision repositories with embedded subjects/artifact index | T01 | Implemented; local verification complete |
-| T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Pending |
-| T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Pending |
+| T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Implemented; local verification complete |
+| T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Implemented; local verification complete |
 | T17 | Unitale | MCP-only booklet tools | T15,T16 | Pending |
 | T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Pending |
 | T19 | Unitale | Versioned visual reviewer and bounded repair contract | T01,T02 | Pending |
@@ -244,3 +244,52 @@ Verification on 2026-11-07:
 - Handbook readiness retains the existing tracking/preference warnings.
 - Final review uses two consecutive same-agent read-only passes; no independent
   reviewer or delegated review is claimed. Commit/merge remain separately authorized.
+
+### T15/T16 service checkpoint
+
+Implemented Unitale lifecycle services, prepaid Run admission and the booklet domain
+adapter. Production start/continuation/revisions reuse Unibase commerce transactions;
+no second Run charge is permitted. Exact-revision human approvals, stale-source
+checks, stage locks, paid source-production reuse, quality evidence gates, bounded
+repair admission and manifest completion are covered by disposable-database tests.
+
+Original image bytes are retained unchanged in local private binary parts or the
+existing configured private object store. Immutable receipts, separate derivatives,
+atomic revision attachment, ordered subject-specific reference routing and reviewer
+input assembly preserve hashes and ownership. Storage response loss retries the
+same receipt without generating another image. Migration
+`booklets:0002-lifecycle-media` creates indexes only, including repeated-run tests.
+
+The canonical [model](model.md), JSON examples and both Mermaid views reflect actual
+collections and embedded fields. The new command is
+`npm run test:booklet-lifecycle-media`. No Unibase edits/import, public routes, MCP
+tools, production workflow registration, provider generation, live migrations or
+publication were performed. Existing interfaces remain unchanged.
+
+Local verification on 2026-11-07: the new service suite has 12 passing tests;
+the combined repository, contract, offline Dify, commerce, evidence, MCP, migration
+and legacy artifact suites have 80 passing tests. Typecheck, lint, build, documentation,
+environment, i18n and skill checks pass. The parallel combined test run required
+MongoMemoryServer's forced-stop fallback for two disposable fixture processes;
+a serial rerun passed all 80 tests without cleanup warnings. Focused regressions also verify logical-Run evidence protection and display derivatives after entitlement expiry. Final read-only reviews are
+reported in the implementation handoff; no independent reviewer is claimed.
+
+Verification on 2026-11-08 after recovery, revision-continuation, repair-allocation and successive-reuse
+corrections: all 16 lifecycle/media tests and all 84 tests in the combined affected
+suite pass. Regressions cover retained-output attachment from a verified terminal
+Run (including an unknown image outcome), no duplicate charge/generation, an
+allocation's inability to reset its repair budget, and original/derivative access
+through three explicitly accepted paid productions. Revision continuations retain
+their original allocation scope without another charge, respect revocation, and
+cannot reset repair budgets; a new revision request replaces the scope. The focused
+and combined runs passed with MongoMemoryServer's forced-stop cleanup warning.
+Typecheck, lint, build,
+documentation, environment, i18n and skill checks pass. Typecheck and build run
+outside the sandbox because SWC's native cache rejects the sandbox user.
+
+Next dependency is T17 (MCP-only booklet catalog). T18/T19 remain independently
+available; T20 wires actual specialist/reviewer publications and enforces provider
+spending, text-call, elapsed-time and workflow-step limits. T21 supplies the creator
+workspace and rich image review presentation. These server-service results are not
+live Dify, visual-quality or end-user journey acceptance; those remain their assigned
+tasks and T28. Commit, merge and deployment still require explicit authorization.

@@ -4,8 +4,7 @@
 
 The accepted model uses a **production document with an embedded content index**.
 Subjects and artifacts are nested identities, not independent collections. Immutable
-content revisions and growing histories remain separate documents. T14 implements these repositories and their transaction boundaries. Lifecycle,
-approval, execution and media integration remain later tasks.
+content revisions and growing histories remain separate documents. T14 implements these repositories; T15 and T16 add lifecycle transactions, exact-revision approvals and private original-media services.
 
 - [Simple Mermaid schema](model-core-mermaid.md)
 - [Complete Mermaid schema](model-complete-mermaid.md)
@@ -33,8 +32,7 @@ The [PRD](prd.md) governs behavior. Dedicated persistence schemas are separate f
 [v1 workflow contracts](contracts.md). Field lists
 are operational summaries, not exhaustive DTOs. Later execution, quality and delivery
 proposals retain their review status; accepting the index does not approve all of them.
-T14 registers a namespaced index migration and an extension with no routes,
-MCP tools, navigation or workers. It introduces no provider calls or charges.
+The booklets extension registers namespaced index migrations and a Run domain adapter. It has no routes, MCP tools, navigation or workers. Lifecycle services use existing Unibase charging and enqueue only the parent orchestrator; they make no generation calls.
 
 ## Approach
 
@@ -52,10 +50,7 @@ MCP tools, navigation or workers. It introduces no provider calls or charges.
   Its typed content embeds panels and lettering, story units, or accepted manifest
   entries. Sources and asset identities are bounded embedded references. Raw prompts
   and provider envelopes stay in evidence storage.
-- **Operations, revisions, decisions, reviews and measurements** stay separate;
-  their history must not accumulate inside Production. Customer revision requests
-  are separate records with an embedded accepted quote snapshot. Attempt/budget
-  implementation details remain pending lifecycle review.
+- **Generation admissions**, review requests and quality reviews stay outside Production. Human submissions remain in existing `runDecisions`; revision requests, allocations and charges reuse commerce documents. Repair usage is derived from generation records grouped by `repairRoot`, bounded by the frozen package limit. No separate attempt, repair-budget or attachment collection is introduced.
 - **Manifest** is a revision kind, not an Edition collection. Its nested page
   entries bind order, exact image revisions, original assets, quality and approval.
 - **Economy** reuses existing Unibase documents. Production references its order;
@@ -129,13 +124,11 @@ addSubject/addArtifact; appendRevision; and acquire/renew/releaseLease.
 `targetId` and product type `booklet`. Creative fields come from the frozen order
 extension; authoritative terms supply package identity and validation allowances.
 The trusted caller supplies matching execution capacity. Only queued/started,
-unexpired orders can create productions. T15 must integrate admission/charging;
-draft persistence does not authorize generation or spend credits.
+unexpired orders can create productions. `bookletLifecycle.start` charges once and transitions the draft in the commerce admission transaction; draft persistence alone never authorizes generation or spends credits.
 
 Creation can participate in an existing MongoDB transaction. The order must already
 have been inserted in that transaction. Unibase's order-creation admission callback
-runs before insertion, so T15 must compose at a compatible boundary rather than
-assuming the callback can read a not-yet-inserted order. Results are usable only
+runs before insertion. Production is created against an existing queued order, then paid admission uses the start callback, where that order already exists. Results are usable only
 after the caller commits. Transactions serialize account-access changes.
 
 Every write has a scoped stable key and normalized input hash. Original results
@@ -146,8 +139,7 @@ operational history, not generation operations or customer charges.
 A production lease lasts 1?300 seconds. Acquisition/takeover increments a durable
 fence; every creative write checks expected version, holder, fence and expiry.
 Renewal and release are versioned/idempotent. Revisions and pointer updates commit
-together. No API mutates an accepted pointer, stage lock, lifecycle or completion.
-T15 owns those transitions and their decision/quality checks.
+together. Dedicated lifecycle methods own accepted pointers, stage locks and completion; there is no general-purpose patch endpoint.
 
 Lists accept 1?100 items (default 25). Book/production pages use stable ID order;
 revision history uses increasing ordinal. Cursors are query/account scoped and
@@ -161,19 +153,17 @@ new mutations; committed idempotent retries remain readable with authorization.
 | D01/D02 | Implemented embedded identities and per-subject responsibilities; no separate artifacts collection |
 | D03 | Implemented immutable revisions, transactional ordinals and canonical hashVersion 1 over content/identity/sources/assets |
 | D04 | Implemented package counts, strict payload validation and BSON size ceilings; raw evidence remains external |
-| D05 | Lifecycle transitions remain T15; new productions are drafts |
+| D05 | Implemented paid start/continuation/revision reopening and manifest completion; new productions are drafts |
 | D06 | Implemented production version, lease/fence, rollback and replay receipts |
-| D07/D08 | Request/attempt/repair orchestration and explicit cross-production reuse remain later work |
+| D07/D08 | Implemented exact human approvals, explicit reuse acceptance, generation locks and bounded repair admission; workflow scheduling remains T20 |
 | D09 | Implemented owned order association and frozen creative snapshot; no Unibase changes |
-| D10 | T14 validates declared asset identities only; T16 verifies retained bytes and ownership |
+| D10 | Implemented original-byte verification, durable retention/attachment and approved source routing |
 | D11 | Implemented owner scope and rejection of deleted books; delete/recovery/cleanup services remain later work |
-| D12 | Implemented manifest draft checks; approval, quality and completion remain T15/T17 |
+| D12 | Implemented manifest checks and evidence-bound completion; MCP exposure remains T17 |
 
-Source dependencies are restricted to the same production. V1 aggregate character
+Same-production dependencies are the default. A new paid production can reference its declared source production only after a persisted exact-revision human reuse approval. Reused content is copied into an empty matching responsibility with the same stable subject identity; the source remains immutable. V1 aggregate character
 and location payloads are rejected by persistence; individual description and roster
-variants are explicit. Manifest review/approval IDs and operation/Run/evidence
-provenance are claims for future service verification, never authority. A stored
-manifest draft cannot complete a production or make content public.
+variants are explicit. Once admitted, image appends require a matching generation authorization and retained original receipt. Completion verifies current accepted revisions, human decisions, passing quality evidence and original bytes. A stored draft alone cannot complete a production or make content public.
 
 Indexes cover owner reads, unique order association, unique production/artifact/
 ordinal, source lookups and scoped idempotency. The forward-only migration is
@@ -193,5 +183,100 @@ Run `npm run test:booklet-repositories` for disposable replica-set tests.
 - [Measurements](../../../src/lib/contracts/execution-measurements.ts) and
   [evidence service](../../../src/lib/server/execution/measurements.ts).
 
-T14 persistence is implemented. Specialists, visual evaluation, Human Input execution,
-reader, PDF and sharing remain their assigned delivery tasks.
+Repositories, lifecycle and media services are implemented. Specialist/reviewer workflows, orchestration, MCP exposure, creator UI, reader, PDF and sharing remain their assigned tasks. Offline service tests are not live Dify acceptance.
+
+## Lifecycle and media service boundaries
+
+`bookletLifecycle` starts/continues paid production, quotes and starts revisions (bound to the expected production version),
+requests/applies human reviews, authorizes and inspects image generation, reconciles
+failed/unknown outcomes and completes a manifest. All service mutations use owned
+transactions and receipts in `bookletServiceWrites`. Mutations with a caller lease
+recheck its fence/expiry before persistence. An authorization receipt identifies an
+operation; it is **not** permission to replay a provider call. T20 must inspect the
+operation and reconcile uncertain execution before dispatching again.
+
+`enqueueBookletRun` binds an active consumption workflow to an existing Run with
+zero generic Run credits. It accepts only a validated booklet orchestrator, no
+persona and no uploaded files. Generic Run-start admission rejects booklet targets
+to prevent bypassing the prepaid binding. A paused Run is answered through the
+existing authenticated Human Input UI. A new continuation requires verified prior
+termination; it does not buy another package. T20 supplies the actual orchestrator
+publication. The picker endpoint remains a T21 integration, not a route added here.
+
+Production's nullable `revisionChargeId` retains the originating revision charge
+and allocation scope across continuation workflows. It is set atomically by
+revision admission, replaced only by a new revision request, and defaults to null
+for existing drafts. Text and image writes resolve non-revoked allocations through
+this identity while still requiring the current active Run. Continuing does not
+create allocations or charges and cannot reset an image allocation's repair budget.
+
+`bookletReviewRequests` stores exact targets, group hash, presentation hash, Run,
+optional reuse source and applied decision identity. The returned bounded native
+form must be used unchanged. It uses the existing summary cards (up to 20 targets,
+10,000 characters per card); oversized groups fail explicitly. Rich image previews
+remain the T21 workspace task. Approval requires an authenticated submitted user
+answer, matching presentation and still-current targets. Image approval also
+requires passing quality; a human cannot override a failed required review.
+
+`bookletQualityReviews` embeds the validated v1 review under `value`. It is immutable
+per target revision. `recordBookletQuality` requires verified original bytes,
+matching input/output evidence, an observed successful reviewer measurement and a
+trusted server-supplied policy/publication. T19 owns visual evaluation and policy
+publication; this service performs identity and disposition checks only.
+
+`bookletGenerations` stores one image authorization per stable operation identity:
+owner/production/Run/artifact, ordered exact sources, state, resulting revision and
+optional `repairRoot` and `revisionAllocationId`. An image allocation binds one
+output root per artifact. A new operation may retry a verified provider failure,
+but an unresolved or attached output cannot start another root on that allocation.
+Subsequent quality repairs must name the current revision and obey the root's
+repair limit, even when a customer revision workflow is active.
+Story/style/reference locks commit before authorization is
+returned. Source selection checks manuscript, style, subject descriptions and page
+plan references, rejecting unrelated subjects. Repairs count against their original
+output and the total image-call ceiling; they never allocate customer revisions.
+Provider spending, text-call/time limits and workflow step scheduling remain T20
+execution admission requirements; these services make no provider calls.
+
+`bookletAssets` stores originals and derivatives as separate records. Metadata
+includes hash, byte count, MIME, dimensions, generation/source provenance, durable
+storage choice, staging/ready state, revision attachments and a reference fence.
+Original bytes are never normalized. Local bytes live in 1 MiB binary parts in
+`bookletAssetBytes`; configured private S3 storage uses the existing object-store
+adapter. Retention accepts a complete bounded buffer (default 64 MiB and 16 million
+pixels), verifies decoding and hash, and resumes the same immutable storage key.
+A generation has one original receipt. Display derivatives retain `originalAssetId`
+and never substitute for source images. Owned display derivatives remain available after revision entitlement expiry. There is no upload or URL-fetch endpoint.
+
+Revision insertion, original attachment and generation completion commit together.
+A failed attachment leaves the retained original reusable without generation.
+A new continuation may reconcile unfinished generation and attach its retained
+original after the originating paid workflow has verified termination. The
+generation keeps its original Run identity; the revision records the active
+attaching Run. Sources, operation and original receipt must still match exactly.
+Unresolved operations continue to block another generation for the same artifact.
+`references` and `reviewerInputs` return verified originals in the authorized source
+order; reviewer inputs include the generated target and approved source content.
+Aggregate image transfers are bounded by the trusted media byte limit. All reads
+recheck account/ownership and deleted-book access, including after storage IO.
+Deletion/recovery cleanup remains later lifecycle administration work; no TTL deletes
+accepted originals or unresolved staging records.
+
+`bookletReuseAcceptances` records the authenticated acceptance of exact source
+revisions in a new production. Shared originals acquire the new revision attachment;
+financial entitlements remain separate for each paid production. The source and its
+completed manifest never change. A reused image must pass review for its new context.
+Reuse can span successive paid productions: the original receipt keeps its initial
+production identity while each explicitly accepted copy adds an immutable revision
+attachment. Asset reads validate the owned target attachment and hash, rather than
+requiring the original to belong to the immediate source production. Derivatives
+use their original's attachment authorization.
+
+Migration `booklets:0002-lifecycle-media` adds indexes only. Run
+`npm run test:booklet-lifecycle-media` with the cached disposable MongoDB binary;
+no credentials, live services or paid calls are required.
+
+Booklet `runId`/revision provenance refer to the specific `aiJobs._id` attempt.
+Execution measurement/evidence `runId` uses `aiJobs.run.logicalId`, preserving
+Unibase active-Run evidence holds across attempts. Services resolve that mapping
+through the owned production/order binding; IDs are not interchangeable.

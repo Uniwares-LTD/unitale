@@ -14,7 +14,7 @@ const coreNames = new Set([
   "Production",
   "Artifact revision",
   "Operation",
-  "Human decision",
+  "Review request",
   "Quality review",
   "Original asset receipt",
   "Consumption order",

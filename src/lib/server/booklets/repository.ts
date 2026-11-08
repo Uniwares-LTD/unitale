@@ -2,6 +2,11 @@ import "server-only";
 import { BSON, type Db, type ClientSession } from "mongodb";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
+import {
+  guardBookletAppend,
+  attachBookletAssets,
+  resolveReusedSource,
+} from "./guards";
 import { AppError } from "../../auth-policy";
 import { fingerprint } from "../foundation/canonical";
 import {
@@ -370,6 +375,7 @@ export function bookletRepository(
         brief: z.input<typeof briefSchema>;
         capacity: z.input<typeof executionCapacitySchema>;
         key: string;
+        sourceProductionId?: string;
       },
       session?: ClientSession,
     ) {
@@ -381,10 +387,16 @@ export function bookletRepository(
           brief: briefSchema,
           capacity: executionCapacitySchema,
           key: id,
+          sourceProductionId: id.optional(),
         })
         .parse(input);
       return transaction(async (s) => {
         const b = await book(value.bookletId, s);
+        if (value.sourceProductionId) {
+          const source = await production(value.sourceProductionId, s);
+          if (source.bookletId !== b._id || source._id === value.id)
+            throw notFound();
+        }
         const existing = await productions.findOne(
           { _id: value.id },
           { session: s },
@@ -452,7 +464,7 @@ export function bookletRepository(
               ownerId: actor.uid,
               bookletId: b._id,
               orderId: order.id,
-              sourceProductionId: null,
+              sourceProductionId: value.sourceProductionId ?? null,
               brief: value.brief,
               creativeConfigSnapshot: {
                 ...fields,
@@ -728,6 +740,7 @@ export function bookletRepository(
         const { subject, artifact } = resolveArtifact(p, value.artifactId);
         if (artifact.kind !== value.content.kind)
           throw invalid("Content kind differs from artifact responsibility.");
+        await guardBookletAppend(db, p, value, s);
         if (
           !unique(value.sources.map((v) => v.artifactId)) ||
           !unique(value.assets.map((v) => v.assetId))
@@ -735,7 +748,14 @@ export function bookletRepository(
           throw invalid("Duplicate source or asset identity.");
         const sourceRows: RevisionDocument[] = [];
         for (const source of value.sources) {
-          const row = await revision(p, source.revisionId, s);
+          const local = await revisions.findOne(
+            { _id: source.revisionId, productionId: p._id, ownerId: actor.uid },
+            { session: s },
+          );
+          const row =
+            local || !p.sourceProductionId
+              ? await revision(p, source.revisionId, s)
+              : await resolveReusedSource(db, p, source.revisionId, s);
           if (
             row.artifactId !== source.artifactId ||
             row.contentHash !== source.sha256
@@ -787,6 +807,7 @@ export function bookletRepository(
         });
         bound(row, limits.revisionBytes);
         await revisions.insertOne(row, { session: s });
+        await attachBookletAssets(db, p, value, row._id, s);
         artifact.currentRevisionId = row._id;
         return { revisionId: row._id, ordinal: row.ordinal };
       });
