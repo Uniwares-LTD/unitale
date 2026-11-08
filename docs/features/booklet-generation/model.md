@@ -280,3 +280,39 @@ Booklet `runId`/revision provenance refer to the specific `aiJobs._id` attempt.
 Execution measurement/evidence `runId` uses `aiJobs.run.logicalId`, preserving
 Unibase active-Run evidence holds across attempts. Services resolve that mapping
 through the owned production/order binding; IDs are not interchangeable.
+
+## T17 MCP storage
+
+The [MCP catalog](../../mcp.md#unitale-booklet-catalog-t17) adds bounded private
+transfer bookkeeping; production document boundaries and embedded artifacts are
+unchanged. The simple diagram retains those core boundaries; the complete diagram
+also shows these internal collections:
+
+- `bookletMcpTransfers`: deterministic owner/production/key identity, immutable
+  kind/bytes/hash, creation Date and a transaction fence. Evidence transfers bind
+  `evidenceInputHash` before use and retain `completedEvidence {inputHash, result}`
+  for response-loss retries.
+- `bookletMcpTransferParts`: deterministic transfer/index identity, SHA-256 and
+  optional BSON Binary `data` of at most 8 KiB. Completing diagnostic retention
+  removes raw `data` atomically with its receipt; hashes remain for retry checks.
+  Redacted logs then live only in the existing execution-evidence store.
+- `bookletMcpTransferBudgets`: one deterministic owner/production row with cumulative
+  reserved `bytes`. Concurrent reservations serialize on this row and cannot
+  exceed the frozen execution-derived budget.
+- `bookletWorkflowPolicies`: a unique execution profile/revision and orchestrator/
+  configuration-revision binding to `reviewer {id, revision, publicationId}`.
+  Trusted T19/T20 integration owns publication verification and immutable provisioning;
+  no workflow tool may edit it.
+
+These records are not customer orders, creative revisions or provider measurements.
+Interrupted transfers survive continuation; no TTL erases unresolved work. Image and
+revision staging, abandoned reservations and part hashes currently remain retained;
+deletion/recovery cleanup must include these collections in the later retention task.
+Migration `booklets:0003-mcp` provisions indexes only. Dates in the JSON example are
+ISO representations of database Dates; binary bytes are illustrative Extended JSON.
+
+Original MCP chunk reads use a bounded in-memory cache of fully verified bytes,
+with authorization checked on every request (including cache hits). See the
+[MCP guide](../../mcp.md#unitale-booklet-catalog-t17) for limits and expiry. This
+optimization adds no persistent fields or relations; the JSON example and both
+schema diagrams are unaffected.

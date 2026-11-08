@@ -20,6 +20,15 @@ import { resolveReusedSource } from "./guards";
 const digest = (bytes: Buffer) =>
   createHash("sha256").update(bytes).digest("hex");
 const PART = 1024 * 1024;
+const READ_CHUNK = 8192;
+const READ_CACHE_BYTES = 64 * 1024 * 1024;
+const READ_CACHE_IDLE_MS = 60_000;
+// Cache verified immutable bytes, never authorization. Shared by service instances
+// for this Mongo client, with database isolation, bounded retention and idle expiry.
+const readCaches = new WeakMap<
+  Db["client"],
+  Map<string, { bytes: Buffer; expiresAt: number }>
+>();
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 export type BookletAsset = {
   _id: string;
@@ -373,6 +382,80 @@ export function bookletMedia(
       bytes: Buffer,
     ) => retain(productionId, input, bytes),
     read,
+    async readChunk(
+      productionId: string,
+      assetId: string,
+      offset: number,
+      expectedHash?: string,
+    ) {
+      const row = await c.transaction((s) => owned(productionId, assetId, s));
+      if (
+        !Number.isSafeInteger(offset) ||
+        offset < 0 ||
+        offset > row.bytes ||
+        (expectedHash && expectedHash !== row.sha256) ||
+        (offset > 0 && !expectedHash)
+      )
+        throw bookletConflict(
+          "Document changed or offset is invalid; restart the read.",
+        );
+      if (
+        row.storage.kind === "object" &&
+        store()?.id !== row.storage.object.storeId
+      )
+        throw bookletConflict("Original storage configuration is unavailable.");
+      let cache = readCaches.get(db.client);
+      if (!cache) {
+        cache = new Map();
+        readCaches.set(db.client, cache);
+      }
+      const now = Date.now();
+      for (const [key, entry] of cache)
+        if (entry.expiresAt <= now) cache.delete(key);
+      const key = fingerprint([
+        db.databaseName,
+        row._id,
+        row.sha256,
+        row.bytes,
+        row.storage,
+      ]);
+      let entry = cache.get(key);
+      if (!entry) {
+        // Existing full read verifies complete bytes before any chunk is exposed.
+        const verified = await read(productionId, assetId);
+        if (
+          verified.asset.sha256 !== row.sha256 ||
+          verified.asset.bytes !== row.bytes
+        )
+          throw bookletConflict("Original changed during read.");
+        entry = { bytes: Buffer.from(verified.bytes), expiresAt: 0 };
+      }
+      cache.delete(key);
+      let retained = [...cache.values()].reduce(
+        (sum, item) => sum + item.bytes.length,
+        0,
+      );
+      while (
+        cache.size &&
+        (retained + entry.bytes.length > READ_CACHE_BYTES || cache.size >= 32)
+      ) {
+        const oldest = cache.keys().next().value!;
+        retained -= cache.get(oldest)!.bytes.length;
+        cache.delete(oldest);
+      }
+      entry.expiresAt = Date.now() + READ_CACHE_IDLE_MS;
+      if (entry.bytes.length <= READ_CACHE_BYTES) cache.set(key, entry);
+      // A warm cache must not preserve deleted-book or revoked-account access.
+      await c.transaction((s) => owned(productionId, assetId, s));
+      const end = Math.min(row.bytes, offset + READ_CHUNK);
+      return {
+        sha256: row.sha256,
+        bytes: row.bytes,
+        offset,
+        nextOffset: end < row.bytes ? end : null,
+        data: entry.bytes.subarray(offset, end).toString("base64"),
+      };
+    },
     async reviewerInputs(productionId: string, revisionId: string) {
       const revision = await c.transaction(async (s) => {
         const p = await c.owned(productionId, s);

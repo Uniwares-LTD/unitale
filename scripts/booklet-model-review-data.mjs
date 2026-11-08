@@ -411,7 +411,67 @@ export const documents = [
   },
 ];
 
+documents.push(
+  {
+    name: "MCP transfer",
+    group: "media",
+    status: "I: T17 bookletMcpTransfers",
+    fields: [
+      "_id / ownerId / productionId / key / kind / createdAt",
+      "bytes / sha256 / fence / evidenceInputHash?",
+      "completedEvidence? {inputHash, result}",
+    ],
+  },
+  {
+    name: "MCP transfer part",
+    group: "media",
+    status: "I: T17 bookletMcpTransferParts",
+    fields: [
+      "_id / transferId / index / sha256",
+      "data? (BSON Binary, at most 8 KiB)",
+      "Evidence completion removes raw data; retry hashes remain",
+    ],
+  },
+  {
+    name: "MCP transfer budget",
+    group: "media",
+    status: "I: T17 bookletMcpTransferBudgets",
+    fields: [
+      "_id / ownerId / productionId / bytes",
+      "Cumulative reservation; transactionally enforced",
+    ],
+  },
+  {
+    name: "Workflow policy binding",
+    group: "lifecycle",
+    status: "I: T17 bookletWorkflowPolicies; provisioning T19/T20",
+    fields: [
+      "profileId / profileRevision",
+      "orchestratorId / configurationRevision",
+      "reviewer {id, revision, publicationId}",
+      "Server-owned immutable publication binding",
+    ],
+  },
+);
+
 export const relationships = [
+  ["MCP transfer", "Production", "owned productionId"],
+  ["MCP transfer part", "MCP transfer", "transferId"],
+  [
+    "MCP transfer budget",
+    "Production",
+    "productionId; frozen execution ceilings",
+  ],
+  [
+    "Workflow policy binding",
+    "Production",
+    "frozen execution profile/revision",
+  ],
+  [
+    "Workflow policy binding",
+    "Quality review",
+    "required measured reviewer publication",
+  ],
   [
     "Booklet",
     "Production",
@@ -471,7 +531,11 @@ export const relationships = [
   ],
   ["Consumption workflow", "Consumption order", "orderId"],
   ["Consumption charge", "Consumption order", "orderId"],
-  ["Production", "Consumption charge", "revisionChargeId (retained across continuations)"],
+  [
+    "Production",
+    "Consumption charge",
+    "revisionChargeId (retained across continuations)",
+  ],
   ["Consumption charge", "Ledger entry", "ledgerId"],
   ["Provider action", "Catalog version", "catalog publication identity"],
   ["Production", "Execution profile", "snapshotted profile identity"],

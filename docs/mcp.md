@@ -359,3 +359,80 @@ end-user ownership. Registered clients share Redis-backed request limits scoped 
 project/environment/client. Exceeded limits return 429 with Retry-After; Redis
 failure returns a safe 503. The environment catalog and deployment validation use
 the same strictly named `MCP_TOKEN_*` credentials and Run client selection.
+
+## Unitale booklet catalog (T17)
+
+The `booklets` server extension registers these private v1 tools on the existing
+`/api/mcp`. One service credential with `extension:booklets:read` and
+`extension:booklets:write` covers the catalog. Each invocation also requires the
+automatically injected `runContext`; it is not a second operator-managed credential.
+The accepted capability must allow that tool. The server derives account, production,
+order, workflow and Run attempt identities; callers cannot override them. Only an
+active, owned booklet orchestrator Run without a persona can use these tools.
+No browser upload route, parallel REST tools, provider dispatch or production
+workflow registration is introduced.
+
+| Tool (all prefixed `booklet_`, suffixed `_v1`) | Behavior |
+| --- | --- |
+| `context` | Small production/version/lease summary |
+| `read_document` | Hash-bound JSON or original-image chunks for production, revision, operation, review form, evidence or asset |
+| `lease` | Acquire, renew or release a versioned mutation lease owned by this Run attempt |
+| `index` | Add stable subjects and embedded artifact responsibilities |
+| `begin_generation` | Authorize an image operation and enforce stage locks and source prerequisites |
+| `transfer` | Open immutable metadata or send one base64 chunk |
+| `retain_original` | Verify and retain an uploaded generated original for its authorized operation |
+| `save_revision` | Validate transferred typed content and atomically append a revision/advance its pointer |
+| `request_review` | Prepare exact-revision Human Input; retrieve the unchanged form with `read_document` |
+| `apply_decision` | Apply an existing authenticated human answer; never manufacture one |
+| `record_evidence` | Retain redacted diagnostics, without provider-measurement authority |
+| `record_quality` | Apply trusted measured reviewer evidence under a server-owned publication binding |
+| `sources` | Hash-bound JSON chunks describing exact original/source identities for generation or review |
+| `reconcile_generation` | Inspect trusted execution evidence to resolve an existing operation, without replay |
+| `complete` | Verify the accepted manifest, required quality and original bytes |
+
+`context`, `read_document` and `sources` require read permission; the others require
+write permission. Results use `result`, except chunk reads, whose structured output
+contains `sha256`, `bytes`, `offset`, `nextOffset` and base64 `data`. Transfer chunks
+carry at most 8 KiB of decoded bytes. Start reads at offset zero and use the returned
+hash on subsequent chunks; changed documents fail explicitly. Read a revision to get
+its content and each original separately after resolving source identities. These
+responses fit the default MCP bounds, including text fallback; smaller administrator
+limits can reject them explicitly. There is no content truncation.
+
+Original-image chunk reads reuse verified immutable bytes in a process-local cache
+shared by Mongo client and isolated by database/asset/hash/storage identity. It holds
+at most 64 MiB and 32 entries, with 60-second idle expiry and least-recently-used
+eviction. A cold read verifies the full original once; subsequent chunks avoid full
+storage downloads and hashing. Every request still checks account, ownership and
+deletion before and after accessing bytes. Replicas and expired/evicted entries
+independently reverify storage; cached bytes never cache authorization.
+
+Upload metadata specifies a stable key, kind, byte count and SHA-256. Images are
+bounded at 64 MiB, revision JSON at 4 MiB and diagnostic JSON at 1 MiB. The final
+media/repository validators may reject tighter pixel, BSON or package limits.
+Each production also has a transactionally reserved cumulative transfer budget:
+64 MiB per allowed image call plus 4 MiB per allowed text call. Failed or abandoned
+reservations remain counted; reuse the original key and chunks after interruption.
+Active Run capabilities are rejected from transferred bytes, including across chunk
+boundaries. Never send credentials or private context in creative/diagnostic payloads.
+
+Creative writes supply stable mutation keys, expected production versions and lease
+fences. Identical retries return the saved effect; changed payloads conflict. A
+successful generation authorization is not permission to replay a provider request:
+inspect its operation after uncertain outcomes. Diagnostic evidence is not a trusted
+measurement and cannot approve a book or establish costs. Trusted adapters must
+record per-call measurements and reviewer input/output evidence using the existing
+execution service; the tools cannot create adapter/provider authority.
+
+T19/T20 must provision a verified `bookletWorkflowPolicies` binding for the frozen
+execution profile/revision and accepted orchestrator/configuration revision. Its
+`reviewer {id, revision, publicationId}` is immutable operational configuration;
+there is no MCP write tool or seeded default. Missing bindings fail closed. Only the
+parent orchestrator receives the catalog/context; specialist and reviewer workflow
+composition remains T18–T20. Existing private Start-input registration rules apply.
+
+Migration `booklets:0003-mcp` adds indexes without changing existing records. The
+[model guide](features/booklet-generation/model.md#t17-mcp-storage) describes private
+staging and receipts. `npm run test:booklet-mcp` uses the real handler, fake identity
+provider and disposable MongoDB replica set (cached test binary required), with no
+secrets or paid calls. Live Dify acceptance remains T28.

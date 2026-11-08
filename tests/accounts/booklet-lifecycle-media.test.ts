@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createHash } from "node:crypto";
-import { MongoClient } from "mongodb";
+import { MongoClient, Collection } from "mongodb";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import sharp from "sharp";
 import { bookletRepository } from "../../src/lib/server/booklets/repository";
@@ -1357,6 +1357,125 @@ test("booklet lifecycle and original media use real transaction paths", async (t
           f.service.continue("production", "after-refund"),
           /closed|unavailable/,
         );
+      },
+    );
+    await t.test(
+      "chunk reads reuse verified bytes across service instances and recheck access",
+      async () => {
+        for (const backend of ["mongo", "object"] as const) {
+          const f = await fixture();
+          await f.generate();
+          const bytes = await sharp(f.imageBytes)
+            .withExif({ IFD0: { ImageDescription: "x".repeat(20000) } })
+            .png()
+            .toBuffer();
+          assert.ok(bytes.length > 16384);
+          let reads = 0;
+          const objects = new Map<string, Buffer>();
+          const store: PrivateObjectStore | null =
+            backend === "mongo"
+              ? null
+              : {
+                  id: "chunk-fixture",
+                  key: (id) => id,
+                  async put(key, value) {
+                    objects.set(key, Buffer.from(value));
+                    return { storeId: "chunk-fixture", key };
+                  },
+                  async get(ref) {
+                    reads++;
+                    return Buffer.from(objects.get(ref.key)!);
+                  },
+                  async head(ref) {
+                    const value = objects.get(ref.key);
+                    return value
+                      ? { bytes: value.length, digest: sha(value) }
+                      : null;
+                  },
+                  async remove(ref) {
+                    objects.delete(ref.key);
+                  },
+                };
+          const asset = await bookletMedia(f.db, actor, {
+            store,
+          }).retainOriginal(
+            "production",
+            {
+              operationId: "image-op",
+              outputKey: "original",
+              mime: "image/png",
+              sha256: sha(bytes),
+            },
+            bytes,
+          );
+          reads = 0;
+          const originalFind = Collection.prototype.find;
+          const spy = t.mock.method(
+            Collection.prototype,
+            "find",
+            function (
+              this: Collection,
+              ...args: Parameters<Collection["find"]>
+            ) {
+              if (
+                backend === "mongo" &&
+                this.collectionName === "bookletAssetBytes"
+              )
+                reads++;
+              return originalFind.apply(this, args);
+            },
+          );
+          try {
+            const parts: Buffer[] = [];
+            let offset: number | null = 0;
+            while (offset !== null) {
+              // database() also creates fresh Db handles for successive MCP requests.
+              const media = bookletMedia(client.db(f.db.databaseName), actor, {
+                store,
+              });
+              const part = await media.readChunk(
+                "production",
+                asset.id,
+                offset,
+                offset ? asset.sha256 : undefined,
+              );
+              parts.push(Buffer.from(part.data, "base64"));
+              offset = part.nextOffset;
+            }
+            assert.deepEqual(Buffer.concat(parts), bytes);
+            assert.equal(reads, 1, backend + " must read original only once");
+            const media = bookletMedia(f.db, actor, { store });
+            await assert.rejects(
+              media.readChunk("production", asset.id, 8192, "0".repeat(64)),
+            );
+            await assert.rejects(
+              bookletMedia(
+                f.db,
+                { uid: "foreign", authTime: 1 },
+                { store },
+              ).readChunk("production", asset.id, 0),
+            );
+            const future = Date.now() + 61000;
+            const clock = t.mock.method(Date, "now", () => future);
+            try {
+              await media.readChunk("production", asset.id, 0);
+            } finally {
+              clock.mock.restore();
+            }
+            assert.equal(reads, 2, "expired cache must reverify storage");
+            await f.db
+              .collection("bookletBooks")
+              .updateMany({}, { $set: { "deletion.deletedAt": new Date() } });
+            await assert.rejects(media.readChunk("production", asset.id, 0));
+            assert.equal(
+              reads,
+              2,
+              "deleted book must fail even with warm bytes",
+            );
+          } finally {
+            spy.mock.restore();
+          }
+        }
       },
     );
     await t.test(

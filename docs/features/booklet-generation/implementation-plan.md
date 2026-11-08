@@ -43,7 +43,7 @@ publication/external acceptance gates. No agent delegation is implied.
 | T14 | Unitale | Owned book/production/revision repositories with embedded subjects/artifact index | T01 | Implemented; local verification complete |
 | T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Implemented; local verification complete |
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Implemented; local verification complete |
-| T17 | Unitale | MCP-only booklet tools | T15,T16 | Pending |
+| T17 | Unitale | MCP-only booklet tools | T15,T16 | Implemented; manifest transport-limit review finding remains; verification notes below |
 | T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Pending |
 | T19 | Unitale | Versioned visual reviewer and bounded repair contract | T01,T02 | Pending |
 | T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Pending |
@@ -287,9 +287,53 @@ Typecheck, lint, build,
 documentation, environment, i18n and skill checks pass. Typecheck and build run
 outside the sandbox because SWC's native cache rejects the sandbox user.
 
-Next dependency is T17 (MCP-only booklet catalog). T18/T19 remain independently
+T17 consumes this service checkpoint. T18/T19 remain independently
 available; T20 wires actual specialist/reviewer publications and enforces provider
 spending, text-call, elapsed-time and workflow-step limits. T21 supplies the creator
 workspace and rich image review presentation. These server-service results are not
 live Dify, visual-quality or end-user journey acceptance; those remain their assigned
 tasks and T28. Commit, merge and deployment still require explicit authorization.
+
+### T17 MCP checkpoint
+
+The `booklets` extension registers fifteen versioned tools through `/api/mcp`.
+The [catalog guide](../../mcp.md#unitale-booklet-catalog-t17) documents permissions,
+automatic Run scope, version/fence checks, exact human decisions, bounded transfers,
+quality evidence and manifest completion. There are no additional tool endpoints,
+dispatcher changes, provider calls or Unibase edits/imports.
+
+Private transfer metadata, parts, cumulative budgets and server-owned reviewer
+bindings are reflected in the model guide, JSON example and regenerated diagrams.
+Migration `booklets:0003-mcp` adds indexes only. Diagnostic transfer completion
+retains its idempotency receipt and discards raw staging bytes; remaining staging
+cleanup belongs to the later retention work. T19/T20 must provision verified
+reviewer bindings and trusted measurements before quality calls can succeed.
+
+Local verification on 2026-11-08: `npm run test:booklet-mcp` passes seven tests.
+The combined repository, lifecycle/media, contract, offline Dify, commerce, evidence,
+MCP, migration and legacy artifact suites pass all 98 tests. Typecheck, lint, build,
+documentation, environment, i18n and skills checks pass. An initial combined run
+emitted MongoMemoryServer's forced-stop warning; the final 98-test run passed.
+Two consecutive same-agent read-only reviews are reported in the handoff, with no
+independent reviewer claimed.
+
+Additional existing Dify registration coverage is not green: nine subtests plus
+their parent fail with `DIFY_ENVIRONMENT_OWNERSHIP` (five tests pass). The same
+failures reproduce in a disposable detached worktree at unchanged base
+`ad8dd8fe736823b757da3d6701785b2cd3a567f8`. This is a pre-existing registration-fixture
+or environment-binding issue, not evidence of live Dify compatibility. T17's new
+catalog uses the real MCP handler with a fake identity provider and disposable
+database; T28 still owns real provider/Dify acceptance.
+
+T18 specialists and T19 visual reviewer are next and may proceed independently.
+T20 manager composition requires both plus T17. Commit, merge, publication and
+deployment remain separate authorized actions; no live configuration was changed.
+
+Review follow-up: original-image MCP reads now reuse a bounded cache of fully
+verified bytes and recheck authorization for every chunk. The focused lifecycle/media
+and MCP suites pass 24 tests, including local/object storage read counts, fresh Db
+handles, idle expiry, foreign ownership and deletion after cache population. The
+Mongo fixture emitted its forced-stop cleanup warning. This correction adds no
+persistence fields. The separate 100-item manifest source/asset transport limit
+finding remains unchanged, as requested; it still needs resolution before accepting
+larger packages through the complete MCP production path.
