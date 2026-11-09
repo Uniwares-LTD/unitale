@@ -120,6 +120,9 @@ test("seven readable native candidates preserve private bindings and disable nod
   );
   assert.ok(!existsSync("dify/plugins/provider-execution"));
   for (const role of roles) {
+    const source = readFileSync(resolve(root, role, "workflow.yaml"), "utf8");
+    // PyYAML resolves these words as booleans, while our local YAML 1.2 parser does not.
+    assert.doesNotMatch(source, /:\s*(?:yes|no|on|off)\s*$/gim, `${role}: quote ambiguous Dify YAML scalars`);
     const { graph, environment_variables } = apps[role].workflow;
     assert.equal(
       environment_variables.find((v: any) => v.name === "execution_ready")
@@ -846,6 +849,8 @@ test("Human Input uses the actual correlated presentation and cannot fabricate o
     (n: any) => n.id === "human",
   );
   assert.ok(human.data.form_content.includes("{{#consume.form#}}"));
+  for (const method of human.data.delivery_methods)
+    assert.match(method.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   delete (args.raw[0].result as any).presentationHash;
   assert.throws(() => run("manager", "consume", args), /presentation missing/);
 });

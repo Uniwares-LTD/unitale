@@ -180,7 +180,10 @@ An ignored recovery archive and file/hash inventory were verified before cleanup
 Local candidate checkpoints 01-06 are complete under the revised DSL-first scope.
 The [candidate README](workflow-package/README.md#checkpoint-evidence) records current
 checks, two clean same-agent review passes per checkpoint and the implementation
-digest. E1-E5 remain pending; no actual Dify import/execution is claimed.
+digest. E1-E5 remain open. Authorized no-money staging probes established disposable
+candidate import/readback, native child/files/control and Human Input resume; the
+README records exact scope, remaining gates and cleanup. No paid or integrated
+application journey is claimed.
 Checkpoint 07 remains a hard application-code gate. Future changes reset affected
 checks/reviews; do not inherit the superseded framework evidence.
 The [compatibility procedure](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)

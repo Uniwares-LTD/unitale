@@ -33,6 +33,9 @@ committing/pushing this candidate and updating issue #10 on 2026-11-09; that doe
 not authorize merging, deployment or provider activation.
 Current replacement evidence is in the candidate README; superseded completion claims
 and test counts do not carry forward. Unverified live capabilities remain pending.
+Authorized no-money staging probes now establish disposable import/readback and native
+child/file/control/Human Input behavior. Provider calls and application integration
+remain pending; the README records the two corrected import/runtime defects and cleanup.
 
 Manager controls paid dispatch; per-production usage ceilings remain app safeguards,
 with labelled estimates and independent progress during unresolved child calls.

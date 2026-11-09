@@ -28,8 +28,8 @@
     {
       "service": "manager",
       "path": "manager/workflow.yaml",
-      "sha256": "51836c1e7c080ce0870202eb24996abf8e424a4c93009915d032fd8dccb13d3e",
-      "bytes": 103814,
+      "sha256": "1c2e6a3fb4ce050cef225bba0322332ffcd957ddcbefd6fdcffcb7823f3f24fb",
+      "bytes": 103844,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -114,8 +114,10 @@
   "activationBlockers": [
     "Official image SDK retries are not explicitly disabled in inspected source.",
     "Official image tools reject the accepted dated Sunburst model.",
-    "Installed package identities, child/native-file wrappers, actual import/control/Human Input execution and trusted observations are not verified."
+    "Installed packages are experiment dev builds; provider execution/retry behavior is not verified.",
+    "Unitale managed MCP/retention, actual Manager journeys, authenticated response correlation, durable continuation and trusted observations are not verified."
   ],
+  "stagingEvidence": "README.md#authorized-no-money-staging-evidence",
   "localCheckpointCompletion": [
     1,
     2,
@@ -126,7 +128,7 @@
   ],
   "review": {
     "mode": "two separate same-agent read-only integrated passes covering each checkpoint",
-    "implementationSha256": "b530d4ef25a61aa1647b8843311920951cdb9a248c98a05d31516f915b2e9991",
+    "implementationSha256": "09d1d42a3f5cf4edf44f96e82426a77f400dae7b3da9141d1ea6cbc539048c4d",
     "independentAgentReview": false
   }
 }

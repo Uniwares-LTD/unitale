@@ -282,7 +282,7 @@ successful installation or a single happy-path model call does not establish ful
 | Stage | Progress | Next action and exit evidence |
 | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README |
-| Provider/composition feasibility | Pending; activation blocked | Separately authorize a scoped target check. Resolve dated-model and no-retry support through an existing supported configuration/version or an explicit plan amendment. Prove import, wrappers, native files and control with disposable no-money probes before relying on these interfaces |
+| Provider/composition feasibility | Partial; activation blocked | Authorized no-money import/readback, child/files/control/failure/Human Input probes passed; results and cleanup are in README. Resolve exact dated model and no-retry support, then separately authorize finite paid probes. Unitale integration proof remains later work |
 | 07: application contracts/persistence | Not started; authorization required | Implement only consumed v2 boundaries from this handoff, preserve v1, update model/example/both diagrams and test storage/identity races |
 | 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review |
 | 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay |

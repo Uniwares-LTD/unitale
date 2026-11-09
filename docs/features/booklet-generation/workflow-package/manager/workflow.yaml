@@ -1421,16 +1421,16 @@ workflow:
           isInLoop: true
           loop_id: actions
           cases:
-            - case_id: yes
+            - case_id: "yes"
               logical_operator: and
               conditions:
-                - id: yes
+                - id: "yes"
                   variable_selector:
                     - guard
                     - paid
                   varType: string
                   comparison_operator: is
-                  value: yes
+                  value: "yes"
       - id: dispatch
         type: custom
         position:
@@ -2125,7 +2125,7 @@ workflow:
               title: Continue
               button_style: primary
           delivery_methods:
-            - id: booklet-run-ui
+            - id: 50dff510-3e10-4afd-819c-9efc888afaf0
               type: webapp
               enabled: true
               config: {}
@@ -2581,7 +2581,7 @@ workflow:
         type: custom
         source: paid
         target: dispatch
-        sourceHandle: yes
+        sourceHandle: "yes"
         targetHandle: target
       - id: paid-false-service
         type: custom

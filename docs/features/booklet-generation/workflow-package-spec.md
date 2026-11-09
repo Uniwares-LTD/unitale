@@ -275,8 +275,8 @@ checks must not be reported as Dify journeys. Two clean read-only reviews per ch
 | Gate | Required evidence | Status |
 | --- | --- | --- |
 | E1 | Exact models/settings, structured output, original image calls, no automatic retries and trusted usage | Pending; official image SDK retry and dated-model gaps identified |
-| E2 | Manager-only native-file byte round trip, order, hashes, practical capacity and expiry/recovery | Pending |
-| E3 | Real child wrappers, nested control, partial failures, Human Input and durable resume | Pending |
+| E2 | Manager-only native-file byte round trip, order, hashes, practical capacity and expiry/recovery | Partial: two small originals passed native parent/child byte comparison; application path, capacity and expiry pending |
+| E3 | Real child wrappers, nested control, partial failures, Human Input and durable resume | Partial: deterministic child, Loop/Assigner, failure branch and same-run native Human Input resume proved; Manager/application journeys pending |
 | E4 | Owned Manager import, managed MCP permissions, suite/observer/reviewer bindings | Pending |
 | E5 | Exact briefs/languages/products, configured prices and finite approved paid cap | Pending |
 | E6 | Current local checks/reviews at the candidate identity | Recorded in candidate evidence |

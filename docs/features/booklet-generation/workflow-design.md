@@ -478,4 +478,5 @@ delivery plan defines 01-12 checkpoints and explicit execution gates. Do not mar
 implementation gaps complete or E evidence gates passed without their required proof.
 Current YAML belongs in `workflow-package/`; Dify/YAML is authoritative. Package
 documentation is consolidated in the root README, manifest and integration handoff.
-Locally authored candidates are not import-verified Dify exports.
+Disposable candidate imports and semantic graph readback are now verified as recorded
+in the package README; integrated/paid acceptance remains pending.

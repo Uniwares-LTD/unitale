@@ -20,14 +20,16 @@ inventory or Dify-engine emulator is delivered.
 The [specification](../workflow-package-spec.md) owns accepted behavior. The
 [integration handoff](integration-handoff.md) defines the proposed application boundary,
 configuration/bindings, failure handling and target probes. Application schemas,
-registrations, migrations and live Dify are unchanged.
+registrations and migrations are unchanged; existing Dify apps and shared plugins
+were preserved during the disposable probes.
 
 ## Configuration and limits
 
 All model execution defaults to disabled through `execution_ready=false`. Prepare is
 unpaid and can run independently. Manager's managed MCP and six Workflow Tool provider
-IDs contain explicit `BINDING_REQUIRED` slots. These are local candidates, not actual
-Dify UI exports or installed/import-verified publications. The empty DSL dependency
+IDs contain explicit `BINDING_REQUIRED` slots. Disposable copies have passed import
+and semantic graph readback; these are not integrated or paid-accepted publications.
+The empty DSL dependency
 arrays do not mean dependency-free: install/configure and pin the official plugins
 listed in the manifest before an authorized import, then export their real identifiers.
 No package hashes or installation identities are invented here.
@@ -35,8 +37,9 @@ No package hashes or installation identities are invented here.
 The inspected official image tools do not explicitly disable OpenAI SDK retries and
 reject the accepted dated Sunburst model. Disabling Dify node retries does not fix
 those gaps. Activation remains blocked; do not silently use an unversioned alias or
-reintroduce a custom plugin. Native structured-output compatibility, file wrappers,
-Loop/Assigner execution, Human Input and trusted observations remain E1-E5 pending.
+reintroduce a custom plugin. Native structured-output compatibility, application MCP wrappers,
+trusted observations and integrated journeys remain pending. Native Loop/Assigner,
+child wrappers, file transport and Human Input evidence is recorded below.
 
 Local capacities: child JSON 256 KiB; original 8 MiB; one to sixteen explicit creative
 items per call; one scoped image call with multiple output slots; whole-book windows
@@ -82,30 +85,31 @@ before 348 individually inventoried source/generated/test files were removed.
 ## Checkpoint evidence
 
 Local candidate checkpoints 01-06 are complete under the revised DSL-first plan.
-This is not integrated/live acceptance: all E1-E5 gates remain pending.
+This is not integrated/paid acceptance: E1-E5 remain open, with partial no-money
+target evidence recorded below.
 
 | Checkpoint | Verified local outcome | Reviews |
 | --- | --- | --- |
 | 01 | Minimal consumed boundaries, seven roles, 48-selector provenance and official-provider capability findings | Two clean same-agent read-only passes |
 | 02 | Source-pinned official plugin configuration and explicit retry/dated-model incompatibilities; no custom adapter | Two clean same-agent read-only passes; target compatibility pending |
 | 03 | Planner, Manuscript, Art Director and scoped Reviewer native YAML; structured-output configuration, scoped content checks and immutable-fact fixtures | Two clean same-agent read-only passes |
-| 04 | Page Composer, deterministic Prepare/Generate candidate and all six Reviewer modes; exact text/source/coverage, partial and unknown fixtures | Two clean same-agent read-only passes; actual pixels/native transport pending |
-| 05 | Bounded native serial Manager, direct private MCP binding, explicit children, checkpoint/preflight/correction/unknown guards and actual presentation binding | Two clean same-agent read-only passes; Dify journeys/resume pending |
+| 04 | Page Composer, deterministic Prepare/Generate candidate and all six Reviewer modes; exact text/source/coverage, partial and unknown fixtures | Two clean same-agent read-only passes; generated pixels and application-native transport pending |
+| 05 | Bounded native serial Manager, direct private MCP binding, explicit children, checkpoint/preflight/correction/unknown guards and actual presentation binding | Two clean same-agent read-only passes; integrated Manager journeys/durable continuation pending |
 | 06 | Seven hashed candidates, configuration/binding manifest, integration handoff and current local evidence | Two clean integrated same-agent read-only passes against 713da2d |
 
 Final affected suite: **33/33 pass** (11 preserved v1 tests and 22 native-package tests).
 Full typecheck, scoped test-file ESLint, check:docs, check:i18n and check:skills pass.
 handbook:ready exits successfully with pre-existing advisory tracking/preferences
 warnings; no project configuration was changed. No application build was needed
-because application/runtime/dependency inputs are unchanged. The connector validator
-was not executed: automatic approval review rejected external source transmission;
-local structure/selectors/branch checks and isolated Code execution were used instead.
+because application/runtime/dependency inputs are unchanged. Before staging authorization,
+automatic approval review rejected external source transmission, so only local checks
+were used. Subsequently authorized connector/import/runtime results are recorded below.
 
-Reviewed implementation SHA-256: `b530d4ef25a61aa1647b8843311920951cdb9a248c98a05d31516f915b2e9991`.
+Reviewed implementation SHA-256: `09d1d42a3f5cf4edf44f96e82426a77f400dae7b3da9141d1ea6cbc539048c4d`.
 Identity covers seven YAML files, five fixtures and the new test file: sort repository-
 relative paths, concatenate each path + NUL + its lowercase SHA-256 + LF, then SHA-256
 the concatenation. Documentation and manifest evidence fields are outside this digest.
-The manifest separately records every workflow/fixture hash. YAML totals 235,134 bytes.
+The manifest separately records every workflow/fixture hash. YAML totals 235,164 bytes.
 
 Reviews are separate same-agent cold-review fallbacks, not independent-agent reviews.
 Both cover all six checkpoint scopes and the complete integrated change: first behavior,
@@ -119,14 +123,64 @@ Regression coverage now uses the application's existing canonical hash implement
 Stale PRD/custom-plugin and per-role README instructions were reconciled. Two fresh
 clean same-agent read-only passes cover the corrected implementation above; prior
 31-test results and earlier review identities are historical, not current evidence.
+Authorized Dify probes subsequently found and fixed the Human Input delivery UUID and
+ambiguous unquoted `yes` branch scalars. Both have focused regressions; fresh read-only
+review passes apply to the corrected digest above.
 
 Handbook: `D:/misc/code/uniwares/handbook` at
 `0048c32a98060bb094eb3010aa0f4f407e97796e`, explicitly refreshed for this session.
 
 Next, follow the compatibility procedure before relying on target bindings; checkpoint
 07 remains the application authorization gate. Keep activation disabled. No application
-changes, live operations or paid calls are included. Candidate commit/push and issue
+changes or paid calls are included. Candidate commit/push and issue
 progress publication were separately authorized on 2026-11-09.
 
 For the ordered remaining work and prerequisites, follow the
 [next-step runbook](integration-handoff.md#next-step-runbook).
+
+## Authorized no-money staging evidence
+
+Observed on 2026-11-09 at `https://dify.uniwares.co.uk`, workspace
+`ffac910f-2786-490e-90d8-07243d49741b`, against the corrected package identity above.
+Only disposable `unitale10_compat_20261109_*` apps/tools were written. These probes
+exercise Dify itself; they do not establish Unitale integration or provider quality.
+
+| Probe | Observed result | Boundary of proof |
+| --- | --- | --- |
+| Installed providers | `openai` 1.0.7-dev7 (`aa245c63…5eba2`) and `openai_tool` 0.2.2-dev3 (`8a7f865a…60f05`); full identifiers below | Patched experiment packages, not the official release versions inspected earlier |
+| Text model catalog | `gpt-6-luna` and `gpt-6-sol` active with vision/structured-output advertised | No provider call, credentials validity or effective settings proved |
+| Seven candidate imports | All imported; node/edge readback matches, corrected Manager separately reimported; execution remains false | Server reports DSL 0.7.0, candidate 0.6.0 accepted with version warning; exact deployed build version unresolved |
+| Echo + Workflow Tool | Publication, export/import and parent-to-child JSON wrapper succeeded; Unicode/whitespace retained | Run `538c476e-0253-49af-97e6-323b1ed25172`; deterministic child only |
+| Ordered originals | Two native PNGs passed parent/child/output and downloaded byte-for-byte unchanged; 24,041/24,039 bytes, hashes match retained fixtures | Run `5adab356-2a90-4938-9c92-aecd9a103b85`; no application MCP/retention, 8 MiB capacity or expiry proof |
+| Native serial control | Loop/Assigner performed two child calls and stopped at count 2 | Run `6976166f-0725-43bc-a233-92ef9aecfeb0`; no full Manager journey |
+| Native failure branch | Intentional Code failure routed to explicit unknown result; workflow partial-succeeded, one exception | Run `11c049a0-474c-471b-8d1e-5f8973e0b97c`; no provider failure simulated |
+| Human Input | Native pause, actual Console form submission and successful resume under the same run ID | Run `26803273-6a73-4d92-bd60-02c8515ae65d`; no authenticated Unitale response/continuation proof |
+| Publication synchronization | After child republication, Workflow Tool reported synced=false; explicit refresh restored true | Manager publication does not independently pin an unchanged child tool |
+
+Installed identifiers:
+
+- `langgenius/openai:1.0.7-dev7@aa245c63d95bee61fbd250e86b5ab7da4accec08144e075e4a4d8dd94bf5eba2`
+- `langgenius/openai_tool:0.2.2-dev3@8a7f865a47ce9e25260bd7d7cade70d4712506d945a7a2a66607f9f324160f05`
+
+The installed image tool declarations offer the unversioned Sunburst alias, not the
+accepted dated ID; no-retry support remains unproved. No shared plugin was changed.
+The prepared connector also has gaps: its Loop validator rejects self-variable break
+conditions that Dify executes, updating an existing draft sends an unsupported empty
+environment_variables field, and its Human Input submit endpoint only simulates form
+outputs. Source-verified prepared Console client calls and disposable DSL imports
+established the native results above. OpenAPI run/form attempts returned HTTP 500;
+they do not prove that Dify lacks Human Input. An initial file-run stream failure was
+inspected before a deterministic retry. No paid execution occurred.
+
+Keep E1-E5 open: provider execution/settings/retries/usage, realistic native-file
+capacity and expiry, real Manager journeys, owned Unitale registration/observations,
+authenticated UI and durable recovery, and finite paid acceptance remain unverified.
+
+Cleanup readback: all 15 disposable apps and their one Workflow Tool were deleted;
+the original 32 app IDs/names/update timestamps and installed plugin identifiers are
+unchanged. Two nonsensitive fixture uploads remain under Dify retention because the
+prepared tools and inspected Console/service upload APIs expose no file-delete action:
+`6e5ccd9f-0d73-4e66-9099-459c7cb53fe1` (original-a) and
+`1205f691-e853-4010-90db-fbc206aa9310` (original-b). Their physical removal is unverified;
+no host/storage mutation or shared-plugin change was attempted. Probe apps/runs were
+deleted after observation, so the run IDs above are historical evidence locators.
