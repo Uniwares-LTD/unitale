@@ -26,6 +26,11 @@ assumed successes; candidate validation is distinct from integrated/live accepta
 A failed probe blocks its dependent binding, not independent schemas/fake-provider work.
 No checkpoint starts merely because documentation has been updated.
 
+The user subsequently authorized preparation of bounded upstream fixes for the
+demonstrated official-provider gaps. The [patch and application instructions](workflow-package/integration-handoff.md#prepared-upstream-patch)
+record offline evidence. This amendment adds no package framework or Unitale plugin;
+upstream submission, shared-plugin installation and paid probes remain separately gated.
+
 The current session authorizes local DSL-first package implementation through 06.
 Application changes begin only after the explicit 07 gate. The user authorized
 committing/pushing the reviewed candidate and updating issue #10 on 2026-11-09.

@@ -198,8 +198,10 @@ blocked**. Do not infer it from disabled Dify-node retry flags. Image model sele
 advertise an unversioned Sunburst alias; the accepted dated reference model is not
 proved equivalent. Report these gaps before proposing any custom implementation.
 The [provider path assessment](workflow-package/integration-handoff.md#supported-provider-path-assessment)
-records checked alternatives and the proposed upstream remedy; no plan amendment or
-plugin installation follows from that source assessment.
+records checked alternatives and the authorized, offline-tested upstream patch to
+the existing official plugins. It is a bounded exception for demonstrated gaps,
+not a new Unitale plugin. Submission, release/installation, target compatibility
+and paid execution remain pending; the patch does not clear activation gates.
 
 ### Concrete runtime record and UI decisions
 

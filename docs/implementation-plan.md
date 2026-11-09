@@ -36,6 +36,9 @@ and test counts do not carry forward. Unverified live capabilities remain pendin
 Authorized no-money staging probes now establish disposable import/readback and native
 child/file/control/Human Input behavior. Provider calls and application integration
 remain pending; the README records the two corrected import/runtime defects and cleanup.
+The separately authorized [upstream provider patch](features/booklet-generation/workflow-package/integration-handoff.md#prepared-upstream-patch)
+is prepared and passes offline tests. It changes the existing official plugins only;
+upstream submission, release/installation and provider execution remain pending.
 
 Manager controls paid dispatch; per-production usage ceilings remain app safeguards,
 with labelled estimates and independent progress during unresolved child calls.

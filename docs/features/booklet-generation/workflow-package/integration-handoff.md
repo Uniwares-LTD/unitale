@@ -229,17 +229,71 @@ fields are ignored. These tests made no HTTP or paid calls. SDK source inspectio
 confirms that omitting the retry override retains SDK defaults; disabling Dify node
 retries cannot change those client settings.
 
-Recommended next amendment, **not yet authorized or implemented**: prepare narrowly
-scoped upstream fixes to the existing official plugins: accept the required dated
-Sunburst model in selector and validation; expose and forward max_retries=0 for image
-and text clients; expose a finite request timeout so effective deadlines can be aligned.
-Preserve existing default behavior for other users and configure this suite explicitly.
-Prove exact model/prompt/settings, original-file order/bytes and one HTTP attempt on
-controlled retryable failures using local fake transports. This adds no Unitale plugin,
-gateway, workflow framework or application code. Upstream submission, shared-plugin
-installation/upgrades, paid probes and activation each retain their existing authority
-boundaries. If upstream fixes are declined, the accepted provider requirements must be
-explicitly amended or activation must wait for a supported release.
+The user authorized bounded upstream fix preparation on 2026-11-09. The resulting
+[upstream patch](../dify-provider-upstream.patch) modifies the existing official plugins;
+it adds no Unitale plugin, gateway, workflow framework or application code. It is an
+offline candidate, not an installed or released plugin. The table above describes the
+unmodified source and the installed staging builds still have those gaps.
+
+#### Prepared upstream patch
+
+Apply against official repository base `18663b9e723c345fed4c7450a3f925c583fa7064`.
+Patch SHA-256: `10119e3628bddbfda0e4c9176741af91c55377af38b4b821f10d1b1561324320`.
+`git apply --check` passes against a separate clean checkout of that exact base.
+Twelve paths change: existing client helpers, provider/tool YAML and READMEs, one
+focused model test file, and the existing image test file. No dependency, lockfile,
+version, workflow or application contract changes are included.
+
+| Accepted need | Smallest change | Offline evidence |
+| --- | --- | --- |
+| Exact dated Sunburst binding | Add `gpt-image-2.5-sunburst-2026-09-08` to the two selectors and existing validator | Actual SDK requests preserve the selected ID, Unicode prompt, canvas/count/quality/background/format |
+| No hidden SDK retries | Optional `max_retries` in both text credential forms and both GPT Image 2/2.5 tool forms; forward explicit zero | Fake HTTP 429/500/read-timeout failures make one attempt for Responses, Chat Completions, generation and edit |
+| Configurable finite network timeout | Optional positive finite `request_timeout`, forwarded as SDK `timeout` | Actual SDK requests carry the configured timeout; invalid/bool/non-finite values fail locally |
+| Preserve existing users and image transport | Omit unset options; reuse existing image API requests and output handling | Text default/one-retry cases retain three/two attempts; image unset controls omit overrides; edit keeps original byte order and outputs/usage |
+
+Validated with Python 3.12.10, `openai` 3.46.0, `dify_plugin` 0.10.2, `httpx` 0.28.1,
+pytest 9.2.0 and pytest-mock 3.17.0 in an isolated ignored checkout. These are tested
+versions, not new dependency pins. From the upstream root, using that environment:
+
+```powershell
+python -m pytest -q tests/tools/openai/test_openai_tool.py
+cd models/openai
+python -m pytest -q tests --ignore=tests/live -m "not live"
+```
+
+Results: **94 image tests and 407 non-live model tests pass**. Run the suites in
+separate processes because the existing image harness stubs Dify modules. The model
+suite reports existing gevent SSL/Pydantic warnings. Sandbox temp/cache permissions
+caused an intermediate run to fail; the complete outside-sandbox rerun passes.
+The provider and both tool declarations also validate with the real Dify SDK schema.
+Tests use dummy credentials and local fake HTTP transports; they make no paid calls.
+Two separate same-agent read-only passes (cold-review fallback, not independent-agent
+review) cover defaults, validation, SDK forwarding, original bytes, scope and handoff.
+No blocking finding remains in the prepared patch's offline scope.
+
+To inspect/apply in a clean checkout of the official repository:
+
+```powershell
+git switch -c fix/booklet-provider-controls 18663b9e723c345fed4c7450a3f925c583fa7064
+$patchPath = "C:/path/to/dify-provider-upstream.patch"
+git apply --check $patchPath
+git apply $patchPath
+```
+
+This source patch is not a `.difypkg` release. Upstream review/submission, release
+versioning, frozen-lock packaging/install checks and target Dify form/export behavior
+remain pending. No upstream commit, push, PR or shared-plugin mutation was performed.
+
+Next, obtain separate authorization to submit the upstream change or use an approved
+supported release. After an authorized installation, set text provider **and any
+custom-model** credentials to `max_retries=0` and an agreed finite `request_timeout`;
+set those controls on both image tool nodes, with the exact dated model. Keep Dify
+node and outer retries disabled. Re-export actual bindings and record the installed
+hashes and effective settings. A network timeout is not a total workflow deadline;
+measure tool/packaging overhead and align parent deadlines before paid acceptance.
+Repeat the no-money target probes, then run E1-E5 under separate paid/application
+authorizations. If upstream fixes are declined, explicitly amend the accepted provider
+requirements or wait for a supported release. Activation stays disabled throughout.
 
 Reference slots: Manager/creative gpt-6-luna (4096/8192 output tokens), independent review
 gpt-6-sol (8192), dated Sunburst image model (high, opaque PNG). Preserve exact image

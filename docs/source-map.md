@@ -36,6 +36,8 @@ and the adapter; the table does not require unrelated suites for every task.
   records proposed application deltas without runtime registration.
   Official provider plugins are configuration dependencies; no custom provider package
   or workflow authoring framework is delivered. Target capabilities remain pending.
+  The handoff also links the bounded offline-tested upstream patch for demonstrated
+  official-plugin gaps; it is not an installed provider release.
   [First-package specification](features/booklet-generation/workflow-package-spec.md)
   owns the detailed operation mapping, proposed contracts, configuration inputs and
   app/MCP/UI change inventory for generating the seven workflows.
