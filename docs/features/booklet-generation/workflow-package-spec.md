@@ -191,11 +191,15 @@ This is source evidence, not an installed-target claim.
 
 Required gates: exact configured models/settings, native structured output, ordered
 originals, useful execution/usage observations, disabled paid-call retries and bounded
-timeouts. The inspected image tools construct `OpenAI(...)` without explicit
+timeouts. The inspected official text credential builder and image tools construct
+`OpenAI(...)` without explicit
 `max_retries=0`; therefore no-SDK-retry compatibility is **unproven and activation is
 blocked**. Do not infer it from disabled Dify-node retry flags. Image model selectors
 advertise an unversioned Sunburst alias; the accepted dated reference model is not
 proved equivalent. Report these gaps before proposing any custom implementation.
+The [provider path assessment](workflow-package/integration-handoff.md#supported-provider-path-assessment)
+records checked alternatives and the proposed upstream remedy; no plan amendment or
+plugin installation follows from that source assessment.
 
 ### Concrete runtime record and UI decisions
 

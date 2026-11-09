@@ -202,6 +202,45 @@ existing supported configuration/upstream version or an explicit bounded plan am
 Follow the [compatibility procedure](#difyprovider-compatibility-procedure) below.
 Disposable platform probes do not establish Unitale ownership or application integration.
 
+### Supported provider path assessment
+
+Read-only investigation on 2026-11-09 rechecked official plugin HEAD at
+`18663b9e723c345fed4c7450a3f925c583fa7064`, unchanged from the earlier inspection.
+No compliant drop-in was established among the paths below. This is a bounded source
+assessment, not a claim that every Marketplace plugin has been audited.
+
+| Path inspected | Finding | Decision |
+| --- | --- | --- |
+| Official OpenAI image tools | The [argument helper](https://github.com/langgenius/dify-official-plugins/blob/18663b9e723c345fed4c7450a3f925c583fa7064/tools/openai/tools/_image_utils.py) allows three undated models; generate/edit construct the SDK without a retry override. The credential schema exposes key/base URL/organization only | Existing configuration cannot satisfy exact snapshot plus no SDK retries |
+| Official OpenAI text provider | The [credential builder](https://github.com/langgenius/dify-official-plugins/blob/18663b9e723c345fed4c7450a3f925c583fa7064/models/openai/models/common_openai.py) passes key/base URL/organization; the LLM constructs its SDK client from those fields. No retry/timeout override is threaded through | Retry gap applies to text/Reviewer/Manager calls too, not only images |
+| Official OpenAI-compatible text provider | Its [LLM client factory](https://github.com/langgenius/dify-official-plugins/blob/18663b9e723c345fed4c7450a3f925c583fa7064/models/openai_api_compatible/models/llm/llm.py) also creates the SDK without a retry override | Switching text providers alone does not resolve the safeguard |
+| Existing abesticode image plugin, `35e32c9f44235d9fc2602bf0a02951f21565b228` | [Source](https://github.com/abesticode/dify-plugin-openai-api-compatible-image/blob/35e32c9f44235d9fc2602bf0a02951f21565b228/tools/image_generate.py) accepts a free model string and uses direct requests, but routes image inputs through generations/chat rather than OpenAI multipart edits; lacks required count/background/output-format forwarding and usage output; quality selector is standard/HD | Does not preserve the accepted Generate/Edit request contract |
+| Existing StormXX image plugin, `d90f46abcd57ae0c18078760c9cae604846ca10f` | [Source](https://github.com/StormXX/dify-gpt-image-generator/blob/d90f46abcd57ae0c18078760c9cae604846ca10f/tools/gpt_image_2_edit_args.py) fixes the model to gpt-image-2; only an edit tool is supplied and its SDK client has no retry override | Does not supply the required model, operations or retry behavior |
+
+[OpenAI's model documentation](https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst)
+explicitly permits the dated Sunburst snapshot. The dated-model failure is the plugin
+whitelist, not evidence that the API rejects the accepted model. Documentation does
+not prove this account's access. Using the alias would still amend the accepted binding.
+
+Offline execution of the pinned official image argument helper confirmed snapshot
+rejection and alias acceptance while preserving the prompt. An isolated execution of
+the official text credential builder confirmed that supplied max_retries/timeout
+fields are ignored. These tests made no HTTP or paid calls. SDK source inspection
+confirms that omitting the retry override retains SDK defaults; disabling Dify node
+retries cannot change those client settings.
+
+Recommended next amendment, **not yet authorized or implemented**: prepare narrowly
+scoped upstream fixes to the existing official plugins: accept the required dated
+Sunburst model in selector and validation; expose and forward max_retries=0 for image
+and text clients; expose a finite request timeout so effective deadlines can be aligned.
+Preserve existing default behavior for other users and configure this suite explicitly.
+Prove exact model/prompt/settings, original-file order/bytes and one HTTP attempt on
+controlled retryable failures using local fake transports. This adds no Unitale plugin,
+gateway, workflow framework or application code. Upstream submission, shared-plugin
+installation/upgrades, paid probes and activation each retain their existing authority
+boundaries. If upstream fixes are declined, the accepted provider requirements must be
+explicitly amended or activation must wait for a supported release.
+
 Reference slots: Manager/creative gpt-6-luna (4096/8192 output tokens), independent review
 gpt-6-sol (8192), dated Sunburst image model (high, opaque PNG). Preserve exact image
 canvas/count/settings in preflight. Default paid-layer retries must be disabled;

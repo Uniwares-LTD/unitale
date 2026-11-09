@@ -164,6 +164,9 @@ Installed identifiers:
 
 The installed image tool declarations offer the unversioned Sunburst alias, not the
 accepted dated ID; no-retry support remains unproved. No shared plugin was changed.
+The [provider path assessment](integration-handoff.md#supported-provider-path-assessment)
+records the subsequent official-source and existing-plugin investigation, including
+the text-provider retry gap and the bounded upstream remedy proposed for approval.
 The prepared connector also has gaps: its Loop validator rejects self-variable break
 conditions that Dify executes, updating an existing draft sends an unsupported empty
 environment_variables field, and its Human Input submit endpoint only simulates form
