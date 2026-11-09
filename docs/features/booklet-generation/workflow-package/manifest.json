@@ -1,0 +1,132 @@
+{
+  "packageVersion": "0.2.0",
+  "contractVersion": 2,
+  "status": "locally-validated-candidate",
+  "implementationBase": "713da2d2c3730686504627f3ba76724d07a57768",
+  "handbookRevision": "0048c32a98060bb094eb3010aa0f4f407e97796e",
+  "sourceRepository": "karpishe-experiments/agentic-poc",
+  "sourcePublicationCommit": "587f1b7775e316f4c58461dd3fda773af6d5dc2e",
+  "sourceExtractionCommit": "1d4cc02307edad21aadefc244bcc4e286396b88f",
+  "sourceSelectors": "fixtures/source-selectors.json",
+  "workflowSourceOfTruth": "native YAML; edit in Dify and review secret-free exports",
+  "executionEnabled": false,
+  "officialPluginSourceRevision": "18663b9e723c345fed4c7450a3f925c583fa7064",
+  "requiredPlugins": [
+    {
+      "id": "langgenius/openai",
+      "versionInInspectedSource": "1.1.0",
+      "installedPackageIdentifier": null
+    },
+    {
+      "id": "langgenius/openai_tool",
+      "versionInInspectedSource": "0.2.2",
+      "installedPackageIdentifier": null
+    }
+  ],
+  "managedMcpProvider": null,
+  "workflows": [
+    {
+      "service": "manager",
+      "path": "manager/workflow.yaml",
+      "sha256": "51836c1e7c080ce0870202eb24996abf8e424a4c93009915d032fd8dccb13d3e",
+      "bytes": 103814,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "story-planner",
+      "path": "story-planner/workflow.yaml",
+      "sha256": "ed94d366acfea6b00099393a2c2cb2ef1eb70929620761d80b84409fdc529608",
+      "bytes": 19119,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "manuscript",
+      "path": "manuscript/workflow.yaml",
+      "sha256": "b880afeca029d3347fdd19a79cab1b8d4444d2a4a3aa4681f19ed90d80ce6773",
+      "bytes": 19018,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "art-director",
+      "path": "art-director/workflow.yaml",
+      "sha256": "b6c0e0ea96579740e612b9dae9c1bc5f7ce1e2fc640c4b3bad7b44c36e9776ac",
+      "bytes": 19813,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "page-composer",
+      "path": "page-composer/workflow.yaml",
+      "sha256": "3406e236d412f87e716080539c4f53c7323115f680a9a7b936ae60a0878969d9",
+      "bytes": 23964,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "image-executor",
+      "path": "image-executor/workflow.yaml",
+      "sha256": "6f506bfd0e4865a7fa790a7b32f353c741bb2e77d8102a46855fe01a97b99bd9",
+      "bytes": 27769,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "quality-reviewer",
+      "path": "quality-reviewer/workflow.yaml",
+      "sha256": "8c3b0fd688e4973a9284f54968633e389adc6527e90d9cbebb6287b06c0283c5",
+      "bytes": 21637,
+      "publicationId": null,
+      "workflowToolId": null
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "fixtures/source-selectors.json",
+      "sha256": "2acf59c4de1cd9e5a744bb13890cff44db86d08a4e02013dcccded6bb7b17771"
+    },
+    {
+      "path": "fixtures/correction-limits.json",
+      "sha256": "d2ccc6955217dbb7ee35467004f9f2a09df15a646281f900ce18eebd6e699a6d"
+    },
+    {
+      "path": "fixtures/behavior-cases.json",
+      "sha256": "850c641705852cf72a4b810c0131ed1be04350c9edc1b9e9c4c1854927984ef5"
+    },
+    {
+      "path": "fixtures/original-a.png",
+      "sha256": "85f4e38d333e174ced79217c90a564699fcd589be0d376a91629dc96d48ada49"
+    },
+    {
+      "path": "fixtures/original-b.png",
+      "sha256": "6ba39f5e8928a00b6396ff8a91144123175fd201e1065c996eadf9d4cb363523"
+    }
+  ],
+  "pendingEvidence": [
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "E5"
+  ],
+  "activationBlockers": [
+    "Official image SDK retries are not explicitly disabled in inspected source.",
+    "Official image tools reject the accepted dated Sunburst model.",
+    "Installed package identities, child/native-file wrappers, actual import/control/Human Input execution and trusted observations are not verified."
+  ],
+  "localCheckpointCompletion": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "review": {
+    "mode": "two separate same-agent read-only integrated passes covering each checkpoint",
+    "implementationSha256": "b530d4ef25a61aa1647b8843311920951cdb9a248c98a05d31516f915b2e9991",
+    "independentAgentReview": false
+  }
+}

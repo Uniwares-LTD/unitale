@@ -9,26 +9,27 @@ Preserve existing records and the single-orchestrator dispatcher. Unibase change
 reach Unitale through reviewed template integration. No production catalog seeds.
 For the current issue #10 design handoff, the Handbook baseline is
 `D:\misc\code\uniwares\handbook` at
-`71891a9031eeebee1ff8d2a66494bdeb10ad5d3f` (usable cached revision).
+`0048c32a98060bb094eb3010aa0f4f407e97796e` (explicitly refreshed from the local
+committed Handbook on 2026-11-09; earlier task baseline was `71891a9031eeebee1ff8d2a66494bdeb10ad5d3f`).
 Earlier implementation evidence below retains its historical scope.
 
 ## Execution prerequisites
 
-**Readiness: checkpoints 01-06 are specified for local candidate implementation;
-implementation authorization and runtime evidence remain separate.** The
+**Readiness: checkpoints 01-06 are locally implemented and reviewed;
+application authorization and runtime evidence remain separate.** The
 [A01-A22 register](workflow-design.md#implementation-readiness-audit)
 links each resolution to the [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22).
 Checkpoints 01-12 below replace the application-first C0-C10 sequence. Deliver the
-candidate workflows/plugin and proposed application changes at 06, then stop before
+candidate workflows and proposed application changes at 06, then stop before
 material application implementation at 07. E1-E6 remain evidence/setup gates, not
 assumed successes; candidate validation is distinct from integrated/live acceptance.
 A failed probe blocks its dependent binding, not independent schemas/fake-provider work.
 No checkpoint starts merely because documentation has been updated.
 
-The user authorized local environment preparation, plan finalization and commit/push
-of these planning changes. Package/application implementation does not begin in this
-handoff task. An explicit new-session goal may authorize 01-06 within the boundary
-below; 07-12 retain their named gates. Merges require separate authorization.
+The current session authorizes local DSL-first package implementation through 06.
+Application changes begin only after the explicit 07 gate. The user authorized
+committing/pushing the reviewed candidate and updating issue #10 on 2026-11-09.
+Merging and later publication still require their own session authorization.
 Releases, deployments, provider publications and paid calls
 remain separately gated. Use fake providers and disposable databases. Full-product T28
 acceptance requires configured Dify publications/plugins/credentials and a finite
@@ -79,614 +80,120 @@ acceptance retain separate authorization. No agent delegation is implied.
 
 ### Issue #10 design and delivery boundary
 
-Deliver the seven workflows together: complete focused services with a simple serial
-Manager, rather than incremental user-facing product slices. T18 covers the focused
-creative/image services, T19 expands to all independent assessment modes, and T20
-owns Manager progression and app integration. Start/review/resume/revision uses the
-existing Run UI; no separate booklet pages are included. Contracts must support
-Manager-controlled grouping and independent parallel calls, even though the initial
-Manager may execute serially. The broader T21 creator workspace and T22-T25 features are not pulled in.
-Booklet-only staging acceptance is part of issue #10 and does not wait for unrelated
-Stripe/Play/device acceptance or imply completion of the full T28 milestone.
+The 2026-11-09 simplification decision supersedes the earlier custom-provider and
+authoring-framework prescriptions. Deliver seven readable Dify YAML workflows using
+native nodes and official provider plugins. Dify/YAML is the source of truth. Manager
+alone communicates with Unitale. Preserve the accepted creative, review, revision and
+recovery behavior in [workflow design](workflow-design.md); simplifying the machinery
+does not remove a behavior requirement.
 
-The user selected workflow-first delivery, including a narrow provider plugin, with
-a hard application-code gate after 06. This handoff prepares the local environment
-and finalizes the plan/supporting documentation; it does not begin package implementation. The checkpoints refine
-T18-T20 and the minimum Run integration, without replacing the historical milestone
-table or pulling in the broader product. [Workflow design](workflow-design.md) owns
-accepted policy; the [package specification](workflow-package-spec.md) owns service
-contracts. Later recorded decisions supersede older issue wording concerning
-mandatory human approvals, Executor quality gates and hard provider-spend limits.
+### Necessity and simplicity gate
 
-Latest decisions: Manager controls paid dispatch; app usage ceilings are safeguards
-per production, shared across continuation/corrections. Include labelled estimates
-until reported costs arrive, avoid double counting, and allow independent work while
-an unknown item is reconciled without replay. Signed grants, provider-spend reservations
-and executor-level replay protection are not required. Purchase/credit, entitlement
-and product-lock rules remain hard app boundaries.
+For material implementation choices, keep the rationale in the nearest specification
+or checkpoint evidence; routine choices need no separate checklist: **Do we really need this change? Is there a simpler approach?**
 
-No package implementation has begun. The local Node/Python/Dify tooling is prepared;
-the current compatibility baseline and typecheck pass as recorded below. Historical
-foundation results retain their original scope and are not new v2 package evidence.
+1. Identify the accepted behavior requiring it. Without one, omit the change.
+2. Check native Dify nodes, existing official plugins and existing application seams.
+3. Select the smallest approach with a credible path to the required behavior.
+4. State the observable proof and distinguish local checks from target execution.
+
+Prefer native nodes, then small self-contained Code nodes. Do not add a generator,
+bundled runtime, shared framework, dependency, custom plugin or expanded interface
+without a demonstrated gap and an explicit amendment to this plan. Pending compatibility
+is a gate, not permission to build a substitute platform. Do not recreate the Dify
+engine for tests. Code size is a review signal, never permission to omit required behavior.
 
 ### Issue #10 deliverables and dependency map
 
-The accepted order is workflow-first. Checkpoints 01-06 deliver a complete **candidate**
-package and exact application-change handoff. They do not require the future Unitale
-MCP handlers or Unibase extensions to exist. Checkpoints 07-12 implement/integrate that
-handoff and obtain staging acceptance. Historical T01-T28 scope/evidence stays intact.
-
-| Checkpoint | Deliverable | Prerequisites | Exit / next gate |
-| --- | --- | --- | --- |
-| 01 - Contracts & Orchestration Design | Package-local v2 contracts, fixtures, Manager outline and initial application handoff | Explicit package implementation authorization; local baseline | Shared interfaces executable in tests; continue to 02 |
-| 02 - Provider Adapter & Compatibility | Narrow Dify provider plugin and boundary evidence | 01 adapter ABI | Local adapter tests pass; live-only bindings explicitly pending |
-| 03 - Story & Art Specialists | Planner, Manuscript, Art Director and text/specification/correction Reviewer branches | 01-02 | Actual graphs pass scoped fixtures; continue to 04 |
-| 04 - Page & Image Services | Page Composer, Image Executor and completed Reviewer | 03 specimens; 02 image ABI | Six focused workflows complete locally; continue to 05 |
-| 05 - Manager Workflow | Minimal complete serial Manager against the proposed app contracts | 01-04 | Seven candidate graphs pass fixture journeys; continue to 06 |
-| 06 - Candidate Package & Integration Handoff | Reviewed package, manifest, evidence and exact Unitale/Unibase change specification | 01-05 | **Stop: application changes require explicit authorization** |
-| 07 - Application Contracts & Persistence | Runtime v2 schemas, storage/index changes and compatible readers | Accepted 06 handoff; application implementation authorization | Persistence and v1 regression checks |
-| 08 - Shared Runtime Extensions | Minimal Unibase changes and reviewed import | 07 interfaces; relevant 02 evidence | Upstream tests and reviewed integration |
-| 09 - Unitale Gateway & Recovery | Admission, nineteen MCP tools, usage, media and recovery | 07-08; verified target file/receipt bindings | Real handler/repository boundary tests |
-| 10 - Run UI Integration | Existing Run create/review/continue/revise surfaces | 09 and 05 contracts | Browser and authentic-decision tests |
-| 11 - Integrated Verification | Actual candidate package against implemented app contracts | 07-10 and 06 package | Offline integrated checks and two clean reviews |
-| 12 - Staging Publication & Acceptance | Publication readback, approved paid acceptance and final exports | 11; E4/E5; exact live authorization | Staging acceptance only; human closure remains separate |
-
-Earlier C0 documentation work is retained. C1 probes move to 02 (local setup starts
-in 01); C2 splits into package-only 01 and application 07; C3=08; C4=09;
-C5 splits across 02-04; C6 spans 03-04; C7=05; C8=10; C9 splits into 06/11; C10=12.
-The superseded C0-C10 and P0-P8 sequences are navigation history, not parallel plans.
-A01-A22 remain design findings, G01-G17 implementation gaps, E1-E6 evidence gates;
-none is renamed to a checkpoint.
-
-### Execution boundary and artifact layout
-
-This handoff authorizes environment/plan preparation and its commit/push only.
-Once the user authorizes 01-06 execution,
-the permitted implementation is Dify plugin/workflow code, package-local contracts,
-offline fixtures/tests and supporting docs. It is not permission to change Unitale or
-Unibase application code. A later instruction to execute the accepted package phase
-covers its automatic internal continuation; do not ask again at every checkpoint.
-
-During 01-06, allow changes only in the package folder below,
-`dify/plugins/provider-execution/`, `tests/booklet-compat/` and the canonical
-booklet docs/source map. Preserve existing v1 tests; add v2 tests alongside them.
-Do not edit `src/`, application registries, runtime schemas, database migrations,
-root dependency manifests/lockfiles, deployment configuration or copied Unibase core.
-If a package change needs any of those paths, document the required application delta
-and use a contract fixture; do not implement a workaround inside a child or plugin.
-Local dependency installation/caches are allowed after execution authorization; no
-dependency upgrade or persistent environment setting change is implied.
-
-Package root: `docs/features/booklet-generation/workflow-package/`.
-Create artifacts only in their assigned checkpoint, not empty future placeholders:
-
-| Artifact | Introduced / contents |
-| --- | --- |
-| `contracts/contracts.ts`, `contracts/export.ts`, exported `contracts/*.schema.json` | 01: standalone Zod v2 wire shapes and JSON Schema export; no imports from application contracts |
-| `fixtures/` | 01 onward: synthetic requests, expected results/control traces and small original images; no customer data |
-| `integration-handoff.md` | 01 onward: proposed app changes, exact contracts and evidence gates; final at 06 |
-| `README.md`, `manifest.json` | 01 skeleton with real available metadata; progressively completed, finalized at 06 |
-| `story-planner/`, `manuscript/`, `art-director/` | 03: each has README and one current `workflow.yaml` |
-| `quality-reviewer/` | 03 scoped working branches; 04 completes all modes in the same workflow |
-| `page-composer/`, `image-executor/` | 04: each has README and one current `workflow.yaml` |
-| `manager/` | 05: README and one complete current `workflow.yaml` |
-| `validation.md` | 06: exact package identity, local/probe evidence, remaining gates and publication/readback procedure |
-
-The package contracts are a testable proposal, not runtime registration. Use the locked
-Zod 4 dependency and its [JSON Schema exporter](https://zod.dev/json-schema), targeting
-draft 2020-12. Keep structural schemas exportable; put cross-record checks (source
-tuples, text coverage, hashes and applicability) in explicit pure validators tested
-alongside them. Do not silently erase a refinement in the export. Provider-specific
-structured-output restrictions are adapter/request mapping concerns and get separate
-tests; do not weaken the canonical service schema to satisfy one provider.
-
-Use JavaScript for authored Dify Code nodes so the existing harness's isolated
-JavaScript execution pattern can be reused. Nodes carry self-contained validation/
-serialization logic; no filesystem/network access or runtime import of package Zod
-code. Test their behavior against the same canonical fixtures. Extend only the small
-set of graph-node behaviors these seven graphs use. Do not build a general Dify
-emulator or duplicate Manager decisions in a handwritten test-only orchestrator.
-Fakes replace external provider/MCP/Human Input boundaries, not the actual Code nodes,
-selectors or routing predicates under test.
-
-### Local commands and evidence levels
-
-Run from the Unitale root using Node 24 and the repository-pinned npm 12.0.1.
-The prepared local launcher is
-`node output/tooling/npm/node_modules/npm/bin/npm-cli.js`; use it in place of `npm.cmd`
-in the script examples below. On implementation entry verify the recorded worktree,
-lockfile/runtime identity and baseline; reuse current evidence when inputs are unchanged.
-Run `ci --cache .npm-cache --no-audit --no-fund` through that launcher only when
-installation is absent/stale; never upgrade the lockfile to repair setup. Existing v1
-harness results prove their own scope, not the unimplemented v2 package.
-
-Prepared workspace tooling on 2026-11-08 (all under ignored `output/`):
-
-| Tool | Verified version / invocation |
-| --- | --- |
-| Node / pinned npm | Node 24.21.0; local npm 12.0.1 via the launcher above; global npm is unchanged |
-| Python runtime | `output/tooling/python312/python.exe` is 3.12.10; `py -3.12` resolves it; pip/SSL/venv smoke checks pass |
-| Dify SDK preflight | `output/tooling/python312-smoke/Scripts/python.exe` imports `dify-plugin==0.11.0` and its Tool/Plugin/Env classes; `pip check` passes |
-| Dify Plugin CLI | `output/tooling/dify/dify.exe` reports v0.6.15; `plugin package --help` works; SHA-256 `28fd1f5826e3b9ae924ad180cd6c2087966aafa9b2af96f5cf2610f09ad504aa` matches the official release asset |
-
-Python came from the [signed official installer](https://www.python.org/downloads/release/python-31210/);
-the CLI came from the [official 0.6.15 release](https://github.com/langgenius/dify-plugin-daemon/releases/tag/0.6.15).
-Global PATH and tracked dependency versions are unchanged; no live Dify installation
-was performed.
-The ignored preflight environment is a setup check, not 02's reviewed hashed lock or
-proof of Dify daemon compatibility. Its package inventory is retained locally at
-`output/tooling/provider-preflight-packages.json`; 02 must create/test its own plugin
-lock and artifact. These ignored tools are not delivered by Git; another machine must
-provision equivalent versions before using the commands.
-
-On this Windows sandbox, run `test:booklet-compat` and `typecheck` outside the sandbox
-from the first attempt: subprocess spawning/native SWC cache access otherwise fail.
-Both commands pass outside it. npm 12 blocked several dependency lifecycle scripts,
-but the required native bindings/test commands work; do not approve every script or
-rewrite package policy without a demonstrated need. Record any new runtime failure
-separately rather than masking it with a dependency upgrade.
-
-The following file/commands are **planned deliverables**, not commands that exist today:
-01 introduces `tests/booklet-compat/v2-contracts.test.ts`; 02 introduces
-`v2-provider.test.ts`; 03 `v2-specialists.test.ts`; 04
-`v2-images-review.test.ts`; 05 `v2-manager.test.ts`; 06 `v2-package.test.ts`.
-For the 01 focused slice run
-`node --conditions=react-server --import tsx --test tests/booklet-compat/v2-contracts.test.ts`.
-For later slices replace only the final filename with the introduced filename above.
-At each checkpoint exit run the existing `npm.cmd run test:booklet-compat`, which
-includes these top-level tests, plus `npm.cmd run check:docs`,
-`npm.cmd run check:i18n`, `npm.cmd run check:skills` and `git diff --check`.
-Run the schema export check and test-local type-check below at every checkpoint exit;
-rerun Python/plugin packaging checks when plugin inputs changed and always at 06.
-Git and any Git-invoking helpers run outside the sandbox. Run
-`npm.cmd run handbook:ready` at planning/final handoff; existing preference/tracking
-warnings are advisory, not permission to invent organization configuration.
-
-01 supplies exporter modes `--write` and read-only `--check`, invoked as
-`node --import tsx docs/features/booklet-generation/workflow-package/contracts/export.ts --check`.
-Run `--write` only for intentional schema changes; review the generated diff.
-Its check covers every exported schema and fails on stale/missing outputs.
-Type-check the new test/contracts slice using a test-local `v2/tsconfig.json` and
-`node node_modules/typescript/bin/tsc --noEmit -p tests/booklet-compat/v2/tsconfig.json`;
-01 creates that config without changing the app tsconfig.
-
-02 supplies a Python 3.12 environment, hashed dependency lock and standard-library
-`unittest` tests under the plugin. Exact setup/test commands are:
-`py -3.12 -m venv dify/plugins/provider-execution/.venv`,
-`dify/plugins/provider-execution/.venv/Scripts/python.exe -m pip install --require-hashes -r dify/plugins/provider-execution/requirements.lock`,
-and `dify/plugins/provider-execution/.venv/Scripts/python.exe -m unittest discover -s dify/plugins/provider-execution/tests -p "test_*.py"`.
-Plugin-local ignore rules exclude its environment, caches, credentials and build output.
-Keep downloaded tools/build artifacts under ignored `output/` as needed; they are
-local tooling, not tracked application changes. Use the official Windows Plugin CLI
-as a workspace-local `dify.exe`, not a global PATH/configuration change. Run
-`dify.exe version` and, from `dify/plugins`,
-`dify.exe plugin package ./provider-execution`, substituting the absolute CLI path
-if needed. Record the actual CLI version/hash and generated package hash. The
-[official CLI](https://docs.dify.ai/en/develop-plugin/getting-started/cli) and
-[packaging guide](https://docs.dify.ai/en/develop-plugin/publishing/marketplace-listing/release-by-file)
-define the tool; validate manifest/provider author identity and package contents.
-Remote debugging, installation and signing-policy changes are live actions, not
-implied by local packaging. Label a locally packaged artifact as a candidate until
-installation/engine evidence exists; never disable signature checks to make it pass.
-Freeze the tested dependency resolution in 02; do not claim an untested lock is known
-now. Candidate Dify SDK/Python versions remain those in the package specification.
-
-Evidence has three levels: local fixture/static validation; actual Dify engine probe;
-paid provider/quality acceptance. Record each separately with version, input, expected/
-observed result, artifact hashes and limitation. Offline graph tests must never mark
-E1-E5 passed. Missing live evidence does not block a candidate checkpoint when its
-local contract is complete and the exact unresolved deployment dependency is recorded.
-A known contradiction that makes the candidate contract impossible does block it:
-resolve the affected contract before advancing, rather than hiding it as a caveat.
-
-### How to execute, checkpoint, review and revise
-
-1. **Resume from evidence.** Read this plan/spec, current status below, actual worktree,
-   previous package hashes and test outputs. Preserve unrelated edits. Establish a
-   checkpoint-start diff/file-hash inventory; do not require a commit to create one.
-   The issue base remains the recorded commit, with pre-existing planning edits noted.
-2. **Take one bounded slice.** Use the slice order inside each checkpoint. Implement
-   its tests and outcome, then run focused checks. Sol/medium is the intended executor;
-   the slice is one contract family, service, reviewer mode or Manager scenario.
-   A slice is not a new approval gate or permission to enlarge the architecture.
-3. **Validate the checkpoint.** Run its focused commands and common exit checks.
-   Prove negative paths as well as success. Record blocked/unrun checks honestly;
-   do not replace missing integration evidence with a passing fake.
-4. **Review read-only, twice.** Apply review-change in two separate passes on the same
-   implementation state. First inspect the checkpoint diff and affected dependencies;
-   second check contract/fixture completeness, failure paths and scope boundaries.
-   Each pass must have no confirmed blocking findings and current required local
-   verification. No delegation is authorized; label same-agent fallback reviews.
-   06 covers the entire package diff against the issue base, not only its last slice.
-5. **Fix outside review.** Fix confirmed in-scope findings, rerun affected checks, and
-   reset the two-clean-pass count when reviewed implementation changes. Preserve
-   unrelated valid evidence. An evidence-only progress entry does not change the
-   reviewed implementation identity. Do not stop after an arbitrary number of fixes;
-   repeated failure of the same fix requires diagnosis under repository guidance.
-6. **Persist a resumable checkpoint.** Update the single current-status section below:
-   checkpoint/slice, outcome, base and changed-file/hash identity, artifact/manifest
-   hashes, exact checks and results, two review outcomes/identity, open evidence gates,
-   remaining work and exact next command/action. Keep canonical decisions in the spec
-   and package evidence in validation docs; no parallel work-log or second task queue.
-   Commit/push only when explicitly authorized; uncommitted reviewed state is valid.
-7. **Reassess the next step.** Compare its inputs with the completed artifacts. Routine
-   field/selector corrections within accepted policy update the schema, examples, all
-   affected graphs, handoff and tests together. Reopen affected earlier checkpoint
-   evidence and rerun it before continuing. A change to ownership, product limits,
-   spending/review policy, service scope, new infrastructure or the app-code boundary
-   requires a concrete proposal and user decision before dependent work.
-8. **Continue within authority.** If the next prerequisites pass, proceed automatically
-   within authorized 01-06. If a live binding is missing, continue only independent
-   local work and leave that probe pending. For unknown live outcomes inspect the same
-   execution/operation; never repeat paid dispatch to discover its state. At 06 stop
-   and present the reviewable application handoff; 07 requires explicit authorization.
-
-### 01 - Contracts & Orchestration Design
-
-**Outcome:** executable package-local contract proposal and Manager outline, sufficient
-for adapter and focused-service authoring. No runtime app/schema change. Covers A01-A04,
-A10-A12,A17,A19-A22 and the interface portion of G01-G17.
-
-**Entry and slices:** after package authorization and local baseline, (a) shared envelope/
-identity/receipt schemas, (b) operation content and review schemas, (c) nineteen proposed
-MCP contracts and Manager action/checkpoint fixtures, (d) handoff inventory/export check.
-Use the source catalog at `587f1b7775e316f4c58461dd3fda773af6d5dc2e`; record source paths,
-selectors and hashes. Current v1 contracts are reference evidence, never v2 imports.
-
-**Concrete decisions/deliverables:**
-
-- Implement the package spec's strict v2 string `request`/`result` carriers with native
-  `references`/`files` separate. Specify every operation's create/revise required
-  fields, optional fields, null rules, input/result examples and cross-record checks.
-  Preserve balanced creative detail, Unicode spans, stable/local IDs, partial outcomes,
-  call/item separation and independent future parallel calls.
-- Define the adapter ABI in the package contracts: tools `text_execute` (text/vision)
-  and `image_execute`, each taking a JSON `request` plus native `references`.
-  Requests include call/input/config identities, the Dify-authored provider payload and
-  expected output schema/keys. JSON results carry parsed output, bounded diagnostic
-  and deterministic receipt; image files are separate native outputs keyed to receipts.
-  No Unitale URL/credential/private context or creative prompt template in the plugin.
-- Define proposed schemas for all nineteen MCP tools from A04, including each union's
-  success/error responses, scoped IDs/fences, idempotency and who writes what.
-  Include native image metadata/content behavior, transport/section bounds and
-  authentic human-response correlation. Fixtures cannot invent app next-action fields.
-- Record a Manager action table for `invoke/review/repair/revalidate/accept/ask/pause/complete`:
-  prerequisites, exact tool/service interaction, durable change, error/partial handling
-  and next observable state. Outline creation, continue and paid customer revise
-  journeys; do not create the Manager YAML yet.
-- Start `integration-handoff.md` from the local feature-spec template conventions.
-  For each app delta record current code symbol/path, proposed signature/payload,
-  owner (Unitale/Unibase), permissions, transaction/fence/idempotency, storage/index
-  change, v1 compatibility, UI consequence, acceptance test and target checkpoint
-  07-10. Cover A20 hooks, not a generic framework. No application implementation.
-- Seed deterministic fixtures: no optional subjects/no cover; multi-subject/multi-page
-  with cover; Arabic/RTL and mixed Unicode; grouped partial results; actual file
-  identity/order; changed source tuples; each error class and correction limits.
-  Fixture capacities are test data, not launch product defaults.
-
-**Verification/exit:** `v2-contracts.test.ts`, export `--check`, slice type-check and
-common checks pass. Every J01-J13 operation and all Reviewer modes have a positive
-and invalid/missing-input contract example. Include canonical hash vectors, exact
-lettering/splits, same-call retry versus new-candidate identity and v1/v2 separation.
-Two reviews confirm no required public field, status, mutation owner or error path is
-left as "implementer decides"; known live binding assumptions have explicit gates.
-Continue to 02. An app change discovered here is a handoff item, not a prerequisite
-to constructing the candidate package.
-
-### 02 - Provider Adapter & Compatibility
-
-**Outcome:** real narrow plugin with a tested local ABI and explicit target-runtime
-compatibility report. Covers A08,A13-A16,A21-A22; E1-E3 remain live evidence gates.
-
-**Slices:** (a) plugin metadata/tool ABI and injected HTTP boundary, (b) text/vision
-mapping, final-answer/receipt handling, (c) image generation/edit/native files,
-(d) packaging and individually scoped engine probes where authorized.
-
-Implement under `dify/plugins/provider-execution/` using the candidate Python 3.12 /
-`dify-plugin==0.11.0` baseline. Use published Responses and image generation/edit
-request mappings with standard-library HTTP/multipart handling and no additional
-provider SDK/retry framework. Keep HTTP injection small for tests. Dify credentials
-configure the provider privately; child requests carry configuration identities only.
-Honor 120/270-second text/image deadlines and zero automatic retries. The plugin
-accepts Dify-authored creative payloads, does deterministic validation/execution/
-receipt packaging, and makes no Unitale calls.
-
-Preserve usage before subsequent local packaging when possible, but promise no
-durability beyond the established receipt channel. Distinguish proven non-dispatch,
-provider failure/refusal, incomplete/invalid output, uncertain transport and native-file
-packaging failure. No receipt store/spool; no blind replay. Select final structured
-output, preserve attributable usage and label calculated costs as estimates.
-Image calls preserve reference order and original bytes, actual dimensions/settings
-and per-output keys. Do not resize originals or substitute thumbnails.
-
-Local Python tests inject provider responses/timeouts and file-emission failures.
-`v2-provider.test.ts` validates tool declarations and shared request/receipt fixtures
-against the 01 ABI; run Python tests separately, not an imitation in JavaScript.
-Package tests must not need credentials or access a live provider. Build a local
-candidate plugin artifact with the official Dify packager; record the verified
-CLI version, exact command and output hash in the plugin README before exit.
-Installation/publication is a different action; a source ZIP is not proof of a valid
-plugin package. If the packaging toolchain is unavailable, do not mark 02 complete.
-
-**Probe protocol:** for each authorized engine probe record target app/workspace and
-versions, input and expected result, allowed writes, numeric paid caps if applicable,
-cleanup/retention and stop condition before execution. Use disposable apps; preserve
-unknown executions. Cover empty FILES conversion, credential binding, request/schema
-parameters, actual Workflow Tool wrappers/system IDs, JSON carrier capacity, native
-files up to the candidate bound, receipt loss, nested timeouts, Human Input/Loop and
-paused-parent publication binding. Group free deterministic probes before any paid
-case. Do not modify the observed staging Manager/shared experiment plugin.
-
-**Exit:** local ABI, failure/receipt/file tests, local package verification and
-two reviews pass; each live capability is evidenced or explicitly pending. Known host
-incompatibilities must be resolved before dependent final selectors; unresolved
-installation IDs may remain deployment slots. Continue local 03 work against the
-validated ABI without claiming E1-E3 passed.
-
-### 03 - Story & Art Specialists
-
-**Outcome:** three complete focused graphs and the working text/specification/text-
-correction branches of the single Reviewer graph. Covers J01-J10 and related A18.
-
-**Slices in order:** (a) Story Planner concept/outline/cast/locations; (b) text Reviewer;
-(c) Manuscript write/reconcile_characters/reconcile_locations; (d) Art Director style/
-sample_spec/character_spec/location_spec; (e) specification and text-correction review.
-Each service slice includes its create/revise fixtures before advancing.
-
-Use the published prompt/schema selectors and migrate creative construction into Dify.
-Remove experiment persona/fixed-count assumptions and callbacks. Use explicit scoped
-inputs, established-fact provenance, bounded context and structured outputs; return
-proposals, not app mutations. Preserve exact text and local-key remap requirements.
-Only Manager selects calls and corrections; children cannot ask humans or invoke peers.
-Load actual authored YAML and execute its JavaScript nodes/selectors with fake tool
-responses, not the old synthetic `candidates()` graphs.
-
-Reviewer shares the 01 assessment envelope: exact targets/sources, inspected coverage,
-pass/repair/inconclusive/blocked, stable findings, evidence and limitations. Operational
-failure is not an invented quality defect. Unimplemented visual branches at this
-intermediate checkpoint are explicitly unsupported and cannot return pass; 04 must
-replace them with working branches before the Reviewer is declared complete.
-
-**Verification/exit:** `v2-specialists.test.ts` plus common checks; variable/zero
-optional subject counts, grouped/out-of-order proposals, scoped revise, hard fact
-conflicts, bounded context, source mapping, Unicode/RTL, missing input, incomplete
-output and meaningful privacy canaries. Reviewer fixtures cover good output,
-confirmed defect, advisory-only and insufficient evidence. No provider SDK/HTTP/node
-retry or undeclared call. Two clean reviews; reconcile contracts/handoff if concrete
-service needs changed them, then continue to 04.
-
-### 04 - Page & Image Services
-
-**Outcome:** Page Composer and Image Executor complete; the same Reviewer now supports
-all six modes. Covers J11-J13, reference serializers and A13-A18.
-
-**Slices:** (a) paginate/compose and routing/spec review; (b) deterministic Image Executor
-prepare and image-request review; (c) generate/native output handling and image review;
-(d) visual correction and whole-book coverage. Contract changes propagate back to 03
-fixtures before exit, not as incompatible special cases.
-
-Page Composer routes all required manuscript text exactly once, using code-point spans,
-explicit reading order, cover/story roles, ordered panels and explicit no-text. New
-dialogue requires a manuscript revision. Image prepare includes immutable style,
-exact lettering, actual reference order and meaningful settings in the request hash.
-Generate validates that exact request but has no Reviewer-pass gate inside Executor.
-Manager's 05 preflight policy is mandatory; no duplicate app/executor quality gate.
-
-Complete Reviewer `text/specification/image_request/image/whole_book/correction`.
-Use actual pixel inputs for image modes and explicit missing-pixel outcomes. Whole-book
-aggregation uses up to four-page windows with one-page overlap and the specified
-recurring-subject pairs; Manager schedules windows, Reviewer only evaluates supplied
-scope. Aggregation cannot manufacture coverage. Fixture-based pixel plumbing is not
-evidence of model visual quality.
-
-**Verification/exit:** `v2-images-review.test.ts`, Python image tests, all earlier
-package tests and common checks. Include title-only cover, inherited non-editable
-facts, lettering omission/duplication/RTL spans, stale request/reference order, missing
-bytes, per-kind dimensions, unsupported final size, two different originals,
-multiple outputs/partial results, absent pixels, cross-window continuity defects,
-and re-review after correction. Failed structural validation dispatches zero provider
-calls. No app overlay/crop workaround. Six focused YAMLs and complete Reviewer mode
-coverage pass two reviews; continue to 05.
-
-### 05 - Manager Workflow
-
-**Outcome:** seventh candidate graph: complete minimal serial orchestration against
-the proposed nineteen-tool app interface. Covers A04-A12,A17,A19.
-
-**Slices:** (a) creation happy path and service wiring; (b) review/preflight/correction/
-selection; (c) optional authentic human input and continuation/customer revision;
-(d) partial results, storage recovery, unknown calls and budgets.
-
-Use one bounded serial Loop (64 actions per attempt), explicit service branches and
-one converged app-facing End `result` compatible with the existing v1 Run envelope.
-Manager's own paid reasoning is registered before dispatch. Direct Start private
-context binds only to managed MCP nodes; never through Code or a child. Child tool/
-publication dependencies are manifest binding slots until real IDs are available.
-
-Build the actual graph from 01's action table, updating it when implemented details
-clarify ordering. Before paid work read authoritative app facts, reconcile observations,
-register calls and persist dispatch intent; release short mutation leases across paid
-calls and human waits. Retain originals/proposals and fresh-fenced selections before
-downstream use. Mandatory exact image preflight, output and whole-book review remain
-Manager policy; human checkpoints remain optional and interruptions minimized.
-
-Test-boundary doubles return contract-valid app facts and enforce scripted
-identity/fence/counter effects; they are not a second production backend, scheduler or
-billing engine. Fixtures assert Manager's actual action trace: reuses the same call
-identity, permits deliberate new candidates under the same chain, never replays unknown
-dispatch, does independent work while permitted, stops new paid work at a ceiling,
-retains in-flight evidence, and records unknown cost rather than zero. Success-only
-Run application stays separate from Manager partial/checkpoint recovery and `complete`.
-
-**Verification/exit:** `v2-manager.test.ts` runs actual graph predicates/Code selectors
-with injected boundary outputs for create, continue, revise, optional/grouped human
-questions, duplicate/stale answers, correction exhaustion, changed sources, retained
-output after failed attachment, cancelled/expired work, no-progress and 64-action
-exhaustion. Assert child/private-context isolation and exact input/output bindings.
-No live app/tool dependency is contacted. Two reviews confirm no functional placeholder
-branches; continue to 06 with all seven candidate YAMLs.
-
-### 06 - Candidate Package & Integration Handoff
-
-**Outcome:** reviewable local candidate release plus decision-complete proposed
-application changes. This is the pre-application-code gate, not staging acceptance.
-
-Complete `v2-package.test.ts`: load exactly the seven YAMLs, validate nodes/edges/
-selectors and required adapter parameters, exercise actual Code behavior, detect
-missing operation/mode coverage, illegal child MCP/Human Input, enabled paid retries,
-secret/private-context leakage and mismatched contracts. Validate source mappings,
-exported schema parity, plugin/build identity and raw file hashes. The manifest must
-identify candidate status, all seven roles, configuration slots, plugin/dependency
-versions, source selectors/hashes and evidence references. Undeployed identities stay
-explicitly unbound; no invented working app IDs or credentials.
-
-Close the integration handoff against current code, not memory: every required field,
-status, tool, event hook, Run card/action and persistence change has a concrete owner,
-signature/example, validation/failure behavior, compatibility rule and test. Cover all
-nineteen tools, admission/consumption sequence, v2 collections/indexes, call/output
-mapping, observer/measurement trust, late usage, file downloader/MCP image extension,
-restricted post-termination retention, authentic Human Input and result application.
-Include proposed UI action/state mapping and extension callbacks/call sites. Unibase
-changes originate upstream; no copied-core workaround. Map each delta to 07-10 and
-name any target capability it depends on. "Implement later" is not a contract.
-
-README/validation include dependency installation/import order, non-secret binding
-slots, configuration ownership, safe recovery, local commands and the separately gated
-publication/paid runbook. Candidate imports may require binding substitutions; identify
-their exact graph selectors and expected shapes. Do not call an unbound candidate an
-installed or publication-matched export. Keep clean and repaired/recovered journeys
-separate. No new app UI is delivered at this checkpoint.
-
-**Verification/exit:** all introduced Node tests, plugin Python/package checks, schema
-export parity, type-check and common checks pass. Two clean read-only reviews cover
-the full package/plan/handoff against the issue base and accepted policy, including
-source provenance and proposed app changes. Record E1-E5 pending where unproven,
-without downgrading known incompatibility to a mere missing test. Produce a precise
-resume entry and present the package plus app-change scope. **Stop before 07** until
-the user explicitly authorizes material Unitale/Unibase application implementation.
+| Checkpoint | Deliverable | Acceptance and continuation |
+| --- | --- | --- |
+| 01 - Minimal boundaries | Seven-role inputs/outputs, essential identities, source mapping and provider capability matrix | Boundary/privacy fixtures and two clean read-only reviews; continue to 02 |
+| 02 - Existing plugins and compatibility | Official text/vision/image plugin configuration; source-backed capability findings | Record installed/import/runtime evidence separately; unresolved capabilities explicitly pending; continue only with independently valid work |
+| 03 - Creative and text review DSL | Planner, Manuscript, Art Director and text/specification/correction Reviewer | Load actual YAML, check references and execute essential inline checks; two clean reviews |
+| 04 - Composition and images DSL | Page Composer, deterministic Prepare, exact Generate and all Reviewer modes | Exact Unicode/routing, ordered originals, partial/unknown outcomes and scoped coverage fixtures; two clean reviews |
+| 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
+| 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
+| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Separate application authorization; preserve v1 records and update model/example/both Mermaid versions together |
+| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Separate authorization; no speculative core extensions |
+| 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
+| 10 - Run UI Integration | Existing Run start/review/continue/revise and authentic Human Input | Browser/race checks; no separate creator workspace |
+| 11 - Integrated Verification | Actual workflows against implemented application interfaces | Real integrated offline checks and two clean reviews |
+| 12 - Staging Publication & Acceptance | Exact publications, finite paid acceptance and final exports | Separate scoped live/publication/paid authorization and operator inputs |
 
 ### 07 - Application Contracts & Persistence
 
-After the 06 gate, implement its v2 shapes/validators, storage/index changes and
-compatible readers. Preserve v1 contracts/quality uniqueness and accepted bindings;
-no automatic creative migration. Update model guide, JSON example and both Mermaid
-versions with executable changes. Test migration/rollback reads, hash vectors,
-immutable writes, partial outputs, revalidation, locks and correction chains.
-Run `test:booklet-repositories`, `test:booklet-lifecycle-media`,
-`node --import tsx --test tests/booklet-contracts.test.ts`, `typecheck`,
-`docs:booklet-model` and `check:docs` (npm scripts via `npm.cmd run`).
-Two reviews; continue to 08.
+Gated: separate application authorization. Use the candidate handoff and update the
+model guide, JSON example and both Mermaid diagrams with any persistence change.
 
-### 08 - Shared Runtime Extensions
+### Execution boundary and artifact layout
 
-Implement only the reviewed 06 interface delta in Unibase: optional domain hooks,
-Run client registrations, MCP image content, restricted downloader extraction and
-verified observations. Include upstream changelog/tests and preserve generic behavior
-when hooks are absent. External reads stay outside transactions. Import a reviewed
-pinned revision into Unitale; record actual source/import evidence. Two reviews and
-affected upstream/import checks; continue to 09. Target-specific bindings need
-relevant 02 engine evidence, not only local ABI fixtures.
+Authorized local work: package YAML, essential inline checks, focused fixtures/tests and
+canonical booklet documentation/navigation. Application code, runtime registries,
+migrations, root dependencies/lockfiles, deployment settings and Unibase are excluded.
+Commits, pushes, live operations and paid calls require separate authorization.
+Existing v1 compatibility tests are preserved. No retroactive issue is needed.
 
-### 09 - Unitale Gateway & Recovery
+Package root: `docs/features/booklet-generation/workflow-package/`. Maintain one
+`workflow.yaml` for each of the seven named roles; fixtures, README, manifest and a
+single integration handoff contain only material used by those workflows. Inline code
+stays readable in YAML, using only the standard library and no package imports or
+generated dependency bundles. Tests inspect
+the actual YAML and run focused pure functions; they do not emulate graph execution.
 
-Implement the nineteen v2 tools, idempotent admission sequence, dispatch/accounting,
-media retention and recovery from the 06 handoff. No v1 catalog on the new Manager.
-Test actual handlers with disposable databases: every admission/dispatch interruption,
-same-call/no blind replay, unknown-child progress, late/conflicting receipts and
-currency, ceiling overage, multiple outputs, per-kind canvas, transaction retries,
-multi-batch history and retained results after cancellation/expiry. Reuse existing
-abandonment, verified release and successful-result application. Run booklet
-repository/lifecycle/media/MCP/contract suites and typecheck. Two reviews; continue to 10.
+### Local commands and evidence levels
 
-### 10 - Run UI Integration
+Use prepared Node 24 and locked dependencies. The local npm launcher is
+`node output/tooling/npm/node_modules/npm/bin/npm-cli.js`. Run tsx/Git helpers outside
+the sandbox on this Windows environment. No dependency upgrade is authorized.
 
-Implement existing Run start/list/detail/decision surfaces and proposed booklet cards/
-authorized paginated media resolvers. Test authentic first-response wins, duplicate/
-changed/stale submissions, raw 4,000-character bound, partial continuation, application
-retry and unknown reconciliation as distinct actions. Browser checks: desktop and
-390px English/Arabic, keyboard/bidi, public preference restoration, hydration and
-served-document CSP nonces. No new workspace/reader/PDF/share UI. Two reviews; continue
-to 11.
+- `npm.cmd run test:booklet-compat`: preserved v1 regressions plus current package checks.
+- `npm.cmd run check:docs`, `npm.cmd run check:i18n`, `npm.cmd run check:skills`.
+- `npm.cmd run handbook:ready` after document restructuring.
+- Run affected inline-code tests with the prepared Python runtime where Python Code
+  nodes are used; this requires no Python package or plugin distribution.
+- Run typecheck for TypeScript test changes. No application build is required when
+  application/runtime/dependency inputs are unchanged.
 
-### 11 - Integrated Verification
+YAML parsing, static graph checks and isolated Code execution are local evidence.
+They are **not** Dify import, nested execution, native-file transport, Human Input
+resume, effective provider settings, pricing or paid acceptance evidence. E1-E5 remain
+pending until their exact probes are authorized and performed.
 
-Replace boundary fakes at application integration seams with actual handlers/services
-in disposable tests; retain focused fixture coverage. Load the seven delivered YAMLs,
-rerun relevant 02 probes on final bindings and verify admission, human resume, revision,
-accounting, files and recovery. A passing fake cannot substitute for actual app behavior.
-Run booklet compatibility/repository/lifecycle-media/MCP and standalone contract tests,
-`typecheck`, `lint`, `build`, `check:env`, `check:docs`, `check:i18n`,
-`check:skills` and `handbook:ready` (npm scripts via `npm.cmd run`), plus affected
-upstream checks. Advisory readiness warnings stay separate. Reconcile docs/model and
-run two clean reviews of the integrated diff. Stop before live 12 without its authority.
+### Checkpoint procedure
 
-### 12 - Staging Publication & Acceptance
-
-Require exact workspace/import/plugin installation/publication/registration/deployment
-authority. Verify owned Manager journal, publish children, create immutable suite tools,
-bind/publish Manager and read back all identities; never mutate accepted tools in place.
-Paid authority names exact package/brief/languages/cases/settings, numeric money/call
-caps and stop conditions. Verify smallest/largest enabled packages, maximum references,
-actual-pixel review, creation/revision/human resume, usage and a clean approved journey.
-Recovery evidence is separate; induce paid faults only within explicit scope.
-Rerun final file/receipt/binding/Human Input evidence; unknown calls are not replayed.
-
-On failure disable new candidate admission, preserve old suites, originals and
-unresolved records; roll back admission selection without deleting v2 readers/recovery.
-After acceptance export all seven actual publications, update hashes/evidence and
-distinguish implementation, installation, publication, deployment, activation and
-paid acceptance. Production promotion, commits/pushes/PRs and human issue closure
-retain their separate authority.
+Work in cohesive slices. Validate before each checkpoint exit. Each checkpoint needs
+two consecutive clean read-only reviews of the same implementation state; fixes reset
+the affected count. Without delegation authorization, use and label separate same-agent
+read-only passes. Final 06 reviews cover the entire diff and all checkpoint dependencies.
+Missing required evidence prevents a completion claim; a documented pending live gate
+does not invalidate independently established local evidence. Update subsequent steps
+from concrete findings rather than accumulating speculative implementation tasks.
 
 ### Verified progress and resume for issue #10
 
-| Item | Current evidence / next action |
-| --- | --- |
-| Source baseline | Issue diff base `07e5af655052473c5e112927cfcb84e3071dc1b8`; finalized handoff is on `feature/10-dify-workflow-design`; inspect actual branch HEAD/worktree at implementation entry |
-| Handbook | `D:\misc\code\uniwares\handbook` at `71891a9031eeebee1ff8d2a66494bdeb10ad5d3f`, usable cached revision |
-| Current deliverable | Finalized 01-12 plan and prepared local tooling; no package/plugin/app implementation created |
-| Documentation verification | 2026-11-08: `check:docs` (73 docs and both unchanged diagrams), `check:i18n`, `check:skills` and `git diff --check` pass; 12 labels/22 readiness mappings/01-06 exit coverage checked |
-| Review evidence | Two separate same-agent read-only plan consistency passes found no confirmed defects; final handoff review covers the complete documentation diff; no independent-agent review claimed |
-| Verification limits | `handbook:ready` retains advisory tracking/issue-language/integration-branch warnings; new v2 tests/plugin/workflows do not exist yet; E1-E5 remain unproven |
-| Checkpoints 01-06 | Planned and locally executable in order after package implementation authorization; none implemented |
-| Checkpoints 07-12 | Deferred behind 06 app-code gate; publication/paid gate remains separate |
-| Local runtime baseline | Locked npm install complete; all 11 existing `test:booklet-compat` tests and full `typecheck` pass outside the sandbox; Zod JSON Schema/YAML preflight passes; Python/SDK/CLI checks above pass |
-| Live evidence | E1-E5 pending; operator identities and finite paid scope are not fabricated |
-| Next executable action | In the new authorized session: inspect branch HEAD/worktree and prepared tools, reuse/revalidate the baseline as needed, then begin 01's shared-contract slice |
+The previous custom plugin, 117-module authoring framework, generated schemas, six
+bundled-runtime YAML files and v2 graph interpreter/tests are superseded. Their old
+test counts/review hashes do not establish correctness of the replacement. Source
+selector provenance, two original PNG fixtures and correction-limit scenarios survive.
+An ignored recovery archive and file/hash inventory were verified before cleanup.
 
-During implementation replace the current row with the active checkpoint/slice and
-the evidence fields required by the execution procedure. Keep only the current resume
-state plus concise completed checkpoint evidence, not an append-only activity log.
-This documentation revision leaves the implemented model guide/example/diagrams
-unchanged; 07 owns their synchronized update with executable persistence changes.
+Local candidate checkpoints 01-06 are complete under the revised DSL-first scope.
+The [candidate README](workflow-package/README.md#checkpoint-evidence) records current
+checks, two clean same-agent review passes per checkpoint and the implementation
+digest. E1-E5 remain pending; no actual Dify import/execution is claimed.
+Checkpoint 07 remains a hard application-code gate. Future changes reset affected
+checks/reviews; do not inherit the superseded framework evidence.
+The [compatibility procedure](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
+separates early Dify feasibility checks from application-dependent integration proof.
 
 ### New-session goal prompt
 
-Select GPT-6.1 Sol with Medium reasoning in the new session, then use this prompt.
-The prompt authorizes package implementation only when the user starts that session;
-it does not start implementation as part of this environment/plan handoff.
-
-```text
-Create and pursue a goal to complete checkpoints 01-06 in
-docs/features/booklet-generation/implementation-plan.md on
-feature/10-dify-workflow-design, using the accepted package specification and decisions.
-
-I authorize the full local candidate-package implementation: package-local contracts,
-the narrow Dify provider plugin, all seven workflows, fixtures/tests and documentation.
-Follow AGENTS.md and the recorded execution/review procedure. Inspect the actual
-worktree and prepared local tools; reuse valid baseline evidence. Work in small slices,
-run the required checks, obtain two clean read-only reviews per checkpoint, record
-resumable evidence and revise affected next steps when verified findings require it.
-Continue automatically through 06; pause only for a genuine blocker or a material
-decision outside the accepted plan. Keep the solution practically simple.
-
-Deliver the complete locally validated candidate package and exact Unitale/Unibase
-application-change handoff. Preserve Manager-only app access and all accepted policies.
-Stop after 06. Unitale/Unibase application code and runtime schemas, migrations,
-live Dify writes, deployment, paid calls, commits and pushes require separate
-authorization. Keep unproven live capabilities explicitly pending; do not substitute
-fixture results for live evidence.
-```
+The DSL-first candidate through 06 is locally validated on
+`feature/10-dify-workflow-design` from `713da2d`. Read current candidate evidence,
+accepted specification and the necessity/simplicity gate before any further work.
+Stop at checkpoint 07 unless the user explicitly authorizes application implementation.
+Live imports/probes/activation, paid calls, commits and pushes remain separately gated.
+Preserve the seven roles, Manager-only app communication and pending E1-E5 evidence.
 
 ## Foundation import
 

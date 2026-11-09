@@ -1,0 +1,15 @@
+{
+  "policy": { "text": 3, "request": 3, "image": 1 },
+  "scenarios": [
+    { "name": "text-exhausted", "family": "text", "used": 3, "maximum": 3, "expectedAction": "pause", "reason": "correction_exhausted", "error": "LIMIT" },
+    { "name": "request-exhausted", "family": "request", "used": 3, "maximum": 3, "expectedAction": "pause", "reason": "correction_exhausted", "error": "LIMIT" },
+    { "name": "image-exhausted", "family": "image", "used": 1, "maximum": 1, "expectedAction": "pause", "reason": "correction_exhausted", "error": "LIMIT" },
+    { "name": "unknown-image-keeps-attempt", "family": "image", "used": 1, "maximum": 1, "expectedAction": "pause", "reason": "unknown_execution", "error": "UNKNOWN_OUTCOME" }
+  ],
+  "invariants": [
+    "A new candidate or continuation retains the target/family/allocation chain.",
+    "A grouped call increments each affected target once, not once per output.",
+    "Only trusted proven non-dispatch can release a consumed correction.",
+    "Review-only calls consume no creative correction."
+  ]
+}

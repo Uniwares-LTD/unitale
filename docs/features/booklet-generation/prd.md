@@ -3,15 +3,16 @@
 The [workflow design](workflow-design.md) records the accepted issue #10 delivery
 and ownership decisions. It supersedes the earlier application-enforced human/quality
 gates for the target design. Existing T14-T17 code still implements those older guards;
-the design is not an implementation claim. Environment preparation and plan finalization
-are complete for handoff; package implementation requires the explicit 01-06 request,
-and application implementation remains behind the post-06 gate.
+the design is not an application implementation claim. The DSL-first local candidate
+through 06 is implemented; current verification is in the candidate README.
+Application implementation remains behind the post-06 gate.
 
 The [A01-A22 technical resolutions](workflow-package-spec.md#technical-resolutions-for-a01-a22)
 and [01-12 checkpoints](implementation-plan.md#issue-10-deliverables-and-dependency-map)
 record workflow-first delivery: complete the candidate package and application-change
 handoff at 06, then require explicit authorization before app implementation at 07.
-The first phase includes the narrow Dify plugin, but no Unitale/Unibase runtime changes.
+The first phase uses official Dify plugins and native YAML with essential inline code,
+without a custom plugin or Unitale/Unibase runtime changes.
 These checkpoints do not
 mark G implementation gaps or E evidence gates complete. Native MCP image transfer
 replaces the proposed stateful file utility; a lost parent must be reconciled before
@@ -218,7 +219,7 @@ budgets, MCP and retention settings.
 ## Decisions and sources
 
 Accepted product requirements and the [workflow design decisions](workflow-design.md)
-govern R01–R14. The environment/plan handoff does not begin package implementation. The original
+govern R01–R14. Local package completion does not establish live acceptance. The original
 foundation used [agentic-poc at its pinned revision](https://github.com/karpishe-experiments/agentic-poc/tree/baa9dda25c041b2d7a77853f9f6c3daa73161217).
 Issue #10 uses the newer published package pinned in the
 [workflow design sources](workflow-design.md#sources-and-maintenance), not story-panel.

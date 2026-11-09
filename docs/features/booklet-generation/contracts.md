@@ -5,8 +5,8 @@ The accepted [workflow design](workflow-design.md) changes the target ownership 
 human approvals, quality gates and Manager acceptance, and records the required
 versioned extensions. Those changes are not implemented. Preserve v1 parsing and
 historical records. The [package specification](workflow-package-spec.md#concrete-runtime-record-and-ui-decisions)
-defines the planned v1/v2 compatibility boundary; package-local schemas are authored
-in 01 and runtime implementation follows 07 in the
+defines the planned v1/v2 compatibility boundary; minimal package boundaries are
+checked in the actual workflow YAML and runtime implementation follows 07 in the
 [delivery plan](implementation-plan.md#07---application-contracts--persistence).
 
 The target usage policy trusts Manager dispatch controls. App usage tracking and

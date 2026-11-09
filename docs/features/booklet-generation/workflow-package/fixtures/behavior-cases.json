@@ -1,0 +1,11 @@
+{
+  "exactText": "  سلام 👩🏽‍🚀\nاَلف — é  ",
+  "scenarios": [
+    "Preserve leading/trailing whitespace, combining marks, emoji and RTL text.",
+    "Do not repeat successful siblings after a partial or unknown result.",
+    "Do not replace original images with thumbnails or silently reorder references.",
+    "Require preflight for the exact prepared request and review actual generated pixels.",
+    "Keep correction counters and authentic human request identities across continuation.",
+    "Checkpoint version races stop progress before dispatch."
+  ]
+}

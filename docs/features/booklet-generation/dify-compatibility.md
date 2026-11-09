@@ -2,6 +2,11 @@
 
 ## Purpose
 
+This document describes the preserved T02/v1 harness. The same suite command also
+runs the current native YAML tests; their prerequisites and results live in the
+[candidate README](workflow-package/README.md#verification). Target Dify/provider
+checks follow the [compatibility runbook](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure).
+
 T02 checks candidate workflow contracts before T18–T20 implement production
 specialists, reviewer and manager. It executes generated JavaScript Code nodes,
 resolves graph selectors into fake adapter validators, and exercises Unitale's
@@ -14,7 +19,9 @@ registered and no dispatcher, endpoint, database or accounting behavior changes.
 ## Prerequisites
 
 Use the repository's Node 24 and installed locked npm dependencies. No `.env.local`,
-secrets, database, Python, Docker, running Dify or paid provider access is needed.
+secrets, database, Docker, running Dify or paid provider access is needed. The v1
+tests need no Python; the native YAML tests require standard-library Python as
+described in the candidate README.
 The command does not use the application's environment-loading wrapper. Tests
 replace global fetch with a rejecting guard; the transport receives only an
 explicit, allowlisted fake fetcher. These guards cover the harness's HTTP paths,
@@ -28,7 +35,9 @@ From the Unitale root, run:
 npm.cmd run test:booklet-compat
 ```
 
-On other shells, use `npm run test:booklet-compat`. Eleven tests should pass.
+On other shells, use `npm run test:booklet-compat`. The suite includes eleven
+preserved v1 tests plus the native-package tests; the candidate README owns the
+current total and reviewed identity.
 An unexpected request, malformed output, unresolved selector or invalid reference
 fails the suite. No credentials should be added to fix an offline failure.
 

@@ -29,8 +29,13 @@ and the adapter; the table does not require unrelated suites for every task.
   product contract and cross-repository dependencies. Implementation is in progress.
   [Workflow package design](features/booklet-generation/workflow-design.md) owns
   issue #10's accepted Manager/app/service boundaries, integration gap assessment and
-  open contract decisions. It distinguishes the target from current code and limits
-  the environment/plan handoff to tooling and documentation, before package implementation.
+  open contract decisions. It distinguishes the target from current application code.
+  The [candidate package](features/booklet-generation/workflow-package/README.md)
+  contains readable native Dify YAML, essential inline checks and source provenance;
+  its [integration handoff](features/booklet-generation/workflow-package/integration-handoff.md)
+  records proposed application deltas without runtime registration.
+  Official provider plugins are configuration dependencies; no custom provider package
+  or workflow authoring framework is delivered. Target capabilities remain pending.
   [First-package specification](features/booklet-generation/workflow-package-spec.md)
   owns the detailed operation mapping, proposed contracts, configuration inputs and
   app/MCP/UI change inventory for generating the seven workflows.
@@ -39,7 +44,7 @@ and the adapter; the table does not require unrelated suites for every task.
   01-06 deliver a candidate package before application changes; 07-12 are gated
   application integration and staging acceptance. Its execution procedure owns slice
   order, two-pass review, evidence/resume records and dependency reassessment.
-  Package-local contract schemas are proposals for the app; implemented model docs
+  Package boundary contracts are proposals for the app; implemented model docs
   remain unchanged until 07. The package integration handoff is created in 01 and
   closed in 06, without a second application implementation queue.
   [Implementation-readiness audit](features/booklet-generation/workflow-design.md#implementation-readiness-audit)
