@@ -186,25 +186,32 @@ where needed. Preserve failed slots; do not remove failed outputs to fabricate c
 Default dependencies: official `langgenius/openai` for text/vision/structured output and
 `langgenius/openai_tool` for image generation/edit. Pin actual installed package hashes
 at activation. Source reviewed at official repository commit
-`18663b9e723c345fed4c7450a3f925c583fa7064`; manifests report 1.1.0 and 0.2.2 respectively.
-This is source evidence, not an installed-target claim.
+`3326464451bbbb6d2060ef6645d826b6f82aa15b` in upstream PR #4238; candidate manifests
+report 1.1.1 and 0.2.3 respectively. These are submitted candidates, not accepted
+official releases or production installation identities.
 
 Required gates: exact configured models/settings, native structured output, ordered
 originals, useful execution/usage observations, disabled paid-call retries and bounded
-timeouts. The inspected official text credential builder and image tools construct
-`OpenAI(...)` without explicit
-`max_retries=0`; therefore no-SDK-retry compatibility is **unproven and activation is
-blocked**. Do not infer it from disabled Dify-node retry flags. Image model selectors
-advertise an unversioned Sunburst alias; the accepted dated reference model is not
-proved equivalent. Report these gaps before proposing any custom implementation.
+timeouts. Unmodified upstream source at `18663b9e723c345fed4c7450a3f925c583fa7064`
+omits SDK overrides and rejects the dated model. The submitted fixes address those
+gaps; activation remains blocked on release/integration acceptance. Do not infer SDK
+retry behavior from Dify-node retry flags or substitute an alias for the dated model.
 The [provider path assessment](workflow-package/integration-handoff.md#supported-provider-path-assessment)
 records checked alternatives and the authorized, offline-tested upstream patch to
 the existing official plugins. It is a bounded exception for demonstrated gaps,
 not a new Unitale production plugin. The subsequent full-compatibility authorization
 permits temporary namespaced test builds to preserve the shared experiment plugins.
 Upstream submission, isolated installation and no-money declaration/DSL checks are
-verified; official release, provider execution and application integration remain
-pending. The US$1 total cap does not clear activation gates.
+verified. Subsequent actual Luna structured-output, Sol vision and dated Sunburst
+Generate/Edit probes pass; the handoff records failed probes, minimal DSL corrections,
+usage estimates and retained liabilities. Official release and application integration
+remain pending. The US$1 total cap does not clear activation gates.
+
+Native model schemas use closed objects. Specialist proposal content is a JSON string
+only inside the model response, decoded by the inline pack node before existing
+content/scope validation. Workflow and Manager/application results still use content
+objects. Keep both target-compatible structured-output switch names in each LLM node;
+do not silently substitute plain-text parsing for native structured output.
 
 ### Concrete runtime record and UI decisions
 
@@ -283,7 +290,7 @@ checks must not be reported as Dify journeys. Two clean read-only reviews per ch
 
 | Gate | Required evidence | Status |
 | --- | --- | --- |
-| E1 | Exact models/settings, structured output, original image calls, no automatic retries and trusted usage | Pending; official image SDK retry and dated-model gaps identified |
+| E1 | Exact models/settings, structured output, original image calls, no automatic retries and trusted usage | Provider feasibility verified on isolated candidates; official release and application-bound observations pending |
 | E2 | Manager-only native-file byte round trip, order, hashes, practical capacity and expiry/recovery | Partial: two small originals passed native parent/child byte comparison; application path, capacity and expiry pending |
 | E3 | Real child wrappers, nested control, partial failures, Human Input and durable resume | Partial: deterministic child, Loop/Assigner, failure branch and same-run native Human Input resume proved; Manager/application journeys pending |
 | E4 | Owned Manager import, managed MCP permissions, suite/observer/reviewer bindings | Pending |

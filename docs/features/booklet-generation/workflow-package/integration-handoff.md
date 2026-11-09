@@ -322,26 +322,82 @@ This proves configuration persistence, not provider execution or a suitable fina
 The original 32 app IDs/names/update times and shared dev7/dev3 plugin identities are
 unchanged. No host signature policy, original credentials or application code changed.
 
-Provider execution awaits secure credential configuration for these isolated providers;
-no key is available in the process or named protected local inventory. Do not retrieve
-existing secrets through database access or place keys in chat/docs/DSL. Supply a
-protected file path or configure the two labelled test providers privately in Dify.
-Set text `max_retries=0` and the agreed timeout before saving: text credential
-validation itself sends a `ping` completion capped at 20 output tokens and must count
-against the allowance. Image credential validation lists models without generating.
-**Spent: US$0; remaining authorized cap: US$1.** Before each paid call, establish its
-cost bound and retain unresolved liability without replay. The
-[model page](https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst)
-and [image guide](https://developers.openai.com/api/docs/guides/image-generation#gpt-image-25-costs)
-describe token rates/estimation but do not establish a hard per-request charge cap;
-do not silently substitute older-model estimates or exceed the authorized total.
+The user privately configured both test credentials. Allowlisted readback confirms
+Responses API, `max_retries=0`, `request_timeout=120`, metadata disabled and no custom
+base URL for text; image credential metadata is present. The probes logged, stored
+and changed no key values.
+Text credential validation sends a `ping` capped at 20 output tokens; its invoice
+amount is unavailable, so US$0.01 remains reserved. Image validation lists models.
 
-Temporary apps/plugins remain only to resume these probes. After completion or
-abandonment, delete exactly the two recorded apps, uninstall exactly these two test
-installation IDs and verify absence plus the unchanged original inventory. Uploaded
-package caches have no inspected deletion API; do not claim physical cache cleanup.
-Maintainer acceptance, paid execution, actual usage/retry observations and application
-integration remain pending; E1-E5 stay open and production execution stays disabled.
+#### Paid provider feasibility results
+
+Six distinct provider attempts were made under the US$1 total authorization; no
+uncertain call was replayed. The original failed attempts remain evidence.
+
+| Probe / run | Verified outcome | Declared or token-based USD estimate |
+| --- | --- | --- |
+| Planner `9d5724b1-e06d-42f2-b195-e7dbffff671a` | Luna returned text, but pack failed because native structured output was absent | 0.0002172 |
+| Structured Planner `bd0f1c89-9985-4a32-92dc-7510ebee7a30` | Provider rejected the open-object schema with HTTP 400; workflow returned unknown through its failure branch | No usage reported; retain US$0.02 hold |
+| Corrected Planner `20270f1a-6e19-4fa2-a8df-e1d359c4c557` | Actual creative workflow succeeds; exact Arabic/combining-character/emoji/whitespace/newline title preserved | 0.0001506 |
+| Reviewer `be87aa56-a5fb-4e14-9248-f48fcaca4130` | Actual Sol vision workflow succeeds on both ordered original PNGs, with exact target/reference coverage | 0.01089 |
+| Generate `10970f43-e110-4d41-9a8a-76bc71491e6c` | Native Prepare then one dated Sunburst call; one original high/opaque/PNG, 1024×1536 | 0.04179 |
+| Edit `18684311-dacc-4805-b6eb-ef1a018f1f04` | Native Prepare then one edit call using the two existing originals in order; one original at the same exact settings | 0.067071 |
+
+Live findings corrected in the actual DSLs:
+
+- The target DTO requires `structured_output_enabled`; `structured_output_switch_on`
+  alone imports but silently leaves structured output disabled. Six LLM nodes now
+  carry both supported names. The [Graphon v0.7 DTO](https://github.com/langgenius/graphon/blob/v0.7.0/src/graphon/nodes/llm/entities.py)
+  declares the former as the wire alias; newer DTOs migrate it. Node outputs now
+  contain actual structured data rather than an unconstrained text fallback.
+- OpenAI strict output rejects `content.additionalProperties=true`. Five specialist
+  model schemas use a JSON string for internal proposal content; two inline lines
+  decode it before existing operation/scope checks. External workflow results retain
+  content objects. This avoids generated per-operation schema inventories or a new
+  application contract. Manager already uses a closed `request_json` string carrier.
+  Model guide/example/Mermaid persistence schemas are unaffected: this changes only
+  the internal model-response carrier; decoded workflow/application objects are unchanged.
+- Both image tool nodes explicitly configure zero SDK retries and 120-second network
+  timeouts. The deterministic validator now permits the accepted dated snapshot when
+  the separate execution gate is enabled; all repository execution gates remain false.
+- LLM nodes explicitly select Standard (`service_tier=default`), matching the measured
+  probes and pricing basis rather than relying on an account-level automatic tier.
+
+Completed calls report US$0.0112578 of text estimates and US$0.108861 of image
+token-based estimates: **US$0.1201188 combined, not invoice-verified spending**.
+The [current pricing](https://developers.openai.com/api/docs/pricing) and
+[model-specific image calculator](https://developers.openai.com/api/docs/guides/image-generation#calculating-costs)
+were checked before calls. The current calculator explicitly supports GPT Image 2.5;
+its high/1024×1536 estimate is 1,372 output tokens (US$0.04116), matching both actual
+responses. Generate used 126 text input tokens; edit used 267 text and 3,072 image
+input tokens. This is the 2.5 formula, not the older GPT Image 2 estimate. The API
+does not expose a per-request dollar cap. Conservative reservations total US$0.67
+(including validation/rejected-request holds), leaving US$0.33 unallocated. No more
+paid calls are necessary for this feasibility slice.
+
+Downloaded originals are valid 1024×1536 PNGs: generation 734,307 bytes,
+SHA-256 `d3ea1b93bfda7de15aa39cd6acccb862611300eff73bd1840516d1e723f441cc`;
+edit 1,094,445 bytes, SHA-256
+`766a513590aa7b593a790fc3280011369d8c845376f90db430d62f4c92c132d5`.
+Visual inspection confirms the requested orange triangle and peach-left/blue-right
+edit. This is limited compatibility evidence, not complete booklet image-quality
+acceptance. Original downloads and raw probe journals remain ignored under `output/tooling`.
+
+All eight disposable apps (the two import-only copies and six paid-probe copies)
+were deleted with absence verified. The original 32 app IDs/names/update timestamps
+remain unchanged. The two configured namespaced plugin installations remain only
+for the next authorized integration probes; remove those exact installation IDs
+after completion or abandonment and verify the shared dev7/dev3 builds are unchanged.
+Two newly uploaded nonsensitive fixtures remain:
+`55739584-ce38-4f8b-8a8b-311c81e2ae38` and
+`2273d0da-d184-45e1-9443-74f3c72ad745`; Edit reused these uploads.
+Uploaded package caches and stored files have no inspected deletion API; do not
+claim physical cache/file cleanup. The earlier two fixture uploads remain historical
+retention evidence in the README; no host/storage deletion was attempted.
+Maintainer acceptance/release and application-bound E1-E5 proof remain pending.
+Source/fake-transport tests, effective zero-retry configuration and single observed
+native provider nodes support retry control; no live retryable-failure injection or
+invoice reconciliation is claimed. Production execution stays disabled.
 
 After secure configuration, set text provider **and any
 custom-model** credentials to `max_retries=0` and an agreed finite `request_timeout`;
@@ -435,17 +491,17 @@ successful installation or a single happy-path model call does not establish ful
 | Stage | Progress | Next action and exit evidence |
 | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README |
-| Provider/composition feasibility | Partial; activation blocked | Upstream fix submitted; isolated packages installed; no-money form/DSL checks pass. Configure test credentials securely, establish cost bounds and probe within the authorized US$1 total. Preserve the shared experiment plugins |
-| 07: application contracts/persistence | Not started; compatibility scope authorized, dependencies pending | After provider feasibility, implement only consumed v2 boundaries from this handoff, preserve v1, update model/example/both diagrams and test storage/identity races |
+| Provider/composition feasibility | Passed for the isolated candidate; official release/activation pending | Actual Luna structured output, Sol vision, dated Sunburst Generate/Edit and original downloads pass after the documented DSL fixes. Preserve the US$1 cap and shared experiment plugins; retain the rejected-request hold |
+| 07: application contracts/persistence | Ready to implement; compatibility scope authorized | Provider feasibility is established for the isolated candidate. Implement only consumed v2 boundaries, preserve v1, update model/example/both diagrams and test storage/identity races |
 | 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review |
 | 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay |
 | 10: existing Run UI | Not started | Wire start/review/continue/revise and authenticated human responses; verify races, media ownership and English/Arabic layouts |
 | 11: integrated validation | Not started | Exercise implemented application boundaries and complete two clean integrated reviews; preserve separate labels for mocks and real Dify evidence |
 | 12: staging/paid acceptance | Limited compatibility probes authorized; full acceptance pending | Pin owned publications/configuration, respect the US$1 total, execute only affordable probes, reconcile usage and export secret-free verified DSLs; no production activation |
 
-Recommended immediate action: resolve the provider/composition feasibility questions
-before committing to dependent application interfaces. Checkpoint 07 may then proceed
-within the authorized compatibility scope. A compatibility failure narrows or revises
+Recommended immediate action: implement the consumed checkpoint 07 boundaries using
+the verified provider/structured-output behavior and existing services. Checkpoint 07
+may proceed within the authorized compatibility scope. A compatibility failure narrows or revises
 the affected step; it does not authorize a new plugin or framework. Keep all seven
 execution switches disabled until the activation prerequisites above are satisfied;
 scoped paid probes use separately authorized disposable copies.

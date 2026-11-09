@@ -171,8 +171,8 @@ workflow:
                     raise ValueError("Image mode/count mismatch")
                 if execution_ready != "true":
                     raise ValueError("Activation blocked: no-retry/exact-model/native-file compatibility pending")
-                if settings["model"] not in ("gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"):
-                    raise ValueError("Official tool does not accept the selected dated model; no silent substitution")
+                if settings["model"] not in ("gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst", "gpt-image-2.5-sunburst-2026-09-08"):
+                    raise ValueError("Unsupported exact image model; no silent substitution")
                 width, height = settings["canvas"]["width"], settings["canvas"]["height"]
                 if width % 16 or height % 16 or min(width, height) <= 0 or max(width, height) > 3840 or max(width, height) > 3 * min(width, height) or not 655360 <= width * height <= 8294400:
                     raise ValueError("Unsupported original canvas; do not resize")
@@ -272,6 +272,12 @@ workflow:
                 - validate
                 - prompt
           tool_configurations:
+            max_retries:
+              type: constant
+              value: 0
+            request_timeout:
+              type: constant
+              value: 120
             model:
               type: variable
               value:
@@ -432,6 +438,12 @@ workflow:
                 - start
                 - references
           tool_configurations:
+            max_retries:
+              type: constant
+              value: 0
+            request_timeout:
+              type: constant
+              value: 120
             model:
               type: variable
               value:

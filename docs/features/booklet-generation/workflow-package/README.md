@@ -34,15 +34,16 @@ arrays do not mean dependency-free: install/configure and pin the official plugi
 listed in the manifest before an authorized import, then export their real identifiers.
 No package hashes or installation identities are invented here.
 
-The inspected official image tools do not explicitly disable OpenAI SDK retries and
-reject the accepted dated Sunburst model. Disabling Dify node retries does not fix
-those gaps. An [offline-tested upstream patch](integration-handoff.md#prepared-upstream-patch)
+The unmodified upstream base tools omitted SDK retry controls and rejected the
+accepted dated Sunburst model. Disabling Dify node retries cannot fix those gaps.
+An [offline-tested upstream patch](integration-handoff.md#prepared-upstream-patch)
 is submitted in upstream PR #4238. Test-only namespaced copies are installed and
 pass no-money form/import/readback/export checks; shared experiment plugins remain
 unchanged. [Current target evidence and probe limits](integration-handoff.md#isolated-target-compatibility-progress)
-record the pending secure credentials, US$1 cap and cleanup inventory.
+record successful paid feasibility probes, the two corrected native structured-output
+defects, US$1 cap and cleanup inventory. Full application integration remains pending.
 Activation remains blocked; do not silently use an unversioned alias or
-reintroduce a custom plugin. Native structured-output compatibility, application MCP wrappers,
+reintroduce a custom production plugin. Full suite acceptance, application MCP wrappers,
 trusted observations and integrated journeys remain pending. Native Loop/Assigner,
 child wrappers, file transport and Human Input evidence is recorded below.
 
@@ -96,13 +97,13 @@ target evidence recorded below.
 | Checkpoint | Verified local outcome | Reviews |
 | --- | --- | --- |
 | 01 | Minimal consumed boundaries, seven roles, 48-selector provenance and official-provider capability findings | Two clean same-agent read-only passes |
-| 02 | Source-pinned official plugin configuration and explicit retry/dated-model incompatibilities; no custom adapter | Two clean same-agent read-only passes; target compatibility pending |
+| 02 | Source-pinned official-plugin fixes, isolated installation and actual text/vision/Generate/Edit feasibility; no new runtime adapter | Two clean same-agent read-only passes; release and application acceptance pending |
 | 03 | Planner, Manuscript, Art Director and scoped Reviewer native YAML; structured-output configuration, scoped content checks and immutable-fact fixtures | Two clean same-agent read-only passes |
 | 04 | Page Composer, deterministic Prepare/Generate candidate and all six Reviewer modes; exact text/source/coverage, partial and unknown fixtures | Two clean same-agent read-only passes; generated pixels and application-native transport pending |
 | 05 | Bounded native serial Manager, direct private MCP binding, explicit children, checkpoint/preflight/correction/unknown guards and actual presentation binding | Two clean same-agent read-only passes; integrated Manager journeys/durable continuation pending |
 | 06 | Seven hashed candidates, configuration/binding manifest, integration handoff and current local evidence | Two clean integrated same-agent read-only passes against 713da2d |
 
-Final affected suite: **33/33 pass** (11 preserved v1 tests and 22 native-package tests).
+Final affected suite: **34/34 pass** (11 preserved v1 tests and 23 native-package tests).
 Full typecheck, scoped test-file ESLint, check:docs, check:i18n and check:skills pass.
 handbook:ready exits successfully with pre-existing advisory tracking/preferences
 warnings; no project configuration was changed. No application build was needed
@@ -110,11 +111,11 @@ because application/runtime/dependency inputs are unchanged. Before staging auth
 automatic approval review rejected external source transmission, so only local checks
 were used. Subsequently authorized connector/import/runtime results are recorded below.
 
-Reviewed implementation SHA-256: `09d1d42a3f5cf4edf44f96e82426a77f400dae7b3da9141d1ea6cbc539048c4d`.
+Reviewed implementation SHA-256: `42e6cfbc2b42f499b649babb2ca0ca9f5b31e036c8f00797fcb7208875715b64`.
 Identity covers seven YAML files, five fixtures and the new test file: sort repository-
 relative paths, concatenate each path + NUL + its lowercase SHA-256 + LF, then SHA-256
 the concatenation. Documentation and manifest evidence fields are outside this digest.
-The manifest separately records every workflow/fixture hash. YAML totals 235,164 bytes.
+The manifest separately records every workflow/fixture hash. YAML totals 236,894 bytes.
 
 Reviews are separate same-agent cold-review fallbacks, not independent-agent reviews.
 Both cover all six checkpoint scopes and the complete integrated change: first behavior,

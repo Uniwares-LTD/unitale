@@ -140,8 +140,28 @@ test("seven readable native candidates preserve private bindings and disable nod
       if (node.parentId) assert.ok(ids.has(node.parentId));
       if (["tool", "llm"].includes(node.data.type))
         assert.equal(node.data.retry_config.retry_enabled, false);
-      if (node.data.type === "llm")
+      if (role === "image-executor" && node.data.type === "tool") {
+        assert.deepEqual(node.data.tool_configurations.max_retries, { type: "constant", value: 0 });
+        assert.equal(node.data.tool_configurations.request_timeout.value, 120);
+      }
+      if (node.data.type === "llm") {
+        assert.equal(node.data.model.completion_params.service_tier, "default");
         assert.equal(node.data.structured_output_switch_on, true);
+        // Older target DTOs require this wire alias even when switch_on is present.
+        assert.equal(node.data.structured_output_enabled, true);
+        const checkStrictSchema = (schema: any): void => {
+          if (!schema || typeof schema !== "object") return;
+          if (schema.type === "object") {
+            assert.equal(schema.additionalProperties, false);
+            assert.deepEqual(
+              [...schema.required].sort(),
+              Object.keys(schema.properties).sort(),
+            );
+          }
+          for (const value of Object.values(schema)) checkStrictSchema(value);
+        };
+        checkStrictSchema(node.data.structured_output.schema);
+      }
       if (node.data.type === "code") {
         assert.doesNotMatch(
           node.data.code,
@@ -333,6 +353,25 @@ test("missing/duplicate creative items cannot become success; partial siblings s
     ...proposal.content,
     kind: "concept",
   });
+});
+
+test("strict model content carrier decodes before existing content validation", () => {
+  const r = request();
+  const content = {
+    title: fixture.exactText,
+    premise: "A quiet story",
+    audience: "age 6",
+    tone: "gentle",
+    constraints: [],
+  };
+  const proposal = { kind: "concept", subjectId: "concept-1", content: JSON.stringify(content) };
+  const response = { items: [{ itemId: "item-1", status: "succeeded", proposals: [proposal], limitations: [] }] };
+  const result = JSON.parse(run("story-planner", "pack", { request: JSON.stringify(r), response }).result);
+  assert.deepEqual(result.items[0].proposals[0].content, { ...content, kind: "concept" });
+  proposal.content = "not JSON";
+  assert.throws(() => run("story-planner", "pack", { request: JSON.stringify(r), response }));
+  proposal.content = "[]";
+  assert.throws(() => run("story-planner", "pack", { request: JSON.stringify(r), response }), /Typed identified content/);
 });
 
 test("pagination preserves exact Unicode/code-point spans and rejects omissions and duplication", () => {
@@ -551,14 +590,9 @@ test("deterministic Prepare preserves text and meaningful hash while Generate re
     () => run("image-executor", "validate", { request: JSON.stringify(r) }),
     /Activation blocked/,
   );
-  assert.throws(
-    () =>
-      run("image-executor", "validate", {
-        request: JSON.stringify(r),
-        execution_ready: "true",
-      }),
-    /dated model/,
-  );
+  assert.equal(run("image-executor", "validate", {
+    request: JSON.stringify(r), execution_ready: "true",
+  }).model, "gpt-image-2.5-sunburst-2026-09-08");
   prepared.prompt += "changed";
   assert.throws(
     () => run("image-executor", "validate", { request: JSON.stringify(r) }),

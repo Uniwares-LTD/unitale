@@ -10,16 +10,16 @@
   "sourceSelectors": "fixtures/source-selectors.json",
   "workflowSourceOfTruth": "native YAML; edit in Dify and review secret-free exports",
   "executionEnabled": false,
-  "officialPluginSourceRevision": "18663b9e723c345fed4c7450a3f925c583fa7064",
+  "officialPluginSourceRevision": "3326464451bbbb6d2060ef6645d826b6f82aa15b",
   "requiredPlugins": [
     {
       "id": "langgenius/openai",
-      "versionInInspectedSource": "1.1.0",
+      "versionInInspectedSource": "1.1.1",
       "installedPackageIdentifier": null
     },
     {
       "id": "langgenius/openai_tool",
-      "versionInInspectedSource": "0.2.2",
+      "versionInInspectedSource": "0.2.3",
       "installedPackageIdentifier": null
     }
   ],
@@ -28,56 +28,56 @@
     {
       "service": "manager",
       "path": "manager/workflow.yaml",
-      "sha256": "1c2e6a3fb4ce050cef225bba0322332ffcd957ddcbefd6fdcffcb7823f3f24fb",
-      "bytes": 103844,
+      "sha256": "780479d557e86322cd24aa91086d7057bd7fff051ff78a26f72ddacb3334bad4",
+      "bytes": 103922,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "story-planner",
       "path": "story-planner/workflow.yaml",
-      "sha256": "ed94d366acfea6b00099393a2c2cb2ef1eb70929620761d80b84409fdc529608",
-      "bytes": 19119,
+      "sha256": "22ff10e5b071780f39cb472f99b869754499cb6ea7d4f57e2d31b4617efdb404",
+      "bytes": 19383,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "manuscript",
       "path": "manuscript/workflow.yaml",
-      "sha256": "b880afeca029d3347fdd19a79cab1b8d4444d2a4a3aa4681f19ed90d80ce6773",
-      "bytes": 19018,
+      "sha256": "7d7844a2f17b603573093573c8d66f516d9c580a2fd600ec3fc5b65cd16cd048",
+      "bytes": 19282,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "art-director",
       "path": "art-director/workflow.yaml",
-      "sha256": "b6c0e0ea96579740e612b9dae9c1bc5f7ce1e2fc640c4b3bad7b44c36e9776ac",
-      "bytes": 19813,
+      "sha256": "9fa8847c11c17a5da066324df41a1a5e4b4518ba1d794a7d418fbb9de87c609a",
+      "bytes": 20077,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "page-composer",
       "path": "page-composer/workflow.yaml",
-      "sha256": "3406e236d412f87e716080539c4f53c7323115f680a9a7b936ae60a0878969d9",
-      "bytes": 23964,
+      "sha256": "ba8af85b63f9fd6db59bf83f7e5116108b05d15fd92dfcc5c9f1f4c343b47fe3",
+      "bytes": 24228,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "image-executor",
       "path": "image-executor/workflow.yaml",
-      "sha256": "6f506bfd0e4865a7fa790a7b32f353c741bb2e77d8102a46855fe01a97b99bd9",
-      "bytes": 27769,
+      "sha256": "d945bf00789f1a4a96cae14c9c5e33e276c84228034dad0243b860314dea3c17",
+      "bytes": 28101,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "quality-reviewer",
       "path": "quality-reviewer/workflow.yaml",
-      "sha256": "8c3b0fd688e4973a9284f54968633e389adc6527e90d9cbebb6287b06c0283c5",
-      "bytes": 21637,
+      "sha256": "528f27a7ecd8fb2ae08a7d7b1b0cf557306cb8876330a2ff416ec09b6b32e88d",
+      "bytes": 21901,
       "publicationId": null,
       "workflowToolId": null
     }
@@ -113,8 +113,8 @@
   ],
   "activationBlockers": [
     "Upstream PR #4238 adds the missing controls and snapshot; official acceptance/release remains pending.",
-    "Isolated test packages install and persist configuration; secure credentials and cost bounds are pending under a US$1 total cap.",
-    "Shared experiment dev builds remain unchanged; actual candidate provider execution/retry behavior is not verified.",
+    "Isolated Luna structured output, Sol vision and dated Sunburst generation/edit pass; full suite/application acceptance remains pending under the US$1 cap.",
+    "Shared experiment dev builds remain unchanged; live retryable-failure injection and invoice reconciliation are not claimed.",
     "Unitale managed MCP/retention, actual Manager journeys, authenticated response correlation, durable continuation and trusted observations are not verified."
   ],
   "stagingEvidence": "README.md#authorized-no-money-staging-evidence",
@@ -128,7 +128,7 @@
   ],
   "review": {
     "mode": "two separate same-agent read-only integrated passes covering each checkpoint",
-    "implementationSha256": "09d1d42a3f5cf4edf44f96e82426a77f400dae7b3da9141d1ea6cbc539048c4d",
+    "implementationSha256": "42e6cfbc2b42f499b649babb2ca0ca9f5b31e036c8f00797fcb7208875715b64",
     "independentAgentReview": false
   }
 }

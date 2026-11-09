@@ -226,6 +226,7 @@ workflow:
             completion_params:
               max_tokens: 4096
               reasoning_effort: low
+              service_tier: default
           context:
             enabled: false
             variable_selector: []
@@ -285,6 +286,7 @@ workflow:
               role: user
               text: "Public user intent: {{#start.request#}}"
           structured_output_switch_on: true
+          structured_output_enabled: true
           structured_output:
             schema:
               type: object

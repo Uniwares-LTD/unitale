@@ -34,8 +34,10 @@ separately gated. The subsequent full-compatibility authorization covers upstrea
 submission, isolated target testing and necessary application compatibility work,
 with **US$1 total probe spending**. The preservation requirement still applies:
 temporary namespaced copies leave shared experiment plugins intact. Submission,
-frozen-lock packaging, isolated installation and no-money form/DSL checks pass;
-provider execution awaits secure credentials and cost bounds. This is not production
+frozen-lock packaging, isolated installation, Luna structured output, Sol vision and
+dated Sunburst Generate/Edit probes pass. Native structured-output alias/schema
+defects were corrected and regression-covered; the handoff retains their failed runs,
+usage estimates and conservative liabilities. This is not production
 activation or acceptance of unverified E1-E5 behavior.
 
 The initial delivery authorization covered local DSL-first implementation through 06.
@@ -126,7 +128,7 @@ engine for tests. Code size is a review signal, never permission to omit require
 | 04 - Composition and images DSL | Page Composer, deterministic Prepare, exact Generate and all Reviewer modes | Exact Unicode/routing, ordered originals, partial/unknown outcomes and scoped coverage fixtures; two clean reviews |
 | 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
 | 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
-| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Compatibility scope authorized; provider feasibility pending; preserve v1 records and update model/example/both Mermaid versions together |
+| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Compatibility scope authorized; isolated provider feasibility established; preserve v1 records and update model/example/both Mermaid versions together |
 | 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Separate authorization; no speculative core extensions |
 | 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
 | 10 - Run UI Integration | Existing Run start/review/continue/revise and authentic Human Input | Browser/race checks; no separate creator workspace |
@@ -198,8 +200,8 @@ digest. E1-E5 remain open. Authorized no-money staging probes established dispos
 candidate import/readback, native child/files/control and Human Input resume; the
 README records exact scope, remaining gates and cleanup. No paid or integrated
 application journey is claimed.
-Checkpoint 07 awaits provider-feasibility dependencies under the later compatibility
-authorization. No application changes have started. Future changes reset affected
+Checkpoint 07 may proceed under the later compatibility authorization and established
+isolated provider feasibility. No application changes have started. Future changes reset affected
 checks/reviews; do not inherit the superseded framework evidence.
 The [compatibility procedure](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
 separates early Dify feasibility checks from application-dependent integration proof.

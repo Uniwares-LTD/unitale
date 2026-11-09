@@ -149,6 +149,7 @@ workflow:
             completion_params:
               max_tokens: 8192
               reasoning_effort: low
+              service_tier: default
           context:
             enabled: false
             variable_selector: []
@@ -179,6 +180,7 @@ workflow:
               role: user
               text: "{{#validate.request#}}"
           structured_output_switch_on: true
+          structured_output_enabled: true
           structured_output:
             schema:
               type: object
@@ -219,8 +221,8 @@ workflow:
                             subjectId:
                               type: string
                             content:
-                              type: object
-                              additionalProperties: true
+                              type: string
+                              description: JSON-encoded operation content object; pack decodes and validates it.
                           additionalProperties: false
                       limitations:
                         type: array
@@ -261,6 +263,8 @@ workflow:
                     if (i["status"] == "succeeded") != bool(proposals):
                         raise ValueError("Success requires proposals; failed/missing input cannot invent proposals")
                     for p in proposals:
+                        if isinstance(p.get("content"), str):
+                            p["content"] = json.loads(p["content"])
                         if not p.get("kind") or not p.get("subjectId") or not isinstance(p.get("content"), dict):
                             raise ValueError("Typed identified content required")
                         if any(k not in p["content"] for k in required):

@@ -34,15 +34,17 @@ not authorize merging, deployment or provider activation.
 Current replacement evidence is in the candidate README; superseded completion claims
 and test counts do not carry forward. Unverified live capabilities remain pending.
 Authorized no-money staging probes now establish disposable import/readback and native
-child/file/control/Human Input behavior. Provider calls and application integration
-remain pending; the README records the two corrected import/runtime defects and cleanup.
+child/file/control/Human Input behavior. Those probes did not establish provider
+execution or application integration; the README records their corrected defects and cleanup.
 The separately authorized [upstream provider patch](features/booklet-generation/workflow-package/integration-handoff.md#prepared-upstream-patch)
 is submitted as PR #4238 and passes frozen-lock tests/packaging. The user's subsequent
 full-compatibility authorization permits necessary compatibility work and US$1 total
 probe spending. Temporary namespaced test copies preserve the shared experiment
-plugins; installation and no-money form/DSL checks pass. Secure credentials, cost
-bounds, provider execution and application integration remain pending. Application
-compatibility work starts only when its provider-feasibility dependencies are met;
+plugins; actual Luna structured output, Sol vision and dated Sunburst Generate/Edit
+probes pass after two native DSL corrections. Provider feasibility is established for
+the isolated candidate. The handoff records US$0.1201188 in usage-based estimates,
+retained liabilities and the US$1 cap. Necessary application compatibility work may
+now proceed; official release and integrated acceptance remain pending, and
 production activation remains disabled.
 
 Manager controls paid dispatch; per-production usage ceilings remain app safeguards,

@@ -11,8 +11,8 @@ Status: ownership and delivery decisions below are accepted in the design sessio
 on 2026-11-08. Technical working decisions and recommendations are distinguished
 below; selected technical resolutions are now recorded in the package specification.
 Current local package evidence is recorded in the delivery plan and candidate README;
-target feasibility has partial no-money evidence; provider execution and application
-integration remain unverified.
+provider feasibility now has actual Luna/Sol and dated Sunburst Generate/Edit evidence
+on isolated candidates; full application integration remains unverified.
 This document owns workflow-specific decisions, integration gaps and open questions;
 the [PRD](prd.md) owns product requirements, [contracts](contracts.md) describes
 current compatibility, and the existing [delivery plan](implementation-plan.md)
