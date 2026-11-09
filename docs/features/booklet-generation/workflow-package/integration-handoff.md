@@ -234,8 +234,9 @@ Disposable platform probes do not establish Unitale ownership or application int
 
 Rechecked on 2026-11-09: [PR #4238](https://github.com/langgenius/dify-official-plugins/pull/4238)
 is open and unmerged at `3326464451bbbb6d2060ef6645d826b6f82aa15b`.
-GitHub reports mergeability state `blocked`, no submitted reviews, review threads or
-conversation comments, no check runs and no commit statuses. This does not identify
+Before the author-account review below, GitHub reported mergeability state `blocked`,
+no submitted reviews, review threads or conversation comments, no check runs and no
+commit statuses. This does not identify
 the branch-protection rule or imply a failing test. No actionable maintainer feedback
 was present. Upstream main still resolves to
 `18663b9e723c345fed4c7450a3f925c583fa7064`; its model/tool manifests remain 1.1.0/0.2.2.
@@ -274,6 +275,18 @@ select an explicitly authorized isolation or reviewed upgrade scope, then privat
 configure credentials and read back effective bindings. New paid checks require a
 finite authorized budget; the previous probe allowance is not spent automatically.
 No live installation, paid call or maintainer message was made for this status check.
+
+The user subsequently authorized reviewing and merging the PR if clean. The
+[published author-account review](https://github.com/langgenius/dify-official-plugins/pull/4238#pullrequestreview-5825532091)
+at the same head found no blocking issue across all nineteen changed files. Fresh
+frozen-lock runs pass 94 image and 407 non-live model tests, with the existing model
+warnings. Both CLI packages build and their Python/YAML match source; archives exclude
+environment files, virtual environments and caches. No provider calls were made.
+The review is `COMMENTED`, not independent approval: the current `uniwares-uk` account
+also authored the PR and cannot approve it. Readback verifies the published review,
+which requests maintainer approval to start checks. The account still lacks upstream
+push/maintainer permissions; no merge or branch-protection bypass was attempted.
+Official merge/publication remains pending, and checkpoint 07 is not authorized.
 
 Checkpoint 07 planning and, after separate authorization, local contract/persistence
 implementation can proceed independently. Its exit does not claim a released provider
