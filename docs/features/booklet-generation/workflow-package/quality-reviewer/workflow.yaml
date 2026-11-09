@@ -1,7 +1,7 @@
 version: 0.6.0
 kind: app
 app:
-  name: Booklet quality-reviewer v2
+  name: 'Unitale: Quality Reviewer'
   mode: workflow
   description: DSL-first local candidate. Binding/import/execution pending; see package README.
   icon: 📖

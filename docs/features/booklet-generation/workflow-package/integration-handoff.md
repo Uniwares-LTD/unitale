@@ -10,6 +10,33 @@ interface proposal. It does not register tools or change application code. The
 owns current local evidence. Preserve v1 schemas, records, registrations and in-flight
 publications. New incompatible semantics use v2 bindings.
 
+## Naming and tagging conventions
+
+Display names use `Unitale: <Readable Role>` in title case. Include the feature when
+needed for clarity, as in **Unitale: Booklet Manager**. The [package reference table](README.md)
+lists the seven exact display names. Keep versions, environments, dates and deployment
+status out of display names. Preserve existing directory slugs, service IDs and
+workflow-tool identifiers; a display-name change must not rename machine references.
+
+Apply exactly these four package tags to each workflow:
+
+- `app:unitale`
+- `feature:booklet`
+- `contract:v2`
+- `role:<existing-service-slug>`
+
+Use the existing service slug for the role value: `manager`, `story-planner`,
+`manuscript`, `art-director`, `page-composer`, `image-executor` or `quality-reviewer`.
+For example, Story Planner receives `role:story-planner`. Tag prefixes and values
+are lowercase; multiword values use kebab-case. `contract:v2` denotes the interface
+contract, not package version `0.2.0`.
+
+Dify tags are workspace metadata, separate from the exported workflow YAML. During
+a future authorized import, reuse exact-name tags, create missing tags, bind all
+four package tags to each workflow and verify readback. Preserve unrelated tags.
+These conventions govern this workflow package only; do not rename or retag
+existing unrelated apps. This repository update does not apply live names or tags.
+
 ## Workflow boundary
 
 Manager Start inputs: public `request` JSON (create/continue/revise/recover intent and
@@ -493,16 +520,16 @@ successful installation or a single happy-path model call does not establish ful
 
 ## Next-step runbook
 
-| Stage | Progress | Next action and exit evidence |
-| --- | --- | --- |
-| 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README |
-| Provider/composition feasibility | Passed for the isolated candidate; official release/activation pending | Actual Luna structured output, Sol vision, dated Sunburst Generate/Edit and original downloads pass after the documented DSL fixes. Preserve the US$1 cap and shared experiment plugins; retain the rejected-request hold |
-| 07: application contracts/persistence | Not started; separate authorization required | Provider feasibility is established. The user stopped at the provider handoff. If later authorized, implement only consumed v2 boundaries, preserve v1 and update model/example/both diagrams |
-| 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review |
-| 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay |
-| 10: existing Run UI | Not started | Wire start/review/continue/revise and authenticated human responses; verify races, media ownership and English/Arabic layouts |
-| 11: integrated validation | Not started | Exercise implemented application boundaries and complete two clean integrated reviews; preserve separate labels for mocks and real Dify evidence |
-| 12: staging/paid acceptance | Provider probes complete; full acceptance not authorized | Preserve current accounting; future integrated acceptance requires a new scope/budget decision and owned publications/configuration; no production activation |
+| Stage | Progress | Next action and exit evidence | Unattended work and preparation |
+| --- | --- | --- | --- |
+| 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README | Local checks can run unattended; no further implementation is needed for this handoff |
+| Provider/composition feasibility | Passed for the isolated candidate; official release/activation pending | Actual Luna structured output, Sol vision, dated Sunburst Generate/Edit and original downloads pass after the documented DSL fixes. Preserve the US$1 cap and shared experiment plugins; retain the rejected-request hold | Read-only upstream status checks can run unattended. Maintainers own acceptance/release; installation needs a reviewed package identity and an authorized isolation/upgrade scope. Billing reconciliation requires account usage/invoice access |
+| 07: application contracts/persistence | Not started; separate authorization required | Implement only consumed v2 boundaries, preserve v1 and update model/example/both diagrams | Can proceed unattended after explicit application authorization and selection of the work branch; use disposable local persistence for verification |
+| 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review | Inspection can be local/read-only. Any required implementation needs authorization for Unibase and template integration, plus its repository access; omit this work if existing seams suffice |
+| 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay | Local implementation/tests can run unattended once authorized and 07/necessary 08 seams are ready; target MCP credentials and environment identity are needed only for later live proof |
+| 10: existing Run UI | Not started | Wire start/review/continue/revise and authenticated human responses; verify races, media ownership and English/Arabic layouts | Can run unattended after application authorization and 09 readiness, using local test accounts/fixtures; real customer decisions remain authenticated human actions |
+| 11: integrated validation | Not started | Exercise implemented application boundaries and complete two clean integrated reviews; preserve separate labels for mocks and real Dify evidence | Local integration checks can run unattended after 07-10. Real target checks require authorized access, working bindings and explicit live scope |
+| 12: staging/paid acceptance | Provider probes complete; full acceptance not authorized | Import/publish children, synchronize tools, bind the owned Manager, apply/read back the documented names/tags and record secret-free exports; prove integrated journeys | Needs separate staging/publication/cleanup authorization, exact environment and provider package identities, privately configured credentials, application deployment readiness, test account/entitlement fixtures and a new finite paid budget. Then bounded probes can run unattended; human acceptance and production activation remain separate |
 
 Current stop: deliver the validated Dify/provider handoff and retain the evidence.
 Checkpoint 07 requires separate application authorization. If granted later, reuse the

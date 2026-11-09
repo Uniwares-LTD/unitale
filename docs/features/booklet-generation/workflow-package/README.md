@@ -7,15 +7,18 @@ Dify/YAML is authoritative: edit workflows in Dify, export without secrets, and 
 the YAML diff. No generator, custom Python plugin, bundled runtime, generated schema
 inventory or Dify-engine emulator is delivered.
 
-| Role | Candidate |
-| --- | --- |
-| Manager | [workflow.yaml](manager/workflow.yaml) |
-| Story Planner | [workflow.yaml](story-planner/workflow.yaml) |
-| Manuscript | [workflow.yaml](manuscript/workflow.yaml) |
-| Art Director | [workflow.yaml](art-director/workflow.yaml) |
-| Page Composer | [workflow.yaml](page-composer/workflow.yaml) |
-| Image Executor | [workflow.yaml](image-executor/workflow.yaml) |
-| Quality Reviewer | [workflow.yaml](quality-reviewer/workflow.yaml) |
+| Role | Dify display name | Candidate |
+| --- | --- | --- |
+| Manager | Unitale: Booklet Manager | [workflow.yaml](manager/workflow.yaml) |
+| Story Planner | Unitale: Story Planner | [workflow.yaml](story-planner/workflow.yaml) |
+| Manuscript | Unitale: Manuscript Writer | [workflow.yaml](manuscript/workflow.yaml) |
+| Art Director | Unitale: Art Director | [workflow.yaml](art-director/workflow.yaml) |
+| Page Composer | Unitale: Page Composer | [workflow.yaml](page-composer/workflow.yaml) |
+| Image Executor | Unitale: Image Executor | [workflow.yaml](image-executor/workflow.yaml) |
+| Quality Reviewer | Unitale: Quality Reviewer | [workflow.yaml](quality-reviewer/workflow.yaml) |
+
+The handoff owns the [naming and tagging conventions](integration-handoff.md#naming-and-tagging-conventions),
+including workspace tags to apply during a future authorized import.
 
 The [specification](../workflow-package-spec.md) owns accepted behavior. The
 [integration handoff](integration-handoff.md) defines the proposed application boundary,
@@ -111,11 +114,11 @@ because application/runtime/dependency inputs are unchanged. Before staging auth
 automatic approval review rejected external source transmission, so only local checks
 were used. Subsequently authorized connector/import/runtime results are recorded below.
 
-Reviewed implementation SHA-256: `42e6cfbc2b42f499b649babb2ca0ca9f5b31e036c8f00797fcb7208875715b64`.
+Reviewed implementation SHA-256: `d95b3c5a3a9cb8eabf6801921c36f1570363d67fdbfabf530823bd14dde97695`.
 Identity covers seven YAML files, five fixtures and the new test file: sort repository-
 relative paths, concatenate each path + NUL + its lowercase SHA-256 + LF, then SHA-256
 the concatenation. Documentation and manifest evidence fields are outside this digest.
-The manifest separately records every workflow/fixture hash. YAML totals 236,894 bytes.
+The manifest separately records every workflow/fixture hash. YAML totals 236,909 bytes.
 
 Reviews are separate same-agent cold-review fallbacks, not independent-agent reviews.
 Both cover all six checkpoint scopes and the complete integrated change: first behavior,
@@ -136,18 +139,29 @@ review passes apply to the corrected digest above.
 Handbook: `D:/misc/code/uniwares/handbook` at
 `0048c32a98060bb094eb3010aa0f4f407e97796e`, explicitly refreshed for this session.
 
-Next, follow the compatibility procedure before relying on target bindings; checkpoint
-07 remains the application authorization gate. Keep activation disabled. No application
-changes or paid calls are included. Candidate commit/push and issue
-progress publication were separately authorized on 2026-11-09.
+The compact-name update changes only the seven quoted `app.name` values; prompts,
+graphs, contracts, bindings and disabled execution gates are unchanged. The naming/tag
+conventions are documented in the handoff; tags have not been applied live. Fresh
+validation passes: 34/34 compatibility tests, check:docs, check:i18n, check:skills,
+workflow/fixture hash audit and git diff --check. Two separate same-agent read-only
+passes found no actionable issues. The manifest and digest above cover the renamed
+candidates; prior live probes exercised the preceding names with identical workflow
+logic. Model/persistence documentation is unaffected by this display-only change.
+
+Provider feasibility passed for the isolated candidate; see the
+[current provider handoff](integration-handoff.md#paid-provider-feasibility-results).
+Checkpoint 07 remains the application authorization gate. Keep activation disabled.
+This naming/documentation update includes no application changes or paid calls.
 
 For the ordered remaining work and prerequisites, follow the
 [next-step runbook](integration-handoff.md#next-step-runbook).
 
-## Authorized no-money staging evidence
+## Historical no-money staging evidence
 
 Observed on 2026-11-09 at `https://dify.uniwares.co.uk`, workspace
-`ffac910f-2786-490e-90d8-07243d49741b`, against the corrected package identity above.
+`ffac910f-2786-490e-90d8-07243d49741b`, before the subsequent provider and naming fixes.
+The table records that earlier probe scope, not the current provider status; later
+provider results and remaining gates are consolidated in the handoff linked above.
 Only disposable `unitale10_compat_20261109_*` apps/tools were written. These probes
 exercise Dify itself; they do not establish Unitale integration or provider quality.
 
@@ -181,9 +195,10 @@ established the native results above. OpenAPI run/form attempts returned HTTP 50
 they do not prove that Dify lacks Human Input. An initial file-run stream failure was
 inspected before a deterministic retry. No paid execution occurred.
 
-Keep E1-E5 open: provider execution/settings/retries/usage, realistic native-file
-capacity and expiry, real Manager journeys, owned Unitale registration/observations,
-authenticated UI and durable recovery, and finite paid acceptance remain unverified.
+At this earlier probe stage, provider execution/settings/retries/usage, realistic
+native-file capacity and expiry, real Manager journeys, owned Unitale registration/
+observations, authenticated UI and durable recovery, and finite paid acceptance were
+unverified. Subsequent provider feasibility evidence does not close E1-E5 as a whole.
 
 Cleanup readback: all 15 disposable apps and their one Workflow Tool were deleted;
 the original 32 app IDs/names/update timestamps and installed plugin identifiers are

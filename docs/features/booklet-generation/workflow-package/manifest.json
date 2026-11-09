@@ -28,15 +28,15 @@
     {
       "service": "manager",
       "path": "manager/workflow.yaml",
-      "sha256": "780479d557e86322cd24aa91086d7057bd7fff051ff78a26f72ddacb3334bad4",
-      "bytes": 103922,
+      "sha256": "94bb3c15f34a949e04a79644d3675cc8047bd7afed20f3cbf65c2ca4254afcd7",
+      "bytes": 103930,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "story-planner",
       "path": "story-planner/workflow.yaml",
-      "sha256": "22ff10e5b071780f39cb472f99b869754499cb6ea7d4f57e2d31b4617efdb404",
+      "sha256": "5cc0fe86bd8bd82c1d8b7536b45870962f5177a641d733966ae42fad5efe2f6b",
       "bytes": 19383,
       "publicationId": null,
       "workflowToolId": null
@@ -44,15 +44,15 @@
     {
       "service": "manuscript",
       "path": "manuscript/workflow.yaml",
-      "sha256": "7d7844a2f17b603573093573c8d66f516d9c580a2fd600ec3fc5b65cd16cd048",
-      "bytes": 19282,
+      "sha256": "0c3df778fb761a9b215f34464e4fc6d08625df5d51ad635bf8f608330f5d0d3d",
+      "bytes": 19289,
       "publicationId": null,
       "workflowToolId": null
     },
     {
       "service": "art-director",
       "path": "art-director/workflow.yaml",
-      "sha256": "9fa8847c11c17a5da066324df41a1a5e4b4518ba1d794a7d418fbb9de87c609a",
+      "sha256": "526d715e74bf54d5847355a8bea313da5d33d2e89c593dd3aaa39beec99443c8",
       "bytes": 20077,
       "publicationId": null,
       "workflowToolId": null
@@ -60,7 +60,7 @@
     {
       "service": "page-composer",
       "path": "page-composer/workflow.yaml",
-      "sha256": "ba8af85b63f9fd6db59bf83f7e5116108b05d15fd92dfcc5c9f1f4c343b47fe3",
+      "sha256": "13e579f3f1c4f1d02aa155b685c532dbc92e28f7c799646b1644baff74c533ef",
       "bytes": 24228,
       "publicationId": null,
       "workflowToolId": null
@@ -68,7 +68,7 @@
     {
       "service": "image-executor",
       "path": "image-executor/workflow.yaml",
-      "sha256": "d945bf00789f1a4a96cae14c9c5e33e276c84228034dad0243b860314dea3c17",
+      "sha256": "9e5facea88203a85512fd8892dfeb287323f656e328402e688de5b080f4c78c0",
       "bytes": 28101,
       "publicationId": null,
       "workflowToolId": null
@@ -76,7 +76,7 @@
     {
       "service": "quality-reviewer",
       "path": "quality-reviewer/workflow.yaml",
-      "sha256": "528f27a7ecd8fb2ae08a7d7b1b0cf557306cb8876330a2ff416ec09b6b32e88d",
+      "sha256": "c3a7d04b75f49e7377334f2c917c849ece4d3e6dd26d2dbf11f44e41c9fb638c",
       "bytes": 21901,
       "publicationId": null,
       "workflowToolId": null
@@ -128,7 +128,7 @@
   ],
   "review": {
     "mode": "two separate same-agent read-only integrated passes covering each checkpoint",
-    "implementationSha256": "42e6cfbc2b42f499b649babb2ca0ca9f5b31e036c8f00797fcb7208875715b64",
+    "implementationSha256": "d95b3c5a3a9cb8eabf6801921c36f1570363d67fdbfabf530823bd14dde97695",
     "independentAgentReview": false
   }
 }

@@ -208,6 +208,10 @@ plugins unchanged. No application changes have started. Future changes reset aff
 checks/reviews; do not inherit the superseded framework evidence.
 The [compatibility procedure](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
 separates early Dify feasibility checks from application-dependent integration proof.
+The seven repository candidates now use compact `Unitale: <Readable Role>` display
+names. The handoff owns [naming/tagging conventions](workflow-package/integration-handoff.md#naming-and-tagging-conventions)
+and the [remaining stages and preparation](workflow-package/integration-handoff.md#next-step-runbook).
+Names do not change service/tool identifiers; live renaming/tagging has not occurred.
 
 ### New-session goal prompt
 
