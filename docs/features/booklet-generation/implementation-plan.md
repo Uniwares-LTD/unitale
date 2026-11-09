@@ -138,10 +138,85 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 ### 07 - Application Contracts & Persistence
 
-Gated on separate application authorization. Provider feasibility is established for
-the isolated candidate, but the user explicitly stopped at that handoff. If authorized,
-use the candidate handoff and update the
-model guide, JSON example and both Mermaid diagrams with any persistence change.
+**Plan finalized; implementation not authorized or started.** The current request
+authorizes provider-release investigation and this planning update only. Isolated
+provider feasibility is established; [official release](workflow-package/integration-handoff.md#official-provider-release-gate)
+still awaits upstream maintainers. Local contract/persistence implementation can begin
+after separate application authorization without waiting for Marketplace publication;
+live binding/activation cannot bypass that release gate.
+
+Outcome: persist and read the minimum v2 facts consumed by the existing candidate
+Manager, preserving v1 records, parsers, indexes and in-flight publications. Use the
+[handoff boundary](workflow-package/integration-handoff.md#minimum-managerapplication-interface)
+as the consumer contract, not a mandate to implement sixteen MCP handlers in 07.
+Keep [contracts](contracts.md) explicit about implemented v1 versus proposed v2.
+
+#### Bounded implementation slices after authorization
+
+| Slice | Accepted need and smallest implementation | Observable exit evidence |
+| --- | --- | --- |
+| 07.1 - Consumed v2 contracts | Inspect actual Manager/specialist inputs and existing `src/project/booklets/contracts.ts`, `workflow-contracts.ts` and server `booklets/documents.ts`. Add only application-boundary v2 parsers/content variants; preserve strict v1 parsers. Preserve the external object content contract; the provider's internal JSON-string carrier is not an application type | Existing v1 fixtures still parse unchanged; actual candidate boundary fixtures cover each consumed role/operation, grouped item identity, explicit partial/unknown outcomes, scoped assessments and rejection of private context in child envelopes |
+| 07.2 - Compatible persistence | Reuse production/revision storage and existing canonical hashing. Add versioned readers/writers for consumed artifact content and source lineage; retain embedded subject/artifact identities and immutable revisions. Introduce a new document version only where existing strict readers cannot safely consume the new shape; never rewrite existing records automatically | Mixed v1/v2 reads, exact Unicode/whitespace round trips, stable hashes, immutable source links, owner isolation and rejected stale production fences pass against disposable persistence |
+| 07.3 - Durable Manager facts | Persist only missing work/call state, scoped repeatable assessments, Manager acceptance, correction-chain counters and an opaque checkpoint with version/fence CAS. Reuse existing generation/receipt/evidence storage when its semantics fit. Keep authentic human decisions distinct from Manager acceptance; store execution locators as evidence references, not model-authoritative usage/publication claims | Duplicate mutations are idempotent; changed identities conflict; checkpoint races have one winner; partial siblings survive; unknown work remains unknown; continuation/new invocation cannot reset correction counts. Distinct assessments for one revision coexist without changing v1 quality uniqueness |
+| 07.4 - Indexes, compatibility and docs | Add only indexes required by demonstrated ownership/idempotency/query paths. Register a project-owned migration after `booklets:0003-mcp` only if necessary, through the existing extension. Update model guide, JSON example and both Mermaid schemas together with executable persistence changes; reconcile contracts and handoff implementation status | Migration/index setup reruns safely on disposable data, v1 records remain byte/semantically unchanged as applicable, existing repository/lifecycle/media/MCP regressions pass, docs match implemented versions and two clean read-only reviews cover the final 07 diff |
+
+The change decision is made at the start of each slice: identify its accepted behavior,
+verify existing service support, choose the smallest delta and name its proof. Keep
+only necessary boundary parsers, not a copy of every prompt/internal schema. Resolve
+field/version/index choices against actual code in that slice; a demonstrated conflict
+with the handoff requires a documented amendment before changing the workflow contract.
+
+#### Compatibility and storage constraints
+
+- Do not reinterpret v1 `schemaVersion:1` DTOs or `documentVersion:1` records as v2.
+  Preserve old bindings and readers; explicit v2 opt-in selects new semantics. Reader
+  compatibility precedes any writer emitting a new shape.
+- Use existing owned transaction and production lease/fence mechanisms. No transaction
+  or lease spans provider/Human Input waits; checkpoint state is bounded to 64 KiB and
+  does not replace authoritative work records or bounded artifact/evidence storage.
+- Assessments bind exact scope/content/source/policy/reviewer identities. Acceptance
+  records select exact revisions; neither a model claim nor a checkpoint grants
+  authority. The existing unique v1 image-quality index must remain valid for v1;
+  choose separate v2 storage or a correctly scoped versioned index only after checking
+  all current readers and duplicate-record behavior.
+- Correction identity follows the durable task/target/funding chain, not a fresh
+  invocation or candidate ID. Preserve customer revision allowances separately from
+  platform-funded corrections. Do not add a billing/reservation engine.
+- No new dependency, generic repository/framework, generated schema inventory or bulk
+  migration. Do not implement MCP registration/transport, paid admission/reconciliation,
+  original download bridges, Run UI, or production activation in 07; those belong to
+  08-12. Storage primitives needed for later handlers are within 07.
+
+#### Verification and handoff
+
+Use the prepared local npm launcher from the repository root. Run affected checks
+after the final relevant edit; database suites must use their disposable fixtures:
+
+```powershell
+node --import tsx --test tests/booklet-contracts.test.ts
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-repositories
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-lifecycle-media
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-mcp
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-compat
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run typecheck
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run docs:booklet-model
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run check:docs
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run check:i18n
+node output/tooling/npm/node_modules/npm/bin/npm-cli.js run check:skills
+```
+
+Run scoped ESLint on changed TypeScript and a build if changed runtime inputs affect
+bundling. Add focused tests in the existing contract/repository/lifecycle suites rather
+than a parallel harness. Each slice needs two consecutive clean read-only passes;
+the final pair reviews the integrated checkpoint. No delegation is implied.
+
+07 exit: consumed v2 contracts/storage are implemented and locally verified with
+unchanged v1 behavior, necessary migration evidence, updated model documentation,
+and an exact implemented-versus-pending handoff for 08/09. A passing parser or database
+fixture is not proof of Dify execution, trusted provider observations or a completed
+booklet. Record remaining provider-release and E1-E5 gates explicitly. Before starting,
+obtain separate 07 implementation authorization and confirm the work branch; no
+credentials, provider calls or live database are needed for this checkpoint.
 
 ### Execution boundary and artifact layout
 

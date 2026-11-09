@@ -230,6 +230,47 @@ existing supported configuration/upstream version or an explicit bounded plan am
 Follow the [compatibility procedure](#difyprovider-compatibility-procedure) below.
 Disposable platform probes do not establish Unitale ownership or application integration.
 
+### Official provider release gate
+
+Rechecked on 2026-11-09: [PR #4238](https://github.com/langgenius/dify-official-plugins/pull/4238)
+is open and unmerged at `3326464451bbbb6d2060ef6645d826b6f82aa15b`.
+GitHub reports mergeability state `blocked`, no submitted reviews, review threads or
+conversation comments, no check runs and no commit statuses. This does not identify
+the branch-protection rule or imply a failing test. No actionable maintainer feedback
+was present. Upstream main still resolves to
+`18663b9e723c345fed4c7450a3f925c583fa7064`; its model/tool manifests remain 1.1.0/0.2.2.
+The tested 1.1.1/0.2.3 candidate versions are not proof of an official release.
+
+**Official release is pending external maintainer action, not complete.** There is
+no known local code fix to make at this state. Do not merge on behalf of upstream,
+self-publish an unofficial build as an official release, or replace shared plugins.
+Release completion requires the following evidence in order:
+
+1. Maintainer review and acceptance of the bounded existing-plugin changes. Address
+   concrete feedback with the existing frozen-lock tests and package audit; a changed
+   upstream diff resets the affected review/compatibility evidence.
+2. An upstream merge containing the required controls and exact dated-model support,
+   followed by official provider/tool package publication. Record the merged commit,
+   official distribution locations, actual versions and immutable package identifiers;
+   do not infer them from this PR's proposed version numbers or a merge alone.
+3. Inspect the released source/package for both text credential forms and Generate/Edit
+   controls, explicit zero retry forwarding, finite timeout validation and unchanged
+   original-file behavior. Compare it with the tested candidate and rerun affected
+   local checks if it differs. Signed/Marketplace provenance must be verified separately
+   from local packaging.
+
+Target installation and credentialed import/execution verification follow release;
+they are not silently included in publication. Preserve shared dev7/dev3 consumers;
+select an explicitly authorized isolation or reviewed upgrade scope, then privately
+configure credentials and read back effective bindings. New paid checks require a
+finite authorized budget; the previous probe allowance is not spent automatically.
+No live installation, paid call or maintainer message was made for this status check.
+
+Checkpoint 07 planning and, after separate authorization, local contract/persistence
+implementation can proceed independently. Its exit does not claim a released provider
+or working live application integration. See the
+[finalized 07 plan](../implementation-plan.md#07---application-contracts--persistence).
+
 ### Supported provider path assessment
 
 Read-only investigation on 2026-11-09 rechecked official plugin HEAD at
@@ -524,7 +565,7 @@ successful installation or a single happy-path model call does not establish ful
 | --- | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README | Local checks can run unattended; no further implementation is needed for this handoff |
 | Provider/composition feasibility | Passed for the isolated candidate; official release/activation pending | Actual Luna structured output, Sol vision, dated Sunburst Generate/Edit and original downloads pass after the documented DSL fixes. Preserve the US$1 cap and shared experiment plugins; retain the rejected-request hold | Read-only upstream status checks can run unattended. Maintainers own acceptance/release; installation needs a reviewed package identity and an authorized isolation/upgrade scope. Billing reconciliation requires account usage/invoice access |
-| 07: application contracts/persistence | Not started; separate authorization required | Implement only consumed v2 boundaries, preserve v1 and update model/example/both diagrams | Can proceed unattended after explicit application authorization and selection of the work branch; use disposable local persistence for verification |
+| 07: application contracts/persistence | Plan finalized; implementation not started or authorized | Follow the [four bounded slices and exit criteria](../implementation-plan.md#07---application-contracts--persistence); preserve v1 and update model/example/both diagrams | Can proceed unattended after explicit application authorization and selection of the work branch; use disposable local persistence for verification. Official release is not a dependency of local contract/persistence work |
 | 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review | Inspection can be local/read-only. Any required implementation needs authorization for Unibase and template integration, plus its repository access; omit this work if existing seams suffice |
 | 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay | Local implementation/tests can run unattended once authorized and 07/necessary 08 seams are ready; target MCP credentials and environment identity are needed only for later live proof |
 | 10: existing Run UI | Not started | Wire start/review/continue/revise and authenticated human responses; verify races, media ownership and English/Arabic layouts | Can run unattended after application authorization and 09 readiness, using local test accounts/fixtures; real customer decisions remain authenticated human actions |
