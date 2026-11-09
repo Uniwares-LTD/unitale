@@ -200,12 +200,14 @@ The [provider path assessment](workflow-package/integration-handoff.md#supported
 records checked alternatives and the authorized, offline-tested upstream patch to
 the existing official plugins. It is a bounded exception for demonstrated gaps,
 not a new Unitale production plugin. The subsequent full-compatibility authorization
-permits temporary namespaced test builds to preserve the shared experiment plugins.
+permitted temporary namespaced test builds to preserve the shared experiment plugins.
 Upstream submission, isolated installation and no-money declaration/DSL checks are
 verified. Subsequent actual Luna structured-output, Sol vision and dated Sunburst
 Generate/Edit probes pass; the handoff records failed probes, minimal DSL corrections,
 usage estimates and retained liabilities. Official release and application integration
-remain pending. The US$1 total cap does not clear activation gates.
+remain pending. The user explicitly stopped at the validated provider handoff;
+temporary apps/plugins are removed and checkpoints 07-11 require separate authorization.
+The US$1 total cap does not clear activation gates.
 
 Native model schemas use closed objects. Specialist proposal content is a JSON string
 only inside the model response, decoded by the inline pack node before existing

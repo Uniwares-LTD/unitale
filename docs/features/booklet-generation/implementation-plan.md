@@ -31,7 +31,7 @@ demonstrated official-provider gaps. The [patch and application instructions](wo
 record offline evidence. This amendment adds no package framework or production Unitale plugin;
 upstream submission, shared-plugin installation and paid probes initially remained
 separately gated. The subsequent full-compatibility authorization covers upstream
-submission, isolated target testing and necessary application compatibility work,
+submission and isolated Dify/provider testing only, as clarified by the user at handoff,
 with **US$1 total probe spending**. The preservation requirement still applies:
 temporary namespaced copies leave shared experiment plugins intact. Submission,
 frozen-lock packaging, isolated installation, Luna structured output, Sol vision and
@@ -41,7 +41,8 @@ usage estimates and conservative liabilities. This is not production
 activation or acceptance of unverified E1-E5 behavior.
 
 The initial delivery authorization covered local DSL-first implementation through 06.
-The later compatibility authorization and dependencies above govern continuation.
+The clarified stop boundary is the validated Dify/provider handoff; checkpoints 07-11
+remain outside the authorization. No application changes were made.
 The user authorized
 committing/pushing the reviewed candidate and updating issue #10 on 2026-11-09.
 Merging and later publication still require their own session authorization.
@@ -128,7 +129,7 @@ engine for tests. Code size is a review signal, never permission to omit require
 | 04 - Composition and images DSL | Page Composer, deterministic Prepare, exact Generate and all Reviewer modes | Exact Unicode/routing, ordered originals, partial/unknown outcomes and scoped coverage fixtures; two clean reviews |
 | 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
 | 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
-| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Compatibility scope authorized; isolated provider feasibility established; preserve v1 records and update model/example/both Mermaid versions together |
+| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Gated on separate application authorization; isolated provider feasibility established; preserve v1 records and update model/example/both Mermaid versions together |
 | 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Separate authorization; no speculative core extensions |
 | 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
 | 10 - Run UI Integration | Existing Run start/review/continue/revise and authentic Human Input | Browser/race checks; no separate creator workspace |
@@ -137,8 +138,9 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 ### 07 - Application Contracts & Persistence
 
-Authorized for necessary compatibility integration once provider feasibility is
-established. Use the candidate handoff and update the
+Gated on separate application authorization. Provider feasibility is established for
+the isolated candidate, but the user explicitly stopped at that handoff. If authorized,
+use the candidate handoff and update the
 model guide, JSON example and both Mermaid diagrams with any persistence change.
 
 ### Execution boundary and artifact layout
@@ -198,10 +200,11 @@ The [candidate README](workflow-package/README.md#checkpoint-evidence) records c
 checks, two clean same-agent review passes per checkpoint and the implementation
 digest. E1-E5 remain open. Authorized no-money staging probes established disposable
 candidate import/readback, native child/files/control and Human Input resume; the
-README records exact scope, remaining gates and cleanup. No paid or integrated
-application journey is claimed.
-Checkpoint 07 may proceed under the later compatibility authorization and established
-isolated provider feasibility. No application changes have started. Future changes reset affected
+README records exact scope, remaining gates and cleanup. Actual paid provider probes
+are recorded in the handoff; no integrated application journey is claimed.
+The user explicitly stopped before checkpoint 07 after validated provider feasibility.
+All eight disposable apps and both test plugins are removed, with original apps/shared
+plugins unchanged. No application changes have started. Future changes reset affected
 checks/reviews; do not inherit the superseded framework evidence.
 The [compatibility procedure](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
 separates early Dify feasibility checks from application-dependent integration proof.
@@ -211,10 +214,10 @@ separates early Dify feasibility checks from application-dependent integration p
 The DSL-first candidate through 06 is locally validated on
 `feature/10-dify-workflow-design` from `713da2d`. Read current candidate evidence,
 accepted specification and the necessity/simplicity gate before any further work.
-Continue authorized full-compatibility work using the handoff's current identities
-and pending inputs. Application compatibility work starts when provider feasibility
-is established. Keep total probe spending within US$1 and preserve shared experiment
-plugins. Production activation and unrelated later product milestones remain gated.
+Stop at the validated Dify/provider handoff. Further application implementation in
+07-11 needs separate authorization. Preserve the US$1 probe accounting and shared
+experiment plugins; temporary probe apps/plugins are removed. Production activation
+and unrelated later product milestones remain gated.
 Preserve the seven roles, Manager-only app communication and pending E1-E5 evidence.
 
 ## Foundation import

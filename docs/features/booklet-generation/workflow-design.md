@@ -28,13 +28,14 @@ mapping, proposed wire/content fields, Manager behavior, MCP/UI requirements and
 ## Scope and authority
 
 The initial session authorized local DSL-first work through 06. The subsequent
-full-compatibility authorization covers upstream submission, isolated target testing
-and necessary compatibility integration, with US$1 total probe spending. Provider
-feasibility still precedes dependent application changes. A bounded test-only
+compatibility authorization covers upstream submission and isolated Dify/provider
+testing, with US$1 total probe spending. The user clarified the stop at the validated
+provider handoff; application implementation in 07-11 still needs separate authorization.
+A bounded test-only
 exception permits namespaced copies of the submitted official-plugin fixes: identical
 runtime code, metadata-only identity changes, preserving shared experiment plugins.
 The [handoff](workflow-package/integration-handoff.md#isolated-target-compatibility-progress)
-owns exact identities, checks, pending credentials/cost bounds and cleanup. This does
+owns historical test identities, successful probes, accounting limits and verified cleanup. This does
 not authorize a permanent custom provider, speculative framework or production activation.
 
 In scope for the eventual delivery: all seven workflows, minimal runtime integration,

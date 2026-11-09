@@ -27,8 +27,9 @@ framework and graph interpreter are withdrawn. The delivery plan's necessity and
 simplicity gate applies to every further change.
 
 Checkpoints 01-06 deliver seven readable YAML workflows, a locally validated candidate
-and the minimum application integration handoff. The original stop before 07 is
-superseded only for the compatibility work described below. The user authorized
+and the minimum application integration handoff. The user explicitly confirmed the
+stop at the validated Dify/provider handoff; checkpoints 07-11 require new application
+authorization. The user authorized
 committing/pushing this candidate and updating issue #10 on 2026-11-09; that does
 not authorize merging, deployment or provider activation.
 Current replacement evidence is in the candidate README; superseded completion claims
@@ -43,8 +44,9 @@ probe spending. Temporary namespaced test copies preserve the shared experiment
 plugins; actual Luna structured output, Sol vision and dated Sunburst Generate/Edit
 probes pass after two native DSL corrections. Provider feasibility is established for
 the isolated candidate. The handoff records US$0.1201188 in usage-based estimates,
-retained liabilities and the US$1 cap. Necessary application compatibility work may
-now proceed; official release and integrated acceptance remain pending, and
+retained liabilities and the US$1 cap. All eight disposable apps and both test plugin
+installations have been removed; the original apps/shared providers remain unchanged.
+No application work starts under this authorization. Official release and integrated acceptance remain pending, and
 production activation remains disabled.
 
 Manager controls paid dispatch; per-production usage ceilings remain app safeguards,

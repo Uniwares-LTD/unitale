@@ -37,8 +37,8 @@ No package hashes or installation identities are invented here.
 The unmodified upstream base tools omitted SDK retry controls and rejected the
 accepted dated Sunburst model. Disabling Dify node retries cannot fix those gaps.
 An [offline-tested upstream patch](integration-handoff.md#prepared-upstream-patch)
-is submitted in upstream PR #4238. Test-only namespaced copies are installed and
-pass no-money form/import/readback/export checks; shared experiment plugins remain
+is submitted in upstream PR #4238. Test-only namespaced copies passed installation,
+configuration and provider probes, then were removed at handoff. Shared experiment plugins remain
 unchanged. [Current target evidence and probe limits](integration-handoff.md#isolated-target-compatibility-progress)
 record successful paid feasibility probes, the two corrected native structured-output
 defects, US$1 cap and cleanup inventory. Full application integration remains pending.

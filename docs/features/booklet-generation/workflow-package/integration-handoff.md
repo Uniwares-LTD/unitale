@@ -3,8 +3,8 @@
 ## Outcome and scope
 
 Integrate the seven native workflow candidates with Unitale's existing Run and booklet
-services under the subsequent full-compatibility authorization, once provider feasibility
-is established. This document is a package-local
+services only after separate checkpoint 07 authorization. The user explicitly stopped
+at the validated Dify/provider handoff. This document is a package-local
 interface proposal. It does not register tools or change application code. The
 [specification](../workflow-package-spec.md) owns behavior; the [candidate](README.md)
 owns current local evidence. Preserve v1 schemas, records, registrations and in-flight
@@ -306,7 +306,8 @@ packaged files, 130 are byte-identical, including all 41 Python files.
 No new runtime code, dependency, generator or application contract is introduced.
 Production YAML keeps official bindings; test copies alone use `unitalecompat`.
 
-Installation task `01a1bfad-5035-7e34-88e0-22d3eb9c72cf` reports success for both:
+Historical installation task `01a1bfad-5035-7e34-88e0-22d3eb9c72cf` succeeded for both
+test builds; both installations are now removed:
 
 | Temporary package | Installed identifier |
 | --- | --- |
@@ -385,12 +386,15 @@ acceptance. Original downloads and raw probe journals remain ignored under `outp
 
 All eight disposable apps (the two import-only copies and six paid-probe copies)
 were deleted with absence verified. The original 32 app IDs/names/update timestamps
-remain unchanged. The two configured namespaced plugin installations remain only
-for the next authorized integration probes; remove those exact installation IDs
-after completion or abandonment and verify the shared dev7/dev3 builds are unchanged.
+remain unchanged. After the user chose the provider-only handoff, both namespaced
+test plugin installation IDs listed above were uninstalled and absence verified.
+Only the original dev7/dev3 plugin identifiers and installation IDs remain; the original
+text provider is still active. No shared credential, plugin or application was changed.
 Two newly uploaded nonsensitive fixtures remain:
 `55739584-ce38-4f8b-8a8b-311c81e2ae38` and
 `2273d0da-d184-45e1-9443-74f3c72ad745`; Edit reused these uploads.
+Generated tool-file IDs are `3c9bba46-cc7f-4848-8339-ed05e7052ad6` and
+`6aaec7e0-c17a-4a52-83a8-81aad963162a`.
 Uploaded package caches and stored files have no inspected deletion API; do not
 claim physical cache/file cleanup. The earlier two fixture uploads remain historical
 retention evidence in the README; no host/storage deletion was attempted.
@@ -399,14 +403,15 @@ Source/fake-transport tests, effective zero-retry configuration and single obser
 native provider nodes support retry control; no live retryable-failure injection or
 invoice reconciliation is claimed. Production execution stays disabled.
 
-After secure configuration, set text provider **and any
+Future integration requires separate authorization and a supported release or reviewed
+test installation. After secure configuration, set text provider **and any
 custom-model** credentials to `max_retries=0` and an agreed finite `request_timeout`;
 set those controls on both image tool nodes, with the exact dated model. Keep Dify
 node and outer retries disabled. Re-export actual bindings and record the installed
 hashes and effective settings. A network timeout is not a total workflow deadline;
 measure tool/packaging overhead and align parent deadlines before paid acceptance.
-Run bounded provider probes within the US$1 cap, then implement and verify only the
-necessary compatibility integration when its dependencies are satisfied. If upstream
+The current probe scope is complete; do not spend the remaining allowance or implement
+application integration automatically. If upstream
 fixes are declined, explicitly amend the accepted provider
 requirements or wait for a supported release. Activation stays disabled throughout.
 
@@ -427,8 +432,8 @@ E4: owned Manager registration, least-permission managed MCP, suite/observer/rev
 E5: exact brief/languages/products/configuration and approved finite paid cap.
 
 Pending target probes are not local failures or successes. Do not activate while they
-are unresolved. Local evidence is in the candidate README; checkpoint 07 awaits its
-provider-feasibility dependencies under the subsequent compatibility authorization.
+are unresolved. Local evidence is in the candidate README; checkpoint 07 remains
+gated on separate application authorization despite established provider feasibility.
 
 ## Dify/provider compatibility procedure
 
@@ -492,16 +497,16 @@ successful installation or a single happy-path model call does not establish ful
 | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README |
 | Provider/composition feasibility | Passed for the isolated candidate; official release/activation pending | Actual Luna structured output, Sol vision, dated Sunburst Generate/Edit and original downloads pass after the documented DSL fixes. Preserve the US$1 cap and shared experiment plugins; retain the rejected-request hold |
-| 07: application contracts/persistence | Ready to implement; compatibility scope authorized | Provider feasibility is established for the isolated candidate. Implement only consumed v2 boundaries, preserve v1, update model/example/both diagrams and test storage/identity races |
+| 07: application contracts/persistence | Not started; separate authorization required | Provider feasibility is established. The user stopped at the provider handoff. If later authorized, implement only consumed v2 boundaries, preserve v1 and update model/example/both diagrams |
 | 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review |
 | 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay |
 | 10: existing Run UI | Not started | Wire start/review/continue/revise and authenticated human responses; verify races, media ownership and English/Arabic layouts |
 | 11: integrated validation | Not started | Exercise implemented application boundaries and complete two clean integrated reviews; preserve separate labels for mocks and real Dify evidence |
-| 12: staging/paid acceptance | Limited compatibility probes authorized; full acceptance pending | Pin owned publications/configuration, respect the US$1 total, execute only affordable probes, reconcile usage and export secret-free verified DSLs; no production activation |
+| 12: staging/paid acceptance | Provider probes complete; full acceptance not authorized | Preserve current accounting; future integrated acceptance requires a new scope/budget decision and owned publications/configuration; no production activation |
 
-Recommended immediate action: implement the consumed checkpoint 07 boundaries using
-the verified provider/structured-output behavior and existing services. Checkpoint 07
-may proceed within the authorized compatibility scope. A compatibility failure narrows or revises
+Current stop: deliver the validated Dify/provider handoff and retain the evidence.
+Checkpoint 07 requires separate application authorization. If granted later, reuse the
+verified provider/structured-output behavior and existing services. A compatibility failure narrows or revises
 the affected step; it does not authorize a new plugin or framework. Keep all seven
 execution switches disabled until the activation prerequisites above are satisfied;
 scoped paid probes use separately authorized disposable copies.

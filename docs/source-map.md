@@ -37,8 +37,8 @@ and the adapter; the table does not require unrelated suites for every task.
   Official provider plugins are configuration dependencies; no custom provider package
   or workflow authoring framework is delivered. Target capabilities remain pending.
   The handoff also links the bounded offline-tested upstream patch for demonstrated
-  official-plugin gaps, plus installed metadata-only test copies, their evidence and
-  cleanup. They are not an accepted official provider release.
+  official-plugin gaps, plus isolated test-build evidence and verified cleanup.
+  The submitted candidates are not an accepted official provider release.
   [First-package specification](features/booklet-generation/workflow-package-spec.md)
   owns the detailed operation mapping, proposed contracts, configuration inputs and
   app/MCP/UI change inventory for generating the seven workflows.
