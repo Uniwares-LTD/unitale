@@ -140,10 +140,11 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 **Plan finalized; implementation not authorized or started.** The current request
 authorizes provider-release investigation and this planning update only. Isolated
-provider feasibility is established; [official release](workflow-package/integration-handoff.md#official-provider-release-gate)
-still awaits upstream maintainers. Local contract/persistence implementation can begin
-after separate application authorization without waiting for Marketplace publication;
-live binding/activation cannot bypass that release gate.
+provider feasibility is established. The upstream PR is withdrawn; official release
+is no longer a delivery dependency. The [local provider proposal](workflow-package/integration-handoff.md#proposed-local-provider-solution)
+awaits adoption. Local contract/persistence implementation can begin after separate
+application authorization; live binding/activation still requires an approved provider
+build and actual integration evidence.
 
 Outcome: persist and read the minimum v2 facts consumed by the existing candidate
 Manager, preserving v1 records, parsers, indexes and in-flight publications. Use the

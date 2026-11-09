@@ -38,7 +38,9 @@ Authorized no-money staging probes now establish disposable import/readback and 
 child/file/control/Human Input behavior. Those probes did not establish provider
 execution or application integration; the README records their corrected defects and cleanup.
 The separately authorized [upstream provider patch](features/booklet-generation/workflow-package/integration-handoff.md#prepared-upstream-patch)
-is submitted as PR #4238 and passes frozen-lock tests/packaging. The user's subsequent
+passes frozen-lock tests/packaging. PR #4238 was closed at the user's request;
+the handoff now proposes isolated [locally owned provider builds](features/booklet-generation/workflow-package/integration-handoff.md#proposed-local-provider-solution)
+using the same patch, awaiting adoption. The user's earlier
 full-compatibility authorization permits necessary compatibility work and US$1 total
 probe spending. Temporary namespaced test copies preserve the shared experiment
 plugins; actual Luna structured output, Sol vision and dated Sunburst Generate/Edit
@@ -46,7 +48,8 @@ probes pass after two native DSL corrections. Provider feasibility is establishe
 the isolated candidate. The handoff records US$0.1201188 in usage-based estimates,
 retained liabilities and the US$1 cap. All eight disposable apps and both test plugin
 installations have been removed; the original apps/shared providers remain unchanged.
-No application work starts under this authorization. Official release and integrated acceptance remain pending, and
+No application work starts under this authorization. Upstream release is withdrawn as
+a dependency; local provider adoption and integrated acceptance remain pending, and
 production activation remains disabled.
 
 Manager controls paid dispatch; per-production usage ceilings remain app safeguards,

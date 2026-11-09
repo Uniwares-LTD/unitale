@@ -186,15 +186,15 @@ where needed. Preserve failed slots; do not remove failed outputs to fabricate c
 Default dependencies: official `langgenius/openai` for text/vision/structured output and
 `langgenius/openai_tool` for image generation/edit. Pin actual installed package hashes
 at activation. Source reviewed at official repository commit
-`3326464451bbbb6d2060ef6645d826b6f82aa15b` in upstream PR #4238; candidate manifests
-report 1.1.1 and 0.2.3 respectively. These are submitted candidates, not accepted
+`3326464451bbbb6d2060ef6645d826b6f82aa15b` in the now-withdrawn PR #4238; candidate manifests
+report 1.1.1 and 0.2.3 respectively. These are tested candidates, not accepted
 official releases or production installation identities.
 
 Required gates: exact configured models/settings, native structured output, ordered
 originals, useful execution/usage observations, disabled paid-call retries and bounded
 timeouts. Unmodified upstream source at `18663b9e723c345fed4c7450a3f925c583fa7064`
 omits SDK overrides and rejects the dated model. The submitted fixes address those
-gaps; activation remains blocked on release/integration acceptance. Do not infer SDK
+gaps; activation remains blocked on approved provider adoption/integration acceptance. Do not infer SDK
 retry behavior from Dify-node retry flags or substitute an alias for the dated model.
 The [provider path assessment](workflow-package/integration-handoff.md#supported-provider-path-assessment)
 records checked alternatives and the authorized, offline-tested upstream patch to
@@ -204,8 +204,10 @@ permitted temporary namespaced test builds to preserve the shared experiment plu
 Upstream submission, isolated installation and no-money declaration/DSL checks are
 verified. Subsequent actual Luna structured-output, Sol vision and dated Sunburst
 Generate/Edit probes pass; the handoff records failed probes, minimal DSL corrections,
-usage estimates and retained liabilities. Official release and application integration
-remain pending. The user explicitly stopped at the validated provider handoff;
+usage estimates and retained liabilities. The [local provider proposal](workflow-package/integration-handoff.md#proposed-local-provider-solution)
+replaces waiting for official release with a proposed isolated build of the same
+plugins/patch; it does not authorize adoption or installation. Application integration
+remains pending. The user explicitly stopped at the validated provider handoff;
 temporary apps/plugins are removed and checkpoints 07-11 require separate authorization.
 The US$1 total cap does not clear activation gates.
 
@@ -292,7 +294,7 @@ checks must not be reported as Dify journeys. Two clean read-only reviews per ch
 
 | Gate | Required evidence | Status |
 | --- | --- | --- |
-| E1 | Exact models/settings, structured output, original image calls, no automatic retries and trusted usage | Provider feasibility verified on isolated candidates; official release and application-bound observations pending |
+| E1 | Exact models/settings, structured output, original image calls, no automatic retries and trusted usage | Provider feasibility verified on isolated candidates; local provider adoption and application-bound observations pending |
 | E2 | Manager-only native-file byte round trip, order, hashes, practical capacity and expiry/recovery | Partial: two small originals passed native parent/child byte comparison; application path, capacity and expiry pending |
 | E3 | Real child wrappers, nested control, partial failures, Human Input and durable resume | Partial: deterministic child, Loop/Assigner, failure branch and same-run native Human Input resume proved; Manager/application journeys pending |
 | E4 | Owned Manager import, managed MCP permissions, suite/observer/reviewer bindings | Pending |

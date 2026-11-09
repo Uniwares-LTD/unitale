@@ -38,7 +38,8 @@ and the adapter; the table does not require unrelated suites for every task.
   or workflow authoring framework is delivered. Target capabilities remain pending.
   The handoff also links the bounded offline-tested upstream patch for demonstrated
   official-plugin gaps, plus isolated test-build evidence and verified cleanup.
-  The submitted candidates are not an accepted official provider release.
+  The upstream PR is withdrawn; the handoff proposes isolated locally owned builds
+  from the same bounded patch. Adoption remains pending; these are not official releases.
   [First-package specification](features/booklet-generation/workflow-package-spec.md)
   owns the detailed operation mapping, proposed contracts, configuration inputs and
   app/MCP/UI change inventory for generating the seven workflows.

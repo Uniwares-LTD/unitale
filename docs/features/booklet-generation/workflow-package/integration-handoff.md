@@ -232,66 +232,60 @@ Disposable platform probes do not establish Unitale ownership or application int
 
 ### Official provider release gate
 
-Rechecked on 2026-11-09: [PR #4238](https://github.com/langgenius/dify-official-plugins/pull/4238)
-is open and unmerged at `3326464451bbbb6d2060ef6645d826b6f82aa15b`.
-Before the author-account review below, GitHub reported mergeability state `blocked`,
-no submitted reviews, review threads or conversation comments, no check runs and no
-commit statuses. This does not identify
-the branch-protection rule or imply a failing test. No actionable maintainer feedback
-was present. Upstream main still resolves to
-`18663b9e723c345fed4c7450a3f925c583fa7064`; its model/tool manifests remain 1.1.0/0.2.2.
-The tested 1.1.1/0.2.3 candidate versions are not proof of an official release.
+**Withdrawn as a delivery dependency.** At the user's request on 2026-11-09,
+[PR #4238](https://github.com/langgenius/dify-official-plugins/pull/4238) was closed;
+readback confirms `closed` and `merged:false`. No upstream branch was deleted or
+merged. The patch, source commit and review remain provenance, not an official release.
+Stop waiting for upstream approval and do not reopen or pursue publication implicitly.
 
-The release workflow explains the next external dependency: the source-pinned
-[pre-PR workflow](https://github.com/langgenius/dify-official-plugins/blob/18663b9e723c345fed4c7450a3f925c583fa7064/.github/workflows/pre-pr-check-per-plugin.yaml)
-starts on a submitted approving review, not ordinary PR creation. Its
-[upload workflow](https://github.com/langgenius/dify-official-plugins/blob/18663b9e723c345fed4c7450a3f925c583fa7064/.github/workflows/upload-merged-plugin.yaml)
-runs after relevant changes reach `main`. The current account's repository permissions
-are read-only (`push`, `maintain`, `admin` and `triage` are false). A maintainer review
-is therefore the next action; no code-only change or repeated local test run can
-replace that approval. No failing CI result is being bypassed.
+The [author-account review](https://github.com/langgenius/dify-official-plugins/pull/4238#pullrequestreview-5825532091)
+found no blocking issue at `3326464451bbbb6d2060ef6645d826b6f82aa15b` against base
+`18663b9e723c345fed4c7450a3f925c583fa7064`. Fresh frozen-lock runs passed 94 image
+and 407 non-live model tests, with existing model warnings. Both packages built;
+archive audits verified source identity and excluded environment files/caches.
+This remains candidate evidence. The account has no upstream merge permission, and
+the closed PR is not independent approval, a merge or Marketplace publication.
 
-**Official release is pending external maintainer action, not complete.** There is
-no known local code fix to make at this state. Do not merge on behalf of upstream,
-self-publish an unofficial build as an official release, or replace shared plugins.
-Release completion requires the following evidence in order:
+### Proposed local provider solution
 
-1. Maintainer review and acceptance of the bounded existing-plugin changes. Address
-   concrete feedback with the existing frozen-lock tests and package audit; a changed
-   upstream diff resets the affected review/compatibility evidence.
-2. An upstream merge containing the required controls and exact dated-model support,
-   followed by official provider/tool package publication. Record the merged commit,
-   official distribution locations, actual versions and immutable package identifiers;
-   do not infer them from this PR's proposed version numbers or a merge alone.
-3. Inspect the released source/package for both text credential forms and Generate/Edit
-   controls, explicit zero retry forwarding, finite timeout validation and unchanged
-   original-file behavior. Compare it with the tested candidate and rerun affected
-   local checks if it differs. Signed/Marketplace provenance must be verified separately
-   from local packaging.
+**Proposal only; no permanent build or installation is authorized by this proposal.**
+The demonstrated gaps are exact dated-model support and configurable SDK retries/
+timeouts in the existing OpenAI text and image plugins. Existing-plugin configuration
+cannot fill them; the following reuses the already tested bounded patch.
 
-Target installation and credentialed import/execution verification follow release;
-they are not silently included in publication. Preserve shared dev7/dev3 consumers;
-select an explicitly authorized isolation or reviewed upgrade scope, then privately
-configure credentials and read back effective bindings. New paid checks require a
-finite authorized budget; the previous probe allowance is not spent automatically.
-No live installation, paid call or maintainer message was made for this status check.
+1. Build the two existing plugins from the pinned base plus the retained
+   [patch](../dify-provider-upstream.patch). Use locally owned identities such as
+   `unitale/openai` and `unitale/openai_tool`, with clear local-build display labels.
+   Keep the existing plugin code and dependencies, with only the reviewed fixes and
+   required identity metadata. This is a maintained build of upstream plugins, not a
+   new provider implementation, callback service, gateway or workflow framework.
+2. Keep these builds alongside the existing shared dev7/dev3 plugins. Do not upgrade
+   or replace those installations: they contain Booklet-specific controls absent from
+   this candidate and serve existing apps. The temporary `unitalecompat` builds proved
+   this isolation approach; their installations were removed after testing.
+3. Record base commit, patch hash, identity-only diff, local version, archive SHA-256
+   and installed Dify package identifier. Store reviewed source/patch and build
+   instructions in version control; keep credentials out of archives and exports.
+   Distribution/signing policy must be checked on the target without weakening it.
+4. After explicit local-provider adoption and installation authorization, configure
+   credentials privately, bind only disposable or package-owned workflows, and read
+   back retry/timeout/model settings. Run no-money import/configuration checks first.
+   Reuse prior behavioral evidence only while the executable source is unchanged;
+   changed builds need affected tests/reviews. Any paid probe needs a finite approved
+   budget; the old unused allowance is not spent automatically.
+5. Export actual local provider identities into the seven candidates and manifest
+   only after binding is verified. Refresh hashes and rerun package checks/reviews.
+   Until adoption, the repository keeps its existing official-identity candidates;
+   they are not ready to activate unchanged with the proposed local builds.
 
-The user subsequently authorized reviewing and merging the PR if clean. The
-[published author-account review](https://github.com/langgenius/dify-official-plugins/pull/4238#pullrequestreview-5825532091)
-at the same head found no blocking issue across all nineteen changed files. Fresh
-frozen-lock runs pass 94 image and 407 non-live model tests, with the existing model
-warnings. Both CLI packages build and their Python/YAML match source; archives exclude
-environment files, virtual environments and caches. No provider calls were made.
-The review is `COMMENTED`, not independent approval: the current `uniwares-uk` account
-also authored the PR and cannot approve it. Readback verifies the published review,
-which requests maintainer approval to start checks. The account still lacks upstream
-push/maintainer permissions; no merge or branch-protection bypass was attempted.
-Official merge/publication remains pending, and checkpoint 07 is not authorized.
-
-Checkpoint 07 planning and, after separate authorization, local contract/persistence
-implementation can proceed independently. Its exit does not claim a released provider
-or working live application integration. See the
-[finalized 07 plan](../implementation-plan.md#07---application-contracts--persistence).
+Maintenance is intentionally small: pin the upstream base, retain the bounded patch,
+rebase only for a needed fix/update, rerun the 501 existing non-live tests and package
+identity audit, then verify affected target bindings. Do not automatically upgrade
+shared providers or remove isolation. If a future supported upstream build includes
+the controls, assess replacing the local builds through a separate reviewed update.
+No upstream merge, Marketplace release, new dependency or checkpoint 07 implementation
+is required to prepare this option. Local adoption, target installation and complete
+application acceptance remain separate decisions; no live resource changed here.
 
 ### Supported provider path assessment
 
@@ -323,9 +317,9 @@ retries cannot change those client settings.
 The user authorized bounded upstream fix preparation on 2026-11-09. The resulting
 [upstream patch](../dify-provider-upstream.patch) modifies the existing official plugins;
 it adds no Unitale production plugin, gateway, workflow framework or application code.
-The fixes are submitted as [upstream PR #4238](https://github.com/langgenius/dify-official-plugins/pull/4238),
-head `3326464451bbbb6d2060ef6645d826b6f82aa15b`. The PR is open; no upstream CI check
-runs were reported at readback. It is not an accepted official release. The table above
+The fixes were submitted as [upstream PR #4238](https://github.com/langgenius/dify-official-plugins/pull/4238),
+head `3326464451bbbb6d2060ef6645d826b6f82aa15b`. The PR is now closed at the user's
+request; no upstream merge/release is claimed. The table above
 describes unmodified upstream source, not the experiment-specific installed code.
 
 #### Prepared upstream patch
@@ -586,7 +580,7 @@ successful installation or a single happy-path model call does not establish ful
 | Stage | Progress | Next action and exit evidence | Unattended work and preparation |
 | --- | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README | Local checks can run unattended; no further implementation is needed for this handoff |
-| Provider/composition feasibility | Passed for the isolated candidate; official release/activation pending | Actual Luna structured output, Sol vision, dated Sunburst Generate/Edit and original downloads pass after the documented DSL fixes. Preserve the US$1 cap and shared experiment plugins; retain the rejected-request hold | Read-only upstream status checks can run unattended. Maintainers own acceptance/release; installation needs a reviewed package identity and an authorized isolation/upgrade scope. Billing reconciliation requires account usage/invoice access |
+| Provider/composition feasibility | Passed for the isolated candidate; upstream release dependency withdrawn | Adopt or revise the [local provider proposal](#proposed-local-provider-solution), preserving shared plugins and existing probe accounting; no permanent installation yet | After explicit adoption, local namespaced packaging/tests can run unattended. Target installation needs authorization and private credentials; billing reconciliation needs account usage/invoice access. No upstream approval is required for this proposed path |
 | 07: application contracts/persistence | Plan finalized; implementation not started or authorized | Follow the [four bounded slices and exit criteria](../implementation-plan.md#07---application-contracts--persistence); preserve v1 and update model/example/both diagrams | Can proceed unattended after explicit application authorization and selection of the work branch; use disposable local persistence for verification. Official release is not a dependency of local contract/persistence work |
 | 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review | Inspection can be local/read-only. Any required implementation needs authorization for Unibase and template integration, plus its repository access; omit this work if existing seams suffice |
 | 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay | Local implementation/tests can run unattended once authorized and 07/necessary 08 seams are ready; target MCP credentials and environment identity are needed only for later live proof |
