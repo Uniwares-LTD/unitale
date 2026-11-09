@@ -11,7 +11,8 @@ Status: ownership and delivery decisions below are accepted in the design sessio
 on 2026-11-08. Technical working decisions and recommendations are distinguished
 below; selected technical resolutions are now recorded in the package specification.
 Current local package evidence is recorded in the delivery plan and candidate README;
-live feasibility remains unverified.
+target feasibility has partial no-money evidence; provider execution and application
+integration remain unverified.
 This document owns workflow-specific decisions, integration gaps and open questions;
 the [PRD](prd.md) owns product requirements, [contracts](contracts.md) describes
 current compatibility, and the existing [delivery plan](implementation-plan.md)
@@ -26,9 +27,15 @@ mapping, proposed wire/content fields, Manager behavior, MCP/UI requirements and
 
 ## Scope and authority
 
-The session authorizes local DSL-first package work through checkpoint 06. Application
-implementation begins only after the post-06 gate. Commits, pushes, publication,
-deployment, live operations and paid calls require separate authorization.
+The initial session authorized local DSL-first work through 06. The subsequent
+full-compatibility authorization covers upstream submission, isolated target testing
+and necessary compatibility integration, with US$1 total probe spending. Provider
+feasibility still precedes dependent application changes. A bounded test-only
+exception permits namespaced copies of the submitted official-plugin fixes: identical
+runtime code, metadata-only identity changes, preserving shared experiment plugins.
+The [handoff](workflow-package/integration-handoff.md#isolated-target-compatibility-progress)
+owns exact identities, checks, pending credentials/cost bounds and cleanup. This does
+not authorize a permanent custom provider, speculative framework or production activation.
 
 In scope for the eventual delivery: all seven workflows, minimal runtime integration,
 current secret-free exports and a minimum usable flow to start, review,

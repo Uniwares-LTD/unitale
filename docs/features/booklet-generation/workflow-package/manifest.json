@@ -112,9 +112,9 @@
     "E5"
   ],
   "activationBlockers": [
-    "Official text and image SDK clients do not expose/forward a no-retry override in inspected source.",
-    "Official image tools reject the accepted dated Sunburst model.",
-    "Installed packages are experiment dev builds; provider execution/retry behavior is not verified.",
+    "Upstream PR #4238 adds the missing controls and snapshot; official acceptance/release remains pending.",
+    "Isolated test packages install and persist configuration; secure credentials and cost bounds are pending under a US$1 total cap.",
+    "Shared experiment dev builds remain unchanged; actual candidate provider execution/retry behavior is not verified.",
     "Unitale managed MCP/retention, actual Manager journeys, authenticated response correlation, durable continuation and trusted observations are not verified."
   ],
   "stagingEvidence": "README.md#authorized-no-money-staging-evidence",

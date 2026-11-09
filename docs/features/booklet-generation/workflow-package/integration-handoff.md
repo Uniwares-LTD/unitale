@@ -3,7 +3,8 @@
 ## Outcome and scope
 
 Integrate the seven native workflow candidates with Unitale's existing Run and booklet
-services after separate checkpoint 07 authorization. This document is a package-local
+services under the subsequent full-compatibility authorization, once provider feasibility
+is established. This document is a package-local
 interface proposal. It does not register tools or change application code. The
 [specification](../workflow-package-spec.md) owns behavior; the [candidate](README.md)
 owns current local evidence. Preserve v1 schemas, records, registrations and in-flight
@@ -231,18 +232,22 @@ retries cannot change those client settings.
 
 The user authorized bounded upstream fix preparation on 2026-11-09. The resulting
 [upstream patch](../dify-provider-upstream.patch) modifies the existing official plugins;
-it adds no Unitale plugin, gateway, workflow framework or application code. It is an
-offline candidate, not an installed or released plugin. The table above describes the
-unmodified source and the installed staging builds still have those gaps.
+it adds no Unitale production plugin, gateway, workflow framework or application code.
+The fixes are submitted as [upstream PR #4238](https://github.com/langgenius/dify-official-plugins/pull/4238),
+head `3326464451bbbb6d2060ef6645d826b6f82aa15b`. The PR is open; no upstream CI check
+runs were reported at readback. It is not an accepted official release. The table above
+describes unmodified upstream source, not the experiment-specific installed code.
 
 #### Prepared upstream patch
 
 Apply against official repository base `18663b9e723c345fed4c7450a3f925c583fa7064`.
-Patch SHA-256: `10119e3628bddbfda0e4c9176741af91c55377af38b4b821f10d1b1561324320`.
-`git apply --check` passes against a separate clean checkout of that exact base.
-Twelve paths change: existing client helpers, provider/tool YAML and READMEs, one
-focused model test file, and the existing image test file. No dependency, lockfile,
-version, workflow or application contract changes are included.
+Patch SHA-256: `216f9ff782ae9f9209abae6807d46e50db5efb8f603a8bccb4c563ae95ebcec4`.
+The submitted patch passes `git apply --cached --check` against a separate index of
+that exact base. It includes required release metadata and packaging exclusions, for
+nineteen paths.
+Versions are 1.1.1/0.2.3; `uv lock` changes only the root project version in each lock.
+Dependency versions and application/workflow contracts are unchanged. The image plugin
+now excludes local bytecode caches, matching the existing model plugin exclusions.
 
 | Accepted need | Smallest change | Offline evidence |
 | --- | --- | --- |
@@ -251,9 +256,10 @@ version, workflow or application contract changes are included.
 | Configurable finite network timeout | Optional positive finite `request_timeout`, forwarded as SDK `timeout` | Actual SDK requests carry the configured timeout; invalid/bool/non-finite values fail locally |
 | Preserve existing users and image transport | Omit unset options; reuse existing image API requests and output handling | Text default/one-retry cases retain three/two attempts; image unset controls omit overrides; edit keeps original byte order and outputs/usage |
 
-Validated with Python 3.12.10, `openai` 3.46.0, `dify_plugin` 0.10.2, `httpx` 0.28.1,
-pytest 9.2.0 and pytest-mock 3.17.0 in an isolated ignored checkout. These are tested
-versions, not new dependency pins. From the upstream root, using that environment:
+Fresh isolated environments from each unchanged dependency lock validate Python
+3.12.10, `openai` 3.37.0, `dify_plugin` 0.10.2, `httpx` 0.28.1, pytest 9.1.1 and
+pytest-mock 3.17.0. Earlier tests also pass with OpenAI 3.46.0/pytest 9.2.0.
+From the upstream root, using the respective environment:
 
 ```powershell
 python -m pytest -q tests/tools/openai/test_openai_tool.py
@@ -280,19 +286,72 @@ git apply --check $patchPath
 git apply $patchPath
 ```
 
-This source patch is not a `.difypkg` release. Upstream review/submission, release
-versioning, frozen-lock packaging/install checks and target Dify form/export behavior
-remain pending. No upstream commit, push, PR or shared-plugin mutation was performed.
+Both official-identity candidates package with the prepared Dify CLI v0.6.15, and the
+Community server accepts their upload/decode. They are unsigned candidates, not signed
+Marketplace releases, and were not installed over the shared experiment plugins.
 
-Next, obtain separate authorization to submit the upstream change or use an approved
-supported release. After an authorized installation, set text provider **and any
+#### Isolated target compatibility progress
+
+The user authorized continued full compatibility with a **US$1 total probe cap** on
+2026-11-09 and proposed isolation from the shared plugins. Necessity: the installed
+text dev7 build exposes Booklet-specific bounded/report/request-digest controls used
+by existing consumers, absent from the upstream candidate. A wholesale upgrade is
+not established safe. The workspace has 32 existing apps and no second accessible
+Community workspace. Do not remove those capabilities as part of this task.
+
+The bounded plan amendment is two **temporary test-only namespaced builds** of the
+submitted code, rather than a permanent Unitale provider fork. Only author/display
+metadata in `manifest.yaml` and `provider/openai.yaml` differs per package. Of 134
+packaged files, 130 are byte-identical, including all 41 Python files.
+No new runtime code, dependency, generator or application contract is introduced.
+Production YAML keeps official bindings; test copies alone use `unitalecompat`.
+
+Installation task `01a1bfad-5035-7e34-88e0-22d3eb9c72cf` reports success for both:
+
+| Temporary package | Installed identifier |
+| --- | --- |
+| Text, installation `01a1bfad-69dc-7dda-97a2-1c7925e1218c` | `unitalecompat/openai:1.1.1@398e48b59a3920b57627d0f13aa831303ce612c9f820db205380e1847fc86bff` |
+| Images, installation `01a1bfad-6842-7e31-bd3d-f4610e6af114` | `unitalecompat/openai_tool:0.2.3@ddce7c0bd034f79461b9f22e6e9f3155b5d244af13910a814d99beff68f7d353` |
+
+Target readback proves dated Sunburst and both transport controls in the tool forms,
+and both controls in provider/custom-model credential forms. Disabled disposable
+Image Executor (`8c4409be-6b8e-4363-9857-64f875d8dd37`) and Story Planner
+(`ab313c30-e948-4988-a709-f78fbd2abf5d`) imports/readbacks/secret-free exports pass.
+Explicit numeric zero retries and 120-second image network timeouts survive readback.
+This proves configuration persistence, not provider execution or a suitable final deadline.
+The original 32 app IDs/names/update times and shared dev7/dev3 plugin identities are
+unchanged. No host signature policy, original credentials or application code changed.
+
+Provider execution awaits secure credential configuration for these isolated providers;
+no key is available in the process or named protected local inventory. Do not retrieve
+existing secrets through database access or place keys in chat/docs/DSL. Supply a
+protected file path or configure the two labelled test providers privately in Dify.
+Set text `max_retries=0` and the agreed timeout before saving: text credential
+validation itself sends a `ping` completion capped at 20 output tokens and must count
+against the allowance. Image credential validation lists models without generating.
+**Spent: US$0; remaining authorized cap: US$1.** Before each paid call, establish its
+cost bound and retain unresolved liability without replay. The
+[model page](https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst)
+and [image guide](https://developers.openai.com/api/docs/guides/image-generation#gpt-image-25-costs)
+describe token rates/estimation but do not establish a hard per-request charge cap;
+do not silently substitute older-model estimates or exceed the authorized total.
+
+Temporary apps/plugins remain only to resume these probes. After completion or
+abandonment, delete exactly the two recorded apps, uninstall exactly these two test
+installation IDs and verify absence plus the unchanged original inventory. Uploaded
+package caches have no inspected deletion API; do not claim physical cache cleanup.
+Maintainer acceptance, paid execution, actual usage/retry observations and application
+integration remain pending; E1-E5 stay open and production execution stays disabled.
+
+After secure configuration, set text provider **and any
 custom-model** credentials to `max_retries=0` and an agreed finite `request_timeout`;
 set those controls on both image tool nodes, with the exact dated model. Keep Dify
 node and outer retries disabled. Re-export actual bindings and record the installed
 hashes and effective settings. A network timeout is not a total workflow deadline;
 measure tool/packaging overhead and align parent deadlines before paid acceptance.
-Repeat the no-money target probes, then run E1-E5 under separate paid/application
-authorizations. If upstream fixes are declined, explicitly amend the accepted provider
+Run bounded provider probes within the US$1 cap, then implement and verify only the
+necessary compatibility integration when its dependencies are satisfied. If upstream
+fixes are declined, explicitly amend the accepted provider
 requirements or wait for a supported release. Activation stays disabled throughout.
 
 Reference slots: Manager/creative gpt-6-luna (4096/8192 output tokens), independent review
@@ -312,7 +371,8 @@ E4: owned Manager registration, least-permission managed MCP, suite/observer/rev
 E5: exact brief/languages/products/configuration and approved finite paid cap.
 
 Pending target probes are not local failures or successes. Do not activate while they
-are unresolved. Local evidence is in the candidate README; checkpoint 07 remains gated.
+are unresolved. Local evidence is in the candidate README; checkpoint 07 awaits its
+provider-feasibility dependencies under the subsequent compatibility authorization.
 
 ## Dify/provider compatibility procedure
 
@@ -375,17 +435,17 @@ successful installation or a single happy-path model call does not establish ful
 | Stage | Progress | Next action and exit evidence |
 | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README |
-| Provider/composition feasibility | Partial; activation blocked | Authorized no-money import/readback, child/files/control/failure/Human Input probes passed; results and cleanup are in README. Resolve exact dated model and no-retry support, then separately authorize finite paid probes. Unitale integration proof remains later work |
-| 07: application contracts/persistence | Not started; authorization required | Implement only consumed v2 boundaries from this handoff, preserve v1, update model/example/both diagrams and test storage/identity races |
+| Provider/composition feasibility | Partial; activation blocked | Upstream fix submitted; isolated packages installed; no-money form/DSL checks pass. Configure test credentials securely, establish cost bounds and probe within the authorized US$1 total. Preserve the shared experiment plugins |
+| 07: application contracts/persistence | Not started; compatibility scope authorized, dependencies pending | After provider feasibility, implement only consumed v2 boundaries from this handoff, preserve v1, update model/example/both diagrams and test storage/identity races |
 | 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review |
 | 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay |
 | 10: existing Run UI | Not started | Wire start/review/continue/revise and authenticated human responses; verify races, media ownership and English/Arabic layouts |
 | 11: integrated validation | Not started | Exercise implemented application boundaries and complete two clean integrated reviews; preserve separate labels for mocks and real Dify evidence |
-| 12: staging/paid acceptance | Not started; separate authorization required | Pin owned publications/configuration, approve finite paid cap, execute accepted journeys, reconcile usage and export secret-free verified DSLs |
+| 12: staging/paid acceptance | Limited compatibility probes authorized; full acceptance pending | Pin owned publications/configuration, respect the US$1 total, execute only affordable probes, reconcile usage and export secret-free verified DSLs; no production activation |
 
 Recommended immediate action: resolve the provider/composition feasibility questions
 before committing to dependent application interfaces. Checkpoint 07 may then proceed
-under explicit application authorization. A compatibility failure narrows or revises
+within the authorized compatibility scope. A compatibility failure narrows or revises
 the affected step; it does not authorize a new plugin or framework. Keep all seven
 execution switches disabled until the activation prerequisites above are satisfied;
 scoped paid probes use separately authorized disposable copies.

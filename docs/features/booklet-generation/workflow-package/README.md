@@ -37,7 +37,10 @@ No package hashes or installation identities are invented here.
 The inspected official image tools do not explicitly disable OpenAI SDK retries and
 reject the accepted dated Sunburst model. Disabling Dify node retries does not fix
 those gaps. An [offline-tested upstream patch](integration-handoff.md#prepared-upstream-patch)
-is prepared for the existing official plugins; it has not been submitted or installed.
+is submitted in upstream PR #4238. Test-only namespaced copies are installed and
+pass no-money form/import/readback/export checks; shared experiment plugins remain
+unchanged. [Current target evidence and probe limits](integration-handoff.md#isolated-target-compatibility-progress)
+record the pending secure credentials, US$1 cap and cleanup inventory.
 Activation remains blocked; do not silently use an unversioned alias or
 reintroduce a custom plugin. Native structured-output compatibility, application MCP wrappers,
 trusted observations and integrated journeys remain pending. Native Loop/Assigner,

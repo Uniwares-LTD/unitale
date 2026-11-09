@@ -27,8 +27,8 @@ framework and graph interpreter are withdrawn. The delivery plan's necessity and
 simplicity gate applies to every further change.
 
 Checkpoints 01-06 deliver seven readable YAML workflows, a locally validated candidate
-and the minimum application integration handoff. Stop before 07. Application changes,
-live operations and paid calls require separate authorization. The user authorized
+and the minimum application integration handoff. The original stop before 07 is
+superseded only for the compatibility work described below. The user authorized
 committing/pushing this candidate and updating issue #10 on 2026-11-09; that does
 not authorize merging, deployment or provider activation.
 Current replacement evidence is in the candidate README; superseded completion claims
@@ -37,8 +37,13 @@ Authorized no-money staging probes now establish disposable import/readback and 
 child/file/control/Human Input behavior. Provider calls and application integration
 remain pending; the README records the two corrected import/runtime defects and cleanup.
 The separately authorized [upstream provider patch](features/booklet-generation/workflow-package/integration-handoff.md#prepared-upstream-patch)
-is prepared and passes offline tests. It changes the existing official plugins only;
-upstream submission, release/installation and provider execution remain pending.
+is submitted as PR #4238 and passes frozen-lock tests/packaging. The user's subsequent
+full-compatibility authorization permits necessary compatibility work and US$1 total
+probe spending. Temporary namespaced test copies preserve the shared experiment
+plugins; installation and no-money form/DSL checks pass. Secure credentials, cost
+bounds, provider execution and application integration remain pending. Application
+compatibility work starts only when its provider-feasibility dependencies are met;
+production activation remains disabled.
 
 Manager controls paid dispatch; per-production usage ceilings remain app safeguards,
 with labelled estimates and independent progress during unresolved child calls.

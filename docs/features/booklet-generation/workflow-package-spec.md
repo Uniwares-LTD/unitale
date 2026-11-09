@@ -200,8 +200,11 @@ proved equivalent. Report these gaps before proposing any custom implementation.
 The [provider path assessment](workflow-package/integration-handoff.md#supported-provider-path-assessment)
 records checked alternatives and the authorized, offline-tested upstream patch to
 the existing official plugins. It is a bounded exception for demonstrated gaps,
-not a new Unitale plugin. Submission, release/installation, target compatibility
-and paid execution remain pending; the patch does not clear activation gates.
+not a new Unitale production plugin. The subsequent full-compatibility authorization
+permits temporary namespaced test builds to preserve the shared experiment plugins.
+Upstream submission, isolated installation and no-money declaration/DSL checks are
+verified; official release, provider execution and application integration remain
+pending. The US$1 total cap does not clear activation gates.
 
 ### Concrete runtime record and UI decisions
 

@@ -17,6 +17,16 @@ index c8e5a80e..7ef80f4f 100644
  Responses is the recommended protocol and the default for official models that support it.
  
  Choose Chat Completions only for a compatible endpoint or a model whose documented API surface requires it.
+diff --git a/models/openai/manifest.yaml b/models/openai/manifest.yaml
+index 2165b5ca..796eae64 100644
+--- a/models/openai/manifest.yaml
++++ b/models/openai/manifest.yaml
+@@ -1,4 +1,4 @@
+-version: 1.1.0
++version: 1.1.1
+ type: plugin
+ author: "langgenius"
+ name: "openai"
 diff --git a/models/openai/models/common_openai.py b/models/openai/models/common_openai.py
 index d28d6d93..fd380fb9 100644
 --- a/models/openai/models/common_openai.py
@@ -108,6 +118,18 @@ index d22df9d7..a8a37011 100644
      - variable: openai_organization
        label:
          zh_Hans: 组织 ID
+diff --git a/models/openai/pyproject.toml b/models/openai/pyproject.toml
+index e99c3325..36237dea 100644
+--- a/models/openai/pyproject.toml
++++ b/models/openai/pyproject.toml
+@@ -1,6 +1,6 @@
+ [project]
+ name = "dify-openai"
+-version = "1.1.0"
++version = "1.1.1"
+ description = "OpenAI models for Dify"
+ readme = "README.md"
+ requires-python = ">=3.12"
 diff --git a/models/openai/tests/test_transport.py b/models/openai/tests/test_transport.py
 new file mode 100644
 index 00000000..f51cbc7b
@@ -183,6 +205,19 @@ index 00000000..f51cbc7b
 +                "gpt-6-luna", credentials, prompt_messages, {}, None, None, False, None
 +            )
 +    assert len(observed) == attempts
+diff --git a/models/openai/uv.lock b/models/openai/uv.lock
+index 3094d12c..921055e9 100644
+--- a/models/openai/uv.lock
++++ b/models/openai/uv.lock
+@@ -228,7 +228,7 @@ wheels = [
+ 
+ [[package]]
+ name = "dify-openai"
+-version = "1.1.0"
++version = "1.1.1"
+ source = { virtual = "." }
+ dependencies = [
+     { name = "dify-plugin" },
 diff --git a/tests/tools/openai/test_openai_tool.py b/tests/tools/openai/test_openai_tool.py
 index 4ee93645..5b89c580 100644
 --- a/tests/tools/openai/test_openai_tool.py
@@ -352,6 +387,19 @@ index 4ee93645..5b89c580 100644
      ],
  )
  def test_gpt_image_rejects_invalid_parameters_without_api_calls(operation, invalid):
+diff --git a/tools/openai/.difyignore b/tools/openai/.difyignore
+new file mode 100644
+index 00000000..af6c7c78
+--- /dev/null
++++ b/tools/openai/.difyignore
+@@ -0,0 +1,7 @@
++.venv/
++__pycache__/
++*.py[cod]
++.pytest_cache/
++.ruff_cache/
++.env
++*.difypkg
 diff --git a/tools/openai/README.md b/tools/openai/README.md
 index 7d4c2a83..e627a808 100644
 --- a/tools/openai/README.md
@@ -380,6 +428,16 @@ index 7d4c2a83..e627a808 100644
  
  Custom dimensions must satisfy all of these conditions:
  
+diff --git a/tools/openai/manifest.yaml b/tools/openai/manifest.yaml
+index 08e9004d..390ad565 100644
+--- a/tools/openai/manifest.yaml
++++ b/tools/openai/manifest.yaml
+@@ -33,4 +33,4 @@ tags:
+ - image
+ - productivity
+ type: plugin
+-version: 0.2.2
++version: 0.2.3
 diff --git a/tools/openai/openai_client.py b/tools/openai/openai_client.py
 index ce0a8ac8..38925003 100644
 --- a/tools/openai/openai_client.py
@@ -416,6 +474,18 @@ index ce0a8ac8..38925003 100644
  def normalize_openai_base_url(base_url: str | None) -> str | None:
      if not base_url:
          return None
+diff --git a/tools/openai/pyproject.toml b/tools/openai/pyproject.toml
+index 82112360..bb123232 100644
+--- a/tools/openai/pyproject.toml
++++ b/tools/openai/pyproject.toml
+@@ -1,6 +1,6 @@
+ [project]
+ name = "dify-openai"
+-version = "0.2.1"
++version = "0.2.3"
+ description = "Add your description here"
+ readme = "README.md"
+ requires-python = ">=3.12"
 diff --git a/tools/openai/tools/_image_utils.py b/tools/openai/tools/_image_utils.py
 index fa9543cf..e7075db7 100644
 --- a/tools/openai/tools/_image_utils.py
@@ -568,3 +638,16 @@ index 6f19bc0c..dfd1fb31 100644
 +  name: request_timeout
 +  required: false
 +  type: number
+diff --git a/tools/openai/uv.lock b/tools/openai/uv.lock
+index d03ce318..8cb72cfe 100644
+--- a/tools/openai/uv.lock
++++ b/tools/openai/uv.lock
+@@ -219,7 +219,7 @@ wheels = [
+ 
+ [[package]]
+ name = "dify-openai"
+-version = "0.2.1"
++version = "0.2.3"
+ source = { virtual = "." }
+ dependencies = [
+     { name = "dify-plugin" },
