@@ -241,6 +241,15 @@ was present. Upstream main still resolves to
 `18663b9e723c345fed4c7450a3f925c583fa7064`; its model/tool manifests remain 1.1.0/0.2.2.
 The tested 1.1.1/0.2.3 candidate versions are not proof of an official release.
 
+The release workflow explains the next external dependency: the source-pinned
+[pre-PR workflow](https://github.com/langgenius/dify-official-plugins/blob/18663b9e723c345fed4c7450a3f925c583fa7064/.github/workflows/pre-pr-check-per-plugin.yaml)
+starts on a submitted approving review, not ordinary PR creation. Its
+[upload workflow](https://github.com/langgenius/dify-official-plugins/blob/18663b9e723c345fed4c7450a3f925c583fa7064/.github/workflows/upload-merged-plugin.yaml)
+runs after relevant changes reach `main`. The current account's repository permissions
+are read-only (`push`, `maintain`, `admin` and `triage` are false). A maintainer review
+is therefore the next action; no code-only change or repeated local test run can
+replace that approval. No failing CI result is being bypassed.
+
 **Official release is pending external maintainer action, not complete.** There is
 no known local code fix to make at this state. Do not merge on behalf of upstream,
 self-publish an unofficial build as an official release, or replace shared plugins.
