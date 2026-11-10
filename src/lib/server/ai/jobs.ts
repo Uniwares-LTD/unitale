@@ -1,4 +1,3 @@
-import { domains, jobTarget } from "../domains";
 import { enqueueNotification } from "../notifications";
 import type { Document } from "mongodb";
 import "server-only";
@@ -474,6 +473,9 @@ export async function persistAiEvent(
           event.type === "decision-expired"
         ) {
           if (!current.run) return;
+          // Project adapters can themselves import AI jobs during registration.
+          // Resolve the registry only after module initialization, when handling an event.
+          const { domains, jobTarget } = await import("../domains");
           const target = jobTarget(current);
           const applicationWait =
             event.type !== "stage" &&

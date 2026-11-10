@@ -20,6 +20,9 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Defer domain lookup until Run event handling so project extensions may import
+  AI job services during registration without a module initialization cycle.
+
 - Map Dify handled node exceptions to failed activity stages, preserving private
   error bodies in opt-in observations instead of labelling the stage successful.
 
