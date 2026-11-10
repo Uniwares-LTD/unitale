@@ -22,6 +22,11 @@ export type RegisteredTool = {
   runContext?: boolean;
   input: z.ZodObject;
   output: z.ZodObject;
+  // Pure projection of already-authorized bytes; output must exclude binary carriers.
+  images?: (result: Record<string, unknown>) => readonly {
+    data: Uint8Array;
+    mimeType: string;
+  }[];
   run: (
     input: Record<string, unknown>,
     context: ToolContext,

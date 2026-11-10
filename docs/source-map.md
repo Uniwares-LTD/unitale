@@ -110,6 +110,10 @@ and the adapter; the table does not require unrelated suites for every task.
   [Media retention](../src/lib/server/runs/media.ts) stages owned bytes before settlement.
 - [Project extensions](../src/project) are project-owned registrations of features and
   samples; core reads them through [the contract](../src/lib/extensions.ts).
+  [Run start composition](../src/project/run-start.tsx) and
+  [Run detail controls](../src/project/run-detail.tsx) stay inside existing Run pages.
+  [Domain hooks](services.md#domain-extensions-and-migration) own private observations
+  and non-paid application waits through the existing worker.
 - [Samples](../src/samples/README.md) are removable reference features declared in
   [samples.json](../samples.json); [the samples script](../scripts/samples.mjs) checks and removes them.
 - [Configuration](../project.config.json) owns project identity/modules; [pure parsers](../src/lib/config)

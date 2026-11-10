@@ -1,6 +1,6 @@
 import { PageMessages } from "@/components/page-messages";
 import { getTranslations } from "next-intl/server";
-import { RunLanding } from "@/components/runs/run-start";
+import { ProjectRunStart } from "@/project/run-start";
 import { orchestrators } from "@/lib/server/runs/orchestrators";
 import { listRuns } from "@/lib/server/runs/service";
 import { PageHeader } from "@/components/page-patterns";
@@ -59,7 +59,7 @@ export default async function Page({
           title={translate("m9f88e18da1c5")}
           description={translate("mbe8f030087bf")}
         />
-        <RunLanding
+        <ProjectRunStart
           key={artifactId ?? "new"}
           choices={choices}
           personas={personas}

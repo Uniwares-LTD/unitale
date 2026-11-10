@@ -12,13 +12,21 @@ import type { OrchestratorDefinition } from "@/lib/contracts/runs";
 import { executionKey } from "./credentials";
 import { difyJson } from "./dify-console-client";
 import type { ProviderEvent } from "../ai/types";
+import { domains, jobTarget } from "../domains";
+import { nodeObservation } from "../ai/node-observation";
 import { assertRunEnvironment } from "./environment-binding";
 
+function observesNodes(job: AiJob) {
+  const target = jobTarget(job);
+  return !!(target && domains.get(target.adapter, target.version).observeNode);
+}
+
 // Terminal event snapshots can omit historical nodes. Fetch bounded node metadata
-// only for the app/Run already accepted in this server-owned job; never expose outputs.
+// only for the accepted app/Run. Opt-in outputs go solely to the private worker hook.
 export async function tracingForRun(
   job: AiJob,
   request: typeof difyJson = difyJson,
+  nodeObservations?: boolean,
 ): Promise<ProviderEvent[]> {
   const appId = job.run?.orchestrator.appId;
   if (
@@ -32,13 +40,15 @@ export async function tracingForRun(
     .object({
       data: z
         .array(
-          z.object({
-            id: z.string().max(128),
-            node_id: z.string().max(128),
-            title: z.string().max(200),
-            status: z.string(),
-            elapsed_time: z.number().nonnegative().nullish(),
-          }),
+          z
+            .object({
+              id: z.string().max(128),
+              node_id: z.string().max(128),
+              title: z.string().max(200),
+              status: z.string(),
+              elapsed_time: z.number().nonnegative().nullish(),
+            })
+            .passthrough(),
         )
         .max(1000),
     })
@@ -48,17 +58,30 @@ export async function tracingForRun(
         { management: true },
       ),
     );
-  return rows.data
-    .filter((n) => ["succeeded", "failed", "running"].includes(n.status))
-    .map((n) => ({
-      type: "stage",
-      id: n.id,
-      nodeId: n.node_id,
-      title: n.title,
-      status: n.status as "succeeded" | "failed" | "running",
-      elapsedMs:
-        n.elapsed_time == null ? null : Math.round(n.elapsed_time * 1000),
-    }));
+  const observations: ProviderEvent[] =
+    (nodeObservations ?? observesNodes(job))
+      ? rows.data.map((node) => ({
+          type: "node-observation",
+          node: nodeObservation(job.runId!, node),
+        }))
+      : [];
+  return [
+    ...observations,
+    ...rows.data
+      .filter((n) =>
+        ["succeeded", "failed", "running", "exception"].includes(n.status),
+      )
+      .map((n) => ({
+        type: "stage" as const,
+        id: n.id,
+        nodeId: n.node_id,
+        title: n.title,
+        status: (n.status === "exception" ? "failed" : n.status) as
+          "succeeded" | "failed" | "running",
+        elapsedMs:
+          n.elapsed_time == null ? null : Math.round(n.elapsed_time * 1000),
+      })),
+  ];
 }
 
 export async function executionBinding(
@@ -136,7 +159,13 @@ export async function providerForRun(
       "Execution credentials changed. Restore the configured connection to reconcile this attempt.",
       409,
     );
-  return createDifyWorkflow(live.config, live.binding);
+  return createDifyWorkflow(
+    live.config,
+    live.binding,
+    undefined,
+    undefined,
+    observesNodes(job),
+  );
 }
 function fakeRun(job: AiJob, db: Db): WorkflowProvider {
   const sample =

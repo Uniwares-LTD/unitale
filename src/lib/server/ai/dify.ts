@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DifyConfig } from "@/lib/config/dify";
 import { readSse } from "./sse";
+import { nodeObservation } from "./node-observation";
 import { workflowFailure } from "./provider-errors";
 import type {
   ProviderEvent,
@@ -205,6 +206,7 @@ export function createDifyWorkflow(
   binding: Binding,
   fetcher: typeof fetch = fetch,
   reconnectRunId?: string,
+  nodeObservations = false,
 ): WorkflowProvider {
   if (binding.kind !== "workflow")
     throw new Error("A workflow binding is required.");
@@ -230,11 +232,13 @@ export function createDifyWorkflow(
               { ...options, method: "GET", body: undefined },
             )
           : fetcher(_url, options);
-      return createDifyWorkflow(config, binding, streamingFetch, runId).start(
-        { user, inputs: {} },
-        observe,
-        signal,
-      );
+      return createDifyWorkflow(
+        config,
+        binding,
+        streamingFetch,
+        runId,
+        nodeObservations,
+      ).start({ user, inputs: {} }, observe, signal);
     },
     async form(token) {
       if (!/^[A-Za-z0-9_-]{1,256}$/.test(token))
@@ -326,6 +330,16 @@ export function createDifyWorkflow(
           }
           if (envelope.event === "error")
             return { kind: "unknown", failure: "unavailable" };
+          if (
+            nodeObservations &&
+            ["node_finished", "node_retry"].includes(envelope.event)
+          ) {
+            if (!runId) throw new Error("Missing observation identity.");
+            await emit({
+              type: "node-observation",
+              node: nodeObservation(runId, envelope.data),
+            });
+          }
           if (["node_started", "node_finished"].includes(envelope.event)) {
             const node = z
               .object({
@@ -345,7 +359,7 @@ export function createDifyWorkflow(
                 status:
                   envelope.event === "node_started"
                     ? "running"
-                    : node.data.status === "failed"
+                    : ["failed", "exception"].includes(node.data.status ?? "")
                       ? "failed"
                       : "succeeded",
                 elapsedMs:

@@ -8,11 +8,15 @@ import type { Migration } from "./migrations";
 // Server-only half of the extension contract; see src/lib/extensions.ts.
 // Entries run with the same permission, module and ownership checks as core.
 export type ServerExtension = {
-  // Contributions are disabled when this module is not enabled.
+  // New user-facing contributions are disabled when the module is not enabled.
+  // Reconciliation still handles accepted work through the existing worker.
   module: ModuleId;
   mcpTools?: readonly RegisteredTool[];
   productTypes?: readonly import("./commerce/catalogs").ProductType[];
   domainAdapters?: readonly DomainAdapter[];
+  // One bounded, leased, non-paid readback/retention pass over accepted work.
+  // Never admit or dispatch work here, including when module admission is disabled.
+  reconcile?: (db: Db, now: Date) => Promise<boolean>;
   // Idempotent index setup run by db:indexes.
   indexes?: (db: Db) => Promise<void>;
   // Forward-only migrations run by db:migrate; IDs start with `<module>:`.
@@ -81,4 +85,16 @@ export function extensionProductTypes(
   if (new Set(keys).size !== keys.length)
     throw new Error("Duplicate product type version.");
   return types;
+}
+
+// Admission filters do not suppress retention of already accepted work.
+export async function reconcileExtensions(
+  extensions: readonly ServerExtension[],
+  db: Db,
+  now: Date,
+) {
+  let worked = false;
+  for (const extension of extensions)
+    worked = (await extension.reconcile?.(db, now)) || worked;
+  return worked;
 }

@@ -1,4 +1,5 @@
 "use client";
+import { ProjectRunDetail } from "@/project/run-detail";
 import {
   CurrencyLabel,
   DateLabel,
@@ -451,6 +452,7 @@ export function RunDetail({ initial }: { initial: Detail }) {
   }
   return (
     <div className="space-y-6">
+      <ProjectRunDetail data={data} refresh={refresh} />
       <div className="flex flex-wrap items-center gap-3">
         <Badge>
           <StateLabel value={data.status} />

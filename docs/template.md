@@ -84,6 +84,15 @@ Extend through the registries instead of editing core lists. The
 6. Tests, then `npm run typecheck`, `npm run lint`, the affected test suites and
    `npm run build`.
 
+Project-specific Run controls belong in `src/project/run-start.tsx` and
+`src/project/run-detail.tsx`: compose `ProjectRunStart` with the existing
+`RunLanding` for package/quote admission, and render additional owned controls through `ProjectRunDetail`. The detail slot receives
+the same allowlisted DTO (including the owned target identity) and refresh function
+as the existing polling UI; do not add a second Run poller or copy shared controls. Defaults preserve generic Run behavior.
+Keep these components client-safe, use the page's typed message scope and put all
+ownership, financial consent and mutation authorization in server services. Prepaid
+Runs omit generic restart controls; their product admission owns continuation.
+
 ## Receive template updates
 
 With a clean working tree run `npm run template:update -- <version>`. It merges the

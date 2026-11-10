@@ -124,7 +124,12 @@ export async function retainEvidence(
     secrets?: readonly string[];
     retentionDays?: number;
   },
+  session?: ClientSession,
 ) {
+  if (session && !session.inTransaction())
+    throw new Error(
+      "Evidence retention requires an active caller transaction.",
+    );
   ownerSchema.parse(uid);
   identitySchema.parse(input.id);
   identitySchema.parse(input.runId);
@@ -152,52 +157,56 @@ export async function retainEvidence(
     );
   const sha256 = createHash("sha256").update(data).digest("hex");
   const id = evidenceKey(uid, input.id);
-  const session = db.client.startSession();
-  try {
-    await session.withTransaction(async () => {
-      const rows = db.collection<Evidence>("executionEvidence");
-      const old = await rows.findOne({ _id: id }, { session });
-      if (old) {
-        if (
-          old.sha256 !== sha256 ||
-          old.runId !== input.runId ||
-          old.operationId !== input.operationId ||
-          old.kind !== kind
-        )
-          throw conflict();
-        return;
-      }
-      await touchOperation(db, session, uid, input.runId, input.operationId);
-      const encoded = data.toString("base64");
-      const parts = Math.ceil(encoded.length / 65536);
-      for (let part = 0; part < parts; part++)
-        await db.collection<Chunk>("executionEvidenceChunks").insertOne(
-          {
-            _id: id + ":" + part,
-            evidenceId: id,
-            data: encoded.slice(part * 65536, (part + 1) * 65536),
-          },
-          { session },
-        );
-      await rows.insertOne(
+  const write = async (session: ClientSession) => {
+    const rows = db.collection<Evidence>("executionEvidence");
+    const old = await rows.findOne({ _id: id }, { session });
+    if (old) {
+      if (
+        old.sha256 !== sha256 ||
+        old.runId !== input.runId ||
+        old.operationId !== input.operationId ||
+        old.kind !== kind
+      )
+        throw conflict();
+      return;
+    }
+    await touchOperation(db, session, uid, input.runId, input.operationId);
+    const encoded = data.toString("base64");
+    const parts = Math.ceil(encoded.length / 65536);
+    for (let part = 0; part < parts; part++)
+      await db.collection<Chunk>("executionEvidenceChunks").insertOne(
         {
-          _id: id,
-          uid,
-          runId: input.runId,
-          operationId: input.operationId,
-          kind,
-          sha256,
-          bytes: data.length,
-          parts,
-          holds: [input.operationId],
-          expiresAt: new Date(Date.now() + days * 86400000),
-          createdAt: new Date(),
+          _id: id + ":" + part,
+          evidenceId: id,
+          data: encoded.slice(part * 65536, (part + 1) * 65536),
         },
         { session },
       );
-    });
-  } finally {
-    await session.endSession();
+    await rows.insertOne(
+      {
+        _id: id,
+        uid,
+        runId: input.runId,
+        operationId: input.operationId,
+        kind,
+        sha256,
+        bytes: data.length,
+        parts,
+        holds: [input.operationId],
+        expiresAt: new Date(Date.now() + days * 86400000),
+        createdAt: new Date(),
+      },
+      { session },
+    );
+  };
+  if (session) await write(session);
+  else {
+    const ownedSession = db.client.startSession();
+    try {
+      await ownedSession.withTransaction(() => write(ownedSession));
+    } finally {
+      await ownedSession.endSession();
+    }
   }
   return { id: input.id, sha256, bytes: data.length, kind };
 }

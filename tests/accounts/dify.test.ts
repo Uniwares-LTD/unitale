@@ -458,3 +458,112 @@ test("workflow retrieval preserves reported summary billing evidence", async () 
     source: "provider",
   });
 });
+
+test("opt-in private node observations retain retry identity and outputs without public-stage leakage", async () => {
+  const node = {
+    id: "child-execution",
+    node_id: "specialist",
+    node_type: "tool",
+    title: "Specialist",
+    status: "retry",
+    retry_index: 2,
+    iteration_id: "iteration-1",
+    loop_id: "loop-1",
+    outputs: {
+      result: "private exact output  \u{1f44b}\n",
+      requestId: "call-1",
+    },
+    outputs_truncated: false,
+    error: "private provider error",
+    execution_metadata: { total_tokens: 7 },
+    inputs: { credential: "must-not-observe" },
+  };
+  const fetcher: typeof fetch = async () =>
+    sse(
+      started,
+      { event: "node_retry", workflow_run_id: runId, data: node },
+      {
+        event: "node_finished",
+        workflow_run_id: runId,
+        data: { ...node, status: "exception", retry_index: undefined },
+      },
+      { event: "workflow_finished", workflow_run_id: runId, data: detail },
+    );
+  for (const enabled of [false, true]) {
+    const events: ProviderEvent[] = [];
+    const provider = createDifyWorkflow(
+      live,
+      live.bindings[0],
+      fetcher,
+      undefined,
+      enabled,
+    );
+    const result = await provider.start(input, async (event) => {
+      events.push(event);
+    });
+    assert.equal(result.kind, "ok");
+    const observations = events.filter(
+      (event) => event.type === "node-observation",
+    );
+    assert.equal(observations.length, enabled ? 2 : 0);
+    assert.equal(
+      events
+        .filter((event) => event.type === "stage")
+        .find((event) => event.nodeId === "specialist")?.status,
+      "failed",
+    );
+    if (enabled) {
+      assert.equal(observations[0].node.runId, runId);
+      assert.equal(observations[0].node.id, "child-execution");
+      assert.equal(observations[0].node.retryIndex, 2);
+      assert.equal(observations[0].node.iterationId, "iteration-1");
+      assert.equal(observations[0].node.loopId, "loop-1");
+      assert.deepEqual(observations[0].node.outputs, node.outputs);
+      assert.equal(observations[0].node.outputsTruncated, false);
+      assert.equal(observations[1].node.retryIndex, null);
+      assert(!JSON.stringify(observations).includes("must-not-observe"));
+    }
+    assert(
+      !JSON.stringify(
+        events.filter((event) => event.type !== "node-observation"),
+      ).includes("private"),
+    );
+  }
+  let dispatches = 0;
+  const failing = createDifyWorkflow(
+    live,
+    live.bindings[0],
+    async (...args) => {
+      dispatches++;
+      return fetcher(...args);
+    },
+    undefined,
+    true,
+  );
+  await assert.rejects(
+    failing.start(input, async (event) => {
+      if (event.type === "node-observation")
+        throw new Error("private observer unavailable");
+    }),
+    /observer unavailable/,
+  );
+  assert.equal(dispatches, 1);
+  const replay = createDifyWorkflow(
+    live,
+    live.bindings[0],
+    async (_url, options) => {
+      assert.equal(options?.method, "GET");
+      return fetcher(_url, options);
+    },
+    undefined,
+    true,
+  );
+  const seen: ProviderEvent[] = [];
+  await replay.stream!(runId, input.user, async (event) => {
+    seen.push(event);
+  });
+  assert.equal(
+    seen.filter((event) => event.type === "node-observation").length,
+    2,
+  );
+});

@@ -1,3 +1,4 @@
+import { domains, jobTarget } from "../domains";
 import { enqueueNotification } from "../notifications";
 import type { Document } from "mongodb";
 import "server-only";
@@ -27,6 +28,7 @@ import type {
   Json,
   ProviderEvent,
   ProviderExecution,
+  ProviderNodeObservation,
   UsageObservation,
 } from "./types";
 
@@ -108,6 +110,7 @@ export type AiJob = {
   nextAttemptAt: Date;
   reviewAfter: Date;
   cancelRequested: boolean;
+  applicationWait?: boolean;
   failure: string | null;
   // Operator-only cause behind a generic failure code; never user-facing.
   failureDetail?: { reason: string; at: Date };
@@ -393,6 +396,7 @@ export async function patchAiJob(
       | "lease"
       | "leaseUntil"
       | "nextAttemptAt"
+      | "applicationWait"
       | "charge"
     >
   >,
@@ -413,6 +417,11 @@ export async function persistAiEvent(
   job: AiJob,
   event: ProviderEvent,
   now = new Date(),
+  observeNode?: (
+    job: AiJob,
+    node: ProviderNodeObservation,
+    session: ClientSession,
+  ) => Promise<void>,
 ) {
   const session = db.client.startSession();
   try {
@@ -453,6 +462,11 @@ export async function persistAiEvent(
           );
         }
         if (!current.runId) throw conflict();
+        if (event.type === "node-observation") {
+          if (event.node.runId !== current.runId) throw conflict();
+          await observeNode?.(current, event.node, session);
+          return; // Never persist raw outputs/errors in public runEvents or usage.
+        }
         if (
           event.type === "stage" ||
           event.type === "decision" ||
@@ -460,6 +474,15 @@ export async function persistAiEvent(
           event.type === "decision-expired"
         ) {
           if (!current.run) return;
+          const target = jobTarget(current);
+          const applicationWait =
+            event.type !== "stage" &&
+            !!(
+              target &&
+              domains
+                .get(target.adapter, target.version)
+                .applicationWaitNodes?.includes(event.nodeId)
+            );
           const eventId = fingerprint([
             job._id,
             event.type,
@@ -485,6 +508,7 @@ export async function persistAiEvent(
                     title: event.title,
                     token: event.token,
                     status: "pending",
+                    ...(applicationWait ? { applicationWait: true } : {}),
                     createdAt: now,
                   },
                 },
@@ -493,6 +517,7 @@ export async function persistAiEvent(
           }
           if (
             event.type === "decision" &&
+            !applicationWait &&
             (!current.run.answerer || current.run.takenOver)
           )
             await enqueueNotification(
@@ -533,6 +558,35 @@ export async function persistAiEvent(
                 { session, sort: { createdAt: -1 } },
               );
           }
+          if (
+            event.type !== "stage" &&
+            target &&
+            (current.applicationWait ||
+              domains.get(target.adapter, target.version).applicationWaitNodes
+                ?.length)
+          ) {
+            const pending = {
+              jobId: current._id,
+              status: { $in: ["pending", "submitting", "unknown"] },
+            };
+            const internal = await db
+              .collection("runDecisions")
+              .findOne({ ...pending, applicationWait: true }, { session });
+            const human = await db
+              .collection("runDecisions")
+              .findOne(
+                { ...pending, applicationWait: { $ne: true } },
+                { session },
+              );
+            await patchAiJob(
+              db,
+              job,
+              { applicationWait: !!internal && !human },
+              now,
+              session,
+            );
+          }
+          if (applicationWait) return; // Internal waits are not creator questions/events.
           const safe =
             event.type === "decision"
               ? { type: event.type, nodeId: event.nodeId, title: event.title }

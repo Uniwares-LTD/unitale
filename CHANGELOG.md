@@ -20,6 +20,27 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Map Dify handled node exceptions to failed activity stages, preserving private
+  error bodies in opt-in observations instead of labelling the stage successful.
+
+- Add an optional bounded reconciliation callback to the existing AI worker for
+  accepted unresolved work after its parent terminates; no new scheduler or dispatch.
+
+- Add project-owned Run start composition and a detail control slot using the existing
+  Run DTO/poller. Prepaid Runs omit generic restart controls and use product admission.
+
+- Add opt-in application wait nodes and paused-Run resume hooks on versioned domains,
+  reusing worker scheduling and the existing uncertain-decision journal. Internal
+  waits suppress creator prompts/notifications and persona responses; application
+  provenance cannot approve human or quality decisions.
+
+- Add optional private, bounded domain node observations under the existing AI
+  worker fence, including Dify retry/exception output readback. Existing domains
+  without the hook retain metadata-only behavior; public Run events stay unchanged.
+
+- Add optional ordered native MCP image results for project tools, preserving JSON/
+  text behavior, permission checks and encoded-response limits.
+
 - Add an opt-in official Google Maven hostname fallback for Android builds,
   preserving dependency versions and normal repository defaults.
 
@@ -47,6 +68,28 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 - Add opt-in v1 commerce and execution-measurement contracts for immutable catalog terms, consumption orders, entitlements, subscriptions, promotions and provider evidence. Existing runtime behavior and records remain unchanged.
 
 ### Upgrade notes
+
+- Server extensions needing late-result readback may opt into `reconcile(db, now)`.
+  The callback must fence its own accepted work and cannot dispatch paid actions.
+  Existing worker mode controls remain in force; no migration is required.
+
+- `src/project/run-start.tsx` and `src/project/run-detail.tsx` contain optional
+  client-safe Run UI composition points. Defaults preserve existing rendering;
+  projects can add controls without editing shared Run pages. See [adding a feature](docs/template.md#add-a-feature).
+
+- Domains may opt into fixed native `applicationWaitNodes` with `resumePaused`;
+  see [domain extensions](docs/services.md#domain-extensions-and-migration). Existing
+  workflows are unchanged. Retain accepted adapter versions when changing wait IDs.
+  No migration, provider change or new scheduler is required.
+
+- Domains needing private execution evidence may opt into `observeNode`; see
+  [domain extensions](docs/services.md#domain-extensions-and-migration). Callbacks
+  must be idempotent transactional retention only. No migration is required.
+
+- Existing MCP tools need no changes. Image-producing tools can opt into `images`
+  as documented in [MCP guidance](docs/mcp.md#native-image-results). Administrators
+  must size existing MCP result/response limits for base64 overhead before using
+  large originals; defaults are unchanged. No migration or live activation is needed.
 
 - Android consumers must regenerate and rebuild the wrapper to receive the custom
   billing activity and Digital Goods service. Minimum Android API is now 24;
