@@ -804,7 +804,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
           service: "manuscript" as const,
           operation: "write",
           category: "paidLlm" as const,
-          targetIds: ["story-v2"],
+          targetIds: ["story-v2", "book-subject"],
           sources: [f.source],
         };
         async function dispatch(
@@ -843,6 +843,33 @@ test("booklet repositories preserve embedded identities and transactional bounda
         await outcome(initial.callId, "succeeded");
         const rootId = (await f.v2.getWork("production-v2", initial.callId))
           .correctionRootId;
+        const disguised = {
+          ...initial,
+          callId: "disguised-initial",
+          actionKey: fingerprint("disguised-initial"),
+          requestHash: fingerprint("changed-creative-request"),
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...disguised }),
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.dispatchWork("production-v2", {
+              ...m,
+              callId: disguised.callId,
+              requestHash: disguised.requestHash,
+            }),
+          ),
+          /Correction metadata required/,
+        );
+        const separateTask = {
+          ...initial,
+          callId: "reconcile-cast",
+          operation: "reconcile_characters",
+          actionKey: fingerprint("reconcile-cast"),
+        };
+        await dispatch(separateTask);
+        await outcome(separateTask.callId, "succeeded");
         const review = {
           ...initial,
           callId: "review",
@@ -877,7 +904,10 @@ test("booklet repositories preserve embedded identities and transactional bounda
               targetHash: f.revision.contentHash,
               requestHash: null,
               sources: [f.source],
-              coverage: { targetIds: ["story-v2"], referencePositions: [] },
+              coverage: {
+                targetIds: initial.targetIds,
+                referencePositions: [],
+              },
               disposition: "repair",
               findings: [
                 {
@@ -885,6 +915,15 @@ test("booklet repositories preserve embedded identities and transactional bounda
                   criterion: "lettering",
                   classification: "confirmed",
                   targetId: "story-v2",
+                  expected: "Exact text",
+                  observed: "Text omitted",
+                },
+
+                {
+                  id: "book-defect",
+                  criterion: "lettering",
+                  classification: "confirmed",
+                  targetId: "book-subject",
                   expected: "Exact text",
                   observed: "Text omitted",
                 },
@@ -896,7 +935,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
         const correction = {
           rootId,
           family: "llm" as const,
-          findingIds: ["missing-text"],
+          findingIds: ["missing-text", "book-defect"],
         };
         await assert.rejects(
           f.write((m) =>
@@ -922,14 +961,49 @@ test("booklet repositories preserve embedded identities and transactional bounda
           ),
           /confirmed findings/,
         );
-        for (let n = 1; n <= 3; n++) {
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...initial,
+              callId: "uncovered-target",
+              actionKey: fingerprint("uncovered-target"),
+              correction: { ...correction, findingIds: ["missing-text"] },
+            }),
+          ),
+          /every target/,
+        );
+        for (let n = 1; n <= 4; n++) {
+          // Independent target repairs do not spend each other's allowance.
+          const targetIds =
+            n === 1
+              ? ["story-v2"]
+              : n === 2
+                ? ["book-subject"]
+                : initial.targetIds;
           const attempt = {
             ...initial,
             callId: "correction-" + n,
             runId: "fresh-run-" + n,
             actionKey: fingerprint("corrective-action-" + n),
             requestHash: fingerprint("corrective-request-" + n),
-            correction,
+            targetIds,
+            correction: {
+              ...correction,
+              rootId: fingerprint([
+                "production-v2",
+                "manuscript",
+                "write",
+                [...targetIds].sort(),
+                "platform",
+              ]),
+              findingIds:
+                n === 1
+                  ? ["missing-text"]
+                  : n === 2
+                    ? ["book-defect"]
+                    : correction.findingIds,
+            },
           };
           await dispatch(attempt);
           if (n === 1) {
@@ -945,7 +1019,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
           } else await outcome(attempt.callId, "succeeded");
           assert.equal(
             (await f.v2.getCorrection("production-v2", rootId)).used,
-            n,
+            Math.max(1, n - 1),
           );
         }
         const exhausted = {
@@ -974,14 +1048,64 @@ test("booklet repositories preserve embedded identities and transactional bounda
             "production-v2",
             rootId,
           ),
-          { rootId, family: "llm", targetIds: ["story-v2"], used: 3, limit: 3 },
+          {
+            rootId,
+            family: "llm",
+            targetIds: initial.targetIds,
+            used: 3,
+            limit: 3,
+          },
         );
         assert.equal(
           (await f.v2.getWork("production-v2", exhausted.callId)).status,
           "registered",
         );
+        {
+          const operation = initial.operation;
+          const subset = {
+            ...initial,
+            callId: "subset-" + operation,
+            operation,
+            actionKey: fingerprint("subset-" + operation),
+            targetIds: ["story-v2"],
+            correction: {
+              ...correction,
+              rootId: fingerprint([
+                "production-v2",
+                "manuscript",
+                operation,
+                ["story-v2"],
+                "platform",
+              ]),
+              findingIds: ["missing-text"],
+            },
+          };
+          await f.write((m) =>
+            f.v2.registerWork("production-v2", { ...m, ...subset }),
+          );
+          await assert.rejects(
+            f.write((m) =>
+              f.v2.dispatchWork("production-v2", {
+                ...m,
+                callId: subset.callId,
+                requestHash: subset.requestHash,
+              }),
+            ),
+            /Correction allowance exhausted/,
+          );
+          assert.equal(
+            (
+              await f.v2.getCorrection(
+                "production-v2",
+                subset.correction.rootId,
+              )
+            ).used,
+            3,
+          );
+        }
         const image = {
           ...initial,
+          targetIds: ["story-v2"],
           callId: "image-initial",
           actionKey: fingerprint("image-initial"),
           service: "image-executor" as const,
@@ -1029,6 +1153,72 @@ test("booklet repositories preserve embedded identities and transactional bounda
           ),
           /Correction allowance exhausted/,
         );
+        // The financial lifecycle has separate integration tests. These stored receipt
+        // fixtures isolate how work scopes survive successive purchased revisions.
+        for (const funding of ["customer-revision-1", "customer-revision-2"]) {
+          await f.db
+            .collection<{
+              _id: string;
+              uid: string;
+              orderId: string;
+              kind: string;
+            }>("consumptionCharges")
+            .insertOne({
+              _id: funding,
+              uid: actor.uid,
+              orderId: "order-v2",
+              kind: "revision",
+            });
+          await f.db
+            .collection<{ _id: string; revisionChargeId: string }>(
+              "bookletProductions",
+            )
+            .updateOne(
+              { _id: "production-v2" },
+              { $set: { revisionChargeId: funding } },
+            );
+          const fresh = {
+            ...initial,
+            callId: funding,
+            actionKey: fingerprint(funding),
+          };
+          await dispatch(fresh);
+          await outcome(fresh.callId, "succeeded");
+          assert.equal(
+            (await f.v2.getCorrection("production-v2", rootId)).used,
+            3,
+          );
+          if (funding === "customer-revision-1") {
+            const paidRoot = (await f.v2.getWork("production-v2", fresh.callId))
+              .correctionRootId;
+            const repair = {
+              ...fresh,
+              callId: "paid-repair",
+              actionKey: fingerprint("paid-repair"),
+              correction: { ...correction, rootId: paidRoot },
+            };
+            await dispatch(repair);
+            await outcome(repair.callId, "succeeded");
+          } else {
+            const paidRoot = (
+              await f.v2.getWork("production-v2", "customer-revision-1")
+            ).correctionRootId;
+            assert.equal(
+              (await f.v2.getCorrection("production-v2", paidRoot)).used,
+              1,
+            );
+            await assert.rejects(
+              f.write((m) =>
+                f.v2.dispatchWork("production-v2", {
+                  ...m,
+                  callId: exhausted.callId,
+                  requestHash: exhausted.requestHash,
+                }),
+              ),
+              /funding identity changed/,
+            );
+          }
+        }
       },
     );
     await t.test(

@@ -125,21 +125,71 @@ export function bookletRepositoryV2(
     family === "image"
       ? Math.min(1, p.creativeConfigSnapshot.repairLimitPerOutput)
       : 3;
-  async function usedCorrections(
+  function correctionRoot(
     p: ProductionV2,
-    rootId: string,
+    row: Pick<WorkV2, "service" | "operation" | "targetIds">,
+    funding: string,
+  ) {
+    return fingerprint([
+      p._id,
+      row.service,
+      row.operation,
+      [...row.targetIds].sort(),
+      funding,
+    ]);
+  }
+  async function correctionFunding(
+    p: ProductionV2,
+    row: WorkV2,
     session: ClientSession,
   ) {
-    return work.distinct(
-      "actionKey",
+    for (const funding of new Set([
+      p.revisionChargeId ?? "platform",
+      "platform",
+    ]))
+      if (correctionRoot(p, row, funding) === row.correctionRootId)
+        return funding;
+    // Historical scopes remain readable after another customer-paid revision.
+    // Resolve their existing immutable commerce receipt; no parallel budget ledger.
+    for await (const charge of db
+      .collection<{ _id: string }>("consumptionCharges")
+      .find(
+        { uid: actor.uid, orderId: p.orderId, kind: "revision" },
+        { projection: { _id: 1 }, session },
+      ))
+      if (correctionRoot(p, row, charge._id) === row.correctionRootId)
+        return charge._id;
+    throw bookletConflict("Correction funding identity is unavailable.");
+  }
+  async function correctionHistory(
+    p: ProductionV2,
+    row: WorkV2,
+    funding: string,
+    session: ClientSession,
+  ) {
+    const history: WorkV2[] = [];
+    for await (const previous of work.find(
       {
         ownerId: actor.uid,
         productionId: p._id,
-        correctionRootId: rootId,
-        correction: { $ne: null },
+        service: row.service,
+        operation: row.operation,
+        category: row.category,
+        targetIds: { $in: row.targetIds },
         status: { $ne: "registered" },
       },
       { session },
+    )) {
+      if (previous.correctionRootId === correctionRoot(p, previous, funding))
+        history.push(previous);
+    }
+    return history;
+  }
+  function correctionActions(history: WorkV2[], targetId: string) {
+    return new Set(
+      history
+        .filter((row) => row.correction && row.targetIds.includes(targetId))
+        .map((row) => row.actionKey),
     );
   }
   async function owned(productionId: string, session: ClientSession) {
@@ -323,11 +373,18 @@ export function bookletRepositoryV2(
         );
         if (!row) throw bookletMissing();
         const family = row.category === "paidImage" ? "image" : "llm";
+        const funding = await correctionFunding(p, row, session);
+        const history = await correctionHistory(p, row, funding, session);
         return {
           rootId,
           family,
           targetIds: row.targetIds,
-          used: (await usedCorrections(p, rootId, session)).length,
+          used: Math.max(
+            0,
+            ...row.targetIds.map(
+              (targetId) => correctionActions(history, targetId).size,
+            ),
+          ),
           limit: correctionLimit(p, family),
         };
       });
@@ -414,13 +471,11 @@ export function bookletRepositoryV2(
             reviewScope: value.reviewScope,
             correction: value.correction,
           };
-          const correctionRootId = fingerprint([
-            p._id,
-            value.service,
-            value.operation,
-            [...value.targetIds].sort(),
+          const correctionRootId = correctionRoot(
+            p,
+            value,
             p.revisionChargeId ?? "platform",
-          ]);
+          );
           const targets = new Set(
             p.subjects.flatMap((s) => [s.id, ...s.artifacts.map((a) => a.id)]),
           );
@@ -497,6 +552,7 @@ export function bookletRepositoryV2(
               throw bookletConflict(
                 "Correction task, target or funding identity changed.",
               );
+            const coveredTargets = new Set<string>();
             for (const findingId of value.correction.findingIds) {
               const finding = await assessments.findOne(
                 {
@@ -510,13 +566,23 @@ export function bookletRepositoryV2(
                     },
                   },
                 },
-                { projection: { _id: 1 }, session },
+                { projection: { "assessment.findings": 1 }, session },
               );
               if (!finding)
                 throw bookletConflict(
                   "Correction requires scoped confirmed findings.",
                 );
+              for (const item of finding.assessment.findings)
+                if (
+                  item.id === findingId &&
+                  item.classification === "confirmed"
+                )
+                  coveredTargets.add(item.targetId);
             }
+            if (value.targetIds.some((target) => !coveredTargets.has(target)))
+              throw bookletConflict(
+                "Correction requires confirmed findings for every target.",
+              );
           }
           const row = workV2Schema.parse({
             ...registration,
@@ -564,17 +630,42 @@ export function bookletRepositoryV2(
             throw bookletConflict(
               "Work already dispatched, changed or unresolved.",
             );
-          if (row.correction) {
-            const used = await usedCorrections(
-              p,
-              row.correction.rootId,
-              session,
-            );
+          const funding = p.revisionChargeId ?? "platform";
+          if (row.correctionRootId !== correctionRoot(p, row, funding))
+            throw bookletConflict("Work funding identity changed.");
+          if (
+            row.category !== "nonPaid" &&
+            row.service !== "manager" &&
+            row.service !== "quality-reviewer"
+          ) {
+            const history = await correctionHistory(p, row, funding, session);
             if (
-              !used.includes(row.actionKey) &&
-              used.length >= correctionLimit(p, row.correction.family)
+              !row.correction &&
+              history.some((previous) => previous.actionKey !== row.actionKey)
             )
-              throw bookletConflict("Correction allowance exhausted.");
+              throw bookletConflict(
+                "Correction metadata required for an already attempted creative target.",
+              );
+            if (
+              history.some(
+                (previous) =>
+                  previous.actionKey !== row.actionKey &&
+                  ["dispatching", "unknown"].includes(previous.status),
+              )
+            )
+              throw bookletConflict(
+                "Reconcile unresolved creative work before another attempt.",
+              );
+            if (row.correction) {
+              for (const targetId of row.targetIds) {
+                const used = correctionActions(history, targetId);
+                if (
+                  !used.has(row.actionKey) &&
+                  used.size >= correctionLimit(p, row.correction.family)
+                )
+                  throw bookletConflict("Correction allowance exhausted.");
+              }
+            }
           }
           const result = await work.updateOne(
             {

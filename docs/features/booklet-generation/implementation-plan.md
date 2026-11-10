@@ -585,12 +585,20 @@ issue. No build rerun was needed for this YAML/test/docs-only delta. Registratio
 locators, without copying its large body into the checkpoint. This is a
 DSL wire change, without storage fields, indexes, dependencies or another graph layer.
 
-Before exposing paid dispatch, `dispatchWork`
-currently checks correction limits only when `correction` is supplied. A changed
-request for an already attempted creative target must not become another paid initial
-attempt by omitting that field; regrouping targets must not reset per-target limits.
-Prove both cases against existing work/funding facts before enabling dispatch, without
-adding a correction-budget collection or another scheduler.
+The seventh slice closes the demonstrated correction-accounting bypass in
+`dispatchWork`: changed work on an already attempted creative task/target requires
+correction metadata, and regrouping targets cannot reset per-target allowances.
+Counters use existing dispatched work and funding roots; technical retries count once,
+independent targets retain their own allowances, and different specialist operations
+remain separate tasks. Every corrective target requires a scoped confirmed finding.
+Historical customer-revision scopes resolve through existing commerce receipts;
+stale registered work cannot dispatch under new funding. No new field, collection,
+index or scheduler. The actual repository regression first failed on omitted correction
+metadata, then passed with the fix. All 47 affected repository/lifecycle/media/MCP tests,
+production build, sequential typecheck, scoped lint, model/docs, environment, i18n and
+skills checks pass. A separate same-agent read-only slice review found no blocking
+issue. Dispatch exposure remains pending with the rest of checkpoint 09;
+checkpoint-wide reviews remain pending.
 Also retain the final metadata checkpoint after structural completion: current v2
 mutation/lease guards reject `completed` productions, but the native graph checkpoints
 after `complete`. Permit only necessary terminal checkpoint/lease cleanup metadata,

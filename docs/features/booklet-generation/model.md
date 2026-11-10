@@ -35,6 +35,13 @@ remain applicable. Image/review gateway and runtime wiring remain 09 work.
 Correction roots bind task, target
 and funding identity. Counts derive from distinct dispatched corrective actions;
 technical retries reuse an action key. No separate correction-budget collection.
+Dispatch requires correction metadata for a changed request on an already attempted
+creative task/target in the same funding scope. Counts are per target, across target
+regrouping; independent targets do not spend each other's allowance. Other specialist
+operations remain separate tasks. Historical funding resolves through retained commerce
+receipts. Only dispatched attempts count; technical retries count once. This changes
+enforcement, not fields or relationships, so the JSON example and both Mermaid views
+are unaffected.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.
