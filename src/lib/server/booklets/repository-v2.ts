@@ -37,6 +37,7 @@ import {
   type AcceptanceV2,
 } from "./documents-v2";
 import type { BookletAsset } from "./media";
+import type { AiJob } from "../ai/jobs";
 
 type CreateInput = Parameters<
   ReturnType<typeof bookletRepository>["createProduction"]
@@ -344,6 +345,42 @@ export function bookletRepositoryV2(
         "registerWork",
         value,
         async (p, session) => {
+          if (p.lifecycleState === "in-progress") {
+            const order = await context.entitled(p, session);
+            const job = await db.collection<AiJob>("aiJobs").findOne(
+              {
+                _id: value.runId,
+                uid: actor.uid,
+                status: { $in: ["running", "paused"] },
+                cancelRequested: false,
+                "run.target.adapter": "booklet",
+                "run.target.version": "2",
+                "run.target.id": p._id,
+                "consumption.orderId": p.orderId,
+                "consumption.workflowId": order.activeWorkflow,
+              },
+              { session },
+            );
+            const flow = await db.collection("consumptionWorkflows").findOne(
+              {
+                _id: order.activeWorkflow as never,
+                uid: actor.uid,
+                orderId: p.orderId,
+                state: "active",
+                jobId: value.runId,
+              },
+              { session },
+            );
+            if (
+              !job?.runId ||
+              !flow ||
+              value.holderId !== job._id ||
+              job.run?.answerer
+            )
+              throw bookletConflict(
+                "An active owned prepaid Manager Run is required.",
+              );
+          }
           const expectedCategory =
             value.service === "image-executor"
               ? value.operation === "prepare"

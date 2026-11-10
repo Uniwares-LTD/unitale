@@ -103,21 +103,25 @@ before 348 individually inventoried source/generated/test files were removed.
 Checkpoint 09 starts with the existing Manager finish node: `booklet_result` preserves
 the domain outcome, while `result` uses the existing sanitized Run UI contract. Only a
 finished, structurally confirmed `complete` becomes success. Unknown/partial and action
-exhaustion stay partial; failure details do not leak into public summaries. No graph
-orchestration, prompts, provider bindings or execution switches change. Offline evidence
+exhaustion stay partial; failure details do not leak into public summaries. The Manager
+registration action now supplies the complete hash-bound `childRequest`, allowing the
+server to derive identity/category rather than trust model assertions. The local
+creative-text registration service records intent only; image/review registration,
+MCP exposure, dispatch budgets and observers remain pending. Provider bindings and
+execution switches stay unchanged. Offline evidence
 and current digest are refreshed for this slice; checkpoint-wide 09 reviews and actual
 Dify import/execution of this revision remain pending.
 
-Current slice: 35/35 compatibility tests pass (11 preserved v1 and 24 native-package
+Current slice: 36/36 compatibility tests pass (11 preserved v1 and 25 native-package
 tests), including the real consume-to-finish result path, all terminal outcomes,
 action exhaustion, malformed data and public evidence redaction. Typecheck and
 scoped test lint pass. Current implementation SHA-256:
-`69bec02610e254f6ff991025c6df7a32eef542a26a9a57714286f84e297a85b3`.
+`550863705e77405f8159921ed398ff50fbd034bd22b33e684b8c8d9d24d30757`.
 The digest uses the same 13-path algorithm described below; seven YAML files total
-237,494 bytes. The historical 01-06 review identity below does not cover this slice.
-A separate same-agent read-only slice review found no blocking issue; the hash audit,
-docs, i18n and skill checks pass. No build rerun is needed for YAML/test/docs-only
-changes after the passing 08 build. Checkpoint-wide 09 reviews remain pending.
+238,614 bytes. The historical 01-06 review identity below does not cover this slice.
+The server registration tests/checks and review evidence are recorded in the
+[delivery plan](../implementation-plan.md#09---unitale-gateway--recovery).
+Checkpoint-wide 09 reviews remain pending.
 
 ## Checkpoint evidence
 

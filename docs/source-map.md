@@ -83,6 +83,8 @@ and the adapter; the table does not require unrelated suites for every task.
   lifecycle calls live in `src/lib/server/booklets/lifecycle-v2.ts` and reuse existing
   commerce quote/allocation journals and shared product revision-scope checks;
   MCP and observer wiring remain checkpoint 09 work.
+  `src/lib/server/booklets/work-v2.ts` derives creative-text registration identity
+  from validated child inputs; it records intent without dispatching providers.
   Regenerate the simple/complete Mermaid versions with `npm run docs:booklet-model` whenever model relationships change.
   The [offline Dify harness](features/booklet-generation/dify-compatibility.md) owns
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;

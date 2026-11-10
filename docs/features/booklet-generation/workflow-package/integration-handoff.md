@@ -115,7 +115,7 @@ Manager must not reconstruct base64 chunks or invent content from an incomplete 
 | read_document | kind,id,cursor? -> immutable body or bounded history page | existing chunked reads; add human_response/work/assessment/execution kinds |
 | lease | action -> current Run-owned fence | existing acquire/renew/release |
 | index | subjects,artifacts,fence -> stable ID map | existing embedded production index |
-| begin_work | action register/dispatch; callId,requestHash,service,operation,targets,sources,correction?,fence -> callId,requestHash,status,fence | extend image begin_generation to text/review/image and durable correction/usage checks |
+| begin_work | register: childRequest,requestHash,targets,retryOf?,correction?,fence; dispatch: callId,requestHash,fence -> callId,requestHash,status,fence | derive identity/category/sources from the complete validated child request; durable correction/usage checks |
 | transfer | action,key and bounded parts -> verified transfer receipt | existing transfer storage/integrity/capacity |
 | retain_original | callId,outputKey,nativeFile,fence -> verified asset receipt | existing restricted Dify downloader and original-media service; per-output identity |
 | save_revision | artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom? -> immutable revision | existing revision writer; complete metadata transfer and new content kinds |
@@ -154,6 +154,14 @@ new creative/corrective action only under its existing funding/correction author
 it cannot masquerade as another technical attempt. requestHash still binds the exact
 per-attempt envelope as the native graph expects. Manual retry authorization, runtime
 observation, restricted reconciliation and financial checks remain 09 obligations.
+
+The local `registerBookletCreativeWorkV2` service now validates the actual creative-text
+child envelope for Planner, Manuscript, Art Director and Page Composer, checks exact
+source content and the declared hash, and derives normalized retry identity/category.
+Active registration rechecks the owned native Manager Run and its actual consumption
+workflow/job binding in the mutation transaction. It records intent only. MCP exposure,
+image/review registration, dispatch budgets, trusted outcomes and runtime recovery
+remain pending; no workflow is activated by this slice.
 
 This storage slice is not proof of real provider execution, effective retries or
 application-connected recovery. The existing candidate still has retries/activation

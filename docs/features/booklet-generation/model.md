@@ -1,11 +1,10 @@
 # Booklet document model
 
 This guide, its JSON example and both Mermaid views describe implemented persistence.
-The accepted [workflow design](workflow-design.md) changes future acceptance/quality
-ownership and identifies schema gaps, but does not select or implement new stored
-fields. The example and diagrams are therefore unchanged by this documentation-only
-decision record. Update all model artifacts together when concrete schema changes
-are authorized; do not relabel existing approval/quality records as Manager acceptance.
+The accepted [workflow design](workflow-design.md) owns target acceptance/quality
+boundaries; the explicit v2 section below records implemented storage and remaining
+wiring. Update all model artifacts together for concrete schema changes; do not relabel
+existing approval/quality records as Manager acceptance.
 
 ## Version 2 storage boundary
 
@@ -27,7 +26,13 @@ hashVersion-1 wrapper. Active paid v2 writes remain blocked until the 09 admissi
 V2 work, assessment and Manager acceptance storage is implemented alongside v1.
 Work uses registered/dispatching/succeeded/partial/failed/unknown states; only confirmed
 retryable failure permits a new attempt, bounded by the production snapshot. Unknown
-results remain unresolved until server observation. Correction roots bind task, target
+results remain unresolved until server observation. Creative-text registration now
+derives action identity from the validated full child request and exact source content;
+active registration checks the native parent Run and consumption workflow/job binding
+inside its transaction. This records intent, not dispatch permission or a provider
+outcome. No new fields/relationships are needed, so the JSON example and both diagrams
+remain applicable. Image/review gateway and runtime wiring remain 09 work.
+Correction roots bind task, target
 and funding identity. Counts derive from distinct dispatched corrective actions;
 technical retries reuse an action key. No separate correction-budget collection.
 Assessments bind observed review scope and evidence, coexist per revision, and derive

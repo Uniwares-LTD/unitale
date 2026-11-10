@@ -277,7 +277,8 @@ workflow:
                 Image prepare input: specification and style equal selected source contents, imageKind, settings {mode,model,count,canvas:{width,height},quality,background,format}, lettering (exact layout spans for pages). Include selected book-layout for page preparation.
                 Image generate input: prepared (unchanged Prepare output). Prepare/Generate share the planned generation callId. Register paid requestHash over canonical child request excluding transient native reference IDs/URLs; do not hash only the prompt.
                 Reviewer item input: targetIds, targetHash (exact content/request/manifest hash), referencePositions, continuityPairs where applicable; image_request includes prepared; whole_book includes pageIds; correction includes before,after,findings,visual where applicable.
-                MCP request JSON fields: read_document {kind,id,cursor?}; lease {action}; index {subjects,artifacts,fence}; begin_work {action:"register",callId,requestHash,service,operation,targets,sources,correction?,fence}; transfer {action,key,...bounded parts}; retain_original {callId,outputKey,nativeFile,fence}; save_revision {artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom?}; request_human {question,targets,responseContract,presentation,fence}; record_evidence {key,content}; record_assessment {assessment,executionLocator,fence}; sources {sources,references}; reconcile_work {callId,executionLocator?}; record_acceptance {revisionId,contentHash,targetIds,assetIds,sources,evidence,fence}; complete {manifest,fence}.
+                MCP request JSON fields: read_document {kind,id,cursor?}; lease {action}; index {subjects,artifacts,fence}; begin_work {action:"register",childRequest:complete_child_envelope,requestHash,targets,retryOf?,correction?,fence}; transfer {action,key,...bounded parts}; retain_original {callId,outputKey,nativeFile,fence}; save_revision {artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom?}; request_human {question,targets,responseContract,presentation,fence}; record_evidence {key,content}; record_assessment {assessment,executionLocator,fence}; sources {sources,references}; reconcile_work {callId,executionLocator?}; record_acceptance {revisionId,contentHash,targetIds,assetIds,sources,evidence,fence}; complete {manifest,fence}.
+                begin_work registration supplies the actual complete childRequest, not just its hash. The app derives call/service/operation/sources/category and normalized action identity from it; never supply an actionKey or retry category. Retry changes invocation/call/item carriers only; preserve the meaningful requested operation and identify retryOf.
                 Use context.fence and returned mutation keys/IDs, never invent current versions. read_document kinds cover revision, history, work, assessment, human_response and execution; respect returned cursors. A pending authentic response stays pending.
             - id: input
               role: user
@@ -396,6 +397,14 @@ workflow:
                     return isinstance(v, list) and any(private(x) for x in v)
                 if private(request):
                     raise ValueError("Model cannot supply private bindings")
+                if action == "begin_work" and request.get("action") == "register":
+                    child = request.get("childRequest")
+                    if not isinstance(child, dict) or child.get("contractVersion") != 2 or child.get("service") not in SERVICES:
+                        raise ValueError("Complete child request required for registration")
+                    meaningful_child = dict(child)
+                    meaningful_child["references"] = [{k: v for k, v in ref.items() if k not in ("nativeFileId", "url")} for ref in child.get("references", [])]
+                    if digest(meaningful_child) != request.get("requestHash"):
+                        raise ValueError("Registration hash differs from actual child request")
                 def passed(mode, target_hash, target_ids=None):
                     return any(a.get("mode") == mode and a.get("targetHash") == target_hash and a.get("disposition") == "pass" and a.get("complete") is True and a.get("policyBinding") == c["policyBinding"] and a.get("reviewerBinding") == c["reviewerBinding"] and (target_ids is None or a.get("coverage", {}).get("targetIds") == target_ids) for a in c["assessments"])
                 if action in SERVICES:

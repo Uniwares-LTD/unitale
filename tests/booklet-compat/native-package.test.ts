@@ -169,6 +169,14 @@ test("Manager terminal view uses the Run contract without exposing domain eviden
     ],
   );
 });
+test("Manager registers the complete hash-bound child payload rather than a claimed identity", () => {
+  const childRequest = request();
+  const registration = { action: "register", childRequest, requestHash: hash(childRequest), targets: ["target-1"], fence: 7 };
+  assert.deepEqual(JSON.parse(guard("begin_work", registration).request), registration);
+  assert.throws(() => guard("begin_work", { ...registration, childRequest: undefined }), /Complete child request/);
+  assert.throws(() => guard("begin_work", { ...registration, requestHash: "0".repeat(64) }), /actual child request/);
+  assert.throws(() => guard("begin_work", { ...registration, childRequest: { ...childRequest, constraints: { credentials: "private" } } }), /private bindings/);
+});
 test("seven readable native candidates preserve private bindings and disable node retries", () => {
   assert.equal(
     readdirSync(root).filter((x) =>

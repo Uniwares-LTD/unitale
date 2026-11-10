@@ -14,6 +14,7 @@ import { createCreditIndexes, grantCredits } from "../../src/lib/server/store/cr
 import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { bookletContext } from "../../src/lib/server/booklets/context";
+import { registerBookletCreativeWorkV2 } from "../../src/lib/server/booklets/work-v2";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import {
   bookletRepositoryV2,
@@ -309,6 +310,75 @@ test("booklet repositories preserve embedded identities and transactional bounda
     };
   }
   try {
+    await t.test("creative work derives retry identity from the actual request and bound paid Run", async () => {
+      const f = await managerFixture();
+      await createCreditIndexes(f.db);
+      await createConsumptionIndexes(f.db);
+      await grantCredits(f.db, actor.uid, "work-funding", { amount: 500, source: "purchase", reference: "fixture" });
+      const paid = await bookletLifecycleV2(f.db, actor).start("production-v2");
+      const jobId = "manager-run";
+      await f.db.collection("aiJobs").insertOne({
+        _id: jobId as never, uid: actor.uid, authTime: actor.authTime,
+        status: "running", cancelRequested: false, runId: crypto.randomUUID(),
+        consumption: { orderId: "order-v2", workflowId: paid.workflowId },
+        run: { target: { adapter: "booklet", version: "2", kind: "booklet-production", id: "production-v2" } },
+      });
+      await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
+      const repo = bookletRepositoryV2(f.db, actor);
+      let p = await repo.getProduction("production-v2");
+      const lease = await repo.acquireLease(p._id, { key: "work-lease", holderId: jobId, expectedVersion: p.version, durationMs: 300000 });
+      let version = lease.version;
+      let ordinal = 0;
+      const m = () => ({ key: "registration-" + ++ordinal, holderId: jobId, fence: lease.fence!, expectedVersion: version });
+      const request = {
+        contractVersion: 2, invocationId: "invocation-1", callId: "call-1", service: "manuscript", operation: "write", intent: "create",
+        items: [{ itemId: "item-1", targetId: "story-v2", input: { instruction: "Keep exact text." } }],
+        sources: [{ ...f.source, content: f.revision.content }],
+        references: [{ assetId: "original-1", sha256: "a".repeat(64), bytes: 100, nativeFileId: "handle-1", url: "https://files.invalid/old" }],
+        constraints: { language: "ar" },
+      };
+      const payload = (childRequest: typeof request, retryOf: string | null = null) => ({
+        childRequest, targets: ["story-v2"], retryOf,
+        requestHash: fingerprint({ ...childRequest, references: childRequest.references.map(({ assetId, sha256, bytes }) => ({ assetId, sha256, bytes })) }),
+      });
+      const firstMutation = m();
+      const invoke = (mutation: Mutation, value: unknown) => registerBookletCreativeWorkV2(f.db, actor, p._id, jobId, mutation, value);
+      await assert.rejects(invoke(firstMutation, { ...payload(request), category: "nonPaid" }));
+      await assert.rejects(invoke(firstMutation, { ...payload(request), requestHash: "0".repeat(64) }), /actual payload/);
+      const changed = structuredClone(request);
+      changed.sources[0].content = { kind: "manuscript", units: [{ id: "altered", texts: [] }] };
+      await assert.rejects(invoke(firstMutation, payload(changed)), /source content/);
+      await assert.rejects(invoke(firstMutation, { ...payload(request), childRequest: { ...request, constraints: { authorization: "private" } } }), /Private bindings/);
+      const registered = await invoke(firstMutation, payload(request));
+      version = registered.version;
+      assert.deepEqual(await invoke(firstMutation, payload(request)), registered);
+      const first = await repo.getWork(p._id, "call-1");
+      assert.equal(first.category, "paidLlm");
+      assert.equal(first.runId, jobId);
+      const retry = structuredClone(request);
+      retry.invocationId = "invocation-2"; retry.callId = "call-2"; retry.items[0].itemId = "item-2";
+      retry.references[0].nativeFileId = "handle-2"; retry.references[0].url = "https://files.invalid/renewed";
+      await assert.rejects(invoke(m(), payload(retry, "call-1")), /Reuse or reconcile/);
+      const dispatch = await repo.dispatchWork(p._id, { ...m(), callId: "call-1", requestHash: first.requestHash });
+      version = dispatch.version;
+      const outcome = await repo.recordWorkOutcome(p._id, { ...m(), callId: "call-1", status: "failed", retryable: true, evidenceIds: ["trusted-fixture"] });
+      version = outcome.version;
+      const retried = await invoke(m(), payload(retry, "call-1"));
+      version = retried.version;
+      const second = await repo.getWork(p._id, "call-2");
+      assert.equal(second.actionKey, first.actionKey);
+      assert.equal(second.retryOrdinal, 1);
+      const different = structuredClone(retry); different.callId = "call-3"; different.items[0].input.instruction = "Changed instructions.";
+      await assert.rejects(invoke(m(), payload(different, "call-2")), /predecessor/);
+      await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId: "foreign-run" } });
+      await assert.rejects(invoke(m(), payload(different)), /prepaid Manager/);
+      await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
+      await f.db.collection("aiJobs").updateOne({ _id: jobId as never }, { $set: { cancelRequested: true } });
+      await assert.rejects(invoke(m(), payload(different)), /prepaid Manager/);
+      p = await repo.getProduction(p._id);
+      assert.equal(p.version, version);
+      assert.equal(await f.db.collection("bookletWork").countDocuments({ productionId: p._id }), 2);
+    });
     await t.test(
       "v2 prepaid Run admission preserves funding, versions and saved state across continuation",
       async () => {

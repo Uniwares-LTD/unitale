@@ -556,17 +556,33 @@ Next: Manager MCP context/read/lease,
 reusing the 07 repository and existing commerce; implement each boundary in small
 verified slices. No current slice enables execution or closes checkpoint 09.
 
-Verified wire finding for the next handler slice: the current Manager `begin_work`
-registration arguments include a declared hash/service/operation but no complete
-child request. That is insufficient for the server-derived normalized action identity
-required by 07. When implementing the actual handler, supply and validate the existing
-child envelope (or its verified complete transfer) before deriving category/action
-identity and checking the declared hash. Add only that necessary carrier; never trust
-a model-supplied action key, category or hash as execution authority. Refresh the
-affected prompt/binding/fixture/hash evidence together; no schema generator or generic
-executor. Likewise keep large action bodies outside the 64 KiB checkpoint and return
+The fifth slice resolves a verified wire gap: `begin_work` previously supplied only
+a declared hash/service/operation. Manager now supplies the complete `childRequest`
+and binds its meaningful hash before registration. The new creative-text registration
+service validates that payload and exact source content, then derives action identity
+and paid category. Active storage rechecks the bound native Manager Run, current order
+and actual workflow/job binding in the same transaction. Invocation/call/item carriers
+and renewed reference handles cannot reset technical retry identity. All 47 affected
+repository/lifecycle/media/MCP tests and 36 compatibility tests pass. Build, sequential
+typecheck, scoped lint, model/docs, environment, i18n, skills and hash audit pass. The
+Mongo fixture used forced-stop cleanup; the runner passed. A separate same-agent
+read-only slice review found no blocking issue. Current package identity is in its
+README/manifest; actual Dify import/execution of this revision remains pending. This registers
+intent only; image/review registration, MCP exposure, dispatch budgets and observers
+remain pending. No fields, migration or dispatch framework are added.
+Keep large action bodies outside the 64 KiB checkpoint and return
 complete typed read sections/cursors; the current `consume` node's inline `lastResult`
 must not silently truncate or become an accidental product-size limit.
+
+Before exposing paid dispatch, close two concrete integration constraints. First,
+`saved` currently returns only checkpoint version while action arguments retain the
+pre-checkpoint fence; short-lease facades increment that fence. Bind action arguments
+to the authoritative checkpoint receipt and test this path. Second, `dispatchWork`
+currently checks correction limits only when `correction` is supplied. A changed
+request for an already attempted creative target must not become another paid initial
+attempt by omitting that field; regrouping targets must not reset per-target limits.
+Prove both cases against existing work/funding facts before enabling dispatch, without
+adding a correction-budget collection or another scheduler.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
