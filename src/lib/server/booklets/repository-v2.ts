@@ -115,6 +115,9 @@ export function bookletRepositoryV2(
   const work = db.collection<WorkV2>("bookletWork");
   const assessments = db.collection<AssessmentV2>("bookletAssessments");
   const acceptances = db.collection<AcceptanceV2>("bookletAcceptances");
+  const mutationInput = options.atomicMutations
+    ? mutationSchema.extend({ fence: z.number().int().nonnegative().safe() })
+    : mutationSchema;
   const ids = z.array(id).refine((v) => new Set(v).size === v.length);
   function boundState(row: object) {
     if (BSON.calculateObjectSize(row) > 4 * 1024 * 1024)
@@ -464,7 +467,7 @@ export function bookletRepositoryV2(
       productionId: string,
       input: Mutation & z.input<typeof workRegistrationV2Schema>,
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend(workRegistrationV2Schema.shape)
         .parse(input);
       return mutate(
@@ -643,7 +646,7 @@ export function bookletRepositoryV2(
       productionId: string,
       input: Mutation & { callId: string; requestHash: string },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({ callId: id, requestHash: z.string().regex(/^[a-f0-9]{64}$/) })
         .parse(input);
       return mutate(
@@ -741,7 +744,7 @@ export function bookletRepositoryV2(
         evidenceIds: string[];
       },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({
           callId: id,
           status: z.enum(["succeeded", "partial", "failed", "unknown"]),
@@ -793,7 +796,7 @@ export function bookletRepositoryV2(
         evidenceIds: string[];
       },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({
           callId: id,
           policyBinding: id,
@@ -897,7 +900,7 @@ export function bookletRepositoryV2(
         evidenceIds: string[];
       },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({
           runId: id,
           revisionId: id,
@@ -986,7 +989,7 @@ export function bookletRepositoryV2(
       productionId: string,
       input: Mutation & { subject: z.input<typeof subjectInputSchema> },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({ subject: subjectInputSchema })
         .parse(input);
       return mutate(productionId, value, "addSubject", value, (p) => {
@@ -1027,7 +1030,7 @@ export function bookletRepositoryV2(
         kind: z.infer<typeof artifactKindV2Schema>;
       },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({ subjectId: id, artifactId: id, kind: artifactKindV2Schema })
         .parse(input);
       return mutate(productionId, value, "addArtifact", value, (p) => {
@@ -1068,7 +1071,7 @@ export function bookletRepositoryV2(
         provenance: z.input<typeof revisionDocumentSchema.shape.provenance>;
       },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({
           artifactId: id,
           content: bookletContentV2Schema,
@@ -1268,7 +1271,7 @@ export function bookletRepositoryV2(
       productionId: string,
       input: Mutation & { expectedCheckpointVersion: number; state: unknown },
     ) {
-      const value = mutationSchema
+      const value = mutationInput
         .extend({
           expectedCheckpointVersion: z.number().int().nonnegative().safe(),
           state: z.json(),
@@ -1282,7 +1285,7 @@ export function bookletRepositoryV2(
       });
     },
     releaseLease(productionId: string, input: Mutation) {
-      const value = mutationSchema.parse(input);
+      const value = mutationInput.parse(input);
       return mutate(productionId, value, "releaseLease", value, (p) => {
         p.mutationLease = null;
       });

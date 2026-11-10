@@ -8,6 +8,9 @@ import { adminAuth } from "../../src/lib/server/firebase";
 import { handleMcp } from "../../src/lib/server/mcp/handler";
 import { parseMcpConfig } from "../../src/lib/config/mcp";
 import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
+import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
+import { productionV2Schema } from "../../src/lib/server/booklets/documents-v2";
+import { fingerprint } from "../../src/lib/server/foundation/canonical";
 import { bookletsServerExtension } from "../../src/project/booklets/server";
 import {
   createCreditIndexes,
@@ -250,10 +253,10 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         const listed = await (await rawCall("tools/list", {})).json();
         assert.deepEqual(
           listed.result.tools.map((x: { name: string }) => x.name).sort(),
-          bookletMcpTools.map((t) => t.name).sort(),
+          [...bookletMcpTools, ...bookletMcpToolsV2].map((t) => t.name).sort(),
         );
         assert.ok(bookletMcpTools.length <= 20);
-        for (const tool of bookletMcpTools)
+        for (const tool of [...bookletMcpTools, ...bookletMcpToolsV2])
           assert.equal(privateToolPermissions[tool.name], tool.permission);
         assert.equal((await rawCall("tools/list", {}, "wrong")).status, 401);
         assert.equal((await call("context", {}, "x".repeat(43))).isError, true);
@@ -897,6 +900,248 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             sha256: sha("x"),
           },
         });
+      },
+    );
+    await t.test(
+      "v2 checkpoint and registration use private owned native Run bindings and atomic receipts",
+      async () => {
+        const v2Token = "v".repeat(43);
+        const stored = await p();
+        const production = productionV2Schema.parse({
+          ...stored,
+          _id: "production-v2",
+          documentVersion: 2,
+          orderId: "order-v2",
+          lifecycleState: "in-progress",
+          version: 1,
+          fenceCounter: 0,
+          mutationLease: null,
+          expiresAt: null,
+          creationHash: fingerprint("v2-fixture"),
+          checkpointVersion: 0,
+          checkpoint: null,
+          retryPolicy: { paidLlm: 2, paidImage: 0, nonPaid: 3 },
+          subjects: [
+            {
+              id: "book-subject",
+              kind: "book",
+              label: "Book",
+              pageRole: null,
+              artifacts: [
+                {
+                  id: "story-v2",
+                  kind: "manuscript",
+                  currentRevisionId: null,
+                  acceptedRevisionId: null,
+                },
+              ],
+            },
+          ],
+        });
+        await db
+          .collection("bookletProductions")
+          .insertOne(production as never);
+        const order = await db
+          .collection("consumptionOrders")
+          .findOne({ _id: "order" as never });
+        await db
+          .collection("consumptionOrders")
+          .insertOne({
+            ...order!,
+            _id: "order-v2" as never,
+            activeWorkflow: "flow-v2",
+            value: {
+              ...order!.value,
+              id: "order-v2",
+              targetId: production._id,
+              state: "started",
+              expiresAt: null,
+            },
+          });
+        await db
+          .collection("consumptionWorkflows")
+          .insertOne({
+            _id: "flow-v2" as never,
+            orderId: "order-v2",
+            uid: "owner",
+            state: "active",
+            jobId: "run-v2",
+          });
+        await db
+          .collection("aiJobs")
+          .insertOne({
+            _id: "run-v2" as never,
+            uid: "owner",
+            authTime: 1,
+            status: "running",
+            cancelRequested: false,
+            runId: "native-v2",
+            execution: { status: "running" },
+            consumption: { orderId: "order-v2", workflowId: "flow-v2" },
+            run: {
+              logicalId: "logical-v2",
+              configurationRevision: 1,
+              orchestrator: { id: "booklet-v2" },
+              target: {
+                adapter: "booklet",
+                version: "2",
+                kind: "booklet-production",
+                id: production._id,
+              },
+            },
+          });
+        await db
+          .collection("runCapabilities")
+          .insertOne({
+            _id: sha(v2Token) as never,
+            uid: "owner",
+            jobId: "run-v2",
+            clientId: "fixture",
+            operations: bookletMcpToolsV2.map((tool) => tool.name),
+            expiresAt: new Date(Date.now() + 300000),
+          });
+        const invoke = async (
+          name: string,
+          request: unknown,
+          token = v2Token,
+        ) => {
+          const response = await rawCall("tools/call", {
+            name: "booklet_" + name + "_v2",
+            arguments: {
+              runContext: token,
+              request:
+                typeof request === "string" ? request : JSON.stringify(request),
+            },
+          });
+          assert.equal(response.status, 200);
+          return (await response.json()).result;
+        };
+        const successful = async (name: string, request: unknown) => {
+          const response = await invoke(name, request);
+          assert.notEqual(response.isError, true, JSON.stringify(response));
+          assert.ok(!JSON.stringify(response).includes(v2Token));
+          return response.structuredContent.result;
+        };
+        const checkpoint = {
+          expectedVersion: 0,
+          fence: 0,
+          state: { pending: { callId: "call-v2" } },
+        };
+        assert.equal(
+          (await invoke("checkpoint", checkpoint, runToken)).isError,
+          true,
+        );
+        assert.equal(
+          (await invoke("checkpoint", "invalid JSON")).isError,
+          true,
+        );
+        assert.equal(
+          (await invoke("checkpoint", { ...checkpoint, ownerId: "other" }))
+            .isError,
+          true,
+        );
+        const saved = await successful("checkpoint", checkpoint);
+        assert.equal(saved.checkpointVersion, 1);
+        assert.equal(saved.fence, 1);
+        assert.deepEqual(await successful("checkpoint", checkpoint), saved);
+        const childRequest = {
+          contractVersion: 2,
+          invocationId: "invocation-v2",
+          callId: "call-v2",
+          service: "manuscript",
+          operation: "write",
+          intent: "create",
+          items: [
+            {
+              itemId: "item-v2",
+              targetId: "story-v2",
+              input: { instruction: "Write the story." },
+            },
+          ],
+          sources: [],
+          references: [],
+          constraints: {},
+        };
+        const registration = {
+          action: "register",
+          fence: saved.fence,
+          childRequest,
+          targets: ["story-v2"],
+          requestHash: fingerprint(childRequest),
+        };
+        const registered = await successful("begin_work", registration);
+        assert.deepEqual(registered, {
+          callId: "call-v2",
+          requestHash: registration.requestHash,
+          status: "registered",
+          fence: 2,
+        });
+        assert.deepEqual(
+          await successful("begin_work", registration),
+          registered,
+        );
+        assert.deepEqual(await successful("checkpoint", checkpoint), saved);
+        assert.equal(
+          await db
+            .collection("bookletWork")
+            .countDocuments({ productionId: production._id }),
+          1,
+        );
+        assert.equal(
+          (await db
+            .collection("bookletProductions")
+            .findOne({ _id: production._id as never }))!.mutationLease,
+          null,
+        );
+        assert.equal(
+          (
+            await invoke("begin_work", {
+              action: "dispatch",
+              callId: "call-v2",
+              requestHash: registration.requestHash,
+              fence: 2,
+            })
+          ).isError,
+          true,
+        );
+        assert.equal(
+          (
+            await invoke("checkpoint", {
+              expectedVersion: 1,
+              fence: 0,
+              state: null,
+            })
+          ).isError,
+          true,
+        );
+        for (const change of [
+          { cancelRequested: true },
+          { "run.target.version": "1" },
+          { "run.answerer": { id: "persona" } },
+          { "execution.status": "failed" },
+        ]) {
+          await db
+            .collection("aiJobs")
+            .updateOne({ _id: "run-v2" as never }, { $set: change });
+          assert.equal((await invoke("checkpoint", checkpoint)).isError, true);
+          await db
+            .collection("aiJobs")
+            .updateOne(
+              { _id: "run-v2" as never },
+              {
+                $set: {
+                  cancelRequested: false,
+                  "run.target.version": "2",
+                  "execution.status": "running",
+                },
+                $unset: { "run.answerer": "" },
+              },
+            );
+        }
+        await db
+          .collection("consumptionWorkflows")
+          .updateOne({ _id: "flow-v2" as never }, { $set: { jobId: "other" } });
+        assert.equal((await invoke("checkpoint", checkpoint)).isError, true);
       },
     );
   } finally {

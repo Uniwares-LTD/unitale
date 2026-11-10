@@ -73,8 +73,9 @@ and the adapter; the table does not require unrelated suites for every task.
   runtime/tool wiring remains pending.
   `src/project/booklets/extension.ts` and `server.ts` own registration.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
-  `src/lib/server/booklets/mcp-tools.ts` owns the private catalog and
-  `mcp-transfers.ts` its bounded staging; `npm run test:booklet-mcp` verifies the
+  `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
+  `mcp-tools-v2.ts` its initial v2 checkpoint/creative-registration handlers;
+  `mcp-transfers.ts` owns bounded staging. `npm run test:booklet-mcp` verifies the
   real MCP handler with disposable persistence. [MCP guidance](mcp.md#unitale-booklet-catalog-t17)
   owns its permissions, transfer protocol and trusted reviewer binding.
   Booklet lifecycle, prepaid Run admission, guards and original-media services are in `src/lib/server/booklets`; the domain adapter is `src/project/booklets/domain.ts`.

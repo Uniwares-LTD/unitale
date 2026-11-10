@@ -5,6 +5,7 @@ import { createBookletServiceIndexes } from "../../lib/server/booklets/lifecycle
 import { createBookletMediaIndexes } from "../../lib/server/booklets/media";
 import { bookletDomain, bookletDomainV2 } from "./domain";
 import { bookletMcpTools } from "../../lib/server/booklets/mcp-tools";
+import { bookletMcpToolsV2 } from "../../lib/server/booklets/mcp-tools-v2";
 import { createBookletMcpIndexes } from "../../lib/server/booklets/mcp-transfers";
 import { createBookletV2Indexes } from "../../lib/server/booklets/repository-v2";
 async function indexes(db: Parameters<typeof createBookletIndexes>[0]) {
@@ -20,7 +21,7 @@ export const bookletsServerExtension = defineServerExtension({
     await createBookletV2Indexes(db);
   },
   domainAdapters: [bookletDomain, bookletDomainV2],
-  mcpTools: bookletMcpTools,
+  mcpTools: [...bookletMcpTools, ...bookletMcpToolsV2],
   migrations: [
     {
       id: "booklets:0001-repositories",

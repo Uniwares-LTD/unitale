@@ -634,6 +634,21 @@ and skills checks pass. A separate same-agent read-only slice review found no bl
 issue. Remaining MCP facades, runtime observation/dispatch checks and checkpoint-wide
 09 reviews remain pending.
 
+The eleventh slice registers `booklet_checkpoint_v2` and the creative-text register
+action of `booklet_begin_work_v2` through the existing project MCP registry. Their
+private capability and native parent checks bind the owned v2 production, current
+prepaid workflow/job, cancellation and execution state. Requests use the candidate's
+bounded JSON-string carrier; responses keep its explicit `result` wrapper. The gateway
+derives receipt keys and reconstructs the original CAS version for lost-reply replay.
+The transport test exposed the initial fence-zero mismatch: only atomic v2 mutations
+now accept zero as an expected initial fence; explicit lease/v1 parsers remain strict.
+All 50 affected booklet repository/lifecycle/media/MCP tests and eight shared MCP
+protocol tests pass, along with production build, sequential typecheck, scoped lint,
+model/docs, i18n and skills checks. The Mongo fixture used its forced-stop cleanup
+fallback; the runner exited zero. A separate same-agent read-only slice review found
+no blocking issue. Paid dispatch, the other fourteen v2 capabilities, image/review
+registration, live bindings and checkpoint-wide 09 reviews remain pending.
+
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
 revision save, human request, evidence, assessment, sources, reconciliation, acceptance,

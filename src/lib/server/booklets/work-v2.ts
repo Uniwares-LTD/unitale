@@ -97,7 +97,9 @@ export async function registerBookletCreativeWorkV2(
   mutation: Mutation,
   raw: unknown,
 ) {
-  mutationSchema.parse(mutation);
+  mutationSchema
+    .extend({ fence: z.number().int().nonnegative().safe() })
+    .parse(mutation);
   if (mutation.holderId !== jobId || containsPrivate(raw))
     throw bookletConflict(
       "Private bindings or a foreign Run cannot register child work.",

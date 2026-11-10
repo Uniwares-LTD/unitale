@@ -162,8 +162,14 @@ Active registration rechecks the owned native Manager Run and its actual consump
 workflow/job binding in the mutation transaction. Registration records intent only.
 Dispatch now rechecks that active binding, cancellation and native execution status;
 registered unsubmitted work binds to its actual dispatching parent on continuation.
-MCP exposure, image/review registration, dispatch budgets, trusted outcomes and runtime recovery
-remain pending; no workflow is activated by this slice.
+The local project registry now exposes `booklet_checkpoint_v2` and creative-text
+registration through `booklet_begin_work_v2`, using the candidate's JSON-string
+request carrier and explicit `result` wrapper. Both require a current private native
+Manager capability and owned prepaid workflow/job binding. Checkpoints accept the
+initial fence zero; subsequent atomic writes return the advanced fence. Exact retries
+reuse existing receipts, including after later mutations. Other MCP capabilities,
+paid dispatch, image/review registration, trusted outcomes and runtime recovery remain
+pending; no workflow is activated by these handlers.
 
 This storage slice is not proof of real provider execution, effective retries or
 application-connected recovery. The existing candidate still has retries/activation

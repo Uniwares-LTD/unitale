@@ -55,6 +55,10 @@ database transaction, leaving `mutationLease` null. Creative-text registration u
 this atomic mode. A live lease blocks it; stale versions/fences fail, failed writes
 roll back the fence, and exact receipt replay does not perform another mutation.
 The existing explicit lease API retains its behavior. This adds no storage fields.
+The v2 MCP checkpoint and creative-text register handlers use these atomic writes.
+An initial expected fence of zero is valid in atomic mode; returned fences advance
+from it. Gateway receipt replay retains the original CAS version. The explicit lease
+and v1 mutation parsers still require positive fences. No example/diagram field changes.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.
