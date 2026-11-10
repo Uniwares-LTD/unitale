@@ -324,12 +324,12 @@ test("booklet repositories preserve embedded identities and transactional bounda
         run: { target: { adapter: "booklet", version: "2", kind: "booklet-production", id: "production-v2" } },
       });
       await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
-      const repo = bookletRepositoryV2(f.db, actor);
+      const repo = bookletRepositoryV2(f.db, actor, undefined, { atomicMutations: true });
       let p = await repo.getProduction("production-v2");
-      const lease = await repo.acquireLease(p._id, { key: "work-lease", holderId: jobId, expectedVersion: p.version, durationMs: 300000 });
-      let version = lease.version;
+      let version = p.version;
+      let fence = p.fenceCounter;
       let ordinal = 0;
-      const m = () => ({ key: "registration-" + ++ordinal, holderId: jobId, fence: lease.fence!, expectedVersion: version });
+      const m = () => ({ key: "registration-" + ++ordinal, holderId: jobId, fence, expectedVersion: version });
       const request = {
         contractVersion: 2, invocationId: "invocation-1", callId: "call-1", service: "manuscript", operation: "write", intent: "create",
         items: [{ itemId: "item-1", targetId: "story-v2", input: { instruction: "Keep exact text." } }],
@@ -351,20 +351,25 @@ test("booklet repositories preserve embedded identities and transactional bounda
       await assert.rejects(invoke(firstMutation, { ...payload(request), childRequest: { ...request, constraints: { authorization: "private" } } }), /Private bindings/);
       const registered = await invoke(firstMutation, payload(request));
       version = registered.version;
+      fence = registered.fence!;
       assert.deepEqual(await invoke(firstMutation, payload(request)), registered);
       const first = await repo.getWork(p._id, "call-1");
       assert.equal(first.category, "paidLlm");
       assert.equal(first.runId, jobId);
+      assert.equal((await repo.getProduction(p._id)).mutationLease, null);
       const retry = structuredClone(request);
       retry.invocationId = "invocation-2"; retry.callId = "call-2"; retry.items[0].itemId = "item-2";
       retry.references[0].nativeFileId = "handle-2"; retry.references[0].url = "https://files.invalid/renewed";
       await assert.rejects(invoke(m(), payload(retry, "call-1")), /Reuse or reconcile/);
       const dispatch = await repo.dispatchWork(p._id, { ...m(), callId: "call-1", requestHash: first.requestHash });
       version = dispatch.version;
+      fence = dispatch.fence!;
       const outcome = await repo.recordWorkOutcome(p._id, { ...m(), callId: "call-1", status: "failed", retryable: true, evidenceIds: ["trusted-fixture"] });
       version = outcome.version;
+      fence = outcome.fence!;
       const retried = await invoke(m(), payload(retry, "call-1"));
       version = retried.version;
+      fence = retried.fence!;
       const second = await repo.getWork(p._id, "call-2");
       assert.equal(second.actionKey, first.actionKey);
       assert.equal(second.retryOrdinal, 1);
@@ -384,7 +389,6 @@ test("booklet repositories preserve embedded identities and transactional bounda
       p = await repo.getProduction(p._id);
       assert.equal(p.version, version);
       assert.equal(await f.db.collection("bookletWork").countDocuments({ productionId: p._id }), 2);
-      const released = await repo.releaseLease(p._id, m());
       const nextJobId = "successor-manager";
       const nextFlowId = "successor-flow";
       const oldJob = await f.db.collection("aiJobs").findOne({ _id: jobId as never });
@@ -393,10 +397,8 @@ test("booklet repositories preserve embedded identities and transactional bounda
         cancelRequested: false, runId: crypto.randomUUID(), execution: null, consumption: { orderId: "order-v2", workflowId: nextFlowId } });
       await f.db.collection("consumptionWorkflows").insertOne({ ...oldFlow!, _id: nextFlowId as never, jobId: nextJobId });
       await f.db.collection("consumptionOrders").updateOne({ _id: "order-v2" as never }, { $set: { activeWorkflow: nextFlowId } });
-      const nextLease = await repo.acquireLease(p._id, { key: "successor-lease", holderId: nextJobId,
-        expectedVersion: released.version, durationMs: 10000 });
-      await repo.dispatchWork(p._id, { key: "successor-dispatch", holderId: nextJobId, fence: nextLease.fence!,
-        expectedVersion: nextLease.version, callId: "call-2", requestHash: second.requestHash });
+      await repo.dispatchWork(p._id, { key: "successor-dispatch", holderId: nextJobId, fence: p.fenceCounter,
+        expectedVersion: p.version, callId: "call-2", requestHash: second.requestHash });
       assert.equal((await repo.getWork(p._id, "call-2")).runId, nextJobId);
       assert.equal((await repo.getWork(p._id, "call-2")).status, "dispatching");
 
@@ -1493,6 +1495,107 @@ test("booklet repositories preserve embedded identities and transactional bounda
           .migrations!.find((m) => m.id === "booklets:0004-manager-state")!
           .run(f.db);
         assert.equal(await f.db.collection("bookletWork").countDocuments(), 2);
+      },
+    );
+    await t.test(
+      "atomic v2 gateway writes release fences without holding leases across calls",
+      async () => {
+        const f = await managerFixture();
+        const gateway = bookletRepositoryV2(f.db, actor, f.now, {
+          atomicMutations: true,
+        });
+        const held = await f.v2.getProduction("production-v2");
+        const checkpoint = {
+          key: "atomic-checkpoint",
+          holderId: "worker",
+          expectedVersion: held.version,
+          fence: held.fenceCounter,
+          expectedCheckpointVersion: 0,
+          state: { pending: "action" },
+        };
+        await assert.rejects(
+          gateway.checkpoint(held._id, checkpoint),
+          /production is leased/,
+        );
+        const released = await f.write((m) => f.v2.releaseLease(held._id, m));
+        const input = { ...checkpoint, expectedVersion: released.version };
+        const saved = await gateway.checkpoint(held._id, input);
+        assert.equal(saved.fence, held.fenceCounter + 1);
+        let current = await gateway.getProduction(held._id);
+        assert.equal(current.mutationLease, null);
+        assert.equal(current.checkpointVersion, 1);
+        assert.deepEqual(await gateway.checkpoint(held._id, input), saved);
+        await assert.rejects(
+          gateway.checkpoint(held._id, { ...input, state: null }),
+          /Changed idempotency/,
+        );
+        const stale = {
+          ...input,
+          key: "stale-fence",
+          expectedVersion: current.version,
+          expectedCheckpointVersion: 1,
+        };
+        await assert.rejects(
+          gateway.checkpoint(held._id, stale),
+          /Mutation fence changed/,
+        );
+        await assert.rejects(
+          gateway.addArtifact(held._id, {
+            key: "invalid-artifact",
+            holderId: "worker",
+            expectedVersion: current.version,
+            fence: current.fenceCounter,
+            subjectId: "missing",
+            artifactId: "invalid",
+            kind: "outline",
+          }),
+        );
+        assert.deepEqual(await gateway.getProduction(held._id), current);
+        const race = await Promise.allSettled(
+          ["left", "right"].map((key) =>
+            gateway.checkpoint(held._id, {
+              ...input,
+              key,
+              expectedVersion: current.version,
+              fence: current.fenceCounter,
+              expectedCheckpointVersion: 1,
+              state: { winner: key },
+            }),
+          ),
+        );
+        assert.equal(race.filter((r) => r.status === "fulfilled").length, 1);
+        current = await gateway.getProduction(held._id);
+        assert.equal(current.fenceCounter, held.fenceCounter + 2);
+        assert.equal(current.checkpointVersion, 2);
+        assert.equal(current.mutationLease, null);
+        // A lost tool reply remains replayable after subsequent writes and lease expiry.
+        f.advance(400000);
+        assert.deepEqual(await gateway.checkpoint(held._id, input), saved);
+        assert.equal(
+          (await gateway.getProduction(held._id)).version,
+          current.version,
+        );
+        await f.db
+          .collection<{ _id: string; lifecycleState: string }>(
+            "bookletProductions",
+          )
+          .updateOne(
+            { _id: held._id },
+            { $set: { lifecycleState: "completed" } },
+          );
+        const terminal = await gateway.checkpoint(held._id, {
+          ...input,
+          key: "atomic-terminal",
+          expectedVersion: current.version,
+          fence: current.fenceCounter,
+          expectedCheckpointVersion: 2,
+          state: { phase: "complete" },
+        });
+        assert.equal(terminal.fence, current.fenceCounter + 1);
+        assert.equal(
+          (await gateway.getProduction(held._id)).mutationLease,
+          null,
+        );
       },
     );
     await t.test(

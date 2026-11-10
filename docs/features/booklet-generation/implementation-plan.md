@@ -622,6 +622,18 @@ typecheck, scoped lint, model/docs, i18n and skills checks pass. A separate same
 read-only slice review found no blocking issue. The MCP facade, dispatch usage/lock
 checks, trusted observations and checkpoint-wide 09 reviews remain pending.
 
+The tenth slice implements the gateway's short-lease behavior using the existing
+repository transaction and fence counter. Server-selected atomic mutations check the
+expected version/fence, reject a live lease, advance the fence and leave no lease after
+the local write. Failure rolls back all effects; exact idempotency receipt replay leaves
+the fence unchanged. Creative-text registration now consumes this mode. The explicit
+lease API remains available for its existing callers. No field, scheduler, new receipt
+store or external transaction executor is added. All 49 affected repository/lifecycle/
+media/MCP tests, production build, sequential typecheck, scoped lint, model/docs, i18n
+and skills checks pass. A separate same-agent read-only slice review found no blocking
+issue. Remaining MCP facades, runtime observation/dispatch checks and checkpoint-wide
+09 reviews remain pending.
+
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
 revision save, human request, evidence, assessment, sources, reconciliation, acceptance,

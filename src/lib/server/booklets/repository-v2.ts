@@ -102,6 +102,7 @@ export function bookletRepositoryV2(
   db: Db,
   actor: CreditActor,
   now = () => new Date(),
+  options: { atomicMutations?: boolean } = {},
 ) {
   const base = bookletRepository(db, actor, { now });
   const context = bookletContext(db, actor, now);
@@ -306,7 +307,24 @@ export function bookletRepositoryV2(
           throw bookletConflict("Changed idempotency payload.");
         return prior.result;
       }
-      fenced(p, value, method === "checkpoint" || method === "releaseLease");
+      const terminalMetadata =
+        method === "checkpoint" || method === "releaseLease";
+      if (options.atomicMutations) {
+        // Gateway mutations contain local database work only. Check and advance
+        // the existing fence in this transaction, leaving no lease across calls.
+        mutable(p, value.expectedVersion, terminalMetadata);
+        if (
+          p.fenceCounter !== value.fence ||
+          (p.mutationLease && p.mutationLease.expiresAt > now())
+        )
+          throw bookletConflict(
+            "Mutation fence changed or production is leased.",
+          );
+        p.fenceCounter++;
+        p.mutationLease = null;
+      } else {
+        fenced(p, value, terminalMetadata);
+      }
       const details = await effect(p, session);
       await save(p, value.expectedVersion, session);
       const result = {
@@ -314,7 +332,9 @@ export function bookletRepositoryV2(
         id: p._id,
         version: p.version,
         checkpointVersion: p.checkpointVersion,
-        ...(method === "checkpoint" ? { fence: value.fence } : {}),
+        ...(options.atomicMutations || method === "checkpoint"
+          ? { fence: options.atomicMutations ? p.fenceCounter : value.fence }
+          : {}),
       };
       await receipts.insertOne(
         {

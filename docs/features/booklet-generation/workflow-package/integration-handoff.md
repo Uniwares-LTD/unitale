@@ -219,10 +219,12 @@ authoritative context, never a child/document result field.
 Do not replace authoritative work facts with intent.
 Durably save partial outputs and original receipts before selecting a manifest.
 
-Keep leases short. Mutation facades acquire/validate and release existing Run-owned
-leases around their local transactions; no database transaction or lease is held across
-model/tool/Human Input waits. Re-read current context and reacquire a valid mutation
-fence after external waits. On a version race stop and recover from authoritative facts.
+Keep leases short. Gateway-local mutations check the expected production version and
+existing fence, advance the fence and leave no lease in the same database transaction.
+The creative-text registration service now uses this atomic repository mode; other
+facades remain pending. No transaction or lease spans model/tool/Human Input waits.
+Re-read current context for a valid mutation fence after external waits. On a version
+race stop and recover from authoritative facts.
 The pre-action checkpoint receipt must return its authoritative `fence` alongside
 `checkpointVersion`. Manager's existing `saved` node validates both, then binds that
 fence into the selected action and paid-dispatch arguments; action branches use these

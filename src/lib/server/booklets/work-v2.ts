@@ -147,7 +147,9 @@ export async function registerBookletCreativeWorkV2(
     throw bookletConflict(
       "Child request hash differs from its actual payload.",
     );
-  const repo = bookletRepositoryV2(db, actor);
+  const repo = bookletRepositoryV2(db, actor, undefined, {
+    atomicMutations: true,
+  });
   const p = await repo.getProduction(productionId);
   if (p.lifecycleState !== "in-progress")
     throw bookletConflict("Creative work requires an admitted production.");

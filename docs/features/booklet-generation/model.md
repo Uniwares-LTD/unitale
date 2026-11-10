@@ -50,6 +50,11 @@ Completed productions permit only final checkpoint and short-lease acquisition/r
 metadata. Creative mutations remain closed; metadata still requires ownership, a fresh
 version/fence and an unexpired production. Checkpoint receipts include their confirmed
 fence. No state field or relationship changes; the JSON example and diagrams are unchanged.
+Gateway-local mutations can check and advance the existing production fence in their
+database transaction, leaving `mutationLease` null. Creative-text registration uses
+this atomic mode. A live lease blocks it; stale versions/fences fail, failed writes
+roll back the fence, and exact receipt replay does not perform another mutation.
+The existing explicit lease API retains its behavior. This adds no storage fields.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.
