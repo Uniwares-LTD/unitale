@@ -11,6 +11,7 @@ import { fingerprint } from "../../src/lib/server/foundation/canonical";
 import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
 import {
   productionV2Schema,
+  revisionV2Schema,
   storedProductionSchema,
 } from "../../src/lib/server/booklets/documents-v2";
 import type {
@@ -349,6 +350,131 @@ test("booklet repositories preserve embedded identities and transactional bounda
             .findOne({ orderId: "order" }),
           before,
         );
+      },
+    );
+    await t.test(
+      "v2 revisions preserve exact text, source hashes and atomic history",
+      async () => {
+        const f = await fixture();
+        const v2 = bookletRepositoryV2(f.db, actor, f.now);
+        const order = structuredClone(f.order);
+        order._id = "order-v2";
+        order.value.id = "order-v2";
+        order.value.targetId = "production-v2";
+        await f.db
+          .collection<typeof order>("consumptionOrders")
+          .insertOne(order);
+        await v2.createProduction({
+          ...f.creation,
+          id: "production-v2",
+          orderId: "order-v2",
+          key: "create-v2",
+        });
+        const lease = await v2.acquireLease("production-v2", {
+          key: "lease",
+          holderId: "worker",
+          expectedVersion: 1,
+          durationMs: 10000,
+        });
+        let version = lease.version;
+        let key = 0;
+        const mutation = () => ({
+          key: "write-" + ++key,
+          expectedVersion: version,
+          holderId: "worker",
+          fence: lease.fence!,
+        });
+        version = (
+          await v2.addSubject("production-v2", {
+            ...mutation(),
+            subject: {
+              id: "book-subject",
+              kind: "book",
+              label: "Book",
+              pageRole: null,
+            },
+          })
+        ).version;
+        version = (
+          await v2.addArtifact("production-v2", {
+            ...mutation(),
+            subjectId: "book-subject",
+            artifactId: "story-v2",
+            kind: "manuscript",
+          })
+        ).version;
+        const content = {
+          kind: "manuscript" as const,
+          units: [
+            {
+              id: "u1",
+              action: "A wave",
+              texts: [
+                {
+                  id: "t1",
+                  kind: "dialogue",
+                  text: "  e\u0301 \ud83d\ude00\n",
+                },
+              ],
+            },
+          ],
+        };
+        const value = {
+          ...mutation(),
+          artifactId: "story-v2",
+          content,
+          sources: [],
+          assets: [],
+          provenance: { operationId: "op", runId: "run", evidenceIds: [] },
+        };
+        const first = await v2.appendRevision("production-v2", value);
+        version = first.version;
+        assert.deepEqual(
+          await v2.appendRevision("production-v2", value),
+          first,
+        );
+        const stored = await v2.getRevision("production-v2", first.revisionId!);
+        assert.deepEqual(stored.content, content);
+        assert.equal(stored.contentHash, fingerprint(content));
+        const source = {
+          artifactId: "story-v2",
+          revisionId: stored._id,
+          contentHash: stored.contentHash,
+        };
+        await assert.rejects(
+          v2.appendRevision("production-v2", {
+            ...value,
+            ...mutation(),
+            sources: [{ ...source, contentHash: "b".repeat(64) }],
+          }),
+          /Source identity/,
+        );
+        const race = await Promise.allSettled(
+          [1, 2].map(() =>
+            v2.appendRevision("production-v2", {
+              ...value,
+              ...mutation(),
+              sources: [source],
+            }),
+          ),
+        );
+        assert.equal(race.filter((r) => r.status === "fulfilled").length, 1);
+        assert.equal(
+          await f.db
+            .collection("bookletRevisions")
+            .countDocuments({ productionId: "production-v2" }),
+          2,
+        );
+        assert.deepEqual(
+          await v2.getRevision("production-v2", stored._id),
+          stored,
+        );
+        assert.equal(
+          (await v2.getProduction("production-v2")).subjects[0].artifacts[0]
+            .acceptedRevisionId,
+          null,
+        );
+        await assert.rejects(v2.getRevision("production-v2", "other"));
       },
     );
     await t.test(
@@ -1173,6 +1299,15 @@ test("canonical document example matches persistence schemas and embedded refere
     updatedAt: new Date(v2Example.updatedAt),
   });
   assert.equal(v2Parsed.documentVersion, 2);
+  const v2Revision = revisionV2Schema.parse({
+    ...example.v2StorageExamples.revision,
+    createdAt: new Date(example.v2StorageExamples.revision.createdAt),
+  });
+  assert.equal(v2Revision.contentHash, fingerprint(v2Revision.content));
+  assert.equal(
+    v2Parsed.subjects[0].artifacts[0].currentRevisionId,
+    v2Revision._id,
+  );
   assert.deepEqual(v2Parsed.retryPolicy, {
     paidLlm: 2,
     paidImage: 0,

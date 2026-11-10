@@ -65,6 +65,9 @@ and the adapter; the table does not require unrelated suites for every task.
   opt-in v1 schemas and the distinction between shape validation and service authorization.
   [Model review](features/booklet-generation/model.md) owns the accepted document boundaries, nested JSON example, diagrams and implemented lifecycle/media boundaries;
   Unitale repositories and schemas live in `src/lib/server/booklets`;
+  [v2 content boundaries](../src/project/booklets/contracts-v2.ts) and the
+  [v2 repository](../src/lib/server/booklets/repository-v2.ts) are opt-in 07 work,
+  preserving strict v1 readers and records.
   `src/project/booklets/extension.ts` and `server.ts` own registration.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private catalog and

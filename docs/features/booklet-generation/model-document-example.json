@@ -580,7 +580,22 @@
         "revision": 1
       },
       "lifecycleState": "draft",
-      "subjects": [],
+      "subjects": [
+        {
+          "id": "book_subject_v2",
+          "kind": "book",
+          "label": "Book",
+          "pageRole": null,
+          "artifacts": [
+            {
+              "id": "manuscript_v2",
+              "kind": "manuscript",
+              "currentRevisionId": "revision_v2_example",
+              "acceptedRevisionId": null
+            }
+          ]
+        }
+      ],
       "stageLocks": {
         "story": null,
         "style": null,
@@ -588,7 +603,7 @@
       },
       "mutationLease": null,
       "fenceCounter": 0,
-      "version": 1,
+      "version": 4,
       "currentManifestRevisionId": null,
       "createdAt": "2026-11-07T09:00:00.000Z",
       "updatedAt": "2026-11-07T09:00:00.000Z",
@@ -601,6 +616,41 @@
       },
       "checkpointVersion": 0,
       "checkpoint": null
+    },
+    "revision": {
+      "_id": "revision_v2_example",
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "artifactId": "manuscript_v2",
+      "subjectId": "book_subject_v2",
+      "kind": "manuscript",
+      "ordinal": 1,
+      "content": {
+        "kind": "manuscript",
+        "units": [
+          {
+            "id": "unit_v2",
+            "action": "A wave",
+            "texts": [
+              {
+                "id": "text_v2",
+                "kind": "dialogue",
+                "text": "  é 😀\n"
+              }
+            ]
+          }
+        ]
+      },
+      "sources": [],
+      "assets": [],
+      "provenance": {
+        "operationId": "operation_v2_example",
+        "runId": "run_v2_example",
+        "evidenceIds": []
+      },
+      "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+      "createdAt": "2026-11-07T09:00:00.000Z"
     }
   }
 }

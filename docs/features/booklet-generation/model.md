@@ -20,8 +20,11 @@ The JSON example includes an independent v2 draft beside unchanged v1 examples.
 V2 content preserves exact manuscript text and useful JSON creative fields. It adds
 native image-spec/book-layout/page-spec variants and source contentHash identities;
 v1 sources retain sha256. Assessment parsers support six modes without granting
-quality or execution authority. V2 assessment/action storage, immutable revision writes,
-lifecycle/MCP/Run UI integration remain pending; this slice does not activate workflows.
+quality or execution authority. Draft v2 revisions now write atomically with their production index pointer, preserve
+exact text and verify local immutable source/owned original identities. Their contentHash
+is SHA-256 of canonical content, matching the Manager source contract; v1 keeps its
+hashVersion-1 wrapper. Active paid v2 writes remain blocked until the 09 admission guard.
+V2 assessment/action storage and lifecycle/MCP/Run UI integration remain pending; this slice does not activate workflows.
 The existing v1 service descriptions below retain their version-1 scope.
 
 ## Outcome

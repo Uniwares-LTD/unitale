@@ -326,11 +326,13 @@ for consumed native content, six-mode assessment and retry-policy boundaries. Ex
 v1 parsers remain unchanged. Focused contract checks pass 12 tests (including three
 v2 behavior cases). 07.2 adds explicit v2 production/revision schemas and atomic new
 production creation, retry-policy snapshots, short leases and bounded checkpoint
-CAS/idempotency in the v2 repository. The 17 repository and 17 lifecycle/media tests
+CAS/idempotency in the v2 repository. The 18 repository and 17 lifecycle/media tests
 pass; the v2 case covers owner isolation, unchanged v1 records, duplicate creation,
 changed payloads, lease replay, one-winner checkpoint races and oversized rollback.
-Immutable revision writing and 07.3 work/assessment/acceptance/correction storage
-remain pending. Checkpoint 07 completion and its final review pair are not claimed. Baseline candidate
+Draft immutable revision writing now preserves exact text and validates local source/
+original identities, with atomic pointers/ordinals and idempotent receipts; active v2
+writes stay closed until 09 admission integration. The new revision race/hash test passes.
+07.3 work/assessment/acceptance/correction storage remains pending. Checkpoint 07 completion and its final review pair are not claimed. Baseline candidate
 checks pass 34 tests, typecheck, scoped lint, docs/i18n/skills and digest audit. Sandbox
 spawn/cache restrictions were resolved by running affected checks outside the sandbox.
 The model guide, independent v2 JSON example and both generated Mermaid schemas

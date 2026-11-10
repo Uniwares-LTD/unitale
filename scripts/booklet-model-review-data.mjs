@@ -55,6 +55,7 @@ export const documents = [
       "artifactId / subjectId / kind / ordinal / createdAt",
       "contentHash (canonical hashVersion 1)",
       "v2 reader: native manuscript texts, image-spec, book-layout, page-spec",
+      "v2 contentHash = canonical SHA-256(content); v1 retains hashVersion 1 wrapper",
       "v2 sources[] use contentHash; v1 sources[] retain sha256",
       "content { one variant by kind",
       "  concept {title, premise, theme, tone, constraints[]}",

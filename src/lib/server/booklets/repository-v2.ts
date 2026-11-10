@@ -1,7 +1,13 @@
 import "server-only";
 import { BSON, type ClientSession, type Db } from "mongodb";
 import { z } from "zod";
-import { bookletRetryPolicySchema } from "../../../project/booklets/contracts-v2";
+import { randomUUID } from "node:crypto";
+import {
+  bookletContentV2Schema,
+  bookletRetryPolicySchema,
+  bookletSourceV2Schema,
+} from "../../../project/booklets/contracts-v2";
+import { assetIdentitySchema } from "../../../project/booklets/contracts";
 import type { CreditActor } from "../store/credit-types";
 import { fingerprint } from "../foundation/canonical";
 import { bookletRepository } from "./repository";
@@ -11,12 +17,18 @@ import {
   mutationSchema,
   type Mutation,
   type ProductionDocument,
+  subjectInputSchema,
+  revisionDocumentSchema,
 } from "./documents";
 import {
+  artifactKindV2Schema,
   productionV2Schema,
+  revisionV2Schema,
   storedProductionSchema,
   type ProductionV2,
+  type RevisionV2,
 } from "./documents-v2";
+import type { BookletAsset } from "./media";
 
 type CreateInput = Parameters<
   ReturnType<typeof bookletRepository>["createProduction"]
@@ -33,6 +45,8 @@ type Receipt = {
     version: number;
     checkpointVersion?: number;
     fence?: number;
+    revisionId?: string;
+    ordinal?: number;
   };
   createdAt: Date;
 };
@@ -51,6 +65,7 @@ export function bookletRepositoryV2(
     "bookletProductions",
   );
   const receipts = db.collection<Receipt>("bookletRepositoryWrites");
+  const revisions = db.collection<RevisionV2>("bookletRevisions");
   async function owned(productionId: string, session: ClientSession) {
     const row = await productions.findOne(
       { _id: id.parse(productionId), ownerId: actor.uid },
@@ -101,7 +116,10 @@ export function bookletRepositoryV2(
     value: Mutation,
     method: string,
     input: unknown,
-    effect: (p: ProductionV2) => void,
+    effect: (
+      p: ProductionV2,
+      session: ClientSession,
+    ) => void | Promise<void | { revisionId: string; ordinal: number }>,
   ) {
     return context.transaction(async (session) => {
       const p = await owned(productionId, session);
@@ -119,9 +137,10 @@ export function bookletRepositoryV2(
         return prior.result;
       }
       fenced(p, value);
-      effect(p);
+      const details = await effect(p, session);
       await save(p, value.expectedVersion, session);
       const result = {
+        ...details,
         id: p._id,
         version: p.version,
         checkpointVersion: p.checkpointVersion,
@@ -206,6 +225,251 @@ export function bookletRepositoryV2(
     },
     getProduction(productionId: string) {
       return context.transaction((session) => owned(productionId, session));
+    },
+    getRevision(productionId: string, revisionId: string) {
+      return context.transaction(async (session) => {
+        const p = await owned(productionId, session);
+        const row = await revisions.findOne(
+          {
+            _id: id.parse(revisionId),
+            ownerId: actor.uid,
+            productionId: p._id,
+          },
+          { session },
+        );
+        if (!row) throw bookletMissing();
+        const subject = p.subjects.find((s) => s.id === row.subjectId);
+        if (
+          !subject?.artifacts.some(
+            (a) => a.id === row.artifactId && a.kind === row.kind,
+          )
+        )
+          throw bookletConflict(
+            "Revision identity differs from embedded index.",
+          );
+        return revisionV2Schema.parse(row);
+      });
+    },
+    addSubject(
+      productionId: string,
+      input: Mutation & { subject: z.input<typeof subjectInputSchema> },
+    ) {
+      const value = mutationSchema
+        .extend({ subject: subjectInputSchema })
+        .parse(input);
+      return mutate(productionId, value, "addSubject", value, (p) => {
+        const limits = {
+          book: 1,
+          character: p.creativeConfigSnapshot.maxCharacters,
+          location: p.creativeConfigSnapshot.maxLocations,
+          "style-sample": p.creativeConfigSnapshot.styleSamples,
+          page:
+            p.creativeConfigSnapshot.storyPages +
+            Number(p.creativeConfigSnapshot.includeCover),
+        };
+        if (
+          p.subjects.filter((s) => s.kind === value.subject.kind).length >=
+          limits[value.subject.kind]
+        )
+          throw bookletConflict("Subject capacity exceeded.");
+        if (
+          value.subject.pageRole === "cover" &&
+          (!p.creativeConfigSnapshot.includeCover ||
+            p.subjects.some((s) => s.pageRole === "cover"))
+        )
+          throw bookletConflict("Cover capacity exceeded.");
+        if (
+          value.subject.pageRole === "story" &&
+          p.subjects.filter((s) => s.pageRole === "story").length >=
+            p.creativeConfigSnapshot.storyPages
+        )
+          throw bookletConflict("Story page capacity exceeded.");
+        p.subjects.push({ ...value.subject, artifacts: [] });
+      });
+    },
+    addArtifact(
+      productionId: string,
+      input: Mutation & {
+        subjectId: string;
+        artifactId: string;
+        kind: z.infer<typeof artifactKindV2Schema>;
+      },
+    ) {
+      const value = mutationSchema
+        .extend({ subjectId: id, artifactId: id, kind: artifactKindV2Schema })
+        .parse(input);
+      return mutate(productionId, value, "addArtifact", value, (p) => {
+        const subject = p.subjects.find((s) => s.id === value.subjectId);
+        if (!subject) throw bookletMissing();
+        const kinds: Record<typeof subject.kind, readonly string[]> = {
+          book: [
+            "concept",
+            "outline",
+            "manuscript",
+            "roster",
+            "style",
+            "book-layout",
+            "book-manifest",
+          ],
+          character: ["description", "image-spec", "reference"],
+          location: ["description", "image-spec", "reference"],
+          "style-sample": ["image-spec", "reference"],
+          page: ["page-spec", "page-image"],
+        };
+        if (!kinds[subject.kind].includes(value.kind))
+          throw bookletConflict("Artifact responsibility mismatch.");
+        subject.artifacts.push({
+          id: value.artifactId,
+          kind: value.kind,
+          currentRevisionId: null,
+          acceptedRevisionId: null,
+        });
+      });
+    },
+    appendRevision(
+      productionId: string,
+      input: Mutation & {
+        artifactId: string;
+        content: z.input<typeof bookletContentV2Schema>;
+        sources: z.input<typeof bookletSourceV2Schema>[];
+        assets: z.input<typeof assetIdentitySchema>[];
+        provenance: z.input<typeof revisionDocumentSchema.shape.provenance>;
+      },
+    ) {
+      const value = mutationSchema
+        .extend({
+          artifactId: id,
+          content: bookletContentV2Schema,
+          sources: z.array(bookletSourceV2Schema),
+          assets: z.array(assetIdentitySchema),
+          provenance: revisionDocumentSchema.shape.provenance,
+        })
+        .parse(input);
+      return mutate(
+        productionId,
+        value,
+        "appendRevision",
+        value,
+        async (p, session) => {
+          // Active paid writes need the v2 work/entitlement guard added in 09.
+          // Keep this repository-construction slice closed to admitted productions.
+          if (p.lifecycleState !== "draft")
+            throw bookletConflict(
+              "Active v2 writes require workflow admission.",
+            );
+          const subject = p.subjects.find((s) =>
+            s.artifacts.some((a) => a.id === value.artifactId),
+          );
+          const artifact = subject?.artifacts.find(
+            (a) => a.id === value.artifactId,
+          );
+          if (!subject || !artifact) throw bookletMissing();
+          if (artifact.kind !== value.content.kind)
+            throw bookletConflict("Revision kind mismatch.");
+          if (
+            new Set(value.sources.map((s) => s.artifactId)).size !==
+              value.sources.length ||
+            new Set(value.assets.map((a) => a.assetId)).size !==
+              value.assets.length
+          )
+            throw bookletConflict("Duplicate source or asset identity.");
+          for (const source of value.sources) {
+            const row = await revisions.findOne(
+              {
+                _id: source.revisionId,
+                ownerId: actor.uid,
+                productionId: p._id,
+              },
+              { session },
+            );
+            if (
+              !row ||
+              row.artifactId !== source.artifactId ||
+              row.contentHash !== source.contentHash
+            )
+              throw bookletConflict("Source identity or hash mismatch.");
+          }
+          for (const asset of value.assets) {
+            const row = await db
+              .collection<BookletAsset>("bookletAssets")
+              .findOne(
+                {
+                  _id: asset.assetId,
+                  ownerId: actor.uid,
+                  productionId: p._id,
+                  sha256: asset.sha256,
+                  state: "ready",
+                  originalAssetId: null,
+                },
+                { session },
+              );
+            if (!row)
+              throw bookletConflict("Original asset identity mismatch.");
+          }
+          if (
+            value.content.kind === "reference" ||
+            value.content.kind === "page-image"
+          ) {
+            const original = value.content.asset;
+            if (
+              !value.assets.some(
+                (a) =>
+                  a.assetId === original.assetId &&
+                  a.sha256 === original.sha256,
+              )
+            )
+              throw bookletConflict("Content original is not attached.");
+          }
+          if (
+            (value.content.kind === "description" &&
+              value.content.subjectKind !== subject.kind) ||
+            (value.content.kind === "page-spec" &&
+              value.content.pageId !== subject.id)
+          )
+            throw bookletConflict("Content subject identity mismatch.");
+          const prior = await revisions
+            .find(
+              {
+                ownerId: actor.uid,
+                productionId: p._id,
+                artifactId: artifact.id,
+              },
+              { session },
+            )
+            .sort({ ordinal: -1 })
+            .limit(1)
+            .next();
+          const row = revisionV2Schema.parse({
+            _id: randomUUID(),
+            documentVersion: 2,
+            ownerId: actor.uid,
+            productionId: p._id,
+            artifactId: artifact.id,
+            subjectId: subject.id,
+            kind: artifact.kind,
+            ordinal: (prior?.ordinal ?? 0) + 1,
+            content: value.content,
+            sources: value.sources,
+            assets: value.assets,
+            provenance: value.provenance,
+            contentHash: fingerprint(value.content),
+            createdAt: now(),
+          });
+          if (BSON.calculateObjectSize(row) > 4 * 1024 * 1024)
+            throw bookletConflict("Revision exceeds its storage limit.");
+          await revisions.insertOne(row, { session });
+          for (const asset of value.assets)
+            await db
+              .collection<BookletAsset>("bookletAssets")
+              .updateOne(
+                { _id: asset.assetId, ownerId: actor.uid, productionId: p._id },
+                { $addToSet: { attachments: row._id } },
+                { session },
+              );
+          artifact.currentRevisionId = row._id;
+          return { revisionId: row._id, ordinal: row.ordinal };
+        },
+      );
     },
     async acquireLease(
       productionId: string,
