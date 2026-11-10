@@ -662,6 +662,16 @@ production build, sequential typecheck, scoped lint, model/docs, i18n and skills
 A separate same-agent read-only slice review found no blocking issue. No storage
 schema or dependency changes; checkpoint-wide 09 reviews remain pending.
 
+The thirteenth slice adds artifact `history` reads to the same v2 tool. It selects at
+most 20 revision metadata items, pins the latest ordinal on the first page and uses
+the existing revision index; no revision bodies or unbounded history are loaded.
+The real transport fixture verifies two-page ordering, exclusion of later appends,
+fresh-snapshot visibility and cross-kind/artifact cursor rejection. No model field,
+index, collection or dependency changes. All 51 affected booklet tests, production
+build, sequential typecheck, scoped lint, model/docs, i18n and skills checks pass.
+A separate same-agent read-only slice review found no blocking issue. Human-response/
+execution reads, remaining 09 integration and checkpoint-wide reviews remain pending.
+
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
 revision save, human request, evidence, assessment, sources, reconciliation, acceptance,

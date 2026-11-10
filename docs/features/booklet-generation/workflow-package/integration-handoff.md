@@ -117,8 +117,11 @@ and document hash. `complete` means the response contains the whole selected pat
 a final page/fragment alone does not imply the earlier pieces were read. Follow all
 necessary cursors and retain exact text; do not interpret the opaque cursor. Cursors
 bind owner/production/kind/id/document hash and reject a changed document. They grant
-no access beyond the allowlisted DTO. History, human responses and execution reads
-remain pending.
+no access beyond the allowlisted DTO. `kind:history` uses the artifact ID and returns
+up to 20 revision metadata items with a cursor and `snapshotOrdinal`. It pins the
+latest ordinal on the initial page, excludes later appends and never loads revision
+bodies for the history page. Fetch those separately by immutable revision ID.
+Human-response and execution reads remain pending.
 
 | Capability | Request arguments / result | Existing service to reuse or extend |
 | --- | --- | --- |

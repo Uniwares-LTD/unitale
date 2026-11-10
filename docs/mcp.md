@@ -402,8 +402,10 @@ under `extension:booklets:read`. Its existing `{kind,id,cursor?}` request return
 small JSON values or bounded typed sections, array pages and decoded text fragments.
 Each response identifies its path, hash and completeness; cursors reject changed or
 different documents. Follow child and page cursors without decoding them. No base64
-content reconstruction is required. History, human-response and execution reads remain
-pending. These reads share the same private native Manager and prepaid binding checks.
+content reconstruction is required. Artifact history reads return at most 20 metadata
+items with an initial ordinal snapshot; later appends require a fresh read and bodies
+are fetched separately by immutable revision ID. Human-response and execution reads
+remain pending. These reads share the same private native Manager and prepaid binding checks.
 
 The `booklets` server extension registers these private v1 tools on the existing
 `/api/mcp`. One service credential with `extension:booklets:read` and

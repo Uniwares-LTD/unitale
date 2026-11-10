@@ -908,7 +908,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
     );
     await t.test(
       "v2 tools preserve native Run scope, atomic receipts and complete typed reads",
-      async () => {
+      async (t) => {
         const v2Token = "v".repeat(43);
         const stored = await p();
         const production = productionV2Schema.parse({
@@ -1299,6 +1299,90 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             })
           ).isError,
           true,
+        );
+        await t.test(
+          "history pages pin immutable metadata and exclude later revisions",
+          async () => {
+            const smallContent = { kind: "manuscript", units: [] };
+            await db.collection("bookletRevisions").insertMany(
+              Array.from({ length: 25 }, (_, index) =>
+                revisionV2Schema.parse({
+                  ...revision,
+                  _id: "history-v2-" + (index + 2),
+                  ordinal: index + 2,
+                  content: smallContent,
+                  contentHash: fingerprint(smallContent),
+                }),
+              ) as never,
+            );
+            const firstPage = await successful("read_document", {
+              kind: "history",
+              id: "story-v2",
+            });
+            assert.equal(firstPage.items.length, 20);
+            assert.equal(firstPage.snapshotOrdinal, 26);
+            assert.equal(firstPage.complete, false);
+            assert.ok(firstPage.cursor);
+            assert.ok(
+              firstPage.items.every(
+                (item: Record<string, unknown>) =>
+                  !Object.hasOwn(item, "content") &&
+                  !Object.hasOwn(item, "ownerId"),
+              ),
+            );
+            await db.collection("bookletRevisions").insertOne(
+              revisionV2Schema.parse({
+                ...revision,
+                _id: "history-v2-27",
+                ordinal: 27,
+                content: smallContent,
+                contentHash: fingerprint(smallContent),
+              }) as never,
+            );
+            const lastPage = await successful("read_document", {
+              kind: "history",
+              id: "story-v2",
+              cursor: firstPage.cursor,
+            });
+            assert.equal(lastPage.snapshotOrdinal, 26);
+            assert.equal(lastPage.cursor, null);
+            assert.equal(lastPage.complete, false);
+            assert.deepEqual(
+              [...firstPage.items, ...lastPage.items].map(
+                (item: { ordinal: number }) => item.ordinal,
+              ),
+              Array.from({ length: 26 }, (_, index) => index + 1),
+            );
+            assert.equal(
+              (
+                await invoke("read_document", {
+                  kind: "history",
+                  id: "foreign-artifact",
+                  cursor: firstPage.cursor,
+                })
+              ).isError,
+              true,
+            );
+            assert.equal(
+              (
+                await invoke("read_document", {
+                  kind: "revision",
+                  id: revision._id,
+                  cursor: firstPage.cursor,
+                })
+              ).isError,
+              true,
+            );
+            assert.equal(
+              (
+                await successful("read_document", {
+                  kind: "history",
+                  id: "story-v2",
+                })
+              ).snapshotOrdinal,
+              27,
+            );
+          },
         );
         for (const change of [
           { cancelRequested: true },

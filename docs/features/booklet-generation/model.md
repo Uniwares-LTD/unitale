@@ -64,6 +64,9 @@ typed sections, ordered array pages and decoded Unicode text fragments with expl
 completeness. Cursors bind the owned document hash and reject changes; they do not
 grant access to private database fields. This read projection adds no storage fields,
 so the JSON example and both Mermaid views remain unchanged.
+Artifact history reads page existing immutable revision metadata with an initial
+ordinal snapshot. Later appends do not change that cursor's window. This query uses
+the existing revision index and adds no collection, index or model field.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.

@@ -4,12 +4,12 @@ import type { Db } from "mongodb";
 import type { CreditActor } from "../store/credit-types";
 import { fingerprint } from "../foundation/canonical";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { assessmentDocumentV2Schema } from "./documents-v2";
+import { assessmentDocumentV2Schema, revisionV2Schema } from "./documents-v2";
 import { bookletConflict, bookletMissing } from "./context";
 import { id } from "./documents";
 
 export const bookletReadV2Schema = z.strictObject({
-  kind: z.enum(["revision", "work", "assessment"]),
+  kind: z.enum(["revision", "work", "assessment", "history"]),
   id,
   cursor: z.string().max(16384).optional(),
 });
@@ -34,6 +34,101 @@ export async function readBookletDocumentV2(
 ) {
   const request = bookletReadV2Schema.parse(raw);
   const repo = bookletRepositoryV2(db, actor);
+  if (request.kind === "history") {
+    const production = await repo.getProduction(productionId);
+    const artifact = production.subjects
+      .flatMap((subject) => subject.artifacts)
+      .find((artifact) => artifact.id === request.id);
+    if (!artifact) throw bookletMissing();
+    const filter = {
+      ownerId: actor.uid,
+      productionId,
+      artifactId: request.id,
+      documentVersion: 2,
+    };
+    const scope = fingerprint([actor.uid, productionId, "history", request.id]);
+    const latest = request.cursor
+      ? null
+      : await db
+          .collection("bookletRevisions")
+          .find(filter, { projection: { ordinal: 1 } })
+          .sort({ ordinal: -1 })
+          .limit(1)
+          .next();
+    const position = request.cursor
+      ? z
+          .strictObject({
+            scope: z.string(),
+            after: z.number().int().nonnegative().safe(),
+            through: z.number().int().nonnegative().safe(),
+          })
+          .parse(
+            JSON.parse(
+              Buffer.from(request.cursor, "base64url").toString("utf8"),
+            ),
+          )
+      : {
+          scope,
+          after: 0,
+          through: z
+            .number()
+            .int()
+            .nonnegative()
+            .safe()
+            .parse(latest?.ordinal ?? 0),
+        };
+    if (position.scope !== scope || position.after > position.through)
+      throw bookletConflict("History cursor belongs to another query.");
+    const metadata = z.strictObject({
+      _id: revisionV2Schema.shape._id,
+      ordinal: revisionV2Schema.shape.ordinal,
+      kind: revisionV2Schema.shape.kind,
+      contentHash: revisionV2Schema.shape.contentHash,
+      createdAt: revisionV2Schema.shape.createdAt,
+    });
+    const rows = await db
+      .collection("bookletRevisions")
+      .find(
+        { ...filter, ordinal: { $gt: position.after, $lte: position.through } },
+        {
+          projection: {
+            _id: 1,
+            ordinal: 1,
+            kind: 1,
+            contentHash: 1,
+            createdAt: 1,
+          },
+        },
+      )
+      .sort({ ordinal: 1 })
+      .limit(21)
+      .toArray();
+    const items = rows.slice(0, 20).map((stored) => {
+      const row = metadata.parse(stored);
+      if (row.kind !== artifact.kind)
+        throw bookletConflict("Revision kind differs from the artifact index.");
+      return {
+        revisionId: row._id,
+        ordinal: row.ordinal,
+        kind: row.kind,
+        contentHash: row.contentHash,
+        createdAt: row.createdAt.toISOString(),
+      };
+    });
+    return {
+      kind: "history",
+      id: request.id,
+      items,
+      snapshotOrdinal: position.through,
+      complete: position.after === 0 && rows.length <= 20,
+      cursor:
+        rows.length > 20
+          ? Buffer.from(
+              JSON.stringify({ ...position, after: items.at(-1)!.ordinal }),
+            ).toString("base64url")
+          : null,
+    };
+  }
   let document: unknown;
   if (request.kind === "revision") {
     const row = await repo.getRevision(productionId, request.id);
