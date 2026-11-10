@@ -649,6 +649,19 @@ fallback; the runner exited zero. A separate same-agent read-only slice review f
 no blocking issue. Paid dispatch, the other fourteen v2 capabilities, image/review
 registration, live bindings and checkpoint-wide 09 reviews remain pending.
 
+The twelfth slice adds `booklet_read_document_v2` for owned revision, work and assessment
+DTOs. It preserves the `{kind,id,cursor?}` wire, returns complete small values and bounded
+typed sections/array pages/decoded text fragments for larger values. Scope and document
+hash bind every cursor; changed documents and paths outside the DTO fail. Completeness
+is explicit and Unicode text is exact; the reader neither truncates content nor requires
+base64 reconstruction. The real MCP fixture reads a large Arabic/combining-mark/emoji manuscript
+through the actual transport and rejects cross-document, prototype and stale-work
+cursors. History, human-response/execution reads and the other v2 capabilities remain
+pending. All 50 affected booklet tests and eight MCP protocol tests pass, along with
+production build, sequential typecheck, scoped lint, model/docs, i18n and skills checks.
+A separate same-agent read-only slice review found no blocking issue. No storage
+schema or dependency changes; checkpoint-wide 09 reviews remain pending.
+
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
 revision save, human request, evidence, assessment, sources, reconciliation, acceptance,

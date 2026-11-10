@@ -11,6 +11,7 @@ import { bookletRepositoryV2 } from "./repository-v2";
 import { registerBookletCreativeWorkV2 } from "./work-v2";
 import { workRegistrationV2Schema, type ProductionV2 } from "./documents-v2";
 import { id } from "./documents";
+import { readBookletDocumentV2 } from "./read-v2";
 
 const count = z.number().int().nonnegative().safe();
 const input = z.strictObject({
@@ -114,13 +115,14 @@ export function createBookletMcpToolsV2(
     name: string,
     description: string,
     effect: (request: unknown, s: Scope) => Promise<unknown>,
+    write = true,
   ): RegisteredTool {
     const fullName = `booklet_${name}_v2`;
     return {
       name: fullName,
       description,
-      permission: "extension:booklets:write",
-      write: true,
+      permission: `extension:booklets:${write ? "write" : "read"}`,
+      write,
       runContext: true,
       input,
       output,
@@ -134,6 +136,12 @@ export function createBookletMcpToolsV2(
     };
   }
   return [
+    tool(
+      "read_document",
+      "Read complete typed values or bounded decoded sections. Follow section and page cursors; incomplete responses are not whole documents.",
+      (raw, s) => readBookletDocumentV2(s.db, s.actor, s.production._id, raw),
+      false,
+    ),
     tool(
       "checkpoint",
       "Save bounded Manager intent with a current fence and checkpoint CAS; no lease spans a workflow wait.",

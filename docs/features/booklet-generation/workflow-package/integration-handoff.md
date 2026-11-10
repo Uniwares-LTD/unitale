@@ -108,6 +108,17 @@ that exact wrapper before binding; unexpected wrappers fail closed.
 V2 read_document returns decoded, typed JSON sections with completeness/cursor metadata.
 Reuse existing bounded storage reads, but keep byte/base64 transport outside the model:
 Manager must not reconstruct base64 chunks or invent content from an incomplete section.
+The local `booklet_read_document_v2` now reads owned revision, work and assessment DTOs.
+Small values return `type:value`, `value`, `complete:true`. Larger objects/arrays return
+ordered `sections` with a key and either a complete value or a child cursor; a top-level
+cursor continues that node's page. Large text returns decoded `text` with code-point
+`offset`, `end`, `total` and a continuation cursor. Every response identifies its path
+and document hash. `complete` means the response contains the whole selected path;
+a final page/fragment alone does not imply the earlier pieces were read. Follow all
+necessary cursors and retain exact text; do not interpret the opaque cursor. Cursors
+bind owner/production/kind/id/document hash and reject a changed document. They grant
+no access beyond the allowlisted DTO. History, human responses and execution reads
+remain pending.
 
 | Capability | Request arguments / result | Existing service to reuse or extend |
 | --- | --- | --- |

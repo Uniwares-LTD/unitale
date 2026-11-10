@@ -75,6 +75,7 @@ and the adapter; the table does not require unrelated suites for every task.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
   `mcp-tools-v2.ts` its initial v2 checkpoint/creative-registration handlers;
+  `read-v2.ts` owns the v2 revision/work/assessment DTO and bounded typed sections;
   `mcp-transfers.ts` owns bounded staging. `npm run test:booklet-mcp` verifies the
   real MCP handler with disposable persistence. [MCP guidance](mcp.md#unitale-booklet-catalog-t17)
   owns its permissions, transfer protocol and trusted reviewer binding.

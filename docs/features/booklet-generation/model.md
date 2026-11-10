@@ -59,6 +59,11 @@ The v2 MCP checkpoint and creative-text register handlers use these atomic write
 An initial expected fence of zero is valid in atomic mode; returned fences advance
 from it. Gateway receipt replay retains the original CAS version. The explicit lease
 and v1 mutation parsers still require positive fences. No example/diagram field changes.
+V2 document reads expose allowlisted revision/work/assessment DTOs. Large values use
+typed sections, ordered array pages and decoded Unicode text fragments with explicit
+completeness. Cursors bind the owned document hash and reject changes; they do not
+grant access to private database fields. This read projection adds no storage fields,
+so the JSON example and both Mermaid views remain unchanged.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.

@@ -9,7 +9,11 @@ import { handleMcp } from "../../src/lib/server/mcp/handler";
 import { parseMcpConfig } from "../../src/lib/config/mcp";
 import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
-import { productionV2Schema } from "../../src/lib/server/booklets/documents-v2";
+import {
+  productionV2Schema,
+  revisionV2Schema,
+  assessmentDocumentV2Schema,
+} from "../../src/lib/server/booklets/documents-v2";
 import { fingerprint } from "../../src/lib/server/foundation/canonical";
 import { bookletsServerExtension } from "../../src/project/booklets/server";
 import {
@@ -903,7 +907,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
       },
     );
     await t.test(
-      "v2 checkpoint and registration use private owned native Run bindings and atomic receipts",
+      "v2 tools preserve native Run scope, atomic receipts and complete typed reads",
       async () => {
         const v2Token = "v".repeat(43);
         const stored = await p();
@@ -1114,6 +1118,188 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           ).isError,
           true,
         );
+        const work = await successful("read_document", {
+          kind: "work",
+          id: "call-v2",
+        });
+        assert.equal(work.type, "value");
+        assert.equal(work.complete, true);
+        assert.equal(work.value.callId, "call-v2");
+        assert.equal(work.value.ownerId, undefined);
+        const exactText =
+          "\u0645\u0631\u062d\u0628\u0627 e\u0301 \ud83d\ude00\n".repeat(6000);
+        const content = {
+          kind: "manuscript",
+          units: [
+            {
+              id: "unit-v2",
+              texts: [{ id: "text-v2", kind: "prose", text: exactText }],
+            },
+          ],
+        };
+        const oldRevision = await db
+          .collection("bookletRevisions")
+          .findOne({ _id: revisionId as never });
+        const revision = revisionV2Schema.parse({
+          ...oldRevision,
+          _id: "revision-v2",
+          documentVersion: 2,
+          productionId: production._id,
+          artifactId: "story-v2",
+          subjectId: "book-subject",
+          kind: "manuscript",
+          content,
+          contentHash: fingerprint(content),
+          sources: [],
+          assets: [],
+        });
+        await db.collection("bookletRevisions").insertOne(revision as never);
+        const documentRequest = { kind: "revision", id: revision._id };
+        let section = await successful("read_document", documentRequest);
+        assert.equal(section.complete, false);
+        const rootCursor = section.sections.find(
+          (part: { key: string }) => part.key === "content",
+        ).cursor;
+        for (const key of ["content", "units", 0, "texts", 0, "text"]) {
+          const part = section.sections.find(
+            (part: { key: string | number }) => part.key === key,
+          );
+          assert.equal(part.complete, false);
+          section = await successful("read_document", {
+            ...documentRequest,
+            cursor: part.cursor,
+          });
+        }
+        let retainedText = "";
+        let expectedOffset = 0;
+        for (;;) {
+          assert.equal(section.type, "text");
+          assert.equal(section.offset, expectedOffset);
+          assert.equal(section.complete, false);
+          assert.ok(Buffer.byteLength(JSON.stringify(section)) < 20 * 1024);
+          retainedText += section.text;
+          expectedOffset = section.end;
+          if (!section.cursor) break;
+          section = await successful("read_document", {
+            ...documentRequest,
+            cursor: section.cursor,
+          });
+        }
+        assert.equal(retainedText, exactText);
+        assert.equal(expectedOffset, [...exactText].length);
+        assert.equal(
+          (
+            await invoke("read_document", {
+              kind: "work",
+              id: "call-v2",
+              cursor: rootCursor,
+            })
+          ).isError,
+          true,
+        );
+        assert.equal(
+          (
+            await invoke("read_document", {
+              ...documentRequest,
+              id: revisionId,
+            })
+          ).isError,
+          true,
+        );
+        const tampered = JSON.parse(
+          Buffer.from(rootCursor, "base64url").toString("utf8"),
+        );
+        tampered.path = ["__proto__"];
+        assert.equal(
+          (
+            await invoke("read_document", {
+              ...documentRequest,
+              cursor: Buffer.from(JSON.stringify(tampered)).toString(
+                "base64url",
+              ),
+            })
+          ).isError,
+          true,
+        );
+        const assessment = assessmentDocumentV2Schema.parse({
+          _id: fingerprint("assessment-v2"),
+          documentVersion: 2,
+          ownerId: "owner",
+          productionId: production._id,
+          createdAt: new Date(),
+          callId: "review-v2",
+          policyBinding: "policy",
+          reviewerBinding: "reviewer",
+          complete: true,
+          evidenceIds: ["evidence-v2"],
+          assessment: {
+            mode: "text",
+            targetHash: revision.contentHash,
+            requestHash: null,
+            sources: [],
+            coverage: { targetIds: ["story-v2"], referencePositions: [] },
+            disposition: "pass",
+            findings: [],
+            limitations: [],
+          },
+        });
+        await db
+          .collection("bookletAssessments")
+          .insertOne(assessment as never);
+        const assessmentRead = await successful("read_document", {
+          kind: "assessment",
+          id: assessment._id,
+        });
+        assert.equal(assessmentRead.complete, true);
+        assert.equal(
+          assessmentRead.value.assessment.targetHash,
+          revision.contentHash,
+        );
+        assert.equal(assessmentRead.value.ownerId, undefined);
+        await db
+          .collection("bookletWork")
+          .updateOne(
+            { productionId: production._id, callId: "call-v2" },
+            {
+              $set: {
+                evidenceIds: Array.from(
+                  { length: 1000 },
+                  (_, i) => "observed-evidence-" + i,
+                ),
+              },
+            },
+          );
+        const changing = await successful("read_document", {
+          kind: "work",
+          id: "call-v2",
+        });
+        const changingCursor = changing.cursor;
+        assert.ok(changingCursor);
+        await db
+          .collection("bookletWork")
+          .updateOne(
+            { productionId: production._id, callId: "call-v2" },
+            { $addToSet: { evidenceIds: "later-observation" } },
+          );
+        assert.equal(
+          (
+            await invoke("read_document", {
+              kind: "work",
+              id: "call-v2",
+              cursor: changingCursor,
+            })
+          ).isError,
+          true,
+        );
+        assert.equal(
+          (
+            await invoke("read_document", {
+              kind: "assessment",
+              id: "foreign-assessment",
+            })
+          ).isError,
+          true,
+        );
         for (const change of [
           { cancelRequested: true },
           { "run.target.version": "1" },
@@ -1124,19 +1310,17 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             .collection("aiJobs")
             .updateOne({ _id: "run-v2" as never }, { $set: change });
           assert.equal((await invoke("checkpoint", checkpoint)).isError, true);
-          await db
-            .collection("aiJobs")
-            .updateOne(
-              { _id: "run-v2" as never },
-              {
-                $set: {
-                  cancelRequested: false,
-                  "run.target.version": "2",
-                  "execution.status": "running",
-                },
-                $unset: { "run.answerer": "" },
+          await db.collection("aiJobs").updateOne(
+            { _id: "run-v2" as never },
+            {
+              $set: {
+                cancelRequested: false,
+                "run.target.version": "2",
+                "execution.status": "running",
               },
-            );
+              $unset: { "run.answerer": "" },
+            },
+          );
         }
         await db
           .collection("consumptionWorkflows")
