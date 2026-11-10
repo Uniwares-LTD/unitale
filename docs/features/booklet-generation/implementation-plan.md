@@ -397,38 +397,68 @@ repeat assessments, durable counters and idempotent migration pass on disposable
 
 ### 08 - Verify runtime seams and import necessary Unibase changes
 
-In progress: refreshed Unibase from upstream `cee55c143c9f19a3e2a454c087b7d6fefe9d20dc`
-onto `feature/booklet-runtime-seams`. First bounded slice committed locally as
-`c5c66ab5ecec79a7ef57710ed6f17ea8aaf6be3b`: optional native MCP image projection,
-unchanged JSON/text defaults, permissions and encoded-result/response limits.
-Official-client HTTP tests preserve two images byte-for-byte and in order; synthetic
-8 MiB capacity, invalid MIME/empty payload, aggregate overflow and full-response
-overflow checks pass. Eight MCP plus 18 Dify/tracing/MCP-foundation tests pass;
-typecheck, scoped ESLint, production build/workers, docs, environment, i18n and
-skills checks pass. Separate same-agent read-only slice reviews found no blocking
-issue; checkpoint-wide reviews remain due after the remaining seams are complete.
-Second slice committed and pushed on the same Unibase branch as
-`a8b5232480bd236ebee752b81e436f79f88c6fc1`: opt-in private node observations for live
-stream/reconnect/terminal readback, plus an optional transactional domain hook under
-the existing worker lease fence. Reported retry/loop identities, truncation flags and
-unknown values are preserved; inputs/process data are excluded. Public Run events
-and usage summaries never receive the private payload. The existing redacted evidence
-writer now accepts the caller transaction, with rollback/idempotence/fence tests.
-Two clean separate same-agent read-only slice reviews found no blocking issue after
-the final fixes. Checks: 16 Dify/tracing tests and 21 AI-job/foundation tests pass;
-the preceding Run regression command passed 34 overlapping worker/foundation/Run
-tests. Typecheck, scoped ESLint, production build/workers, docs, template consistency,
-environment, i18n and skills checks pass. These are local shared-seam checks, not
-verified application recovery. Both upstream slice commits are pushed; no PR/merge
-or template import has occurred yet.
+Unibase shared seams are merged in [PR #49](https://github.com/Uniwares-LTD/unibase/pull/49)
+at `61001a0174ac53f542d1e93f6ad7d08a2bd32dd0`, from verified base
+`cee55c143c9f19a3e2a454c087b7d6fefe9d20dc`. Six small commits end at
+`473affe0522858d7702d4673577f62cda1750180`. The optional changes provide ordered
+native MCP images, private transactional node observations, declared internal waits,
+project Run UI composition and late-result reconciliation in the existing worker.
+Handled Dify exceptions now display failed stages; raw errors remain private.
+No dependency, framework, scheduler, migration or provider change was added.
 
-No live configuration, Dify conversion or provider call occurred. Model storage and
-diagrams are unaffected by these generic transport/observation changes. Next: verify
-automatic wait/resume and existing Run UI extension needs. The current automatic
-decision processor requires a persona answerer, so it does not yet prove a no-money,
-app-controlled retry wait. Reuse its worker/submission machinery; do not introduce a
-second scheduler or paid responder merely to resume an internal wait. Full 08 exit,
-checkpoint-wide reviews and reviewed import remain pending.
+Final upstream verification: 65 AI-job/Run/persona/result-application/MCP regressions
+and 16 Dify stream/replay/tracing tests pass, alongside typecheck, scoped ESLint,
+production application/worker build, docs, environment inventory, i18n, skills and
+template checks. Initializer tests and two independently initialized project builds
+also passed with task-local Git 2.56 (host Git 2.27 lacks `init -b`). Native image
+tests preserve bytes/order and cover synthetic 8 MiB capacity and encoded bounds.
+Recovery tests cover stale fences, rollback, parallel human/internal waits, a lost
+submission response without redispatch, and private late-result retention after Stop.
+Local headless browser checks cover English/Arabic desktop/390px Run pages, genuine
+Human Input, focus, English/LTR admin and preference restoration, navigation nonces
+and served-document CSP enforcement. Task browser/server fixtures were stopped.
+
+Two consecutive separate same-agent read-only full-candidate reviews at `473affe`
+found no blocking issue; no independent review is claimed. These establish generic
+local seams, not application-connected recovery or deployed Dify image conversion.
+No live configuration or provider call occurred. Booklet storage/model diagrams are
+unaffected by generic Run metadata. Next: import the exact reviewed merge through
+`template:update`, verify Unitale integration, then complete the checkpoint reviews.
+
+08 wait/resume resolution: the existing worker already schedules paused Runs and
+the decision submission helper journals uncertain submissions. Reuse those paths.
+Add an optional versioned domain declaration of fixed native application-wait node
+IDs and a paused-Run resume hook. Only those server-declared nodes become internal
+waits: retain their decision journal, suppress creator questions/notifications and
+persona answers, and display reconciliation progress. An application response must
+match the owned target/declared node and cannot approve a human/quality decision.
+Use the existing worker eligibility/poll/reconciliation bounds, one execution and
+the existing submission intent; no new scheduler, paid responder or blind replay.
+Unitale 09 must additionally bind each wait to its actual authorized action and
+durable eligibility/counters. Local fake-provider tests prove the generic seam;
+application-specific policy and live acceptance remain their later checkpoints.
+
+08 terminal-interface finding: Manager currently returns its domain status envelope,
+while the existing Run worker already accepts a `result` UI envelope. No new shared
+normalization hook is needed. In 09, keep the domain envelope unchanged under the
+additional End output `booklet_result` and use the existing small finish Code node
+to produce the generic `result` view. Map a finished `succeeded` domain result to
+success, `invalid_input`/`failed` to failed, and other terminal domain states to
+partial; the worker still requires native execution success for success. Keep
+cards/images empty and checkpoint null in this view: owned booklet state/assets
+remain authoritative. Include only a bounded readable summary and sanitized failure
+code/message, never raw work evidence, private context or native file handles.
+Update the v2 binding/fixtures/hashes/handoff together in 09. Preserve existing v1
+outputs and worker accounting; no additional generic result protocol or interpreter.
+
+08 late-result finding: the generic worker does not claim terminal Runs. Active-node
+observation and paused-Run resume therefore cannot reconcile a child that finishes
+after its parent stops. Add one optional server-extension `reconcile(db, now)` callback
+to the existing AI worker cycle. Unitale 09 supplies one bounded, leased, non-paid
+readback/retention pass over already accepted unresolved work, including when module
+admission is disabled. It cannot dispatch paid work or create a successor. Keep the
+existing worker mode switch, timing and heartbeat; do not keep stopped Runs artificially
+active, add another queue/scheduler, or repurpose decision-failure fields for this case.
 
 First prove existing extension points against current upstream; no fixed expansion list.
 
@@ -649,15 +679,16 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 ### New-session goal prompt
 
 Continue scope B on `feature/10-dify-workflow-design`: 01-06 native candidates and 07
-local storage are complete; 08 shared runtime seam verification is next. Read AGENTS,
+local storage are complete; 08 exact shared-runtime import and integrated verification are next. Read AGENTS,
 the accepted plan/handoff, current code and checkpoint evidence. Use prepared tools,
 small slices and the necessity/simplicity gate. Scope B already covers necessary
 Unitale/Unibase implementation, scoped code commits/pushes/PRs/merges and reviewed exact
 template imports after checks/reviews. Verify upstream Unibase main before branching;
 never patch copied shared core locally. No new framework, scheduler, plugin or dashboard.
-Unibase `feature/booklet-runtime-seams` already contains pushed MCP image and private
-node-observation slices through `a8b5232`; continue with wait/resume and UI seam
-verification rather than recreating them. No shared changes have been imported yet.
+Unibase PR #49 merged the reviewed shared seams at
+`61001a0174ac53f542d1e93f6ad7d08a2bd32dd0`; import that exact revision through
+`template:update` and verify the integrated state rather than recreating the seams.
+No shared changes have been imported yet.
 
 Continue through 11 when dependencies are satisfied. Each checkpoint needs two clean
 read-only reviews. Do not confuse storage tests with verified Dify/application recovery.
