@@ -248,6 +248,19 @@ existing authenticated Human Input UI. A new continuation requires verified prio
 termination; it does not buy another package. T20 supplies the actual orchestrator
 publication. The picker endpoint remains a T21 integration, not a route added here.
 
+Checkpoint 09 extends this admission boundary to explicit v2 productions. Both
+`booklet@1` and `booklet@2` remain registered; the selected orchestrator and successor
+must match the stored production's version. V2 ownership uses the same owned book
+check inside the caller transaction; default v1 readers still reject v2 records.
+Admission increments only the production version/update time, preserving checkpoint,
+work, retry snapshots and immutable content, and reuses the existing consumption/job
+binding. The v2 adapter rejects generic Run admission and does not apply v1 creative
+approval gates. This does not implement the remaining v2 start/revision/MCP/recovery
+services or activate an orchestrator.
+
+No document field, relationship, index or migration changes in this admission slice;
+the JSON example and both Mermaid schema versions remain applicable unchanged.
+
 Production's nullable `revisionChargeId` retains the originating revision charge
 and allocation scope across continuation workflows. It is set atomically by
 revision admission, replaced only by a new revision request, and defaults to null

@@ -8,6 +8,11 @@ import {
 } from "../../src/lib/server/booklets/repository";
 import { bookletsServerExtension } from "../../src/project/booklets/server";
 import { fingerprint } from "../../src/lib/server/foundation/canonical";
+import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
+import { bookletDomain, bookletDomainV2 } from "../../src/project/booklets/domain";
+import { createCreditIndexes, grantCredits } from "../../src/lib/server/store/credits";
+import { createConsumptionIndexes, startConsumption, continueConsumption, finishConsumptionWorkflow } from "../../src/lib/server/commerce/orders";
+import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import {
   bookletRepositoryV2,
   createBookletV2Indexes,
@@ -302,6 +307,174 @@ test("booklet repositories preserve embedded identities and transactional bounda
     };
   }
   try {
+    await t.test(
+      "v2 prepaid Run admission preserves funding, versions and saved state across continuation",
+      async () => {
+        const f = await managerFixture();
+        await f.write((m) =>
+          f.v2.checkpoint("production-v2", {
+            ...m,
+            expectedCheckpointVersion: 0,
+            state: { pending: { callId: "retained-work" } },
+          }),
+        );
+        await createCreditIndexes(f.db);
+        await createConsumptionIndexes(f.db);
+        await grantCredits(f.db, actor.uid, "admission-funding", {
+          amount: 500,
+          source: "purchase",
+          reference: "fixture",
+        });
+        const paid = await startConsumption(
+          f.db,
+          actor,
+          "order-v2",
+          "initial",
+          async (session) => {
+            await f.db
+              .collection("bookletProductions")
+              .updateOne(
+                { _id: "production-v2" as never, lifecycleState: "draft" },
+                { $set: { lifecycleState: "in-progress" } },
+                { session },
+              );
+          },
+        );
+        const before = await f.v2.getProduction("production-v2");
+        const definition = orchestratorSchema.parse({
+          id: "booklet-manager-v2",
+          name: "Booklet fixture",
+          description: "Fake",
+          order: 0,
+          keyEnv: "DIFY_KEY_TEST",
+          enabled: true,
+          domainAdapter: { id: "booklet", version: "2" },
+          responseMode: "raw-v1",
+          legacyInputs: [],
+          inputs: [],
+          pricing: null,
+          recovery: null,
+        });
+        await f.db.collection("orchestrators").insertOne({
+          _id: definition.id as never,
+          revision: 1,
+          definition,
+          validated: true,
+          updatedAt: new Date(),
+        });
+        await bookletDomainV2.own(f.db, actor.uid, "production-v2");
+        await assert.rejects(bookletDomainV2.own(f.db, "foreign", "production-v2"));
+        await assert.rejects(bookletDomain.own(f.db, actor.uid, "production-v2"));
+        await assert.rejects(bookletDomainV2.own(f.db, actor.uid, "production"));
+        const session = client.startSession();
+        try {
+          await assert.rejects(
+            session.withTransaction(() =>
+              bookletDomainV2.admit(f.db, actor.uid, "production-v2", session),
+            ),
+            /paid entitlement/,
+          );
+        } finally {
+          await session.endSession();
+        }
+        const oldMode = process.env.DIFY_MODE;
+        process.env.DIFY_MODE = "fake";
+        try {
+          const input = {
+            key: "v2-admission",
+            workflowId: paid.workflowId,
+            orchestratorId: definition.id,
+            configurationRevision: 1,
+            inputs: {},
+          };
+          const [admitted, duplicate] = await Promise.all([
+            enqueueBookletRun(f.db, actor, "production-v2", input),
+            enqueueBookletRun(f.db, actor, "production-v2", input),
+          ]);
+          assert.deepEqual(duplicate, admitted);
+          assert.deepEqual(
+            await enqueueBookletRun(f.db, actor, "production-v2", input),
+            admitted,
+          );
+          const job = await f.db
+            .collection("aiJobs")
+            .findOne({ _id: admitted.attemptId as never });
+          assert.equal(job!.run.target.version, "2");
+          assert.equal(job!.reservationId, null);
+          assert.equal(job!.credits, 0);
+          assert.equal(job!.consumption.orderId, "order-v2");
+          await assert.rejects(
+            finishConsumptionWorkflow(f.db, actor, "order-v2", paid.workflowId),
+            /Reconcile/,
+          );
+          await f.db
+            .collection("aiJobs")
+            .updateOne(
+              { _id: admitted.attemptId as never },
+              { $set: { status: "failed", terminationEvidence: "unverified" } },
+            );
+          await assert.rejects(
+            finishConsumptionWorkflow(f.db, actor, "order-v2", paid.workflowId),
+            /Reconcile/,
+          );
+          await f.db
+            .collection("aiJobs")
+            .updateOne(
+              { _id: admitted.attemptId as never },
+              { $set: { terminationEvidence: "provider-failed" } },
+            );
+          await finishConsumptionWorkflow(f.db, actor, "order-v2", paid.workflowId);
+          const nextFlow = await continueConsumption(
+            f.db,
+            actor,
+            "order-v2",
+            "explicit-continuation",
+            fingerprint("continuation"),
+            async () => {},
+          );
+          const successor = await enqueueBookletRun(f.db, actor, "production-v2", {
+            ...input,
+            key: "v2-continuation",
+            workflowId: nextFlow,
+            predecessorId: admitted.attemptId,
+          });
+          assert.equal(successor.id, admitted.id);
+          const nextJob = await f.db
+            .collection("aiJobs")
+            .findOne({ _id: successor.attemptId as never });
+          assert.equal(nextJob!.run.attempt, 2);
+          assert.equal(nextJob!.credits, 0);
+          assert.equal(
+            await f.db
+              .collection("consumptionCharges")
+              .countDocuments({ orderId: "order-v2" }),
+            1,
+          );
+          const after = await f.v2.getProduction("production-v2");
+          assert.equal(after.documentVersion, 2);
+          assert.deepEqual(after.retryPolicy, before.retryPolicy);
+          assert.deepEqual(after.checkpoint, before.checkpoint);
+          assert.deepEqual(after.subjects, before.subjects);
+          assert.equal(after.version, before.version + 2);
+          await f.db
+            .collection("orchestrators")
+            .updateOne(
+              { _id: definition.id as never },
+              { $set: { "definition.domainAdapter.version": "1" } },
+            );
+          await assert.rejects(
+            enqueueBookletRun(f.db, actor, "production-v2", {
+              ...input,
+              key: "wrong-version",
+            }),
+            /validated booklet/,
+          );
+        } finally {
+          if (oldMode === undefined) delete process.env.DIFY_MODE;
+          else process.env.DIFY_MODE = oldMode;
+        }
+      },
+    );
     await t.test(
       "v2 work state preserves unknown outcomes and enforces retries across runs",
       async () => {

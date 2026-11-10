@@ -135,8 +135,9 @@ identity from server context, never from model claims.
 
 ### Checkpoint 07 storage boundary
 
-V2 storage now exists in the project repository; MCP/observer/admission wiring is
-still pending in 09; the generic 08 seams are imported. Work records use distinct call IDs, a server action identity,
+V2 storage now exists in the project repository; MCP/observer/lifecycle wiring
+remains 09 work. Generic 08 seams are imported; v2 prepaid Run binding passes local
+ownership, race and one-charge continuation checks. Work records use distinct call IDs, a server action identity,
 request hash and retry ordinal. Automatic retries require the latest confirmed
 retryable failure of that same action; unknown or terminal success cannot be replayed.
 Correction roots bind production/task/targets/funding, with distinct corrective

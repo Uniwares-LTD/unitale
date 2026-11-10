@@ -142,13 +142,7 @@ export function bookletRepositoryV2(
     );
   }
   async function owned(productionId: string, session: ClientSession) {
-    const row = await productions.findOne(
-      { _id: id.parse(productionId), ownerId: actor.uid },
-      { session },
-    );
-    if (!row) throw bookletMissing();
-    await base.getBook(row.bookletId);
-    return productionV2Schema.parse(row);
+    return context.owned(id.parse(productionId), session, 2);
   }
   function mutable(p: ProductionV2, expectedVersion: number) {
     if (

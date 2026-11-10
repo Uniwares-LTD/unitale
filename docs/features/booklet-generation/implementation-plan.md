@@ -524,8 +524,20 @@ All 35 compatibility tests, typecheck and scoped test lint pass. Prompts, child 
 bindings, contracts and disabled execution switches remain unchanged. Package hashes
 and current evidence are in the [candidate README](workflow-package/README.md#current-integration-slice).
 Checkpoint-wide 09 reviews and application-connected execution remain pending.
-Next: versioned Manager MCP context/read/lease and prepaid admission wiring, reusing
-the 07 repository and existing services; implement each boundary in small verified slices.
+The second bounded slice extends existing prepaid Run admission and ownership to v2,
+with explicit adapter-version matching and the same consumption/job transaction.
+V1 readers remain strict; generic Run admission still rejects booklet targets.
+No fields or migrations change. Repository admission tests cover owned/versioned
+targets, duplicate starts, unknown termination and continuation without another
+package charge. All 46 affected repository/lifecycle/media/MCP tests pass, including
+concurrent starts and a non-empty preserved checkpoint. Production build, typecheck,
+scoped lint, model/docs, environment, i18n and skills checks pass. The Mongo fixture
+used its forced-stop cleanup fallback; the test runner passed. A separate same-agent
+read-only slice review found no blocking issue. No model/example/diagram field or
+relationship changed; regenerated diagram content remains unchanged.
+Next: v2 start/continuation/revision services and Manager MCP context/read/lease,
+reusing the 07 repository and existing commerce; implement each boundary in small
+verified slices. No current slice enables execution or closes checkpoint 09.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,

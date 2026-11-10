@@ -28,3 +28,24 @@ export const bookletDomain: DomainAdapter = {
   },
   approval: validateBookletApproval,
 };
+
+// V2 retains product-only financial admission. Manager selects creative acceptance;
+// applying a terminal Run never completes a booklet or applies a v1 approval gate.
+export const bookletDomainV2: DomainAdapter = {
+  id: "booklet",
+  version: "2",
+  kind: "booklet-production",
+  picker: bookletDomain.picker,
+  async own(db, uid, id, session) {
+    await bookletContext(db, { uid, authTime: 0 }).owned(id, session, 2);
+  },
+  async admit(db, uid, id, session) {
+    await this.own(db, uid, id, session);
+    throw bookletConflict(
+      "Start from booklet admission so its paid entitlement is bound to the Run.",
+    );
+  },
+  async apply(db, intent, session) {
+    await this.own(db, intent.uid, intent.target.id, session);
+  },
+};

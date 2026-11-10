@@ -3,7 +3,7 @@ import { defineServerExtension } from "../../lib/server/extensions";
 import { createBookletIndexes } from "../../lib/server/booklets/repository";
 import { createBookletServiceIndexes } from "../../lib/server/booklets/lifecycle";
 import { createBookletMediaIndexes } from "../../lib/server/booklets/media";
-import { bookletDomain } from "./domain";
+import { bookletDomain, bookletDomainV2 } from "./domain";
 import { bookletMcpTools } from "../../lib/server/booklets/mcp-tools";
 import { createBookletMcpIndexes } from "../../lib/server/booklets/mcp-transfers";
 import { createBookletV2Indexes } from "../../lib/server/booklets/repository-v2";
@@ -19,7 +19,7 @@ export const bookletsServerExtension = defineServerExtension({
     await createBookletMcpIndexes(db);
     await createBookletV2Indexes(db);
   },
-  domainAdapters: [bookletDomain],
+  domainAdapters: [bookletDomain, bookletDomainV2],
   mcpTools: bookletMcpTools,
   migrations: [
     {
