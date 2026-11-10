@@ -372,12 +372,34 @@ test("booklet repositories preserve embedded identities and transactional bounda
       await assert.rejects(invoke(m(), payload(different, "call-2")), /predecessor/);
       await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId: "foreign-run" } });
       await assert.rejects(invoke(m(), payload(different)), /prepaid Manager/);
+      await assert.rejects(repo.dispatchWork(p._id, { ...m(), callId: "call-2", requestHash: second.requestHash }), /prepaid Manager/);
       await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
       await f.db.collection("aiJobs").updateOne({ _id: jobId as never }, { $set: { cancelRequested: true } });
       await assert.rejects(invoke(m(), payload(different)), /prepaid Manager/);
+      await assert.rejects(repo.dispatchWork(p._id, { ...m(), callId: "call-2", requestHash: second.requestHash }), /prepaid Manager/);
+      assert.equal((await repo.getWork(p._id, "call-2")).status, "registered");
+      await f.db.collection("aiJobs").updateOne({ _id: jobId as never }, { $set: { cancelRequested: false, execution: { status: "failed" } } });
+      await assert.rejects(repo.dispatchWork(p._id, { ...m(), callId: "call-2", requestHash: second.requestHash }), /prepaid Manager/);
+
       p = await repo.getProduction(p._id);
       assert.equal(p.version, version);
       assert.equal(await f.db.collection("bookletWork").countDocuments({ productionId: p._id }), 2);
+      const released = await repo.releaseLease(p._id, m());
+      const nextJobId = "successor-manager";
+      const nextFlowId = "successor-flow";
+      const oldJob = await f.db.collection("aiJobs").findOne({ _id: jobId as never });
+      const oldFlow = await f.db.collection("consumptionWorkflows").findOne({ _id: paid.workflowId as never });
+      await f.db.collection("aiJobs").insertOne({ ...oldJob!, _id: nextJobId as never,
+        cancelRequested: false, runId: crypto.randomUUID(), execution: null, consumption: { orderId: "order-v2", workflowId: nextFlowId } });
+      await f.db.collection("consumptionWorkflows").insertOne({ ...oldFlow!, _id: nextFlowId as never, jobId: nextJobId });
+      await f.db.collection("consumptionOrders").updateOne({ _id: "order-v2" as never }, { $set: { activeWorkflow: nextFlowId } });
+      const nextLease = await repo.acquireLease(p._id, { key: "successor-lease", holderId: nextJobId,
+        expectedVersion: released.version, durationMs: 10000 });
+      await repo.dispatchWork(p._id, { key: "successor-dispatch", holderId: nextJobId, fence: nextLease.fence!,
+        expectedVersion: nextLease.version, callId: "call-2", requestHash: second.requestHash });
+      assert.equal((await repo.getWork(p._id, "call-2")).runId, nextJobId);
+      assert.equal((await repo.getWork(p._id, "call-2")).status, "dispatching");
+
     });
     await t.test(
       "v2 prepaid Run admission preserves funding, versions and saved state across continuation",

@@ -29,8 +29,12 @@ retryable failure permits a new attempt, bounded by the production snapshot. Unk
 results remain unresolved until server observation. Creative-text registration now
 derives action identity from the validated full child request and exact source content;
 active registration checks the native parent Run and consumption workflow/job binding
-inside its transaction. This records intent, not dispatch permission or a provider
-outcome. No new fields/relationships are needed, so the JSON example and both diagrams
+inside its transaction. Dispatch repeats the same checks, including cancellation and
+native execution status, before changing a registered intent to dispatching. A registered,
+unsubmitted intent may bind to the current admitted successor; its work `runId` then
+records that dispatching parent. Previously dispatched work remains non-replayable.
+Dispatch usage/lock checks and trusted provider outcomes remain pending.
+No new fields/relationships are needed, so the JSON example and both diagrams
 remain applicable. Image/review gateway and runtime wiring remain 09 work.
 Correction roots bind task, target
 and funding identity. Counts derive from distinct dispatched corrective actions;

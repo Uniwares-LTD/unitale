@@ -611,6 +611,17 @@ A separate same-agent read-only slice review found no blocking issue. No new fie
 status, index, delayed completion or finalizer is introduced. The Manager facade and
 checkpoint-wide 09 reviews remain pending.
 
+The ninth slice reuses the active prepaid Manager binding check at dispatch, closing
+the interval between registration and execution. Dispatch rejects replaced workflow/job
+bindings, cancellation and native terminal execution even if the parent job status has
+not caught up. Registered unsubmitted work can bind to the current admitted successor;
+the work record then identifies its actual dispatching parent. This reuses existing
+fields/transactions and does not enable a paid call or bypass unresolved work checks.
+All 48 affected repository/lifecycle/media/MCP tests, production build, sequential
+typecheck, scoped lint, model/docs, i18n and skills checks pass. A separate same-agent
+read-only slice review found no blocking issue. The MCP facade, dispatch usage/lock
+checks, trusted observations and checkpoint-wide 09 reviews remain pending.
+
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
 revision save, human request, evidence, assessment, sources, reconciliation, acceptance,

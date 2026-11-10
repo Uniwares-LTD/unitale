@@ -159,8 +159,10 @@ The local `registerBookletCreativeWorkV2` service now validates the actual creat
 child envelope for Planner, Manuscript, Art Director and Page Composer, checks exact
 source content and the declared hash, and derives normalized retry identity/category.
 Active registration rechecks the owned native Manager Run and its actual consumption
-workflow/job binding in the mutation transaction. It records intent only. MCP exposure,
-image/review registration, dispatch budgets, trusted outcomes and runtime recovery
+workflow/job binding in the mutation transaction. Registration records intent only.
+Dispatch now rechecks that active binding, cancellation and native execution status;
+registered unsubmitted work binds to its actual dispatching parent on continuation.
+MCP exposure, image/review registration, dispatch budgets, trusted outcomes and runtime recovery
 remain pending; no workflow is activated by this slice.
 
 This storage slice is not proof of real provider execution, effective retries or
