@@ -21,8 +21,9 @@ records current checks/reviews. Follow the
 [compatibility runbook](features/booklet-generation/workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
 before relying on target bindings; checkpoint 07 is the next application gate.
 
-The current 2026-11-10 run authorizes documentation/planning only, not application or
-workflow implementation, commits, pushes or live operations. The
+The user subsequently requested committing the reviewed candidate/plan and executing
+approved scope B. Baseline committed as `2dc7b8c`; 07.1/07.2 are in progress.
+Live operations, scope C and paid calls remain gated. The
 [remaining 07-12 plan](features/booklet-generation/implementation-plan.md#remaining-implementation-kickoff-and-ownership)
 aligns T18-T21, fixes Unitale/Unibase ownership and groups approvals at kickoff/final
 acceptance. It includes snapshotted action retries (LLM 2, image 0, retriable non-paid 3),
@@ -39,7 +40,8 @@ Checkpoints 01-06 deliver seven readable YAML workflows, a locally validated can
 and the minimum application integration handoff. The user explicitly confirmed the
 initial stop at the validated Dify/provider handoff. Scope B for minimal checkpoints
 07-11 is now approved, including scoped commits/pushes/PRs/merges/imports after checks.
-Implementation has not started; this turn only reconciles docs. No temporary tunnel
+Implementation started with v2 contracts and production/checkpoint storage; 07 is
+not complete. No temporary tunnel
 is planned: local MCP contract checks precede live conversion proof in 12. Scope C
 remains pending, with a selected US$3 future provider cap and no spending approval. The user authorized
 committing/pushing this candidate and updating issue #10 on 2026-11-09; that does

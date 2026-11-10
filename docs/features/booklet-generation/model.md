@@ -7,6 +7,23 @@ fields. The example and diagrams are therefore unchanged by this documentation-o
 decision record. Update all model artifacts together when concrete schema changes
 are authorized; do not relabel existing approval/quality records as Manager acceptance.
 
+## Version 2 storage slice (07 in progress)
+
+The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
+[v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing
+collections and owned transaction/admission validation. New v2 production creation is
+atomic; existing v1 records are never converted. Strict v1 readers remain unchanged;
+mixed readers discriminate documentVersion. Production v2 adds creation identity,
+a snapshotted retry policy and a versioned opaque checkpoint capped at 64 KiB.
+The JSON example includes an independent v2 draft beside unchanged v1 examples.
+
+V2 content preserves exact manuscript text and useful JSON creative fields. It adds
+native image-spec/book-layout/page-spec variants and source contentHash identities;
+v1 sources retain sha256. Assessment parsers support six modes without granting
+quality or execution authority. V2 assessment/action storage, immutable revision writes,
+lifecycle/MCP/Run UI integration remain pending; this slice does not activate workflows.
+The existing v1 service descriptions below retain their version-1 scope.
+
 ## Outcome
 
 The accepted model uses a **production document with an embedded content index**.

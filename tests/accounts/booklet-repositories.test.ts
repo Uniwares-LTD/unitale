@@ -8,6 +8,11 @@ import {
 } from "../../src/lib/server/booklets/repository";
 import { bookletsServerExtension } from "../../src/project/booklets/server";
 import { fingerprint } from "../../src/lib/server/foundation/canonical";
+import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
+import {
+  productionV2Schema,
+  storedProductionSchema,
+} from "../../src/lib/server/booklets/documents-v2";
 import type {
   AppendInput,
   Mutation,
@@ -213,6 +218,139 @@ test("booklet repositories preserve embedded identities and transactional bounda
     };
   }
   try {
+    await t.test(
+      "v2 creation and checkpoints preserve v1, ownership and durable CAS",
+      async () => {
+        const f = await fixture();
+        const before = await f.db
+          .collection("bookletProductions")
+          .findOne({ orderId: "order" });
+        const v2 = bookletRepositoryV2(f.db, actor, f.now);
+        const order = structuredClone(f.order);
+        order._id = "order-v2";
+        order.value.id = "order-v2";
+        order.value.targetId = "production-v2";
+        await f.db
+          .collection<typeof order>("consumptionOrders")
+          .insertOne(order);
+        const input = {
+          ...f.creation,
+          id: "production-v2",
+          orderId: "order-v2",
+          key: "create-v2",
+        };
+        assert.deepEqual(await v2.createProduction(input), {
+          id: "production-v2",
+          version: 1,
+        });
+        assert.deepEqual(await v2.createProduction(input), {
+          id: "production-v2",
+          version: 1,
+        });
+        await assert.rejects(
+          v2.createProduction(input, { paidLlm: 1 }),
+          /Changed production/,
+        );
+        const p = await v2.getProduction(input.id);
+        assert.equal(p.documentVersion, 2);
+        assert.deepEqual(p.retryPolicy, {
+          paidLlm: 2,
+          paidImage: 0,
+          nonPaid: 3,
+        });
+        assert.equal(storedProductionSchema.parse(before).documentVersion, 1);
+        assert.equal(storedProductionSchema.parse(p).documentVersion, 2);
+        await assert.rejects(f.repo.getProduction(input.id));
+        await assert.rejects(v2.getProduction("production"));
+        await assert.rejects(
+          bookletRepositoryV2(
+            f.db,
+            { uid: "other", authTime: 1 },
+            f.now,
+          ).getProduction(input.id),
+        );
+        const lease = await v2.acquireLease(input.id, {
+          key: "lease-v2",
+          holderId: "worker",
+          expectedVersion: 1,
+          durationMs: 10000,
+        });
+        assert.deepEqual(
+          await v2.acquireLease(input.id, {
+            key: "lease-v2",
+            holderId: "worker",
+            expectedVersion: 1,
+            durationMs: 10000,
+          }),
+          lease,
+        );
+        const checkpoint = {
+          key: "checkpoint-1",
+          holderId: "worker",
+          fence: lease.fence!,
+          expectedVersion: lease.version,
+          expectedCheckpointVersion: 0,
+          state: {
+            text: "  e\u0301 \ud83d\ude00\n",
+            pending: { callId: "call-1" },
+          },
+        };
+        const written = await v2.checkpoint(input.id, checkpoint);
+        assert.deepEqual(await v2.checkpoint(input.id, checkpoint), written);
+        await assert.rejects(
+          v2.checkpoint(input.id, { ...checkpoint, state: null }),
+          /Changed idempotency/,
+        );
+        const race = await Promise.allSettled(
+          ["left", "right"].map((key) =>
+            v2.checkpoint(input.id, {
+              ...checkpoint,
+              key,
+              expectedVersion: written.version,
+              expectedCheckpointVersion: 1,
+              state: { winner: key },
+            }),
+          ),
+        );
+        assert.equal(race.filter((r) => r.status === "fulfilled").length, 1);
+        const current = await v2.getProduction(input.id);
+        assert.equal(current.checkpointVersion, 2);
+        await assert.rejects(
+          v2.checkpoint(input.id, {
+            ...checkpoint,
+            key: "oversize",
+            expectedVersion: current.version,
+            expectedCheckpointVersion: 2,
+            state: "x".repeat(65536),
+          }),
+          /Checkpoint exceeds/,
+        );
+        assert.equal((await v2.getProduction(input.id)).checkpointVersion, 2);
+        assert.equal(
+          productionV2Schema.safeParse({
+            ...current,
+            checkpoint: "x".repeat(65536),
+          }).success,
+          false,
+        );
+        f.advance(20000);
+        await assert.rejects(
+          v2.releaseLease(input.id, {
+            key: "expired",
+            expectedVersion: current.version,
+            holderId: "worker",
+            fence: lease.fence!,
+          }),
+          /lease expired/,
+        );
+        assert.deepEqual(
+          await f.db
+            .collection("bookletProductions")
+            .findOne({ orderId: "order" }),
+          before,
+        );
+      },
+    );
     await t.test(
       "migration is repeatable and leaves existing records untouched",
       async () => {
@@ -1028,6 +1166,18 @@ test("canonical document example matches persistence schemas and embedded refere
     ),
   );
   const c = example.collections;
+  const v2Example = example.v2StorageExamples.production;
+  const v2Parsed = productionV2Schema.parse({
+    ...v2Example,
+    createdAt: new Date(v2Example.createdAt),
+    updatedAt: new Date(v2Example.updatedAt),
+  });
+  assert.equal(v2Parsed.documentVersion, 2);
+  assert.deepEqual(v2Parsed.retryPolicy, {
+    paidLlm: 2,
+    paidImage: 0,
+    nonPaid: 3,
+  });
   const dated = (row: Record<string, unknown>) => ({
     ...row,
     createdAt: new Date(row.createdAt as string),

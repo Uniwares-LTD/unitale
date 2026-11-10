@@ -3,7 +3,10 @@
 This guide describes the existing v1 contract and implementation boundaries.
 The accepted [workflow design](workflow-design.md) changes the target ownership of
 human approvals, quality gates and Manager acceptance, and records the required
-versioned extensions. Those changes are not implemented. Preserve v1 parsing and
+versioned extensions. The 07.1 [v2 content/assessment/retry parsers](../../../src/project/booklets/contracts-v2.ts)
+are implemented. V2 production/checkpoint persistence has started with explicit
+readers/writers; v2 revision writes, durable work/assessment records, tool integration
+and runtime policy remain pending. Preserve v1 parsing and
 historical records. The [package specification](workflow-package-spec.md#concrete-runtime-record-and-ui-decisions)
 defines the planned v1/v2 compatibility boundary; minimal package boundaries are
 checked in the actual workflow YAML and runtime implementation follows 07 in the
@@ -28,16 +31,19 @@ and its revision/version fields must not become an independent artifact write fe
 Production version/fencing governs persistence. No v1 parser changes are made by
 T14; any breaking public shape requires explicit versioning.
 
-## Planned v2 boundary
+## V2 boundary implementation status
 
 The [technical resolutions](workflow-package-spec.md#technical-resolutions-for-a01-a22)
 freeze v2 envelope/content identities, storage/index deltas, hashing, MCP ownership,
 admission/recovery, trusted observations, correction/revalidation and UI correlation.
-V1 quality uniqueness and parsing stay unchanged. New assessments, Manager acceptance
+V1 quality uniqueness and parsing stay unchanged. Content, assessment and retry policy
+parsers now exist beside v1; they preserve exact text and creative JSON fields. Structural
+parsing grants no execution/quality/usage authority. New assessment storage, Manager acceptance
 and correction chains remain application proposals until 07-09; 01 may implement
 package-local contract fixtures without changing runtime schemas.
-The model guide/example/Mermaid diagrams continue to describe implemented v1 state;
-07 must update all of them together with executable persistence changes.
+The model guide/example/Mermaid diagrams now distinguish unchanged v1 state from
+the implemented v2 production/checkpoint storage slice. Remaining records are not
+claimed as implemented.
 
 ## Versioning
 
