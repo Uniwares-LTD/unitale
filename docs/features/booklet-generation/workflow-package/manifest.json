@@ -28,8 +28,8 @@
     {
       "service": "manager",
       "path": "manager/workflow.yaml",
-      "sha256": "94bb3c15f34a949e04a79644d3675cc8047bd7afed20f3cbf65c2ca4254afcd7",
-      "bytes": 103930,
+      "sha256": "e7ce33211900aeb4b389709f0a2c526b86c0ec2419e3a6424f7fea8b52a77d2a",
+      "bytes": 104840,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -125,8 +125,8 @@
     6
   ],
   "review": {
-    "mode": "two separate same-agent read-only integrated passes covering each checkpoint",
-    "implementationSha256": "1cef1f643dd8a043a46eb52fb74c88a8978127de21d8b0a3f369405467e18df3",
+    "mode": "checkpoint 09 result-view slice reviewed read-only; checkpoint-wide 09 reviews pending; 01-06 reviews historical",
+    "implementationSha256": "69bec02610e254f6ff991025c6df7a32eef542a26a9a57714286f84e297a85b3",
     "independentAgentReview": false
   }
 }

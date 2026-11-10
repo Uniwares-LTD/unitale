@@ -2327,6 +2327,10 @@ workflow:
               value_selector:
                 - finish
                 - result
+            - variable: booklet_result
+              value_selector:
+                - finish
+                - booklet_result
       - id: after-context
         type: custom
         position:
@@ -2376,10 +2380,16 @@ workflow:
             import json
             def main(result, done):
                 value = json.loads(result)
+                if not isinstance(value, dict):
+                    raise ValueError("Expected a booklet outcome object")
                 if not done:
                     value["status"] = "partial"
                     value["reason"] = "action_bound_reached"
-                return {"result": json.dumps(value)}
+                status = value.get("status")
+                outcome = "success" if done and status == "complete" else "failed" if status in ("invalid_input", "failed") else "partial"
+                text = {"success": "Booklet completed.", "failed": "Booklet could not be completed.", "partial": "Booklet execution is incomplete. Check its current status before continuing."}[outcome]
+                view = {"version": 1, "outcome": outcome, "text": text, "cards": [], "images": [], "checkpoint": None, "failure": "booklet_" + status if outcome == "failed" else None}
+                return {"result": json.dumps(view), "booklet_result": json.dumps(value)}
           variables:
             - variable: result
               value_selector:
@@ -2391,6 +2401,8 @@ workflow:
                 - done
           outputs:
             result:
+              type: string
+            booklet_result:
               type: string
     edges:
       - id: start-source-actions

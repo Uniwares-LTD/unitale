@@ -242,9 +242,14 @@ integration. Extend generic MCP native-file, observed child execution or Run car
 Input seams only where the current implementation demonstrably lacks them. Do not
 implement the old preselected upstream feature list. Existing exact-publication import
 journals, environment-owned MCP provider and restricted downloads are reuse candidates,
-not evidence of deployed capability. No application changes are included in this package. The booklet domain adapter must
-map Manager status complete/partial/unknown into the existing Run result/card contract,
-without equating a terminated workflow with a completed book.
+not evidence of deployed capability. The candidate Manager finish node preserves its
+domain envelope under `booklet_result` and supplies the existing Run `result` view:
+confirmed `complete` maps to success, `failed`/`invalid_input` to failure and all other
+states to partial. The public view uses fixed summaries and sanitized failure codes,
+empty cards/images and no checkpoint; domain evidence stays outside it. The existing
+worker additionally requires native execution success. Booklet state/assets remain
+authoritative; terminating a workflow does not itself complete a book. Application
+registration and v2 domain wiring remain checkpoint 09 work.
 
 ## Provider and deployment handoff
 
@@ -785,7 +790,7 @@ an approval boundary. No technical approval establishes unverified capabilities.
 | Provider/composition feasibility | Isolated probes and installed-source audit complete; SDK retries/default timeout/alias accepted | Reuse shared providers unchanged; current-provider configuration and all seven secret-free candidate import/readbacks now pass; actual execution of this revised binding and application acceptance remain unverified | No-money checks can run unattended with authorized staging access. No plugin installation or upstream release required; any further paid probes need a newly agreed finite scope/cap. Billing reconciliation needs account usage/invoice access |
 | 07: application contracts/persistence | Complete locally; two clean same-agent reviews | Follow the [bounded slices](../implementation-plan.md#07---application-contracts--persistence); v2 compatibility, action/assessment/checkpoint facts and retry snapshots | Kickoff approval covers 07-11 and scoped cross-repository publication; disposable local persistence only |
 | 08: shared runtime seams | Complete locally at Unitale `2873e60`; two clean same-agent reviews | Unibase PRs #49/#50 imported at `98b77fd1926bc38cefa172a1c90e4735597ca6db`; image transport, private observations, internal waits, Run UI slots and existing-worker late reconciliation pass local checks | No provider release dependency; project wiring remains 09-11 and live MCP conversion remains 12 |
-| 09: Unitale gateway/recovery | Not started | Manager MCP, prepaid admission, per-output retention, bounded retries, automatic evidence reconciliation and explicit continuation | Reuse existing worker/commerce; no new scheduler or blind replay; fake-provider tests unattended after dependencies |
+| 09: Unitale gateway/recovery | In progress: Manager terminal view validated offline | Wire versioned Manager MCP, prepaid admission, per-output retention, bounded retries, automatic evidence reconciliation and explicit continuation | Reuse existing worker/commerce; no new scheduler or blind replay; fake-provider tests unattended after dependencies |
 | 10: existing Run UI / T21 | Not started | Brief, quote/consent, progress, decisions, revisions and accessible history; retry settings/evidence in existing admin | Local browser fixtures; en/ar public and English/LTR admin; no standalone creator workspace |
 | 11: integrated validation | Not started | Actual boundaries, failure/recovery/race tests and two clean reviews; distinguish offline from Dify evidence | Local tests unattended under kickoff approval; final handoff records exact revisions and pending gates |
 | 12: staging acceptance | Integrated acceptance pending | Publish specialists then Manager, verify bindings/tags, execute T18-T21 journeys and retain secret-free evidence | Final grouped approval: deployment/migration/publication, secure inputs, package/capacity, test accounts and selected US$3 total cap (no spend until approval); real staging MCP image proof; human consent remains human |

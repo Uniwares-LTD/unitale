@@ -22,9 +22,9 @@ including workspace tags to apply during a future authorized import.
 
 The [specification](../workflow-package-spec.md) owns accepted behavior. The
 [integration handoff](integration-handoff.md) defines the proposed application boundary,
-configuration/bindings, failure handling and target probes. Application schemas,
-registrations and migrations are unchanged; existing Dify apps and shared plugins
-were preserved during the disposable probes.
+configuration/bindings, failure handling and target probes. Application storage and
+shared-runtime integration are implemented separately in 07-08; v2 runtime registration
+remains 09. Existing Dify apps and shared plugins were preserved during disposable probes.
 
 ## Configuration and limits
 
@@ -49,12 +49,12 @@ They do not establish execution of the revised shared-provider binding. [Shared-
 now passes for all seven disabled candidates; actual revised-binding execution and
 full application integration remain pending.
 Activation remains disabled. Scope B for minimal 07-11 implementation is approved;
-07 storage is complete locally; 08-11 runtime integration remains. The [approval register](integration-handoff.md#approval-register)
+07 storage and 08 shared-runtime import are complete locally; 09-11 application integration remains. The [approval register](integration-handoff.md#approval-register)
 records no tunnel, scope C pending and a future US$3 ceiling (not current spend approval).
 The [remaining T18-T21 plan](../implementation-plan.md#remaining-implementation-kickoff-and-ownership)
-is documentation only. Its [retry/reconciliation policy](../implementation-plan.md#action-retries-and-automatic-reconciliation)
+is being executed under scope B. Its [retry/reconciliation policy](../implementation-plan.md#action-retries-and-automatic-reconciliation)
 requires future application and bounded YAML changes with fresh evidence; existing
-candidate retry settings and recorded hashes are unchanged.
+candidate retries remain disabled. The 09 Manager result-view slice below has fresh hashes.
 The retained upstream patch and isolated-build proposal are optional historical evidence.
 
 Local capacities: child JSON 256 KiB; original 8 MiB; one to sixteen explicit creative
@@ -98,7 +98,30 @@ scenarios are retained. The superseded implementation has an ignored recovery ar
 at `output/tooling/booklet-before-simplification.zip` with all 356 source hashes verified
 before 348 individually inventoried source/generated/test files were removed.
 
+## Current integration slice
+
+Checkpoint 09 starts with the existing Manager finish node: `booklet_result` preserves
+the domain outcome, while `result` uses the existing sanitized Run UI contract. Only a
+finished, structurally confirmed `complete` becomes success. Unknown/partial and action
+exhaustion stay partial; failure details do not leak into public summaries. No graph
+orchestration, prompts, provider bindings or execution switches change. Offline evidence
+and current digest are refreshed for this slice; checkpoint-wide 09 reviews and actual
+Dify import/execution of this revision remain pending.
+
+Current slice: 35/35 compatibility tests pass (11 preserved v1 and 24 native-package
+tests), including the real consume-to-finish result path, all terminal outcomes,
+action exhaustion, malformed data and public evidence redaction. Typecheck and
+scoped test lint pass. Current implementation SHA-256:
+`69bec02610e254f6ff991025c6df7a32eef542a26a9a57714286f84e297a85b3`.
+The digest uses the same 13-path algorithm described below; seven YAML files total
+237,494 bytes. The historical 01-06 review identity below does not cover this slice.
+A separate same-agent read-only slice review found no blocking issue; the hash audit,
+docs, i18n and skill checks pass. No build rerun is needed for YAML/test/docs-only
+changes after the passing 08 build. Checkpoint-wide 09 reviews remain pending.
+
 ## Checkpoint evidence
+
+The following evidence records the historical 01-06 candidate before 09 integration.
 
 Local candidate checkpoints 01-06 are complete under the revised DSL-first plan.
 This is not integrated/paid acceptance: E1-E5 remain open, with partial no-money
@@ -159,7 +182,7 @@ by that display-only change.
 
 Provider feasibility passed for the isolated candidate; see the
 [current provider handoff](integration-handoff.md#paid-provider-feasibility-results).
-Checkpoint 07 is the next implementation step under approved scope B. Keep live
+Checkpoint 09 is the current implementation step under approved scope B. Keep live
 activation disabled pending scope C and application acceptance.
 This naming/documentation update includes no application changes or paid calls.
 

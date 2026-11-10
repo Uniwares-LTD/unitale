@@ -462,7 +462,7 @@ application-specific policy and live acceptance remain their later checkpoints.
 while the existing Run worker already accepts a `result` UI envelope. No new shared
 normalization hook is needed. In 09, keep the domain envelope unchanged under the
 additional End output `booklet_result` and use the existing small finish Code node
-to produce the generic `result` view. Map a finished `succeeded` domain result to
+to produce the generic `result` view. Map a finished `complete` domain result to
 success, `invalid_input`/`failed` to failed, and other terminal domain states to
 partial; the worker still requires native execution success for success. Keep
 cards/images empty and checkpoint null in this view: owned booklet state/assets
@@ -470,6 +470,9 @@ remain authoritative. Include only a bounded readable summary and sanitized fail
 code/message, never raw work evidence, private context or native file handles.
 Update the v2 binding/fixtures/hashes/handoff together in 09. Preserve existing v1
 outputs and worker accounting; no additional generic result protocol or interpreter.
+Verified against the actual `consume` Code node: it emits `complete` only after the
+application confirms structural completion. The earlier `succeeded` wording was
+incorrect and must not create a second domain completion vocabulary.
 
 08 late-result finding: the generic worker does not claim terminal Runs. Active-node
 observation and paused-Run resume therefore cannot reconcile a child that finishes
@@ -513,6 +516,16 @@ regressions. Do not manually edit Unitale CHANGELOG/template version. Close 08 w
 no code if all seams suffice. Do not claim an external required reviewer can be automated.
 
 ### 09 - Unitale Gateway & Recovery
+
+In progress: the first bounded slice resolves the demonstrated Manager/Run terminal
+contract mismatch in the existing finish node and End selectors. Domain payload is
+preserved as `booklet_result`; the sanitized `result` view uses the existing Run parser.
+All 35 compatibility tests, typecheck and scoped test lint pass. Prompts, child graphs,
+bindings, contracts and disabled execution switches remain unchanged. Package hashes
+and current evidence are in the [candidate README](workflow-package/README.md#current-integration-slice).
+Checkpoint-wide 09 reviews and application-connected execution remain pending.
+Next: versioned Manager MCP context/read/lease and prepaid admission wiring, reusing
+the 07 repository and existing services; implement each boundary in small verified slices.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,

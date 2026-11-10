@@ -6,6 +6,7 @@ import { fingerprint as hash } from "../../src/lib/server/foundation/canonical";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { parse } from "yaml";
+import { parseResult } from "../../src/lib/contracts/runs";
 
 // Inspect actual DSL and execute isolated pure Code functions. This is not a Dify engine.
 const root = resolve("docs/features/booklet-generation/workflow-package");
@@ -107,6 +108,67 @@ function register(r: any, c = context(), correction?: any) {
   });
   return c;
 }
+test("Manager terminal view uses the Run contract without exposing domain evidence", () => {
+  for (const [status, outcome] of [
+    ["complete", "success"],
+    ["invalid_input", "failed"],
+    ["failed", "failed"],
+    ["partial", "partial"],
+    ["unknown", "partial"],
+    ["unexpected", "partial"],
+  ]) {
+    const domain = {
+      status,
+      reason: "private provider detail",
+      evidence: "private receipt",
+    };
+    const output = run("manager", "finish", {
+      result: JSON.stringify(domain),
+      done: true,
+    });
+    assert.deepEqual(JSON.parse(output.booklet_result), domain);
+    const view = parseResult(output);
+    assert.equal(view.outcome, outcome);
+    assert.deepEqual(view.cards, []);
+    assert.deepEqual(view.images, []);
+    assert.equal(view.checkpoint, null);
+    assert(!JSON.stringify(view).includes("private"));
+  }
+  const unfinished = run("manager", "finish", {
+    result: JSON.stringify({ status: "complete" }),
+    done: false,
+  });
+  assert.equal(parseResult(unfinished).outcome, "partial");
+  assert.deepEqual(JSON.parse(unfinished.booklet_result), {
+    status: "partial",
+    reason: "action_bound_reached",
+  });
+  const confirmed = run("manager", "consume", {
+    raw: [{ result: { status: "complete" } }],
+    action: "complete", request: "{}",
+    context: JSON.stringify(context()), version: 4,
+  });
+  assert.equal(parseResult(run("manager", "finish", {
+    result: confirmed.result, done: confirmed.done,
+  })).outcome, "success");
+  assert.throws(
+    () => run("manager", "finish", { result: "[]", done: true }),
+    /outcome object/,
+  );
+  const end = apps.manager.workflow.graph.nodes.find(
+    (node: any) => node.id === "end",
+  );
+  assert.deepEqual(
+    end.data.outputs.map((output: any) => [
+      output.variable,
+      output.value_selector,
+    ]),
+    [
+      ["result", ["finish", "result"]],
+      ["booklet_result", ["finish", "booklet_result"]],
+    ],
+  );
+});
 test("seven readable native candidates preserve private bindings and disable node retries", () => {
   assert.equal(
     readdirSync(root).filter((x) =>

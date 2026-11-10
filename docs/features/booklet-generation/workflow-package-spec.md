@@ -235,6 +235,15 @@ do not silently substitute plain-text parsing for native structured output.
 
 ### Concrete runtime record and UI decisions
 
+Manager End outputs separate `booklet_result` (the preserved domain envelope) from
+`result` (the existing version-1 Run view). The finish Code node maps only confirmed
+`complete` to success, `failed`/`invalid_input` to failed, and other outcomes to
+partial, with fixed bounded summaries and sanitized failure codes. Cards/images are
+empty and checkpoint null; owned booklet records/assets remain authoritative. The
+generic worker additionally requires native execution success. No shared normalizer
+or second result protocol is needed. This local 09 slice has pure-Code/Run-parser
+fixtures; its target Dify execution and v2 application wiring remain pending.
+
 Keep v1 semantics and records. Necessary v2 boundaries are proposals; do not design
 all collections/indexes before the workflows establish their need. Reuse existing
 production/revision/original-media, consumption, execution and Run services. Human
