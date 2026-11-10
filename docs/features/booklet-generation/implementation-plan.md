@@ -543,7 +543,16 @@ All 46 affected repository/lifecycle/media/MCP tests pass; a final 22-test repos
 run also verifies a version-changing save is rejected. Build, sequential typecheck,
 scoped lint, generated model/docs, i18n and skills checks pass. A separate same-agent
 read-only slice review found no blocking issue. No fields, migration, dispatch or scheduler.
-Next: v2 revision services and Manager MCP context/read/lease,
+The fourth slice adds v2 revision quote/start through existing commerce and the
+unchanged product revision-scope guard shared with v1. It binds expected production
+version, exact quote/amount and durable revision funding origin; stale/widened/locked
+requests cannot admit work. All 39 affected repository/lifecycle tests pass, including
+the actual v2 quote/start path, repeated consent, wrong amounts, stale versions and
+locked stages. Production build, sequential typecheck, scoped lint, model/docs, i18n
+and skills checks pass. The fixture used its forced-stop cleanup fallback; the runner
+passed. A separate same-agent read-only slice review found no blocking issue.
+No new accounting record, field, dependency or app creative policy is introduced.
+Next: Manager MCP context/read/lease,
 reusing the 07 repository and existing commerce; implement each boundary in small
 verified slices. No current slice enables execution or closes checkpoint 09.
 

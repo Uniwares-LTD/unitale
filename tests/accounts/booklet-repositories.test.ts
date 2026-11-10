@@ -322,6 +322,12 @@ test("booklet repositories preserve embedded identities and transactional bounda
         );
         await createCreditIndexes(f.db);
         await createConsumptionIndexes(f.db);
+        await f.db.collection("consumptionOrders").updateOne(
+          { _id: "order-v2" as never },
+          { $set: { "value.terms.allowances": f.order.value.terms.allowances.map((a) =>
+            a.category === "story" ? { ...a, unit: "request" } : a,
+          ) } },
+        );
         await grantCredits(f.db, actor.uid, "admission-funding", {
           amount: 500,
           source: "purchase",
@@ -446,6 +452,37 @@ test("booklet repositories preserve embedded identities and transactional bounda
           assert.deepEqual(after.checkpoint, before.checkpoint);
           assert.deepEqual(after.subjects, before.subjects);
           assert.equal(after.version, before.version + 3);
+          await f.db.collection("aiJobs").updateOne(
+            { _id: successor.attemptId as never },
+            { $set: { status: "failed", terminationEvidence: "provider-failed" } },
+          );
+          await lifecycle.finishRun("production-v2", nextFlow);
+          const revisionRequest = {
+            requestId: "story-revision", category: "story" as const, subjects: [],
+            inputHash: fingerprint("revised brief"), expectedVersion: after.version,
+          };
+          const quote = await lifecycle.quoteRevision("production-v2", revisionRequest);
+          assert.equal(quote.credits, 0);
+          await assert.rejects(lifecycle.quoteRevision("production-v2", {
+            ...revisionRequest, expectedVersion: after.version + 1,
+          }), /changed/);
+          await assert.rejects(lifecycle.quoteRevision("production-v2", {
+            ...revisionRequest, subjects: ["book-subject"],
+          }), /one round/);
+          await assert.rejects(lifecycle.startRevision("production-v2", revisionRequest, quote.hash, 1), /quote/);
+          const revisionFlow = await lifecycle.startRevision("production-v2", revisionRequest, quote.hash, quote.credits);
+          assert.equal(await lifecycle.startRevision("production-v2", revisionRequest, quote.hash, quote.credits), revisionFlow);
+          const revised = await f.v2.getProduction("production-v2");
+          assert.equal(revised.revisionChargeId, revisionFlow);
+          assert.deepEqual(revised.checkpoint, before.checkpoint);
+          assert.equal(await f.db.collection("consumptionAllocations").countDocuments({ orderId: "order-v2" }), 1);
+          await f.db.collection("bookletProductions").updateOne(
+            { _id: "production-v2" as never },
+            { $set: { "stageLocks.story": { operationId: "downstream", lockedAt: new Date(), sourceRevisionIds: [] } } },
+          );
+          await assert.rejects(lifecycle.quoteRevision("production-v2", {
+            ...revisionRequest, requestId: "locked-revision", expectedVersion: revised.version,
+          }), /locked/);
           await f.db
             .collection("orchestrators")
             .updateOne(

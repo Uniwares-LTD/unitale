@@ -81,7 +81,8 @@ and the adapter; the table does not require unrelated suites for every task.
   The existing admission service selects the stored v1/v2 production and matching
   domain version; both adapters reject generic Run-start admission. V2 financial
   lifecycle calls live in `src/lib/server/booklets/lifecycle-v2.ts` and reuse existing
-  commerce journals; revision, MCP and observer wiring remain checkpoint 09 work.
+  commerce quote/allocation journals and shared product revision-scope checks;
+  MCP and observer wiring remain checkpoint 09 work.
   Regenerate the simple/complete Mermaid versions with `npm run docs:booklet-model` whenever model relationships change.
   The [offline Dify harness](features/booklet-generation/dify-compatibility.md) owns
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;

@@ -260,8 +260,11 @@ existing consumption journals, and finishes a workflow only with verified termin
 Shared version-aware persistence validates the selected schema and fences the stored
 document version, preventing conversion through a save. These calls preserve opaque
 checkpoints, retry policy and content; the service does not dispatch providers. V2
-revision, MCP and automatic recovery wiring remain subsequent work; no orchestrator
-is activated here.
+revision quote/start uses the same subject/stage-lock checks and quote/allocation
+journals as v1. Quotes bind the exact production version and accepted amount; a new
+revision records its funding origin and reopens working state without changing old
+revisions or the selected manifest. MCP and automatic recovery wiring remain
+subsequent work; no orchestrator is activated here.
 
 No document field, relationship, index or migration changes in this admission slice;
 the JSON example and both Mermaid schema versions remain applicable unchanged.
