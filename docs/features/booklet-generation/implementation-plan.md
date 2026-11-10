@@ -556,6 +556,18 @@ Next: Manager MCP context/read/lease,
 reusing the 07 repository and existing commerce; implement each boundary in small
 verified slices. No current slice enables execution or closes checkpoint 09.
 
+Verified wire finding for the next handler slice: the current Manager `begin_work`
+registration arguments include a declared hash/service/operation but no complete
+child request. That is insufficient for the server-derived normalized action identity
+required by 07. When implementing the actual handler, supply and validate the existing
+child envelope (or its verified complete transfer) before deriving category/action
+identity and checking the declared hash. Add only that necessary carrier; never trust
+a model-supplied action key, category or hash as execution authority. Refresh the
+affected prompt/binding/fixture/hash evidence together; no schema generator or generic
+executor. Likewise keep large action bodies outside the 64 KiB checkpoint and return
+complete typed read sections/cursors; the current `consume` node's inline `lastResult`
+must not silently truncate or become an accidental product-size limit.
+
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
 revision save, human request, evidence, assessment, sources, reconciliation, acceptance,
