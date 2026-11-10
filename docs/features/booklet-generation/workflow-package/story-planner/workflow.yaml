@@ -159,8 +159,8 @@ workflow:
                 Return exactly one result item for each requested itemId. Missing facts return needs_input and limitations. Never put null inside required text or arrays.
                 concept: Develop title, premise, audience/reading needs, tone and constraints from the brief. Add theme or emotional promise only when meaningful; leave unresolved decisions explicit.
                 outline: Develop an ordered outline and emotional progression from the selected concept and brief. Use stable beat IDs and explicit subject mentions; do not force an act taxonomy or settle intentionally open subject details.
-                cast: Propose individual character descriptions and one roster delta within maxCharacters. Existing subjects retain IDs. Newly needed characters use local keys. Zero characters is valid: return an empty character roster, not filler characters. Separate sourced established facts from provisional choices.
-                locations: Propose individual location descriptions and one roster delta within maxLocations. Existing subjects retain IDs and new locations use local keys. Zero locations is valid. Describe narrative purpose and established anchors without persona-based counts.
+                cast: For create, propose individual character descriptions and one roster delta within maxCharacters. For revise, return only explicitly targeted description or roster proposals; do not add an unrelated roster. Existing subjects retain IDs. Newly needed characters use local keys. Zero characters is valid: return an empty character roster, not filler characters. Separate sourced established facts from provisional choices.
+                locations: For create, propose individual location descriptions and one roster delta within maxLocations. For revise, return only explicitly targeted description or roster proposals; do not add an unrelated roster. Existing subjects retain IDs and new locations use local keys. Zero locations is valid. Describe narrative purpose and established anchors without persona-based counts.
                 Return items with itemId/status/proposals/limitations. Each proposal has kind, subjectId, and a structured content object. Use the operation content fields described above. Individual descriptions contain name, subjectKind, description, establishedFacts and continuityConstraints. A roster contains subjectIds. Manuscript contains ordered units with id/action/subjects/texts; each text has id/kind/text and optional speaker. Layout/page content preserves ordered panels and lettering. Every successful proposal has the appropriate artifact kind.
             - id: input
               role: user
@@ -278,11 +278,11 @@ workflow:
                         if i["status"] != "succeeded":
                             continue
                         rosters = [p["content"]["subjectIds"] for p in i["proposals"] if p["kind"] == "roster"]
-                        if len(rosters) != 1 or len(set(rosters[0])) != len(rosters[0]) or len(rosters[0]) > r["constraints"][limit_key]:
+                        if (r["intent"] == "create" and len(rosters) != 1) or len(rosters) > 1 or (rosters and (len(set(rosters[0])) != len(rosters[0]) or len(rosters[0]) > r["constraints"][limit_key])):
                             raise ValueError("Explicit roster/product capacity mismatch")
                         descriptions = [p["subjectId"] for p in i["proposals"] if p["kind"] == "description"]
-                        if len(set(descriptions)) != len(descriptions) or not set(descriptions).issubset(rosters[0]):
-                            raise ValueError("Subject description not in roster")
+                        if len(set(descriptions)) != len(descriptions) or len(descriptions) > r["constraints"][limit_key] or (rosters and not set(descriptions).issubset(rosters[0])):
+                            raise ValueError("Subject description not in roster or exceeds capacity")
                 statuses = [i["status"] for i in items]
                 status = "succeeded" if all(s == "succeeded" for s in statuses) else ("partial" if "succeeded" in statuses else ("failed" if all(s == "failed" for s in statuses) else "needs_input"))
                 return {"result": json.dumps({"contractVersion": 2, "invocationId": r["invocationId"], "callId": r["callId"], "service": r["service"], "operation": r["operation"], "status": status, "items": items}, ensure_ascii=False)}

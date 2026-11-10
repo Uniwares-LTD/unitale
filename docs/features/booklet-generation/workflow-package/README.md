@@ -100,33 +100,34 @@ before 348 individually inventoried source/generated/test files were removed.
 
 ## Current integration slice
 
-Checkpoint 09 starts with the existing Manager finish node: `booklet_result` preserves
-the domain outcome, while `result` uses the existing sanitized Run UI contract. Only a
-finished, structurally confirmed `complete` becomes success. Unknown/partial and action
-exhaustion stay partial; failure details do not leak into public summaries. The Manager
-registration action now supplies the complete hash-bound `childRequest`, allowing the
-server to derive identity/category rather than trust model assertions. The local
-creative-text registration service records intent only; image/review registration,
-MCP exposure, dispatch budgets and observers remain pending. Provider bindings and
-execution switches stay unchanged. Offline evidence
-and current digest are refreshed for this slice; checkpoint-wide 09 reviews and actual
-Dify import/execution of this revision remain pending.
+Checkpoint 09 preserves the Manager domain outcome as `booklet_result` and returns
+an existing sanitized Run UI `result`. Confirmed structural completion becomes success;
+unknown/partial outcomes stay partial. Pre-action checkpoint receipts supply the
+confirmed fence to action/dispatch arguments, and registration supplies the complete
+hash-bound child envelope. Provider bindings and execution switches remain disabled.
 
-The pre-action checkpoint now supplies the confirmed fence to all existing action
-branches and paid dispatch. Read payloads and child content stay unchanged; registration
-intent retains nested child call/item IDs for recovery. Pending action identity excludes
-the root concurrency token. The checkpoint facade must return its authoritative fence.
+Local v2 checkpoint, index, document/history reads and creative-text registration
+handlers now exist. Registration binds actual artifact responsibilities while native
+child selectors retain subject IDs and grouped revisions. Paid dispatch, image/review
+registration, remaining capabilities, trusted observers and recovery integration remain
+pending. The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
+owns application checks and progress; the package digest below covers only native
+YAML, fixtures and their focused compatibility test.
 
-Current slice: 37/37 compatibility tests pass (11 preserved v1 and 26 native-package
-tests), including the real consume-to-finish result path, all terminal outcomes,
-action exhaustion, malformed data and public evidence redaction. Typecheck and
-scoped test lint pass. Current implementation SHA-256:
-`148cecf12e9111eab2ac05d3a478307e95ad21485f56a1297e551108cf01dcf6`.
-The digest uses the same 13-path algorithm described below; seven YAML files total
-240,060 bytes. The historical 01-06 review identity below does not cover this slice.
-The server registration tests/checks and review evidence are recorded in the
-[delivery plan](../implementation-plan.md#09---unitale-gateway--recovery).
-Checkpoint-wide 09 reviews remain pending.
+Story Planner now permits a character/location description-only revision without an
+unrequested roster proposal. Initial creation still requires its roster; product
+capacity, duplicate and revision-scope checks remain. The regression failed against
+the prior exported pack node, then passed with the focused fix. No target-environment
+import or execution of this revised candidate is claimed.
+
+Current slice: 38/38 compatibility tests pass (11 preserved v1 and 27 native-package
+tests). Typecheck, scoped test lint, docs/i18n/skills checks and an independent hash audit
+pass. A separate same-agent read-only slice review found no blocking issue. Current
+implementation SHA-256:
+`40e52a70fb2c02cb4d873c6832871b43f9ae10ab933c7ee86d38e4d2d6e9810b`.
+The digest uses the existing 13-path algorithm described below; seven YAML files total
+240,453 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+and application-connected execution remain pending.
 
 ## Checkpoint evidence
 

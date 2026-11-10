@@ -702,11 +702,18 @@ No new wire field, task registry or
 application creative progression policy. Paid dispatch and trusted per-output retention
 remain pending.
 
-Native pack follow-up: Story Planner currently requires a roster proposal for every
-cast/location result, including a revision scoped only to one description. Its revision
-scope check then rejects an unrequested book-roster proposal. Keep initial creation's
-roster requirement, but let targeted revision omit that unrelated roster; prove it with
-the actual exported pack node before enabling the affected path.
+The sixteenth slice fixes the verified native pack mismatch: Story Planner's cast/
+location description-only revisions no longer require an unrelated roster. Its prompt
+and existing inline guard preserve initial creation's roster, product capacity,
+duplicate and explicit revision-target checks. The new regression fails on the prior
+exported pack node, then passes with the fix for both operations. All 38 compatibility
+tests pass. Workflow hashes and the existing 13-path digest are refreshed; the package
+README records the current identity and consolidates its integration status. Typecheck,
+scoped test lint, docs/i18n/skills checks and an independent hash audit pass. A separate
+same-agent read-only slice review found no blocking issue. No application build rerun
+was needed for this YAML/test/docs-only delta. No provider binding, execution gate, machine
+reference, application contract or model field changes. Actual import/execution of
+this candidate and checkpoint-wide 09 reviews remain pending.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,

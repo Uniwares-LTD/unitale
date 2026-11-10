@@ -186,6 +186,9 @@ subject IDs, matching native proposal `subjectId`; each selected subject must pa
 a declared artifact target. Initial roster creation can use new invocation-local subject
 keys under the declared roster artifact; those keys never become accounting targets.
 Grouped revision selectors retain their native meaning.
+Planner cast/location description-only revisions can omit an unrelated roster;
+initial creation still requires the roster. The exported pack node and prompt enforce
+the selected subject scope, uniqueness and product capacity in both cases.
 Subject aliases, unrelated artifact kinds and invented operations cannot create a new
 work accounting scope. This is an extension of the existing operation allowlist, not
 an application creative scheduler or a new role registry.

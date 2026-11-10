@@ -1027,6 +1027,87 @@ test("Planner supports zero optional subjects and rejects invented roster capaci
   );
 });
 
+test("Planner targeted description revisions do not require unrelated roster changes", () => {
+  for (const [operation, subjectKind, target, limit] of [
+    ["cast", "character", "character-1", "maxCharacters"],
+    ["locations", "location", "location-1", "maxLocations"],
+  ]) {
+    const r = request("story-planner", operation);
+    r.intent = "revise";
+    r.constraints = { [limit]: 1 };
+    r.items[0] = {
+      ...r.items[0],
+      targetId: target,
+      baseline: { name: "Existing subject" },
+      feedback: { instruction: "Fix the confirmed detail." },
+    };
+    const proposal = {
+      kind: "description",
+      subjectId: target,
+      content: {
+        name: "Existing subject",
+        subjectKind,
+        description: "Corrected detail",
+        establishedFacts: [],
+        continuityConstraints: [],
+      },
+    };
+    const response = {
+      items: [
+        {
+          itemId: "item-1",
+          status: "succeeded",
+          proposals: [proposal],
+          limitations: [],
+        },
+      ],
+    };
+    const packed = JSON.parse(
+      run("story-planner", "pack", { request: JSON.stringify(r), response })
+        .result,
+    );
+    assert.equal(packed.status, "succeeded");
+    assert.equal(packed.items[0].proposals.length, 1);
+    const withUnrequestedRoster = structuredClone(response);
+    withUnrequestedRoster.items[0].proposals.push({
+      kind: "roster",
+      subjectId: "book",
+      content: { subjectIds: [target] },
+    } as any);
+    assert.throws(
+      () =>
+        run("story-planner", "pack", {
+          request: JSON.stringify(r),
+          response: withUnrequestedRoster,
+        }),
+      /Revision escaped target/,
+    );
+    const duplicate = structuredClone(response);
+    duplicate.items[0].proposals.push(structuredClone(proposal));
+    assert.throws(
+      () =>
+        run("story-planner", "pack", {
+          request: JSON.stringify(r),
+          response: duplicate,
+        }),
+      /Subject description/,
+    );
+    r.constraints[limit] = 0;
+    assert.throws(
+      () =>
+        run("story-planner", "pack", { request: JSON.stringify(r), response }),
+      /capacity|Subject description/,
+    );
+    r.constraints[limit] = 1;
+    r.intent = "create";
+    assert.throws(
+      () =>
+        run("story-planner", "pack", { request: JSON.stringify(r), response }),
+      /Explicit roster/,
+    );
+  }
+});
+
 test("Art Director preserves immutable facts while allowing open design choices", () => {
   const r = request("art-director", "character_spec");
   r.items[0].input = { descriptionRevisionId: "character-revision" };

@@ -36,8 +36,8 @@
     {
       "service": "story-planner",
       "path": "story-planner/workflow.yaml",
-      "sha256": "5cc0fe86bd8bd82c1d8b7536b45870962f5177a641d733966ae42fad5efe2f6b",
-      "bytes": 19383,
+      "sha256": "85a705689d3c84797e852b58f71193a50ef4fdaa5c15edbce8c6418478bf1dfe",
+      "bytes": 19776,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -125,8 +125,8 @@
     6
   ],
   "review": {
-    "mode": "checkpoint 09 pre-action fence slice reviewed read-only; checkpoint-wide 09 reviews pending; 01-06 reviews historical",
-    "implementationSha256": "148cecf12e9111eab2ac05d3a478307e95ad21485f56a1297e551108cf01dcf6",
+    "mode": "checkpoint 09 Planner targeted-revision slice reviewed read-only; checkpoint-wide 09 reviews pending; 01-06 reviews historical",
+    "implementationSha256": "40e52a70fb2c02cb4d873c6832871b43f9ae10ab933c7ee86d38e4d2d6e9810b",
     "independentAgentReview": false
   }
 }
