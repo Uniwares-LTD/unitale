@@ -113,7 +113,7 @@ Manager must not reconstruct base64 chunks or invent content from an incomplete 
 | --- | --- | --- |
 | context | `{}` -> bounded facts below | existing context + owned production/read services |
 | read_document | kind,id,cursor? -> immutable body or bounded history page | existing chunked reads; add human_response/work/assessment/execution kinds |
-| lease | action -> current Run-owned fence | existing acquire/renew/release |
+| lease | action,fence -> current Run-owned fence | existing acquire/renew/release |
 | index | subjects,artifacts,fence -> stable ID map | existing embedded production index |
 | begin_work | register: childRequest,requestHash,targets,retryOf?,correction?,fence; dispatch: callId,requestHash,fence -> callId,requestHash,status,fence | derive identity/category/sources from the complete validated child request; durable correction/usage checks |
 | transfer | action,key and bounded parts -> verified transfer receipt | existing transfer storage/integrity/capacity |
@@ -125,7 +125,7 @@ Manager must not reconstruct base64 chunks or invent content from an incomplete 
 | sources | sources,references -> ordered immutable reference manifest plus native files | existing source authorization + native image bridge |
 | reconcile_work | callId,executionLocator? -> trusted per-item state/effective usage | existing terminal recovery and measurements; never paid replay |
 | record_acceptance | revisionId,contentHash,targetIds,assetIds,sources,evidence,fence -> Manager selection | separate Manager selection from authenticated human apply_decision |
-| checkpoint | expectedVersion,fence,state -> checkpointVersion | new small opaque CAS record on owned production; no scheduling |
+| checkpoint | expectedVersion,fence,state -> checkpointVersion,fence | small opaque CAS record on owned production; return authoritative post-write fence; no scheduling |
 | complete | manifest,fence -> status complete only after structural/product checks | existing completion, removing app quality/human-policy gates for v2 |
 
 This is a versioned boundary proposal, not a demand to replace all v1 handlers. Keep
@@ -221,6 +221,12 @@ Keep leases short. Mutation facades acquire/validate and release existing Run-ow
 leases around their local transactions; no database transaction or lease is held across
 model/tool/Human Input waits. Re-read current context and reacquire a valid mutation
 fence after external waits. On a version race stop and recover from authoritative facts.
+The pre-action checkpoint receipt must return its authoritative `fence` alongside
+`checkpointVersion`. Manager's existing `saved` node validates both, then binds that
+fence into the selected action and paid-dispatch arguments; action branches use these
+confirmed arguments. Read-only payloads remain unchanged. The root MCP `fence` is a
+concurrency token, excluded from the opaque pending action's meaningful hash. Child
+request/content identities remain unchanged by this token refresh.
 
 Same-run Human Input resumes the same Dify execution. Run UI authenticates and stores
 request/attempt/presentation/target correlation independently of native form text;

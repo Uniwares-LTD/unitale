@@ -112,13 +112,18 @@ execution switches stay unchanged. Offline evidence
 and current digest are refreshed for this slice; checkpoint-wide 09 reviews and actual
 Dify import/execution of this revision remain pending.
 
-Current slice: 36/36 compatibility tests pass (11 preserved v1 and 25 native-package
+The pre-action checkpoint now supplies the confirmed fence to all existing action
+branches and paid dispatch. Read payloads and child content stay unchanged; registration
+intent retains nested child call/item IDs for recovery. Pending action identity excludes
+the root concurrency token. The checkpoint facade must return its authoritative fence.
+
+Current slice: 37/37 compatibility tests pass (11 preserved v1 and 26 native-package
 tests), including the real consume-to-finish result path, all terminal outcomes,
 action exhaustion, malformed data and public evidence redaction. Typecheck and
 scoped test lint pass. Current implementation SHA-256:
-`550863705e77405f8159921ed398ff50fbd034bd22b33e684b8c8d9d24d30757`.
+`148cecf12e9111eab2ac05d3a478307e95ad21485f56a1297e551108cf01dcf6`.
 The digest uses the same 13-path algorithm described below; seven YAML files total
-238,614 bytes. The historical 01-06 review identity below does not cover this slice.
+240,060 bytes. The historical 01-06 review identity below does not cover this slice.
 The server registration tests/checks and review evidence are recorded in the
 [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery).
 Checkpoint-wide 09 reviews remain pending.

@@ -172,10 +172,40 @@ test("Manager terminal view uses the Run contract without exposing domain eviden
 test("Manager registers the complete hash-bound child payload rather than a claimed identity", () => {
   const childRequest = request();
   const registration = { action: "register", childRequest, requestHash: hash(childRequest), targets: ["target-1"], fence: 7 };
-  assert.deepEqual(JSON.parse(guard("begin_work", registration).request), registration);
+  const planned = guard("begin_work", registration);
+  assert.deepEqual(JSON.parse(planned.request), registration);
+  const pending = JSON.parse(planned.checkpoint).state.pending;
+  assert.equal(pending.callId, childRequest.callId);
+  assert.equal(pending.invocationId, childRequest.invocationId);
+  assert.deepEqual(pending.itemIds, ["item-1"]);
   assert.throws(() => guard("begin_work", { ...registration, childRequest: undefined }), /Complete child request/);
   assert.throws(() => guard("begin_work", { ...registration, requestHash: "0".repeat(64) }), /actual child request/);
   assert.throws(() => guard("begin_work", { ...registration, childRequest: { ...childRequest, constraints: { credentials: "private" } } }), /private bindings/);
+});
+test("Manager action branches use the fence confirmed by the pre-action checkpoint", () => {
+  const c = context();
+  const planned = guard("index", { subjects: [], artifacts: [], fence: c.fence }, c);
+  const args = { raw: [{ result: { checkpointVersion: 5, fence: 8 } }], context: JSON.stringify(c), request: planned.request, dispatch: planned.dispatch, action: "index" };
+  const saved = run("manager", "saved", args);
+  const bound = JSON.parse(saved.request);
+  assert.equal(bound.fence, 8);
+  assert.equal(JSON.parse(saved.dispatch).fence, 8);
+  assert.equal(JSON.parse(planned.checkpoint).state.pending.requestHash, hash({ subjects: [], artifacts: [] }));
+  assert.equal(saved.version, 5);
+  for (const fence of [undefined, true, 6, 8.5, Number.MAX_SAFE_INTEGER + 1])
+    assert.throws(() => run("manager", "saved", { ...args, raw: [{ result: { checkpointVersion: 5, fence } }] }), /fence was not confirmed/);
+  const read = run("manager", "saved", { ...args, request: JSON.stringify({ kind: "history" }) });
+  assert.deepEqual(JSON.parse(read.request), { kind: "history" });
+  const lease = run("manager", "saved", { ...args, action: "lease", request: JSON.stringify({ action: "acquire" }) });
+  assert.deepEqual(JSON.parse(lease.request), { action: "acquire", fence: 8 });
+  assert.throws(() => run("manager", "saved", { ...args, context: JSON.stringify({ ...c, checkpointVersion: 0 }), raw: [{ result: { checkpointVersion: true, fence: 8 } }] }), /not durably/);
+  const nodes = apps.manager.workflow.graph.nodes;
+  const branches = nodes.filter((node: any) => node.id.startsWith("app-"));
+  assert.equal(branches.length, 14);
+  for (const node of branches)
+    assert.deepEqual(node.data.tool_parameters.request.value, ["saved", "request"]);
+  assert.deepEqual(nodes.find((node: any) => node.id === "dispatch").data.tool_parameters.request.value, ["saved", "dispatch"]);
+  assert.deepEqual(nodes.find((node: any) => node.id === "before").data.tool_parameters.request.value, ["guard", "checkpoint"]);
 });
 test("seven readable native candidates preserve private bindings and disable node retries", () => {
   assert.equal(
@@ -869,13 +899,15 @@ test("durable checkpoint confirmation is required; version races and fabricated 
       run("manager", "saved", {
         raw: [{ result: { checkpointVersion: 4 } }],
         context: JSON.stringify(c),
+        request: "{}", dispatch: "{}", action: "index",
       }),
     /not durably/,
   );
   assert.equal(
     run("manager", "saved", {
-      raw: [{ result: { checkpointVersion: 5 } }],
+      raw: [{ result: { checkpointVersion: 5, fence: 8 } }],
       context: JSON.stringify(c),
+      request: "{}", dispatch: "{}", action: "index",
     }).version,
     5,
   );

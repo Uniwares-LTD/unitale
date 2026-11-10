@@ -574,15 +574,27 @@ Keep large action bodies outside the 64 KiB checkpoint and return
 complete typed read sections/cursors; the current `consume` node's inline `lastResult`
 must not silently truncate or become an accidental product-size limit.
 
-Before exposing paid dispatch, close two concrete integration constraints. First,
-`saved` currently returns only checkpoint version while action arguments retain the
-pre-checkpoint fence; short-lease facades increment that fence. Bind action arguments
-to the authoritative checkpoint receipt and test this path. Second, `dispatchWork`
+The sixth slice closes the pre-action fence mismatch: `saved` now validates checkpoint
+version and authoritative receipt fence, and binds that fence into the existing action
+and dispatch arguments. All 14 app branches and paid dispatch use the confirmed
+arguments; reads and child content are unchanged. The root MCP concurrency token is
+excluded from pending action identity, so refreshing it does not change the operation.
+All 37 compatibility tests, typecheck, scoped lint, hash audit, model/docs, i18n and
+skills checks pass. A separate same-agent read-only slice review found no blocking
+issue. No build rerun was needed for this YAML/test/docs-only delta. Registration intent also retains nested child call/item
+locators, without copying its large body into the checkpoint. This is a
+DSL wire change, without storage fields, indexes, dependencies or another graph layer.
+
+Before exposing paid dispatch, `dispatchWork`
 currently checks correction limits only when `correction` is supplied. A changed
 request for an already attempted creative target must not become another paid initial
 attempt by omitting that field; regrouping targets must not reset per-target limits.
 Prove both cases against existing work/funding facts before enabling dispatch, without
 adding a correction-budget collection or another scheduler.
+Also retain the final metadata checkpoint after structural completion: current v2
+mutation/lease guards reject `completed` productions, but the native graph checkpoints
+after `complete`. Permit only necessary terminal checkpoint/lease cleanup metadata,
+keeping creative mutations closed; test that distinction before wiring the facade.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
