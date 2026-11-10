@@ -26,7 +26,12 @@ and the adapter; the table does not require unrelated suites for every task.
 
 - [Booklet requirements](features/booklet-generation/prd.md) and
   [delivery plan](features/booklet-generation/implementation-plan.md) own the accepted
-  product contract and cross-repository dependencies. Implementation is in progress.
+  product contract and cross-repository dependencies. Its
+  [remaining 07-12 plan](features/booklet-generation/implementation-plan.md#remaining-implementation-kickoff-and-ownership)
+  maps T18-T21, Unitale/Unibase ownership and approval gates; its
+  [retry/reconciliation policy](features/booklet-generation/implementation-plan.md#action-retries-and-automatic-reconciliation)
+  owns planned defaults and recovery semantics. The current amendment is documentation
+  only; application implementation has not started.
   [Workflow package design](features/booklet-generation/workflow-design.md) owns
   issue #10's accepted Manager/app/service boundaries, integration gap assessment and
   open contract decisions. It distinguishes the target from current application code.
@@ -38,8 +43,9 @@ and the adapter; the table does not require unrelated suites for every task.
   or workflow authoring framework is delivered. Target capabilities remain pending.
   The handoff also links the bounded offline-tested upstream patch for demonstrated
   official-plugin gaps, plus isolated test-build evidence and verified cleanup.
-  The upstream PR is withdrawn; the handoff proposes isolated locally owned builds
-  from the same bounded patch. Adoption remains pending; these are not official releases.
+  The upstream PR is withdrawn. The handoff owns accepted SDK retry/default-timeout/alias
+  tradeoffs; reuse installed shared providers unchanged. Local builds are optional
+  historical remediation, not delivery prerequisites or official releases.
   [First-package specification](features/booklet-generation/workflow-package-spec.md)
   owns the detailed operation mapping, proposed contracts, configuration inputs and
   app/MCP/UI change inventory for generating the seven workflows.

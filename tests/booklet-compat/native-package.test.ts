@@ -141,8 +141,10 @@ test("seven readable native candidates preserve private bindings and disable nod
       if (["tool", "llm"].includes(node.data.type))
         assert.equal(node.data.retry_config.retry_enabled, false);
       if (role === "image-executor" && node.data.type === "tool") {
-        assert.deepEqual(node.data.tool_configurations.max_retries, { type: "constant", value: 0 });
-        assert.equal(node.data.tool_configurations.request_timeout.value, 120);
+        // Shared installed tools do not expose SDK transport controls. Node retries
+        // stay disabled above; SDK retries/default timeouts are accepted separately.
+        assert.equal(node.data.tool_configurations.max_retries, undefined);
+        assert.equal(node.data.tool_configurations.request_timeout, undefined);
       }
       if (node.data.type === "llm") {
         assert.equal(node.data.model.completion_params.service_tier, "default");
@@ -566,7 +568,7 @@ function imageRequest(): any {
     lettering,
     settings: {
       mode: "generate",
-      model: "gpt-image-2.5-sunburst-2026-09-08",
+      model: "gpt-image-2.5-sunburst",
       count: 2,
       canvas: layout.canvas,
       quality: "high",
@@ -592,7 +594,7 @@ test("deterministic Prepare preserves text and meaningful hash while Generate re
   );
   assert.equal(run("image-executor", "validate", {
     request: JSON.stringify(r), execution_ready: "true",
-  }).model, "gpt-image-2.5-sunburst-2026-09-08");
+  }).model, "gpt-image-2.5-sunburst");
   prepared.prompt += "changed";
   assert.throws(
     () => run("image-executor", "validate", { request: JSON.stringify(r) }),

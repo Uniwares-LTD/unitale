@@ -165,6 +165,15 @@ Reviews consume no correction. Customer revision allocations remain separate.
 
 ### Checkpoints, leases and recovery
 
+The [accepted action retry/reconciliation policy](../implementation-plan.md#action-retries-and-automatic-reconciliation)
+is the canonical 07-11 target: paid LLM retries 2, paid image retries 0, retriable
+non-paid retries 3; non-retriable errors stop. App reconciliation automatically checks
+trusted Dify evidence using existing worker scheduling. Unknown outcomes never permit
+blind redispatch. Explicit Retry failed step grants one attempt without resetting
+counters; Continue booklet requires verified termination and reuses saved work.
+Current candidate retries remain disabled; implementation and fresh proof are pending.
+
+
 Checkpoint writes atomically compare version/fence and persist opaque bounded state.
 Before an action it contains pending action/call/item/source identities and request hash/reason;
 large request bodies stay outside the checkpoint. Preserve the prior opaque state while
@@ -221,11 +230,13 @@ Text/vision/native structured output and GPT Image 2/2.5 generation/edit are adv
 Source metadata is not installed/runtime evidence. Image generation/edit yields native
 files and usage JSON when available; the call total is not charged once per image.
 
-Confirmed gaps: image helpers reject the accepted dated model string; their OpenAI
-client construction omits explicit max_retries=0. No retry-free execution guarantee is
-established. Keep activation disabled. Do not silently substitute the Sunburst alias,
-patch installed/shared plugins or add another custom package. Resolve through an
-existing supported configuration/upstream version or an explicit bounded plan amendment.
+The installed providers' SDK retries, default network timeout and undated Sunburst
+alias are now explicitly accepted tradeoffs. They no longer block delivery or require
+provider code changes. Keep Dify node retries and Manager redispatch disabled in the current 01-06 candidate;
+the planned bounded action retry policy above requires separate implementation.
+Retain unknown outcomes for reconciliation. The
+[accepted tradeoffs](#accepted-provider-tradeoffs) define the limits of admin evidence.
+Activation still requires application integration and separate approval.
 
 Follow the [compatibility procedure](#difyprovider-compatibility-procedure) below.
 Disposable platform probes do not establish Unitale ownership or application integration.
@@ -246,50 +257,130 @@ archive audits verified source identity and excluded environment files/caches.
 This remains candidate evidence. The account has no upstream merge permission, and
 the closed PR is not independent approval, a merge or Marketplace publication.
 
+### Installed-provider no-money audit
+
+Read-only inventory on 2026-11-09 confirms the shared text `1.0.7-dev7` and image
+`0.2.2-dev3` installations. Original local archives were located in the reference
+experiment's `output/m5-diagnostics-provider-candidates/`. Recomputing Dify's sorted
+entry-name/content hash matched the complete installed identifiers exactly:
+
+| Package | Installed content hash | Archive SHA-256 |
+| --- | --- | --- |
+| Text dev7 | `aa245c63d95bee61fbd250e86b5ab7da4accec08144e075e4a4d8dd94bf5eba2` | `a4eb441d0ac3ca84ccbe18b0f0be93b20c088ed6740a486dc490e66f14d24d53` |
+| Image dev3 | `8a7f865a47ce9e25260bd7d7cade70d4712506d945a7a2a66607f9f324160f05` | `5f34caaee4b58e672eb3117ad0eb39fb4905049487844609c0b60d681a3a68ef` |
+
+The extracted source was executed with dummy credentials, socket connections denied
+and SDK HTTP requests handled entirely by in-memory transports. Five text tests and
+four image tests pass; their retry checks cover twelve model/operation/failure
+combinations. Audit code and extracted packages remain ignored under
+`output/tooling/installed-provider-audit/`; no production framework/test suite was added.
+
+The following table records the former strict requirements and optional remedies;
+the accepted amendment below replaces their blocking status.
+
+| Former requirement | Verified installed behavior | Optional remedy |
+| --- | --- | --- |
+| No hidden SDK retries | Ordinary Luna/Sol Responses and standard image Generate/Edit each make three attempts on HTTP 429, HTTP 500 and read timeout. Supplying `max_retries=0` is ignored by existing credential/tool construction | Forward optional retry controls through existing native client paths |
+| Finite selected network timeout | The same calls ignore `request_timeout=12.5` and retain the SDK's 600-second read timeout | Forward optional timeout through those client paths; keep Manager's separate operation deadline |
+| Exact dated Sunburst model | Installed `_image_utils.build_image_args` rejects `gpt-image-2.5-sunburst-2026-09-08`; the alias passes | Extend the existing Generate/Edit selectors and validator |
+| Native text/vision prompts | The bounded text branch rejects native image message parts before client construction and requires the digest of its exact provider payload. The separate Real-report branch requires an experiment carrier | Preserve these legacy branches; add controls to the ordinary native text/vision path rather than reconstructing carriers in workflows |
+| Manager-only application communication | Installed `booklet_real_image.deliver` requires a direct evidence callback to the old experiment; its success path also uploads originals there | Use the standard image tools with the small controls/model patch; leave the experiment tool unchanged |
+
+Text checks pass with both OpenAI SDK 3.26.0 (the text package's requirements pin)
+and 3.37.0; image checks pass with its pinned 3.37.0. Dify SDK is 0.10.2. These are
+local SDK/source checks, not an inspection of the daemon's resolved environment or a
+live workflow failure injection. Existing gevent import warnings remain advisory.
+An initial audit fixture omitted the SDK-required image MIME type; it was corrected
+before the complete passing run. No provider requests, credential changes, plugin
+installations or application changes occurred.
+
+The audit above tested the former strict requirements. Its findings remain valid,
+but the user subsequently accepted these differences under the amendment below.
+
+### Accepted provider tradeoffs
+
+The user accepts the installed shared providers unchanged. No provider patch, new
+plugin installation, upstream release or local-build adoption is required to continue.
+This changes provider requirements only; checkpoint 07 implementation remains gated.
+
+| Tradeoff | Accepted behavior and minimum integration handoff |
+| --- | --- |
+| Automatic SDK retries | Accept the installed SDK defaults (two retries, up to three attempts in the mocked failure cases). Keep Dify node and Manager retries off in the current candidate; the 07-11 action-retry amendment above governs future implementation. Admin evidence must distinguish workflow dispatch count from SDK attempt count; record actual retries only when independently evidenced, otherwise explicitly unknown. Preserve available workflow/node IDs, timestamps, errors, plugin identity and provider request/response IDs. Final returned usage may omit costs from preceding uncertain attempts; report it as incomplete and reconcile with provider billing. A per-dispatch estimate is not a hard total spend guarantee. No new retry telemetry is implemented in 01-06. |
+| Default network timeout | Temporarily accept the observed 600-second SDK read timeout; it is neither a total workflow deadline nor proof the provider stopped. Manager/application timeout leaves the call unknown, with unresolved liability and no automatic redispatch. Inspect the existing Dify run/node result and retain any late outcome before reconciliation; absence of a result is not proof of no execution. |
+| Sunburst alias | Use `gpt-image-2.5-sunburst`. The dated snapshot is no longer mandatory. Record the requested alias, exact plugin package and returned model identity when available; never invent a resolved snapshot or promise reproducibility across alias updates. Keep quality, canvas, count, background, original bytes and output format unchanged. |
+
+**Future improvement, not a current gate:** investigate status reconciliation using
+existing Dify execution retrieval first. For provider lookup,
+[OpenAI background Responses](https://developers.openai.com/api/docs/guides/background)
+support polling when the caller retains the response ID, through
+[response retrieval](https://developers.openai.com/api/reference/resources/responses/methods/retrieve).
+The current native provider does not establish durable early-ID capture/background
+execution. A timeout before receiving an ID cannot be repaired merely by querying
+with a workflow or request ID. The installed image tools use synchronous
+[image Generate](https://developers.openai.com/api/reference/resources/images/methods/generate)
+and Edit; no image-job retrieval path was established for these calls. Any future
+background mode, retention, polling or webhook change needs capability verification
+and a bounded plan amendment; implement none in this package.
+
+The nine no-money installed-source audit tests establish these accepted differences.
+Earlier paid success evidence belongs to the removed isolated patched providers,
+not to a newly executed shared-provider suite. Current-provider no-money configuration/import/export
+readback passes as recorded below; actual revised-binding execution and integrated
+acceptance remain pending. The acceptance amendment itself made no paid calls or
+live mutations; subsequent disposable imports are recorded below. Application model/schema/example/diagrams are
+unaffected because no application persistence or runtime interface was implemented.
+
+### Shared-provider import/readback evidence
+
+On 2026-11-09, all seven exact repository YAML files imported into disposable disabled
+apps against the existing shared dev7/dev3 providers. Every draft and secret-free
+export preserved all graph nodes/edges exactly. All activation variables remained
+`false`; all LLM/tool node retries remained disabled. Six native LLM nodes retained
+the shared provider identity and enabled structured output. Luna and Sol model
+inventory status is `active`, with load balancing disabled. Standard Generate/Edit
+declarations include `gpt-image-2.5-sunburst`; the image nodes retain their variable
+model selector and omit unsupported SDK retry/timeout fields. No credential values
+were inspected or changed; no provider credential validation request was made.
+
+| Role | Disposable app ID (deleted) | Nodes |
+| --- | --- | --- |
+| manager | `5fb0bdf9-3f1d-4418-98f4-baf72fcd4a37` | 53 |
+| story-planner | `d64a45a6-e8b3-4467-83ff-9244147c05aa` | 7 |
+| manuscript | `0e9a6b6b-7e16-4c49-a7b0-cac956a44543` | 7 |
+| art-director | `c0cd6954-3a47-48e8-8042-08c7b055f38b` | 7 |
+| page-composer | `5bcdd8cd-d6ac-47e4-9cc4-02439ff0ba34` | 7 |
+| image-executor | `a8cb792d-ffc2-4870-bde9-ee1e05eec23f` | 16 |
+| quality-reviewer | `9b59c9ee-0988-459d-9192-79c8afdeb7f2` | 7 |
+
+All seven apps were deleted and absence verified. Before/after inventory matches the
+original 32 app IDs, names and update timestamps and both plugin installation IDs and
+package hashes. Two earlier diagnostic Manager copies were also deleted: the probe's
+YAML serializer unquoted `yes`, causing Dify YAML 1.1 coercion to booleans. Importing
+the exact repository text, which already quotes those scalars, resolves the mismatch;
+no candidate change was needed. Future imports must preserve that quoting.
+
+The ignored journal is `output/tooling/dify-shared-provider-readback-v3.json`, with
+separate failed-attempt journals retained. These checks prove import/configuration
+persistence and export fidelity only. No workflow was executed or published; Manager
+application/child binding placeholders remain intentionally unresolved. Shared-provider
+paid execution, model-account access, production credentials and application integration
+are not proved by import. No paid calls, application changes or checkpoint 07 work
+occurred. The next application step remains separate checkpoint 07 authorization.
+
 ### Proposed local provider solution
 
-**Proposal only; no permanent build or installation is authorized by this proposal.**
-The demonstrated gaps are exact dated-model support and configurable SDK retries/
-timeouts in the existing OpenAI text and image plugins. Existing-plugin configuration
-cannot fill them; the following reuses the already tested bounded patch.
-
-1. Build the two existing plugins from the pinned base plus the retained
-   [patch](../dify-provider-upstream.patch). Use locally owned identities such as
-   `unitale/openai` and `unitale/openai_tool`, with clear local-build display labels.
-   Keep the existing plugin code and dependencies, with only the reviewed fixes and
-   required identity metadata. This is a maintained build of upstream plugins, not a
-   new provider implementation, callback service, gateway or workflow framework.
-2. Keep these builds alongside the existing shared dev7/dev3 plugins. Do not upgrade
-   or replace those installations: they contain Booklet-specific controls absent from
-   this candidate and serve existing apps. The temporary `unitalecompat` builds proved
-   this isolation approach; their installations were removed after testing.
-3. Record base commit, patch hash, identity-only diff, local version, archive SHA-256
-   and installed Dify package identifier. Store reviewed source/patch and build
-   instructions in version control; keep credentials out of archives and exports.
-   Distribution/signing policy must be checked on the target without weakening it.
-4. After explicit local-provider adoption and installation authorization, configure
-   credentials privately, bind only disposable or package-owned workflows, and read
-   back retry/timeout/model settings. Run no-money import/configuration checks first.
-   Reuse prior behavioral evidence only while the executable source is unchanged;
-   changed builds need affected tests/reviews. Any paid probe needs a finite approved
-   budget; the old unused allowance is not spent automatically.
-5. Export actual local provider identities into the seven candidates and manifest
-   only after binding is verified. Refresh hashes and rerun package checks/reviews.
-   Until adoption, the repository keeps its existing official-identity candidates;
-   they are not ready to activate unchanged with the proposed local builds.
-
-Maintenance is intentionally small: pin the upstream base, retain the bounded patch,
-rebase only for a needed fix/update, rerun the 501 existing non-live tests and package
-identity audit, then verify affected target bindings. Do not automatically upgrade
-shared providers or remove isolation. If a future supported upstream build includes
-the controls, assess replacing the local builds through a separate reviewed update.
-No upstream merge, Marketplace release, new dependency or checkpoint 07 implementation
-is required to prepare this option. Local adoption, target installation and complete
-application acceptance remain separate decisions; no live resource changed here.
+**Superseded optional remediation.** The previous proposal used isolated locally
+owned builds of the existing plugins plus the [prepared patch](#prepared-upstream-patch).
+The accepted SDK retry/default-timeout/alias tradeoffs remove its necessity. Do not
+build, install or upgrade providers as a delivery prerequisite. Retain the patch and
+prior probe identities as historical provenance only. Revisit controls only for a
+concrete operational need and explicit scope approval, preserving shared consumers.
 
 ### Supported provider path assessment
 
-Read-only investigation on 2026-11-09 rechecked official plugin HEAD at
+Historical assessment against the former strict requirements; the accepted
+tradeoffs above supersede its delivery decisions. Read-only investigation on
+2026-11-09 rechecked official plugin HEAD at
 `18663b9e723c345fed4c7450a3f925c583fa7064`, unchanged from the earlier inspection.
 No compliant drop-in was established among the paths below. This is a bounded source
 assessment, not a claim that every Marketplace plugin has been audited.
@@ -482,32 +573,29 @@ Generated tool-file IDs are `3c9bba46-cc7f-4848-8339-ed05e7052ad6` and
 Uploaded package caches and stored files have no inspected deletion API; do not
 claim physical cache/file cleanup. The earlier two fixture uploads remain historical
 retention evidence in the README; no host/storage deletion was attempted.
-Maintainer acceptance/release and application-bound E1-E5 proof remain pending.
-Source/fake-transport tests, effective zero-retry configuration and single observed
-native provider nodes support retry control; no live retryable-failure injection or
-invoice reconciliation is claimed. Production execution stays disabled.
+Application-bound E1-E5 proof remains pending. Earlier zero-retry evidence applies
+to the removed isolated candidates; the current shared-provider SDK defaults are
+accepted under the amendment above. No live retryable-failure injection or invoice
+reconciliation is claimed. Production execution stays disabled.
 
-Future integration requires separate authorization and a supported release or reviewed
-test installation. After secure configuration, set text provider **and any
-custom-model** credentials to `max_retries=0` and an agreed finite `request_timeout`;
-set those controls on both image tool nodes, with the exact dated model. Keep Dify
-node and outer retries disabled. Re-export actual bindings and record the installed
-hashes and effective settings. A network timeout is not a total workflow deadline;
-measure tool/packaging overhead and align parent deadlines before paid acceptance.
-The current probe scope is complete; do not spend the remaining allowance or implement
-application integration automatically. If upstream
-fixes are declined, explicitly amend the accepted provider
-requirements or wait for a supported release. Activation stays disabled throughout.
+Future integration reuses the installed shared provider identities recorded by the
+audit. Use ordinary text/vision and image tools, leaving legacy experiment paths and
+shared credentials intact. Remove unsupported SDK-control fields from candidate image
+nodes; keep Dify node/outer retries disabled. Re-export actual bindings and record
+plugin hashes and effective settings. SDK retries and network timeouts remain as
+installed. The completed probes do not authorize spending the remaining historical
+allowance or implementing application integration automatically.
 
-Reference slots: Manager/creative gpt-6-luna (4096/8192 output tokens), independent review
-gpt-6-sol (8192), dated Sunburst image model (high, opaque PNG). Preserve exact image
-canvas/count/settings in preflight. Default paid-layer retries must be disabled;
-provider/parent deadlines must fit measured tool and packaging overhead. Record effective
-provider/model settings rather than assuming completion_params were honored.
+Reference slots: Manager/creative gpt-6-luna (4096/8192 output tokens), independent
+review gpt-6-sol (8192), Sunburst alias (high, opaque PNG). Preserve exact image
+canvas/count/settings in preflight. Record available usage and incomplete retry/billing
+evidence for admin reconciliation; do not claim each dispatch is one provider attempt.
 
 ## Acceptance probes and stop conditions
 
-E1: exact model/settings, structured result, no SDK/node/outer retries, trustworthy usage.
+E1: accepted model/settings, structured result, no blind or whole-flow replay; verify
+planned bounded action retries when implemented. SDK retries,
+default timeout and incomplete usage explicitly reported under the accepted tradeoffs.
 E2: two distinct originals through Manager/MCP/child/retention with identical bytes,
 hashes, MIME, dimensions/order and practical limits; repeat expiry and storage failure.
 E3: actual serial Loop branches, child wrappers, partial/unknown outputs, authenticated
@@ -535,8 +623,8 @@ is implemented. Record partial evidence against each gate, not a single blanket 
 2. **Inspect installed capability without spending.** Record the Dify version, exact
    installed plugin identifiers/hashes, available model IDs, supported parameters and
    retry/timeout configuration. Check both official text and image paths. Resolve the
-   accepted dated image model and retry-free execution before paid image probes. Source
-   inspection must cover SDK, Dify node and outer retries; node flags alone are insufficient.
+   accepted alias and SDK defaults separately from Dify node/outer retries. Source
+   inspection must cover each retry layer; node flags alone are insufficient.
    Prefer an existing supported version/configuration. If no supported path exists,
    report the exact gap and seek a bounded plan amendment; do not patch shared plugins,
    invent model equivalence or build a custom replacement.
@@ -575,22 +663,113 @@ probes sufficient to guide 07. Full exit: effective provider behavior plus actua
 Unitale integration evidence. Failed/unverified requirements remain explicit blockers;
 successful installation or a single happy-path model call does not establish full compatibility.
 
+## Pre-kickoff capability verification and approval review
+
+Read-only audit on 2026-11-10, before application implementation. Community connector
+resolved `https://dify.uniwares.co.uk`, workspace
+`ffac910f-2786-490e-90d8-07243d49741b`; inventory returned 32 apps and the same two
+shared provider identifiers listed above. No apps, plugins, credentials or workflows
+were changed and no execution/provider call was made in this audit.
+
+| Capability | Verified evidence | Remaining proof / implementation implication |
+| --- | --- | --- |
+| Shared provider availability | Live inventory matches recorded openai 1.0.7-dev7 and openai_tool 0.2.2-dev3 identities | No replacement needed; inventory does not verify execution or credentials |
+| Child composition/files/control | Prior deterministic run IDs and byte comparisons are recorded in the candidate README | Reuse this evidence; it excludes application MCP/native conversion and realistic capacity |
+| Human Input | Prior Console submission resumed the same run; Unitale source has form retrieval/submission and event handling | Authenticated booklet target correlation remains application integration work; one earlier published-human helper failed and is not success evidence |
+| Run observations | Unitale adapter handles identity, stage, usage and terminal events; worker retrieves/reconciles existing executions | `tracingForRun` currently keeps only node identity/status/time, discarding outputs. Per-call/iteration evidence and crash recovery need a bounded shared extension and target proof |
+| MCP native file conversion | Unitale handler currently emits JSON/text only. Upstream Dify MCP tool source converts ImageContent/embedded blobs into blob messages | Source is upstream main, not deployed-build proof. Test exact installed conversion, order, byte hashes, wrapper and bounds before selecting the implementation |
+| Retry wait/reentry | Live HTTP-request defaults expose retry configuration; prior Loop/Assigner execution proved serial control | No generic timer/resume proven. Live requests for wait, loop and human-input defaults each returned an empty object, which proves neither support nor absence. Do not use this as a reason to add HTTP calls or another retry layer |
+
+Source reference for the proposed MCP conversion:
+[Dify MCP tool implementation](https://github.com/langgenius/dify/blob/main/api/core/tools/mcp_tool/tool.py).
+This is source-level feasibility only; the exact deployed Dify build remains unresolved.
+The generic installed-tools guide is not a complete deployed node-capability inventory.
+Full E2-E4 still requires implemented application integration; pre-kickoff probes can
+close platform feasibility only. No claim that all technical gates are cleared.
+
+### Approved minimal capability probe results
+
+Scope A was exercised on 2026-11-10 with **one disposable app, one deterministic
+run, no tool/provider bindings, no publication and no uploaded files**. No application
+or candidate YAML was changed. This is a platform probe, not implementation of 07-11.
+
+- App: `42318aaf-9b51-4b7f-a8f9-cd81fa1fe2b6`,
+  `unitale10_capability_20261110_control` (deleted; absence verified).
+- Run: `bf200d3c-e685-4a7a-9e0a-e6cbdf0c8351`, partial-succeeded, zero tokens.
+- Graph: Start -> successful synthetic Code output -> deliberately failing Code node
+  with two native retries and failure branch -> End retaining the successful output.
+- `retry_config` readback: enabled, max_retries 2, retry_interval 1000. Stream contained
+  exactly retry_index 1 and 2 for the failed node. Observed intervals were approximately
+  1.16 and 1.12 seconds. Successful predecessor executed once; no whole-flow replay.
+- Separate run/node retrieval after execution retained the earlier synthetic output,
+  final error and retry rows with distinct `:retry:1` / `:retry:2` identities.
+- Before/after comparison: all 32 original app IDs/names/update timestamps and both
+  installed plugin identifiers unchanged. No paid node, external HTTP node, provider
+  credential validation or model invocation occurred.
+- Ignored local evidence/helper: `output/tooling/dify-capability-20261110.json` and
+  `output/tooling/dify-capability-20261110.mjs`. Assertions verify counts, output,
+  zero tokens and cleanup; the helper refuses silent replay of its existing journal.
+
+This establishes native failed-action retry with delay and post-run node-output
+readback. It does not establish selective paid-error retry, per-production dynamic
+configuration, durable app counters, surviving Dify/worker crashes, nested child/loop
+identity recovery, or a general asynchronous timer/reentry API. The test deliberately
+retried a Code exception to exercise the engine, not the product error classifier.
+Do not enable blanket native retries on paid nodes on the strength of this result.
+
+Concrete upstream needs are now clearer: the Unitale stream adapter does not consume
+`node_retry`; `tracingForRun` drops retry/exception rows and output bodies. Extend
+trusted bounded observation in Unibase only as required, preserving default behavior.
+Native retry can be considered as the sole executor only if the accepted classification,
+app-authorized counters and settings snapshot can be enforced without stacking retries;
+otherwise keep it disabled and use explicit failure routing.
+
+MCP-native-file conversion remains unverified. The user accepted the simpler path:
+**no temporary tunnel or standalone reachable fixture**. Verify response shape, order,
+hashes and bounds locally in 08-09; test actual Dify conversion through the real staging
+application endpoint in 12. This is an accepted evidence deferral, not removal of the
+original-image requirement or a claim that deployed conversion passes. Application
+recovery proof remains in 09-12.
+
+### Approval register
+
+Scope A approved on 2026-11-10. User response: "I approve but it's important to keep them at minimum reasonable." Use one reusable disposable app where practical; three is a ceiling, not a target. Scope B was subsequently approved separately as recorded below; scope C remains pending.
+
+| Scope | Agreed scope | Current status / exclusions |
+| --- | --- | --- |
+| A: zero-cost feasibility probes | Up to three disposable `unitale10_capability_20261110_*` apps and their test-only workflow-tool/MCP bindings; deterministic nodes and synthetic PNG fixtures; import/publication/execution/readback, disconnect/retrieval and cleanup of those resources. Probe ordered MCP image conversion, retained node/iteration evidence, and safe action retry delay/reentry. Any fixture endpoint must use an already approved reachable route; no new host/network setup | Approved 2026-11-10 with minimum reasonable resource use. US$0; no LLM/image/provider calls, production app changes, shared plugin changes, application implementation or commits. If a reachable fixture route is absent, stop that probe and report it |
+| B: implementation kickoff | Checkpoints 07-11 in Unitale; demonstrated bounded generic changes in Unibase; local fixtures/checks, scoped commits/pushes/PRs/normal merges and reviewed exact template imports after required reviews | Approved 2026-11-10: "I approve with this note: keep everything simple and minimal, do not over-engineer". Reuse existing services/worker/Run UI; no new framework, scheduler, plugin or dashboard. No deployment, release/tag, new dependency, paid call, production migration or bypass of branch protections. External required reviews may still block; implementation has not started |
+| C: staging acceptance | Exact reviewed application deployment/migration, specialist-first Dify publication/bindings, named test package/accounts, cleanup and finite paid acceptance | Pending by explicit choice "Keep C pending". User selected US$3 total for future provider acceptance; no spending until C approval. Review exact artifacts, deployment/configuration/migration, secure inputs and resource identities after 11; historical US$1 cap is not renewed |
+
+Scope A is closed for the minimum feasible probe; MCP live proof is deferred to 12.
+Retain only sanitized evidence: source/build identity where obtainable,
+resource inventory, fixture hashes, run/node/iteration IDs, wrapper shape, counters,
+timestamps, statuses and cleanup readback. No credentials or customer payloads.
+Reconcile failed probes into the existing plan; do not quietly downgrade automatic
+retries to manual continuation or promise output recovery that observations cannot supply.
+Scope B approval is recorded here; no repeated kickoff approval is needed for the same
+scope. This turn is documentation reconciliation only. Proceed with B when implementation
+is started; return for decisions only if findings change accepted behavior/scope or cross
+an approval boundary. No technical approval establishes unverified capabilities.
+
 ## Next-step runbook
 
 | Stage | Progress | Next action and exit evidence | Unattended work and preparation |
 | --- | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README | Local checks can run unattended; no further implementation is needed for this handoff |
-| Provider/composition feasibility | Passed for the isolated candidate; upstream release dependency withdrawn | Adopt or revise the [local provider proposal](#proposed-local-provider-solution), preserving shared plugins and existing probe accounting; no permanent installation yet | After explicit adoption, local namespaced packaging/tests can run unattended. Target installation needs authorization and private credentials; billing reconciliation needs account usage/invoice access. No upstream approval is required for this proposed path |
-| 07: application contracts/persistence | Plan finalized; implementation not started or authorized | Follow the [four bounded slices and exit criteria](../implementation-plan.md#07---application-contracts--persistence); preserve v1 and update model/example/both diagrams | Can proceed unattended after explicit application authorization and selection of the work branch; use disposable local persistence for verification. Official release is not a dependency of local contract/persistence work |
-| 08: shared runtime seams | Conditional; not started | Inspect existing extension points; change Unibase only for a demonstrated missing generic capability, then import through review | Inspection can be local/read-only. Any required implementation needs authorization for Unibase and template integration, plus its repository access; omit this work if existing seams suffice |
-| 09: Unitale gateway/recovery | Not started | Wire Manager-only MCP, admission, usage, per-output originals and durable recovery; verify partial/unknown outcomes without paid replay | Local implementation/tests can run unattended once authorized and 07/necessary 08 seams are ready; target MCP credentials and environment identity are needed only for later live proof |
-| 10: existing Run UI | Not started | Wire start/review/continue/revise and authenticated human responses; verify races, media ownership and English/Arabic layouts | Can run unattended after application authorization and 09 readiness, using local test accounts/fixtures; real customer decisions remain authenticated human actions |
-| 11: integrated validation | Not started | Exercise implemented application boundaries and complete two clean integrated reviews; preserve separate labels for mocks and real Dify evidence | Local integration checks can run unattended after 07-10. Real target checks require authorized access, working bindings and explicit live scope |
-| 12: staging/paid acceptance | Provider probes complete; full acceptance not authorized | Import/publish children, synchronize tools, bind the owned Manager, apply/read back the documented names/tags and record secret-free exports; prove integrated journeys | Needs separate staging/publication/cleanup authorization, exact environment and provider package identities, privately configured credentials, application deployment readiness, test account/entitlement fixtures and a new finite paid budget. Then bounded probes can run unattended; human acceptance and production activation remain separate |
+| Provider/composition feasibility | Isolated probes and installed-source audit complete; SDK retries/default timeout/alias accepted | Reuse shared providers unchanged; current-provider configuration and all seven secret-free candidate import/readbacks now pass; actual execution of this revised binding and application acceptance remain unverified | No-money checks can run unattended with authorized staging access. No plugin installation or upstream release required; any further paid probes need a newly agreed finite scope/cap. Billing reconciliation needs account usage/invoice access |
+| 07: application contracts/persistence | Scope B approved; not started | Follow the [bounded slices](../implementation-plan.md#07---application-contracts--persistence); v2 compatibility, action/assessment/checkpoint facts and retry snapshots | Kickoff approval covers 07-11 and scoped cross-repository publication; disposable local persistence only |
+| 08: shared runtime seams | Conditional; not started | Prove existing observation/native-file/decision/Run extension points; only necessary generic fixes in Unibase, then reviewed exact import | Refresh stale Unibase checkout first; no provider release dependency. Local capability failures or required external reviews block only dependent work; live MCP conversion deferred to 12 |
+| 09: Unitale gateway/recovery | Not started | Manager MCP, prepaid admission, per-output retention, bounded retries, automatic evidence reconciliation and explicit continuation | Reuse existing worker/commerce; no new scheduler or blind replay; fake-provider tests unattended after dependencies |
+| 10: existing Run UI / T21 | Not started | Brief, quote/consent, progress, decisions, revisions and accessible history; retry settings/evidence in existing admin | Local browser fixtures; en/ar public and English/LTR admin; no standalone creator workspace |
+| 11: integrated validation | Not started | Actual boundaries, failure/recovery/race tests and two clean reviews; distinguish offline from Dify evidence | Local tests unattended under kickoff approval; final handoff records exact revisions and pending gates |
+| 12: staging acceptance | Integrated acceptance pending | Publish specialists then Manager, verify bindings/tags, execute T18-T21 journeys and retain secret-free evidence | Final grouped approval: deployment/migration/publication, secure inputs, package/capacity, test accounts and selected US$3 total cap (no spend until approval); real staging MCP image proof; human consent remains human |
 
-Current stop: deliver the validated Dify/provider handoff and retain the evidence.
-Checkpoint 07 requires separate application authorization. If granted later, reuse the
-verified provider/structured-output behavior and existing services. A compatibility failure narrows or revises
+
+Current stop: documentation/planning only; retain the validated candidate evidence.
+Scope B is approved for 07-11 with minimal implementation; scope C stays pending.
+Reuse the verified provider/structured-output behavior and existing services when
+implementation starts. No temporary tunnel is planned. A compatibility failure narrows or revises
 the affected step; it does not authorize a new plugin or framework. Keep all seven
 execution switches disabled until the activation prerequisites above are satisfied;
 scoped paid probes use separately authorized disposable copies.

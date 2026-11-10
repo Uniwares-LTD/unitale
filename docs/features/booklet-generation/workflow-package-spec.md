@@ -185,17 +185,28 @@ where needed. Preserve failed slots; do not remove failed outputs to fabricate c
 
 Default dependencies: official `langgenius/openai` for text/vision/structured output and
 `langgenius/openai_tool` for image generation/edit. Pin actual installed package hashes
-at activation. Source reviewed at official repository commit
+at activation. Historical patched source was reviewed at official repository commit
 `3326464451bbbb6d2060ef6645d826b6f82aa15b` in the now-withdrawn PR #4238; candidate manifests
 report 1.1.1 and 0.2.3 respectively. These are tested candidates, not accepted
-official releases or production installation identities.
+official releases or production installation identities. The manifest now selects
+the source-audited installed shared dev7/dev3 identities; its
+`officialPluginSourceRevision` retains historical patch provenance only.
 
-Required gates: exact configured models/settings, native structured output, ordered
-originals, useful execution/usage observations, disabled paid-call retries and bounded
-timeouts. Unmodified upstream source at `18663b9e723c345fed4c7450a3f925c583fa7064`
-omits SDK overrides and rejects the dated model. The submitted fixes address those
-gaps; activation remains blocked on approved provider adoption/integration acceptance. Do not infer SDK
-retry behavior from Dify-node retry flags or substitute an alias for the dated model.
+Required gates: accepted configured models/settings, native structured output, ordered
+originals and useful execution/usage observations. The user accepts the installed
+providers' automatic SDK retries, default network timeout and Sunburst alias; these
+no longer require a provider patch or replacement installation. Keep Dify node and
+Manager redispatch retries disabled in the current candidate. The accepted future
+[action retry policy](implementation-plan.md#action-retries-and-automatic-reconciliation)
+adds bounded technical retries and automatic app reconciliation in 07-11, with fresh
+checks/reviews; it does not change current YAML or control provider SDK attempts. The
+[accepted provider tradeoffs](workflow-package/integration-handoff.md#accepted-provider-tradeoffs)
+define admin evidence and unresolved liabilities. Planned app reconciliation checks
+existing Dify evidence automatically; direct provider status lookup remains a future
+capability-dependent improvement.
+SDK retry counts and total billing are unknown unless independently evidenced;
+returned usage alone does not account for preceding uncertain attempts. Activation
+still requires application integration acceptance and separate authorization.
 The [provider path assessment](workflow-package/integration-handoff.md#supported-provider-path-assessment)
 records checked alternatives and the authorized, offline-tested upstream patch to
 the existing official plugins. It is a bounded exception for demonstrated gaps,
@@ -205,10 +216,14 @@ Upstream submission, isolated installation and no-money declaration/DSL checks a
 verified. Subsequent actual Luna structured-output, Sol vision and dated Sunburst
 Generate/Edit probes pass; the handoff records failed probes, minimal DSL corrections,
 usage estimates and retained liabilities. The [local provider proposal](workflow-package/integration-handoff.md#proposed-local-provider-solution)
-replaces waiting for official release with a proposed isolated build of the same
-plugins/patch; it does not authorize adoption or installation. Application integration
+is superseded optional remediation; reuse the installed shared providers under the
+accepted tradeoffs without provider changes. Application integration
 remains pending. The user explicitly stopped at the validated provider handoff;
-temporary apps/plugins are removed and checkpoints 07-11 require separate authorization.
+temporary apps/plugins are removed. Scope B for minimal checkpoints 07-11 was later
+approved on 2026-11-10; no implementation has started. Follow the
+[approval register](workflow-package/integration-handoff.md#approval-register): no tunnel,
+local MCP checks in 08-09, deployed conversion in 12; scope C pending with a selected
+future US$3 cap and no current spending authorization.
 The US$1 total cap does not clear activation gates.
 
 Native model schemas use closed objects. Specialist proposal content is a JSON string
@@ -229,7 +244,7 @@ Implemented model documents/JSON example/both Mermaid versions remain unchanged 
 this package does not change application schemas or persistence. Update all at 07.
 
 Initial model slots retain reference choices: `gpt-6-luna` for Manager/creative work,
-`gpt-6-sol` for independent review, `gpt-image-2.5-sunburst-2026-09-08` for images.
+`gpt-6-sol` for independent review, `gpt-image-2.5-sunburst` for images.
 Defaults are configuration, not service enums. Never silently substitute models.
 
 ## Technical resolutions for A01-A22
@@ -248,6 +263,11 @@ Manager-only managed MCP. Minimum actual operations and fields are in the handof
 Reuse bounded reads for history, human responses and observations where possible.
 
 ### A05-A07 - Admission and crash recovery
+
+Follow the [accepted retry/reconciliation policy](implementation-plan.md#action-retries-and-automatic-reconciliation):
+production-snapshotted paid LLM/image retries 2/0, retriable non-paid retries 3, no
+automatic retry for non-retriable errors. Preserve action/correction counts separately;
+automatic evidence checks never turn missing results into permission to redispatch.
 
 Reuse prepaid admission, Run-owned fencing and trusted terminal recovery. Unknown is
 not terminated and never permits blind paid replay. Keep completed siblings.
@@ -294,7 +314,7 @@ checks must not be reported as Dify journeys. Two clean read-only reviews per ch
 
 | Gate | Required evidence | Status |
 | --- | --- | --- |
-| E1 | Exact models/settings, structured output, original image calls, no automatic retries and trusted usage | Provider feasibility verified on isolated candidates; local provider adoption and application-bound observations pending |
+| E1 | Accepted models/settings, structured output, original image calls, no blind/whole-flow replay; planned bounded action retries and accepted SDK retries/default timeout and incomplete usage reported | Isolated feasibility and installed-source audit verified; shared-provider configuration/import/export readback verified; actual revised-binding execution and application-bound observations pending |
 | E2 | Manager-only native-file byte round trip, order, hashes, practical capacity and expiry/recovery | Partial: two small originals passed native parent/child byte comparison; application path, capacity and expiry pending |
 | E3 | Real child wrappers, nested control, partial failures, Human Input and durable resume | Partial: deterministic child, Loop/Assigner, failure branch and same-run native Human Input resume proved; Manager/application journeys pending |
 | E4 | Owned Manager import, managed MCP permissions, suite/observer/reviewer bindings | Pending |

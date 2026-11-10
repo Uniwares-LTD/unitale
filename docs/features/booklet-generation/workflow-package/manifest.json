@@ -14,13 +14,13 @@
   "requiredPlugins": [
     {
       "id": "langgenius/openai",
-      "versionInInspectedSource": "1.1.1",
-      "installedPackageIdentifier": null
+      "versionInInspectedSource": "1.0.7-dev7",
+      "installedPackageIdentifier": "langgenius/openai:1.0.7-dev7@aa245c63d95bee61fbd250e86b5ab7da4accec08144e075e4a4d8dd94bf5eba2"
     },
     {
       "id": "langgenius/openai_tool",
-      "versionInInspectedSource": "0.2.3",
-      "installedPackageIdentifier": null
+      "versionInInspectedSource": "0.2.2-dev3",
+      "installedPackageIdentifier": "langgenius/openai_tool:0.2.2-dev3@8a7f865a47ce9e25260bd7d7cade70d4712506d945a7a2a66607f9f324160f05"
     }
   ],
   "managedMcpProvider": null,
@@ -68,8 +68,8 @@
     {
       "service": "image-executor",
       "path": "image-executor/workflow.yaml",
-      "sha256": "9e5facea88203a85512fd8892dfeb287323f656e328402e688de5b080f4c78c0",
-      "bytes": 28101,
+      "sha256": "f8aa0ec19d663002d388b896391bda87e3bba8a4689dfe9b2c23bc62befaed84",
+      "bytes": 27776,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -112,12 +112,10 @@
     "E5"
   ],
   "activationBlockers": [
-    "Upstream PR #4238 adds the missing controls and snapshot; official acceptance/release remains pending.",
-    "Isolated Luna structured output, Sol vision and dated Sunburst generation/edit pass; full suite/application acceptance remains pending under the US$1 cap.",
-    "Shared experiment dev builds remain unchanged; live retryable-failure injection and invoice reconciliation are not claimed.",
+    "Shared-provider import/configuration/export readback passed for all seven disabled candidates; revised-binding execution and full application acceptance remain pending.",
     "Unitale managed MCP/retention, actual Manager journeys, authenticated response correlation, durable continuation and trusted observations are not verified."
   ],
-  "stagingEvidence": "README.md#authorized-no-money-staging-evidence",
+  "stagingEvidence": "README.md#historical-no-money-staging-evidence",
   "localCheckpointCompletion": [
     1,
     2,
@@ -128,7 +126,7 @@
   ],
   "review": {
     "mode": "two separate same-agent read-only integrated passes covering each checkpoint",
-    "implementationSha256": "d95b3c5a3a9cb8eabf6801921c36f1570363d67fdbfabf530823bd14dde97695",
+    "implementationSha256": "1cef1f643dd8a043a46eb52fb74c88a8978127de21d8b0a3f369405467e18df3",
     "independentAgentReview": false
   }
 }

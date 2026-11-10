@@ -33,25 +33,29 @@ unpaid and can run independently. Manager's managed MCP and six Workflow Tool pr
 IDs contain explicit `BINDING_REQUIRED` slots. Disposable copies have passed import
 and semantic graph readback; these are not integrated or paid-accepted publications.
 The empty DSL dependency
-arrays do not mean dependency-free: install/configure and pin the official plugins
+arrays do not mean dependency-free: reuse/configure and verify the installed providers
 listed in the manifest before an authorized import, then export their real identifiers.
 No package hashes or installation identities are invented here.
 
-The unmodified upstream base tools omitted SDK retry controls and rejected the
-accepted dated Sunburst model. Disabling Dify node retries cannot fix those gaps.
-An [offline-tested upstream patch](integration-handoff.md#prepared-upstream-patch)
-was submitted in PR #4238, now closed at the user's request. The
-[proposed local provider solution](integration-handoff.md#proposed-local-provider-solution)
-reuses that patch in isolated, locally owned builds; adoption is not yet authorized.
-Test-only namespaced copies passed installation,
-configuration and provider probes, then were removed at handoff. Shared experiment plugins remain
-unchanged. [Current target evidence and probe limits](integration-handoff.md#isolated-target-compatibility-progress)
-record successful paid feasibility probes, the two corrected native structured-output
-defects, US$1 cap and cleanup inventory. Full application integration remains pending.
-Activation remains blocked; do not silently use an unversioned alias or
-reintroduce a custom production plugin. Full suite acceptance, application MCP wrappers,
-trusted observations and integrated journeys remain pending. Native Loop/Assigner,
-child wrappers, file transport and Human Input evidence is recorded below.
+The installed shared text dev7/image dev3 providers are selected in the manifest.
+The user accepts their automatic SDK retries, existing network timeout and Sunburst
+alias under the [provider tradeoffs](integration-handoff.md#accepted-provider-tradeoffs).
+No provider patch/release/new installation is required. Dify node and Manager retries
+remain disabled; SDK attempt counts and complete costs are unknown unless evidenced.
+The image candidates omit unsupported retry/timeout configuration fields.
+
+Historical patched-provider probes passed and their disposable resources were removed.
+They do not establish execution of the revised shared-provider binding. [Shared-provider import/readback](integration-handoff.md#shared-provider-importreadback-evidence)
+now passes for all seven disabled candidates; actual revised-binding execution and
+full application integration remain pending.
+Activation remains disabled. Scope B for minimal 07-11 implementation is approved;
+implementation has not started. The [approval register](integration-handoff.md#approval-register)
+records no tunnel, scope C pending and a future US$3 ceiling (not current spend approval).
+The [remaining T18-T21 plan](../implementation-plan.md#remaining-implementation-kickoff-and-ownership)
+is documentation only. Its [retry/reconciliation policy](../implementation-plan.md#action-retries-and-automatic-reconciliation)
+requires future application and bounded YAML changes with fresh evidence; existing
+candidate retry settings and recorded hashes are unchanged.
+The retained upstream patch and isolated-build proposal are optional historical evidence.
 
 Local capacities: child JSON 256 KiB; original 8 MiB; one to sixteen explicit creative
 items per call; one scoped image call with multiple output slots; whole-book windows
@@ -103,7 +107,7 @@ target evidence recorded below.
 | Checkpoint | Verified local outcome | Reviews |
 | --- | --- | --- |
 | 01 | Minimal consumed boundaries, seven roles, 48-selector provenance and official-provider capability findings | Two clean same-agent read-only passes |
-| 02 | Source-pinned official-plugin fixes, isolated installation and actual text/vision/Generate/Edit feasibility; no new runtime adapter | Two clean same-agent read-only passes; release and application acceptance pending |
+| 02 | Source-pinned official-plugin fixes, isolated installation and actual text/vision/Generate/Edit feasibility; no new runtime adapter | Two clean same-agent read-only passes; application acceptance pending; provider release no longer required |
 | 03 | Planner, Manuscript, Art Director and scoped Reviewer native YAML; structured-output configuration, scoped content checks and immutable-fact fixtures | Two clean same-agent read-only passes |
 | 04 | Page Composer, deterministic Prepare/Generate candidate and all six Reviewer modes; exact text/source/coverage, partial and unknown fixtures | Two clean same-agent read-only passes; generated pixels and application-native transport pending |
 | 05 | Bounded native serial Manager, direct private MCP binding, explicit children, checkpoint/preflight/correction/unknown guards and actual presentation binding | Two clean same-agent read-only passes; integrated Manager journeys/durable continuation pending |
@@ -117,11 +121,11 @@ because application/runtime/dependency inputs are unchanged. Before staging auth
 automatic approval review rejected external source transmission, so only local checks
 were used. Subsequently authorized connector/import/runtime results are recorded below.
 
-Reviewed implementation SHA-256: `d95b3c5a3a9cb8eabf6801921c36f1570363d67fdbfabf530823bd14dde97695`.
+Reviewed implementation SHA-256: `1cef1f643dd8a043a46eb52fb74c88a8978127de21d8b0a3f369405467e18df3`.
 Identity covers seven YAML files, five fixtures and the new test file: sort repository-
 relative paths, concatenate each path + NUL + its lowercase SHA-256 + LF, then SHA-256
 the concatenation. Documentation and manifest evidence fields are outside this digest.
-The manifest separately records every workflow/fixture hash. YAML totals 236,909 bytes.
+The manifest separately records every workflow/fixture hash. YAML totals 236,584 bytes.
 
 Reviews are separate same-agent cold-review fallbacks, not independent-agent reviews.
 Both cover all six checkpoint scopes and the complete integrated change: first behavior,
@@ -147,17 +151,33 @@ graphs, contracts, bindings and disabled execution gates are unchanged. The nami
 conventions are documented in the handoff; tags have not been applied live. Fresh
 validation passes: 34/34 compatibility tests, check:docs, check:i18n, check:skills,
 workflow/fixture hash audit and git diff --check. Two separate same-agent read-only
-passes found no actionable issues. The manifest and digest above cover the renamed
-candidates; prior live probes exercised the preceding names with identical workflow
-logic. Model/persistence documentation is unaffected by this display-only change.
+passes found no actionable issues. Those naming reviews cover the preceding
+display-only candidate; the current
+digest also includes the provider-tradeoff amendment. Prior live probes exercised
+the isolated patched-provider binding. Model/persistence documentation was unaffected
+by that display-only change.
 
 Provider feasibility passed for the isolated candidate; see the
 [current provider handoff](integration-handoff.md#paid-provider-feasibility-results).
-Checkpoint 07 remains the application authorization gate. Keep activation disabled.
+Checkpoint 07 is the next implementation step under approved scope B. Keep live
+activation disabled pending scope C and application acceptance.
 This naming/documentation update includes no application changes or paid calls.
 
 For the ordered remaining work and prerequisites, follow the
 [next-step runbook](integration-handoff.md#next-step-runbook).
+
+### Provider-tradeoff amendment verification
+
+The accepted SDK retry/default-timeout/alias amendment uses the installed shared
+providers. Image nodes omit unavailable transport controls; the existing focused
+fixture verifies the alias survives Prepare/Generate validation unchanged. All 34
+compatibility tests, full typecheck, scoped test ESLint, check:docs, check:i18n,
+check:skills and the workflow/fixture/digest audit pass. Two separate same-agent
+read-only passes cover the amended candidate and handoff; no blocking issue remains
+in this local scope. Subsequent disposable shared-provider imports/readbacks pass as recorded in the
+handoff, with verified cleanup. No paid call or checkpoint 07 implementation was
+performed. Admin retry reporting and direct provider-status reconciliation are
+handoff requirements/future improvements, not implemented application capabilities.
 
 ## Historical no-money staging evidence
 
@@ -185,11 +205,15 @@ Installed identifiers:
 - `langgenius/openai:1.0.7-dev7@aa245c63d95bee61fbd250e86b5ab7da4accec08144e075e4a4d8dd94bf5eba2`
 - `langgenius/openai_tool:0.2.2-dev3@8a7f865a47ce9e25260bd7d7cade70d4712506d945a7a2a66607f9f324160f05`
 
-The installed image tool declarations offer the unversioned Sunburst alias, not the
-accepted dated ID; no-retry support remains unproved. No shared plugin was changed.
+The [installed-source audit](integration-handoff.md#installed-provider-no-money-audit)
+matches both original archives to the live installed hashes. Mocked calls confirm
+three SDK attempts on retryable failures in the ordinary text and image paths,
+ignored timeout controls, dated-image-model rejection and incompatible legacy
+carrier/callback paths. These differences are now explicitly accepted under the provider tradeoffs.
+No shared plugin was changed.
 The [provider path assessment](integration-handoff.md#supported-provider-path-assessment)
 records the subsequent official-source and existing-plugin investigation, including
-the text-provider retry gap and the bounded upstream remedy proposed for approval.
+the text-provider retry gap and the historical optional upstream remedy.
 The prepared connector also has gaps: its Loop validator rejects self-variable break
 conditions that Dify executes, updating an existing draft sends an unsupported empty
 environment_variables field, and its Human Input submit endpoint only simulates form

@@ -170,7 +170,7 @@ workflow:
                 if settings["mode"] != ("edit" if refs else "generate") or not 1 <= settings["count"] <= 10:
                     raise ValueError("Image mode/count mismatch")
                 if execution_ready != "true":
-                    raise ValueError("Activation blocked: no-retry/exact-model/native-file compatibility pending")
+                    raise ValueError("Activation blocked: accepted-provider/native-file integration pending")
                 if settings["model"] not in ("gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst", "gpt-image-2.5-sunburst-2026-09-08"):
                     raise ValueError("Unsupported exact image model; no silent substitution")
                 width, height = settings["canvas"]["width"], settings["canvas"]["height"]
@@ -272,12 +272,6 @@ workflow:
                 - validate
                 - prompt
           tool_configurations:
-            max_retries:
-              type: constant
-              value: 0
-            request_timeout:
-              type: constant
-              value: 120
             model:
               type: variable
               value:
@@ -438,12 +432,6 @@ workflow:
                 - start
                 - references
           tool_configurations:
-            max_retries:
-              type: constant
-              value: 0
-            request_timeout:
-              type: constant
-              value: 120
             model:
               type: variable
               value:

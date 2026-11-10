@@ -13,6 +13,10 @@ below; selected technical resolutions are now recorded in the package specificat
 Current local package evidence is recorded in the delivery plan and candidate README;
 provider feasibility now has actual Luna/Sol and dated Sunburst Generate/Edit evidence
 on isolated candidates; full application integration remains unverified.
+The user accepts the installed shared providers' SDK retries, default network timeout
+and Sunburst alias under the [provider tradeoffs](workflow-package/integration-handoff.md#accepted-provider-tradeoffs).
+Provider patches/new installations are not delivery prerequisites; exact SDK retry
+counts and total charges remain unknown without independent evidence.
 This document owns workflow-specific decisions, integration gaps and open questions;
 the [PRD](prd.md) owns product requirements, [contracts](contracts.md) describes
 current compatibility, and the existing [delivery plan](implementation-plan.md)
@@ -30,7 +34,11 @@ mapping, proposed wire/content fields, Manager behavior, MCP/UI requirements and
 The initial session authorized local DSL-first work through 06. The subsequent
 compatibility authorization covers upstream submission and isolated Dify/provider
 testing, with US$1 total probe spending. The user clarified the stop at the validated
-provider handoff; application implementation in 07-11 still needs separate authorization.
+provider handoff. Scope B was later approved on 2026-11-10 for minimal 07-11 work
+and scoped code publication/imports after checks/reviews; implementation has not started.
+The [approval register](workflow-package/integration-handoff.md#approval-register) owns
+current limits: no tunnel; scope C pending; US$3 selected for future acceptance, not
+current spending authorization. This reconciliation run remains documentation only.
 A bounded test-only
 exception permits namespaced copies of the submitted official-plugin fixes: identical
 runtime code, metadata-only identity changes, preserving shared experiment plugins.
@@ -155,6 +163,17 @@ and customer-requested revisions separate. Counts survive continuation and candi
 revisions. Exhaustion pauses with findings and a resolution path. Storage retries use
 retained original bytes; unknown paid outcomes require reconciliation before replay.
 
+### Planned retry and recovery policy
+
+The 2026-11-10 [action retries and automatic reconciliation](implementation-plan.md#action-retries-and-automatic-reconciliation) amendment owns retry defaults,
+automatic application reconciliation, explicit user retry/continuation and logging.
+It is planned work for 07-11; current YAML and application behavior are unchanged.
+Technical retries, quality corrections and customer revisions share durable provenance
+but retain separate allowances. No provider patch, extra scheduler or dashboard.
+The [remaining checkpoint plan](implementation-plan.md#remaining-implementation-kickoff-and-ownership)
+also completes T21 brief, quotes/consent, progress, decisions, revisions and accessible
+history through existing Run UI. No separate creator workspace is required.
+
 ## Integration gap assessment
 
 Source-inspected baseline: Unitale `f269357d302eff53702c8c51d3a26cce900e43f8`.
@@ -166,7 +185,7 @@ resolutions must be checked against the accepted ownership boundary above.
 | G01 | [Specialist envelope](../../../src/project/booklets/workflow-contracts.ts) has one proposal and aggregate character/location payloads, while persistence uses descriptions/roster | Version grouped typed results with individual identities and source/acceptance coverage; reconcile DTOs with persisted content |
 | G02 | [Artifact schemas](../../../src/project/booklets/contracts.ts) simplify reference creative fields; `reference` already requires an image asset | Define the minimal durable pre-generation specifications and creative fields needed for approved-source fidelity; map each service input/output without copying experiment counts |
 | G03 | [Quality schema](../../../src/project/booklets/contracts.ts) requires an asset and has pass/repair/blocked only; [service](../../../src/lib/server/booklets/lifecycle.ts) permits one immutable disposition per revision | Support scoped assessments, inconclusive evidence, coverage and additional review attempts; separate assessment records from Manager acceptance |
-| G04 | [Lifecycle](../../../src/lib/server/booklets/lifecycle.ts) enforces human approval and image-quality passes | Replace these policy gates with Manager acceptance persistence while retaining authenticity, identities, locks and structural completion checks |
+| G04 | [Lifecycle](../../../src/lib/server/booklets/lifecycle.ts) enforces human approval and image-quality passes | For v2 only, replace these policy gates with Manager acceptance persistence while retaining authenticity, identities, locks and structural completion checks; preserve v1 behavior |
 | G05 | Generation admission has no final-request identity; no target Image Executor exists | Define Prepare/Generate, canonical request identity and Manager-owned exact preflight checks; bind authorized execution and resulting evidence to the dispatched request |
 | G06 | [Guards](../../../src/lib/server/booklets/guards.ts) require customer allocation for changed story/style content; image repair roots are the only correction accounting | Add bounded platform-funded text/request correction authorization and durable policy/counters without consuming customer revision allowances |
 | G07 | Packages declare text/step/time/spending ceilings, but booklet services lack complete usage integration; [measurement writer](../../../src/lib/server/execution/measurements.ts) has no production callers | Record calls, usage, labelled estimates and overages; apply per-production safeguards and reconcile without double counting; never promote model-reported usage to provider authority |
@@ -177,14 +196,14 @@ resolutions must be checked against the accepted ownership boundary above.
 | G12 | [Generic restart](../../../src/lib/server/runs/service.ts) uses ordinary admission, which [booklet domain](../../../src/project/booklets/domain.ts) rejects; lifecycle release exists without an integrated caller | Connect booklet continuation/revision and terminal workflow release; handle partial admission, cancellation and unknown outcomes without duplicate charges |
 | G13 | Review forms serialize JSON into [summary cards](../../../src/lib/runs/cards.ts) capped at 10,000 characters; Run gallery authorization only reads `runAssets` | Supply readable bounded text/image reviews and owned booklet media access; reuse components without confusing booklet assets with Run assets |
 | G14 | [Reviewer bindings](../../../src/lib/server/booklets/mcp-tools.ts) exist as a server-owned collection, but suite provisioning/composition is absent | Define verified suite/publication/tool bindings and evidence provenance under the new ownership policy; no child app registration journals |
-| G15 | Prior [compatibility evidence](dify-compatibility.md) is offline candidate behavior; the earlier local setup lacked installed `tsx` | Restore locked dependencies after implementation/setup authorization, re-establish affected baselines and prove actual composition separately |
+| G15 | Earlier [compatibility evidence](dify-compatibility.md) is offline; prepared tools and current candidate checks now exist | Setup blocker resolved; re-establish affected application baselines and prove composition separately |
 | G16 | [Media retention](../../../src/lib/server/booklets/media.ts) permits only one original per generation; a generation has a single target/revision | Separate paid call/group from output-item identities so grouped/multiple outputs retain per-item provenance, retries and accounting without a future app contract change |
 | G17 | [Attachment and reuse guards](../../../src/lib/server/booklets/guards.ts) require every original, including reference sheets, to match the single package canvas | Define page product canvas versus sample/reference execution settings; validate against authorized per-kind output constraints without altering original bytes |
 
 Booklet changes belong in project extensions. If Run/card/transport extension points
 need reusable core changes, implement them in Unibase and import through reviewed
 template integration. An upstream dependency is not permission to patch copied core
-locally or publish changes. The selected upstream scope is recorded in A20 of the package specification; implementation and reviewed import remain pending.
+locally or publish changes. A20 permits only demonstrated missing generic seams. Checkpoint 08 may close without code; any necessary implementation and reviewed import remain pending.
 
 ## Contract design working decisions
 
@@ -389,8 +408,8 @@ project extension to the shared resolver. Do not insert booklet IDs into the Run
 asset route without the corresponding ownership contract. Reusable Run rendering,
 media-resolution or lifecycle hooks belong upstream in Unibase if current extension
 points cannot support them. Booklet routes, view models and product policies remain
-in Unitale. The selected A20 interface delta is an implementation prerequisite, not
-a claim that those extension points already exist.
+in Unitale. A20 requires proof of the existing seams first; only demonstrated missing capabilities
+justify an upstream delta. No fixed upstream implementation is a prerequisite.
 
 ### Closure criteria
 

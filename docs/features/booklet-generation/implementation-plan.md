@@ -21,8 +21,8 @@ application authorization and runtime evidence remain separate.** The
 links each resolution to the [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22).
 Checkpoints 01-12 below replace the application-first C0-C10 sequence. Deliver the
 candidate workflows and proposed application changes at 06, then stop before
-material application implementation at 07. E1-E6 remain evidence/setup gates, not
-assumed successes; candidate validation is distinct from integrated/live acceptance.
+material application implementation at 07. E1-E5 retain partial or pending runtime evidence; E6 records current local checks, not
+integrated acceptance; candidate validation is distinct from integrated/live acceptance.
 A failed probe blocks its dependent binding, not independent schemas/fake-provider work.
 No checkpoint starts merely because documentation has been updated.
 
@@ -40,12 +40,21 @@ defects were corrected and regression-covered; the handoff retains their failed 
 usage estimates and conservative liabilities. This is not production
 activation or acceptance of unverified E1-E5 behavior.
 
+The user subsequently accepted SDK retries, the existing network timeout and the
+Sunburst alias, with honest admin evidence and future status reconciliation as
+defined in the [handoff amendment](workflow-package/integration-handoff.md#accepted-provider-tradeoffs).
+This removes provider patch/release/installation prerequisites. Current-provider
+configuration/import/export readback now passes for all seven disabled candidates,
+with cleanup verified; revised-binding execution and integrated runtime proof remain pending.
+
 The initial delivery authorization covered local DSL-first implementation through 06.
-The clarified stop boundary is the validated Dify/provider handoff; checkpoints 07-11
-remain outside the authorization. No application changes were made.
+That initial authorization stopped at the validated Dify/provider handoff. Scope B
+was subsequently approved on 2026-11-10 for 07-11 as recorded below; implementation
+has not started. This reconciliation task is documentation only.
 The user authorized
 committing/pushing the reviewed candidate and updating issue #10 on 2026-11-09.
-Merging and later publication still require their own session authorization.
+Scope B now covers scoped code publication/merges after checks and reviews;
+Dify publication and operational activation remain scope C.
 Releases, deployments, provider publications and paid calls
 remain separately gated. Use fake providers and disposable databases. Full-product T28
 acceptance requires configured Dify publications/plugins/credentials and a finite
@@ -82,9 +91,9 @@ acceptance retain separate authorization. No agent delegation is implied.
 | T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Implemented; local verification complete |
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Implemented; local verification complete |
 | T17 | Unitale | MCP-only booklet tools | T15,T16 | Implemented; manifest transport-limit review finding remains; verification notes below |
-| T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Pending |
-| T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | Pending |
-| T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Pending |
+| T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Candidate implemented; integration/acceptance pending |
+| T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | Candidate implemented; persistence/integration/acceptance pending |
+| T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Candidate implemented; application/recovery/acceptance pending |
 | T21 | Unitale | Creator brief, quotes, progress, decisions, revisions and history | T15,T16 | Pending |
 | T22 | Unitale | Private reader and image downloads | T15,T16 | Pending |
 | T23 | Unitale | Manifest-bound deterministic PDF | T15,T16 | Pending |
@@ -129,95 +138,363 @@ engine for tests. Code size is a review signal, never permission to omit require
 | 04 - Composition and images DSL | Page Composer, deterministic Prepare, exact Generate and all Reviewer modes | Exact Unicode/routing, ordered originals, partial/unknown outcomes and scoped coverage fixtures; two clean reviews |
 | 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
 | 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
-| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Gated on separate application authorization; isolated provider feasibility established; preserve v1 records and update model/example/both Mermaid versions together |
-| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Separate authorization; no speculative core extensions |
+| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Scope B approved; implementation not started; isolated provider feasibility established; preserve v1 records and update model/example/both Mermaid versions together |
+| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Scope B covers demonstrated generic changes and reviewed imports; no speculative core extensions |
 | 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
-| 10 - Run UI Integration | Existing Run start/review/continue/revise and authentic Human Input | Browser/race checks; no separate creator workspace |
+| 10 - Run UI Integration | T21 brief, quotes, progress, decisions, revisions and history in existing Run UI | Browser/race checks; no separate creator workspace |
 | 11 - Integrated Verification | Actual workflows against implemented application interfaces | Real integrated offline checks and two clean reviews |
 | 12 - Staging Publication & Acceptance | Exact publications, finite paid acceptance and final exports | Separate scoped live/publication/paid authorization and operator inputs |
 
+### Remaining implementation: kickoff and ownership
+
+Planning amendment accepted 2026-11-10. **Scope B is approved; implementation has
+not started.** The current request is to reconcile documentation only, not start
+07-11 or publish changes in this turn. The plan targets unattended Sol Medium work
+under the recorded approval when implementation is started.
+
+The [capability audit and approval register](workflow-package/integration-handoff.md#approval-register)
+records the actual user decisions. Scope A used one zero-cost disposable app, verified
+native retries/delay and output/retry readback, and cleaned it up. Selective paid retry,
+crash/nested recovery and native MCP file conversion are not yet proven.
+
+Scope B approval on 2026-11-10 covers Unitale checkpoints 07-11, necessary bounded
+Unibase changes, and scoped commits, pushes, PR publication, normal merges and reviewed
+exact template imports after required checks/reviews. User condition: "keep everything
+simple and minimal, do not over-engineer". Preserve and review the task-owned diff;
+reuse existing services/worker/Run UI. No new framework, scheduler, plugin, dashboard,
+dependency, delegation, release/tag, deployment or paid call is authorized by B.
+Required external reviews and branch protections remain in force.
+
+The user accepted **no temporary tunnel**. Validate the MCP response shape locally in
+08-09, then prove deployed native-file conversion through the real staging application
+endpoint in 12. This defers live evidence, not the original-image requirement. Source/
+local tests may permit 07-11 progression; failed local compatibility still blocks its
+dependent work. Do not add a fixture server/network merely to clear a planning gate.
+
+Scope C remains **pending** by explicit user choice. A **US$3 total** provider-spend
+ceiling is selected for future staging acceptance, conditional on later C approval;
+it is not spending authorization now. Retain estimated costs and unresolved liabilities
+before dispatch and the accepted hidden-SDK-retry limitation. No live activation or
+paid acceptance is included in B.
+
+Continue Unitale on `feature/10-dify-workflow-design`. Create an Unibase work branch
+from verified upstream main, never develop on main. The 2026-11-10 read-only check
+found local Unibase at `65e70ca35786c8e81ba1039dd258a7a010d40df0`, while upstream main
+and Unitale's recorded import were `cee55c143c9f19a3e2a454c087b7d6fefe9d20dc`.
+Refresh and verify before implementation; do not build on that stale checkout.
+Follow both repositories' guidance and retained Handbook baseline above. Use prepared
+local tools, fake providers and disposable databases; no credentials are needed for
+local 07-11 work. Establish affected baselines and preserve unrelated changes.
+
+Unitale owns booklet policy, content/persistence, assessments, counters, Manager
+MCP tools, product registration, booklet UI and YAML. Unibase owns reusable Run,
+worker/provider/MCP transport and generic extension points. Shared changes originate
+upstream and enter Unitale through reviewed `template:update`; never copy shared
+patches locally. No booklet roles, collections or policy in Unibase.
+
+| Milestone | Verified progress | Remaining coverage |
+| --- | --- | --- |
+| T18 | Specialist candidates implemented locally in 01-04/06 | 07-09 bindings, originals and 11-12 integration/acceptance |
+| T19 | Six Reviewer modes and correction workflow implemented locally | 07 durable assessments/counters, 09 enforcement, 11-12 proof |
+| T20 | Manager candidate implemented locally in 05-06 | 07-10 authenticated decisions, retry/recovery and continuation; 11-12 proof |
+| T21 | Generic Run capabilities exist | 09 backend and 10 brief, quote/consent, progress, decisions, revisions and history; 11-12 proof |
+
+No T18-T20 behavior is intentionally omitted. Complete T21 through existing Run
+surfaces; a dedicated booklet list/workspace is excluded, not its history or financial
+consent requirements. Reader/PDF/sharing/storefront and full-product T26-T28 remain
+separate. Earlier T18-T20 next-step statements below are historical evidence.
+
+### Requirements alignment check
+
+Documentation review on 2026-11-10 against the accepted PRD and T18-T21 scope:
+
+| Requirement / invariant | Planned coverage and boundary |
+| --- | --- |
+| R01 configurable creation; T21 brief/quotes | 09 admission/price identity and 10 package/brief/consent; synthetic local fixtures, no launch catalog seeds |
+| R02-R03 persistence and history | 07 versioned immutable state and 09 continuation; 10 accessible history; preserve v1 and embedded subject/artifact identities |
+| R04/R08 measurements and limits | 09 trusted bounded evidence and no double counting; missing SDK attempts/costs remain unknown |
+| R05-R07 orchestration, decisions, revision locks and MCP security | Manager-only app communication, authentic correlated responses, owned tools and existing accounting; no app creative scheduler |
+| R09 originals | Local response/byte/hash checks in 08-11; actual MCP/Dify conversion in 12 through real staging endpoint; requirement retained despite evidence deferral |
+| R10/T19 quality and corrections | All six review modes, Manager policy, durable correction counts distinct from technical retries and paid customer revisions |
+| R12 consumption and recovery | Prepaid scope preserved; unknown calls reconciled, never blindly replayed; no duplicate continuation charge |
+| T18-T21 completeness | Specialist/Reviewer/Manager integration plus all six creator outcomes; existing Run UI, not a new workspace |
+| Later product obligations | R11 commerce remains reused and regression-protected; R13 delivery and later retention/product acceptance remain their existing milestones, not added to B |
+
+No accepted requirement is removed by the no-tunnel decision. This is a planning
+conformance check, not proof of implemented behavior. Scopes A/B/C and technical
+evidence are recorded separately in the handoff; unresolved integration proof stays
+visible. The current documentation-only change leaves model JSON/diagrams and runtime
+artifacts unchanged.
+
+### Action retries and automatic reconciliation
+
+These are accepted target semantics for 07-11, **not capabilities of the current
+01-06 candidate**. Unitale administration owns the following production-snapshotted
+settings; values are nonnegative safe integers and count retries after the first attempt.
+
+| Category | Default retries | Maximum automatic action attempts |
+| --- | --- | --- |
+| Paid LLM | 2 | 3 |
+| Paid image | 0 | 1 |
+| Retriable non-paid | 3 | 4 |
+| Non-retriable | Not applicable | Stop until cause changes |
+
+Existing spending, execution and action limits still apply. Settings changes affect
+new productions, never reset active counters. SDK retry defaults remain accepted;
+action attempts are measurable, hidden provider attempts/costs may be unknown.
+No provider patch or exact SDK-attempt control is required.
+
+Use one durable action history: logical action ID, canonical request hash, category,
+policy snapshot, attempt IDs/numbers, reason, outcome, timestamps, next eligible time,
+result/evidence references and correction-chain identity. Each paid dispatch gets a
+new attempt/call ID under the same logical action. Non-paid write retries reuse their
+business idempotency key. A new invocation or successor cannot reset allowances.
+Technical retries and quality corrections have separate counts in this same history:
+a failed image with zero retries differs from a successful defective image eligible
+for the existing one correction. Keep three LLM corrections and one image correction,
+with customer-paid revisions separate. Reviews themselves are not corrections.
+
+Manager remains the only workflow orchestrator. App services classify trusted outcomes
+and atomically authorize attempts; no app specialist scheduler. Retry only the failed
+operation, never successful siblings or an entire child/Manager flow. Save failures
+reuse retained bytes/results. A deterministic native failure branch must handle a
+failed Manager reasoning call without asking that failed LLM to recover itself.
+Keep independent Dify node retry layers disabled. Native failure routing must use the
+same app-authorized attempt identity/counter before any new paid action. A graph whose
+failed stage cannot be isolated must stop rather than replay successful paid stages.
+
+Classify from trusted evidence, never model explanations:
+
+- Confirmed transient failure with no unresolved execution: eligible for bounded retry.
+- Invalid input, credentials, permissions, unsupported configuration or exhausted product
+  limits: non-retriable until corrected. A stale fence requires rereading state, not
+  overwriting concurrent work.
+- Timeout, disconnect or incomplete evidence: unknown; reconcile before redispatch.
+  A terminal Dify error alone does not prove the underlying provider did not complete.
+- Successful defective content: quality correction, not a technical retry.
+
+Reuse existing Run `retryBaseSeconds`, `retryMaxSeconds`, `pollSeconds` and
+`reconciliationHours`; do not add timing settings or a scheduler. Backoff starts at
+configured base and doubles to configured maximum, using the action's retry ordinal;
+honor validated retry-after within existing bounds. Persist eligibility times; never
+hold a transaction/production lease or run a busy-wait Code node during delays.
+Checkpoint 08 must prove a native wait/reentry path using existing mechanisms. If an
+active Dify execution cannot safely wait, checkpoint it and expose continuation after
+verified termination rather than create an alternative scheduling system.
+
+The existing AI worker automatically reconciles: inspect retained evidence first,
+then query the bound Dify run/node when a verified execution locator exists. Successful
+running/paused reads are normal observation, not failures. Failed status reads consume
+the non-paid attempt budget (initial failed read plus three retries by default)
+for that reconciliation episode; successful observations do not
+reset its failed-read count. End automatic reconciliation at allowance exhaustion or
+the existing snapshotted reconciliation deadline. Missing locators/unavailable evidence
+become explicitly unresolved; do not search by similarity. Ordinary observation can
+continue for a confirmed active Run under existing runtime limits.
+
+Exhaustion/deadline is not proof of provider failure, termination or zero cost. Preserve
+liability and accept trusted late results through restricted recovery. Do not query
+OpenAI directly unless a supported locator/status capability is demonstrated later;
+that future improvement is not required here. Stop/revocation forbids dispatch but not
+retention of already-paid results. No automatic successor scheduling.
+
+Public controls:
+
+- **Retry failed step:** only a confirmed retriable failure with no active/unknown
+  attempt; one authenticated click authorizes one additional attempt, never resets
+  automatic counters or bypasses existing financial safeguards. Duplicate clicks are
+  idempotent. If the original workflow has terminated, execute it through the same
+  verified successor path as Continue, scoped to the failed action.
+- **Continue booklet:** verified predecessor termination, same production/prepaid scope,
+  checkpoint and known results; no duplicate charge. If termination is unknown, do not
+  offer a successor even if the worker has stopped waiting.
+- **Stop:** prevent new dispatch; retain/reconcile paid results.
+- Unknown outcomes show "Your completed work is saved. We're checking the last step
+  before continuing." When checks exhaust, show that the step needs review, not an
+  unsafe retry action. Non-retriable failures require a corrected cause first.
+
+Log every application error, retry, explicit retry authorization and reconciliation
+check in existing bounded evidence/administrative views: category, code, timestamps,
+attempt/call/run/node IDs, outcome, available provider IDs and usage provenance.
+Redact credentials/private Run context; preserve missing SDK retries/costs as unknown.
+Do not add a dedicated dashboard or rely on logs for authoritative accounting state.
+
 ### 07 - Application Contracts & Persistence
 
-**Plan finalized; implementation not authorized or started.** The current request
-authorizes provider-release investigation and this planning update only. Isolated
-provider feasibility is established. The upstream PR is withdrawn; official release
-is no longer a delivery dependency. The [local provider proposal](workflow-package/integration-handoff.md#proposed-local-provider-solution)
-awaits adoption. Local contract/persistence implementation can begin after separate
-application authorization; live binding/activation still requires an approved provider
-build and actual integration evidence.
+Unitale only. Implement four slices, each checked before proceeding:
 
-Outcome: persist and read the minimum v2 facts consumed by the existing candidate
-Manager, preserving v1 records, parsers, indexes and in-flight publications. Use the
-[handoff boundary](workflow-package/integration-handoff.md#minimum-managerapplication-interface)
-as the consumer contract, not a mandate to implement sixteen MCP handlers in 07.
-Keep [contracts](contracts.md) explicit about implemented v1 versus proposed v2.
+1. Add only consumed v2 boundary parsers/content variants beside strict v1 contracts.
+   Provider JSON-string carriers are not domain types. Bind new productions explicitly
+   to v2; preserve v1 records/publications and reject cross-version continuation.
+2. Add versioned production/revision readers before writers. Reuse existing repositories,
+   canonical hashing, embedded subject/artifact identities and immutable lineage.
+   Preserve exact Unicode/whitespace; no automatic conversion or text normalization.
+3. Persist missing action attempts, retry policy/counters, scoped assessments, Manager
+   acceptance, human correlation and correction chains. Use separate v2 assessment
+   storage; do not change the v1 unique quality index. Keep opaque checkpoint plus CAS
+   version on the owned production, capped at 64 KiB. Large outputs stay in existing
+   bounded evidence/media storage. Work facts remain authoritative over checkpoint intent.
+4. Register only query/idempotency indexes actually consumed, including unique owned
+   logical-action/attempt and mutation keys. Register a forward-only booklet migration
+   after `booklets:0003-mcp` through the existing project extension. Update collection
+   registration, model guide, JSON example and both Mermaid schemas together.
 
-#### Bounded implementation slices after authorization
+Mutation facades use existing short Run-owned leases/fences around local transactions;
+no lease spans model/Human Input waits. Reload authoritative state/fence after waits.
+Preserve v1 human/quality gates on v1 bindings; only v2 transfers policy to Manager.
+No MCP registration, admission, native transport, UI or live migration in 07.
 
-| Slice | Accepted need and smallest implementation | Observable exit evidence |
-| --- | --- | --- |
-| 07.1 - Consumed v2 contracts | Inspect actual Manager/specialist inputs and existing `src/project/booklets/contracts.ts`, `workflow-contracts.ts` and server `booklets/documents.ts`. Add only application-boundary v2 parsers/content variants; preserve strict v1 parsers. Preserve the external object content contract; the provider's internal JSON-string carrier is not an application type | Existing v1 fixtures still parse unchanged; actual candidate boundary fixtures cover each consumed role/operation, grouped item identity, explicit partial/unknown outcomes, scoped assessments and rejection of private context in child envelopes |
-| 07.2 - Compatible persistence | Reuse production/revision storage and existing canonical hashing. Add versioned readers/writers for consumed artifact content and source lineage; retain embedded subject/artifact identities and immutable revisions. Introduce a new document version only where existing strict readers cannot safely consume the new shape; never rewrite existing records automatically | Mixed v1/v2 reads, exact Unicode/whitespace round trips, stable hashes, immutable source links, owner isolation and rejected stale production fences pass against disposable persistence |
-| 07.3 - Durable Manager facts | Persist only missing work/call state, scoped repeatable assessments, Manager acceptance, correction-chain counters and an opaque checkpoint with version/fence CAS. Reuse existing generation/receipt/evidence storage when its semantics fit. Keep authentic human decisions distinct from Manager acceptance; store execution locators as evidence references, not model-authoritative usage/publication claims | Duplicate mutations are idempotent; changed identities conflict; checkpoint races have one winner; partial siblings survive; unknown work remains unknown; continuation/new invocation cannot reset correction counts. Distinct assessments for one revision coexist without changing v1 quality uniqueness |
-| 07.4 - Indexes, compatibility and docs | Add only indexes required by demonstrated ownership/idempotency/query paths. Register a project-owned migration after `booklets:0003-mcp` only if necessary, through the existing extension. Update model guide, JSON example and both Mermaid schemas together with executable persistence changes; reconcile contracts and handoff implementation status | Migration/index setup reruns safely on disposable data, v1 records remain byte/semantically unchanged as applicable, existing repository/lifecycle/media/MCP regressions pass, docs match implemented versions and two clean read-only reviews cover the final 07 diff |
+Exit: actual candidate boundary fixtures, mixed-version reads, exact hashes, ownership,
+immutable lineage, stale fences, duplicate/conflicting writes, one-winner checkpoint CAS,
+repeat assessments, durable counters and idempotent migration pass on disposable data.
 
-The change decision is made at the start of each slice: identify its accepted behavior,
-verify existing service support, choose the smallest delta and name its proof. Keep
-only necessary boundary parsers, not a copy of every prompt/internal schema. Resolve
-field/version/index choices against actual code in that slice; a demonstrated conflict
-with the handoff requires a documented amendment before changing the workflow contract.
+### 08 - Verify runtime seams and import necessary Unibase changes
 
-#### Compatibility and storage constraints
+First prove existing extension points against current upstream; no fixed expansion list.
 
-- Do not reinterpret v1 `schemaVersion:1` DTOs or `documentVersion:1` records as v2.
-  Preserve old bindings and readers; explicit v2 opt-in selects new semantics. Reader
-  compatibility precedes any writer emitting a new shape.
-- Use existing owned transaction and production lease/fence mechanisms. No transaction
-  or lease spans provider/Human Input waits; checkpoint state is bounded to 64 KiB and
-  does not replace authoritative work records or bounded artifact/evidence storage.
-- Assessments bind exact scope/content/source/policy/reviewer identities. Acceptance
-  records select exact revisions; neither a model claim nor a checkpoint grants
-  authority. The existing unique v1 image-quality index must remain valid for v1;
-  choose separate v2 storage or a correctly scoped versioned index only after checking
-  all current readers and duplicate-record behavior.
-- Correction identity follows the durable task/target/funding chain, not a fresh
-  invocation or candidate ID. Preserve customer revision allowances separately from
-  platform-funded corrections. Do not add a billing/reservation engine.
-- No new dependency, generic repository/framework, generated schema inventory or bulk
-  migration. Do not implement MCP registration/transport, paid admission/reconciliation,
-  original download bridges, Run UI, or production activation in 07; those belong to
-  08-12. Storage primitives needed for later handlers are within 07.
+| Required proof | Smallest permitted Unibase delta if absent |
+| --- | --- |
+| Trusted child/Manager execution identity, outputs and usage | Optional bounded provider/worker observation hook, preserving defaults without a project consumer |
+| Ordered native originals across actual MCP wrapper | Optional validated file-result transport; retain JSON/text compatibility, permissions, redaction and complete encoded-response limits |
+| Authenticated decisions, terminal recovery and scheduled eligibility | Narrow optional Run/domain hook using existing worker scheduling, not another dispatcher |
+| Existing Run UI can host project-specific controls/history | Typed optional extension point; no booklet-specific policy in shared UI |
 
-#### Verification and handoff
+The approved one-app probe established native node_retry events and terminal output/
+retry-row readback; current stream/trace adapters discard part of that evidence. Use
+the [probe result](workflow-package/integration-handoff.md#approved-minimal-capability-probe-results)
+to scope the observer delta, not as proof of paid retry classification or crash recovery.
 
-Use the prepared local npm launcher from the repository root. Run affected checks
-after the final relevant edit; database suites must use their disposable fixtures:
+Current Unitale MCP transport emits JSON/text only; native file conversion is a real
+proof obligation. Use a local synthetic fixture for the 08-09 response/transport contract;
+defer deployed byte conversion to the real staging endpoint in 12. No temporary tunnel. Inspect installed wrapper declarations and recorded probes. Assert
+actual result shape, byte identity/order, practical capacity, expiry and permission
+failures; local mocks alone do not close target evidence. Do not silently invent a
+wrapper, expose base64 to models, add a plugin, or treat declarations as live execution.
+If local inspection/testing cannot establish a supported response path, mark dependent
+work blocked and continue independent work. The absence of live MCP conversion evidence
+alone is not a pre-07-11 blocker under the accepted deferral; it remains a 12 gate.
 
-```powershell
-node --import tsx --test tests/booklet-contracts.test.ts
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-repositories
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-lifecycle-media
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-mcp
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run test:booklet-compat
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run typecheck
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run docs:booklet-model
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run check:docs
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run check:i18n
-node output/tooling/npm/node_modules/npm/bin/npm-cli.js run check:skills
-```
+For needed shared changes: implement backwards-compatible optional APIs in Unibase,
+focused tests and an Unreleased changelog/upgrade note. Run checks and two clean reviews;
+then PR/merge under kickoff approval and repository protections. Import exact reviewed
+revision with `template:update` from a clean Unitale tree. Preserve project-owned files,
+registries, deleted samples, identities and configuration; verify source record and
+regressions. Do not manually edit Unitale CHANGELOG/template version. Close 08 with
+no code if all seams suffice. Do not claim an external required reviewer can be automated.
 
-Run scoped ESLint on changed TypeScript and a build if changed runtime inputs affect
-bundling. Add focused tests in the existing contract/repository/lifecycle suites rather
-than a parallel harness. Each slice needs two consecutive clean read-only passes;
-the final pair reviews the integrated checkpoint. No delegation is implied.
+### 09 - Unitale Gateway & Recovery
 
-07 exit: consumed v2 contracts/storage are implemented and locally verified with
-unchanged v1 behavior, necessary migration evidence, updated model documentation,
-and an exact implemented-versus-pending handoff for 08/09. A passing parser or database
-fixture is not proof of Dify execution, trusted provider observations or a completed
-booklet. Record remaining provider-release and E1-E5 gates explicitly. Before starting,
-obtain separate 07 implementation authorization and confirm the work branch; no
-credentials, provider calls or live database are needed for this checkpoint.
+Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
+context, document reads, lease, index, work register/dispatch, transfer, original retention,
+revision save, human request, evidence, assessment, sources, reconciliation, acceptance,
+checkpoint and completion. Parse each operation's bounded request; no generic executor.
+Validate private Run context and production ownership on every tool. Children never
+receive private context or call app tools. Pin suite/publication and reviewer identity
+from server configuration, not model claims.
+
+Register v2 booklet domain/product contributions through project registries. Reuse
+existing quote/consumption/continuation/revision services; validate price/input identity
+at consent and consume once. Keep generic restart from bypassing prepaid admission.
+A successor requires verified termination and the same production/order scope.
+
+Implement trusted observations and per-output original retention before enabling paid
+dispatch. Retain full successful/partial outputs before checkpoint advancement; validate
+restricted download hosts, ownership, size, output order and original hashes. Validate
+per-kind authorized canvas settings, not one blanket page canvas for all references.
+Use bounded typed reads/cursors and complete-payload transfer for large revisions;
+never silently truncate or impose transport item limits as product limits. Measurements
+separate reported/estimated/unknown costs and avoid parent/child double counting.
+
+Add the retry/reconciliation behavior above to existing services and necessary native
+YAML failure branches. Correct only demonstrated integration mismatches; no prompt or
+graph redesign unrelated to accepted behavior. Preserve seven role/tool identities.
+Refresh YAML hashes/digest and reset affected checks/reviews when YAML actually changes.
+
+Completion verifies ownership, immutable identities, product structure, locks and
+accounting. Manager alone decides creative acceptance, human policy and quality usage.
+Exit: handler/repository tests prove these paths with fake providers, including safe
+retention after cancellation, correction exhaustion and no duplicate continuation charge.
+
+### 10 - Existing Run UI and complete T21
+
+Use `/runs/new`, existing Run detail/history surfaces and Unitale project components.
+Supply all six outcomes: package/brief/audience/preferences; creation/revision quote and
+financial consent; progress/results; authentic decisions; target-scoped revisions;
+owner-bound paginated production, artifact revision, decision and execution history.
+Saving history alone does not meet the UI requirement. Use existing owned media services;
+never pass booklet IDs into Run asset routes without an ownership-aware resolver.
+
+Add Retry failed step, Continue booklet and Stop with server-enforced eligibility above.
+Show saved progress and reconciliation states without technical identifiers in public
+copy. Review prompts are optional Manager policy; combine related questions. Financial
+consent remains mandatory. Expose retry settings and sanitized evidence in existing
+administration; no new dashboard, standalone workspace or booklet listing page.
+Public UI uses typed en/ar dictionaries and logical RTL; admin remains English/LTR.
+
+### 11 - Integrated verification and handoff
+
+Use actual YAML boundaries and real app handlers with deterministic providers/disposable
+persistence, not a Dify execution engine emulator. Cover:
+
+- Creation, all six review modes, exact text/originals and structural completion.
+- Retry defaults, settings snapshots, non-retriable errors, distinct correction counts,
+  durable limits, backoff eligibility and no duplicate/whole-flow paid replay.
+- Partial siblings, retained-save retry, late results and reconciliation success/failure/
+  uncertainty; missing locators, exhausted reads and deadline do not imply safe replay.
+- Crash after dispatch, after retention and before checkpoint; conflicting workers and
+  expired leases; cancellation/capability expiry permits retention, not new dispatch.
+- Same-run Human Input, authentic first-wins answers, stale decisions and successor
+  continuation with no duplicate charge; repeated user retry/continue clicks.
+- Quote changes, one-time consent/consumption, locks, revision scope and owned history.
+- Preserved v1 behavior and optional shared hooks disabled for unrelated projects.
+
+Run affected `test:booklet-compat`, `test:booklet-repositories`,
+`test:booklet-lifecycle-media`, `test:booklet-mcp`, MCP/Run/AI/commerce suites and contract
+fixtures using prepared npm. Run typecheck, scoped ESLint, build for runtime inputs,
+and applicable check:env, check:docs, check:i18n, check:skills. Persistence changes run
+`docs:booklet-model` before `check:docs`; shared changes add template and initialized-
+project checks. Browser proof covers desktop/390px en/ar, keyboard, admin language
+isolation, media ownership and served-document CSP. No paid calls for local checks.
+
+Every checkpoint requires two consecutive clean read-only reviews on the same state;
+fixes reset the affected count. Slices require affected checks, not extra review pairs.
+Without delegation authorization label separate same-agent review passes. Update exact
+artifact/revision evidence, G01-G17 resolutions and E1-E6 status; local tests never prove
+Dify runtime acceptance. Preserve bounded evidence when an external gate remains open.
+
+### 12 - Final approvals and staging acceptance
+
+Present one reviewable package after 11: exact revisions/import, migration instructions,
+workflow hashes, plugin identities, settings/bindings, test evidence and unresolved gates.
+Group final manual inputs/approval: staging app deployment/migration, Dify publication
+and tool bindings, secure credentials/environment identity, selected package/capacity,
+test accounts and confirmation of the selected US$3 total provider-spend ceiling.
+Scope C is pending; that ceiling is not permission to spend before approval. Prior
+US$1 probe approval is historical and not reusable. Verify live MCP image conversion
+through this staging endpoint; no preliminary tunnel is planned.
+Human account/financial-consent steps remain human actions. No production activation.
+
+After authorization, publish specialists before Manager, verify exact bindings and tags,
+then run bounded application-connected T18-T21 journeys. Preserve existing apps/shared
+plugins. Verify cleanup or explicitly retained resources and secret-free final exports.
+Close E1-E5 only with actual supporting evidence; E6 tracks current local checks/reviews.
+T18-T21 completion requires their acceptance evidence, not full-product T28 completion.
+Stop after the final handoff; later milestones remain excluded.
+
+### Unattended execution and documentation rules
+
+Use small slices with checks, necessity/simplicity rationale and updated evidence in
+these existing docs; no new tracking hierarchy. Continue automatically through satisfied
+dependencies after kickoff. Fix in-scope defects without asking routine implementation
+questions. Pause only dependent work for a missing capability, required external reviewer,
+permissions failure or excluded-scope change; keep independent work moving. Never bypass
+branch protections or claim a gated capability is proven. Routine syntax/file organization
+choices belong to the implementer; business behavior and ownership above are fixed.
+
+This documentation amendment changes no executable contract or persistence. The model
+JSON/diagrams therefore remain unchanged until 07. Existing 01-06 evidence remains
+historical for those exact artifacts; the new retry behavior needs fresh implementation
+and verification. No current application or YAML retry capability is claimed.
 
 ### Execution boundary and artifact layout
 
@@ -250,8 +527,8 @@ the sandbox on this Windows environment. No dependency upgrade is authorized.
 
 YAML parsing, static graph checks and isolated Code execution are local evidence.
 They are **not** Dify import, nested execution, native-file transport, Human Input
-resume, effective provider settings, pricing or paid acceptance evidence. E1-E5 remain
-pending until their exact probes are authorized and performed.
+resume, effective provider settings, pricing or paid acceptance evidence. E1-E5 retain partial/pending evidence as recorded in the package specification;
+close only the specific behavior actually probed under its authorization.
 
 ### Checkpoint procedure
 
@@ -291,6 +568,11 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
+Current task: documentation reconciliation only. Scope B for 07-11 is approved
+with minimal implementation and required reviews; no implementation has started.
+No temporary tunnel; scope C stays pending with a selected future US$3 ceiling.
+The following records the original completed 01-06 authorization, not a new task.
+
 The DSL-first candidate through 06 is locally validated on
 `feature/10-dify-workflow-design` from `713da2d`. Read current candidate evidence,
 accepted specification and the necessity/simplicity gate before any further work.
@@ -301,6 +583,9 @@ and unrelated later product milestones remain gated.
 Preserve the seven roles, Manager-only app communication and pending E1-E5 evidence.
 
 ## Foundation import
+
+The remaining historical sections preserve evidence at their original checkpoints.
+Use the current 07-12 plan above for next actions and milestone status.
 
 Unibase PR #44 merged T03-T06 at `327bc01ed1ec4ca1dfbacd8ca7cdd64118a5f1b1`.
 The template update imports that pinned revision, including the shared T01 commerce
