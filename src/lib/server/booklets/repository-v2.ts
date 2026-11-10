@@ -195,16 +195,21 @@ export function bookletRepositoryV2(
   async function owned(productionId: string, session: ClientSession) {
     return context.owned(id.parse(productionId), session, 2);
   }
-  function mutable(p: ProductionV2, expectedVersion: number) {
+  function mutable(
+    p: ProductionV2,
+    expectedVersion: number,
+    terminalMetadata = false,
+  ) {
     if (
       p.version !== expectedVersion ||
-      ["completed", "closed"].includes(p.lifecycleState) ||
+      p.lifecycleState === "closed" ||
+      (p.lifecycleState === "completed" && !terminalMetadata) ||
       (p.expiresAt && p.expiresAt <= now())
     )
       throw bookletConflict("Production changed or is not mutable.");
   }
-  function fenced(p: ProductionV2, value: Mutation) {
-    mutable(p, value.expectedVersion);
+  function fenced(p: ProductionV2, value: Mutation, terminalMetadata = false) {
+    mutable(p, value.expectedVersion, terminalMetadata);
     if (
       !p.mutationLease ||
       p.mutationLease.holderId !== value.holderId ||
@@ -256,7 +261,7 @@ export function bookletRepositoryV2(
           throw bookletConflict("Changed idempotency payload.");
         return prior.result;
       }
-      fenced(p, value);
+      fenced(p, value, method === "checkpoint" || method === "releaseLease");
       const details = await effect(p, session);
       await save(p, value.expectedVersion, session);
       const result = {
@@ -264,6 +269,7 @@ export function bookletRepositoryV2(
         id: p._id,
         version: p.version,
         checkpointVersion: p.checkpointVersion,
+        ...(method === "checkpoint" ? { fence: value.fence } : {}),
       };
       await receipts.insertOne(
         {
@@ -1190,7 +1196,9 @@ export function bookletRepositoryV2(
             throw bookletConflict("Changed idempotency payload.");
           return prior.result;
         }
-        mutable(p, value.expectedVersion);
+        // A completed Manager still checkpoints and releases its short lease.
+        // Every creative mutation keeps the normal closed-state guard.
+        mutable(p, value.expectedVersion, true);
         if (p.mutationLease && p.mutationLease.expiresAt > now())
           throw bookletConflict("Production already leased.");
         p.fenceCounter++;

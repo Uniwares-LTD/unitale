@@ -599,10 +599,17 @@ production build, sequential typecheck, scoped lint, model/docs, environment, i1
 skills checks pass. A separate same-agent read-only slice review found no blocking
 issue. Dispatch exposure remains pending with the rest of checkpoint 09;
 checkpoint-wide reviews remain pending.
-Also retain the final metadata checkpoint after structural completion: current v2
-mutation/lease guards reject `completed` productions, but the native graph checkpoints
-after `complete`. Permit only necessary terminal checkpoint/lease cleanup metadata,
-keeping creative mutations closed; test that distinction before wiring the facade.
+The eighth slice retains the final metadata checkpoint after structural completion.
+The repository now permits checkpoint and short-lease acquisition/release metadata on
+`completed` productions, while creative mutations remain closed. Ownership, expiry,
+version/CAS and fence checks remain enforced. Checkpoint receipts expose the confirmed
+fence required by the native `saved` node. The regression first reproduced the blocked
+final checkpoint, then passed. All 48 affected repository/lifecycle/media/MCP tests,
+production build, sequential typecheck, scoped lint, model/docs, i18n and skills checks
+pass. The Mongo fixture used its forced-stop cleanup fallback; the runner exited zero.
+A separate same-agent read-only slice review found no blocking issue. No new fields,
+status, index, delayed completion or finalizer is introduced. The Manager facade and
+checkpoint-wide 09 reviews remain pending.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,

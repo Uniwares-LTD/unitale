@@ -42,6 +42,10 @@ operations remain separate tasks. Historical funding resolves through retained c
 receipts. Only dispatched attempts count; technical retries count once. This changes
 enforcement, not fields or relationships, so the JSON example and both Mermaid views
 are unaffected.
+Completed productions permit only final checkpoint and short-lease acquisition/release
+metadata. Creative mutations remain closed; metadata still requires ownership, a fresh
+version/fence and an unexpired production. Checkpoint receipts include their confirmed
+fence. No state field or relationship changes; the JSON example and diagrams are unchanged.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.

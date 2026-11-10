@@ -1474,6 +1474,122 @@ test("booklet repositories preserve embedded identities and transactional bounda
       },
     );
     await t.test(
+      "completed v2 productions retain only terminal checkpoint and lease metadata",
+      async () => {
+        const f = await managerFixture();
+        // Completion facade is the next gateway slice; isolate its persisted state here.
+        await f.db
+          .collection<{ _id: string; lifecycleState: string }>(
+            "bookletProductions",
+          )
+          .updateOne(
+            { _id: "production-v2" },
+            { $set: { lifecycleState: "completed" } },
+          );
+        const terminal = await f.write((m) =>
+          f.v2.checkpoint("production-v2", {
+            ...m,
+            expectedCheckpointVersion: 0,
+            state: { phase: "complete" },
+          }),
+        );
+        assert.equal(terminal.checkpointVersion, 1);
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.addArtifact("production-v2", {
+              ...m,
+              subjectId: "book-subject",
+              artifactId: "after-completion",
+              kind: "outline",
+            }),
+          ),
+          /not mutable/,
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.appendRevision("production-v2", {
+              ...m,
+              artifactId: "story-v2",
+              content: { kind: "manuscript", units: [] },
+              sources: [],
+              assets: [],
+              provenance: { runId: "run", operationId: "op", evidenceIds: [] },
+            }),
+          ),
+          /not mutable/,
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAcceptance("production-v2", {
+              ...m,
+              runId: "run",
+              revisionId: f.revision._id,
+              contentHash: f.revision.contentHash,
+              targetIds: ["story-v2"],
+              assetIds: [],
+              evidenceIds: [],
+            }),
+          ),
+          /not mutable/,
+        );
+        const released = await f.write((m) =>
+          f.v2.releaseLease("production-v2", m),
+        );
+        const lease = await f.v2.acquireLease("production-v2", {
+          key: "terminal-lease",
+          holderId: "terminal-worker",
+          expectedVersion: released.version,
+          durationMs: 1000,
+        });
+        const next = {
+          key: "terminal-checkpoint",
+          holderId: "terminal-worker",
+          fence: lease.fence!,
+          expectedVersion: lease.version,
+          expectedCheckpointVersion: 1,
+          state: { phase: "complete", retained: true },
+        };
+        await assert.rejects(
+          f.v2.checkpoint("production-v2", {
+            ...next,
+            key: "stale-fence",
+            fence: lease.fence! - 1,
+          }),
+          /lease expired or changed/,
+        );
+        const saved = await f.v2.checkpoint("production-v2", next);
+        assert.deepEqual(await f.v2.checkpoint("production-v2", next), saved);
+        assert.equal(saved.fence, lease.fence);
+        await f.v2.releaseLease("production-v2", {
+          key: "terminal-release",
+          holderId: next.holderId,
+          fence: next.fence,
+          expectedVersion: saved.version,
+        });
+        const current = await f.v2.getProduction("production-v2");
+        assert.equal(current.lifecycleState, "completed");
+        assert.equal(current.checkpointVersion, 2);
+        assert.equal(current.mutationLease, null);
+        await f.db
+          .collection<{ _id: string; lifecycleState: string }>(
+            "bookletProductions",
+          )
+          .updateOne(
+            { _id: "production-v2" },
+            { $set: { lifecycleState: "closed" } },
+          );
+        await assert.rejects(
+          f.v2.acquireLease("production-v2", {
+            key: "closed-lease",
+            holderId: "terminal-worker",
+            expectedVersion: current.version,
+            durationMs: 1000,
+          }),
+          /not mutable/,
+        );
+      },
+    );
+    await t.test(
       "v2 creation and checkpoints preserve v1, ownership and durable CAS",
       async () => {
         const f = await fixture();
