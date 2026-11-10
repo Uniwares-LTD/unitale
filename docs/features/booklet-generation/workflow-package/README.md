@@ -49,7 +49,7 @@ They do not establish execution of the revised shared-provider binding. [Shared-
 now passes for all seven disabled candidates; actual revised-binding execution and
 full application integration remain pending.
 Activation remains disabled. Scope B for minimal 07-11 implementation is approved;
-implementation has not started. The [approval register](integration-handoff.md#approval-register)
+07 storage is complete locally; 08-11 runtime integration remains. The [approval register](integration-handoff.md#approval-register)
 records no tunnel, scope C pending and a future US$3 ceiling (not current spend approval).
 The [remaining T18-T21 plan](../implementation-plan.md#remaining-implementation-kickoff-and-ownership)
 is documentation only. Its [retry/reconciliation policy](../implementation-plan.md#action-retries-and-automatic-reconciliation)

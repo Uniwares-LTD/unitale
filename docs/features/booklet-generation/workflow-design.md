@@ -35,10 +35,10 @@ The initial session authorized local DSL-first work through 06. The subsequent
 compatibility authorization covers upstream submission and isolated Dify/provider
 testing, with US$1 total probe spending. The user clarified the stop at the validated
 provider handoff. Scope B was later approved on 2026-11-10 for minimal 07-11 work
-and scoped code publication/imports after checks/reviews; implementation has not started.
+and scoped code publication/imports after checks/reviews; 07 storage is locally complete.
 The [approval register](workflow-package/integration-handoff.md#approval-register) owns
 current limits: no tunnel; scope C pending; US$3 selected for future acceptance, not
-current spending authorization. This reconciliation run remains documentation only.
+current spending authorization. Scope B execution is active; runtime integration and scope C remain pending.
 A bounded test-only
 exception permits namespaced copies of the submitted official-plugin fixes: identical
 runtime code, metadata-only identity changes, preserving shared experiment plugins.

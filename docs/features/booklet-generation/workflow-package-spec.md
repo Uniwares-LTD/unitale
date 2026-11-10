@@ -8,7 +8,8 @@ Deliver seven readable Dify workflows and a precise application integration hand
 necessity/simplicity checks, reviews and authority. Dify/YAML is the source of truth.
 The 2026-11-09 simplification replaces the custom provider, generated schema inventory,
 TypeScript authoring framework and graph interpreter. Their removal does not reduce
-accepted booklet behavior. Application contracts below are proposals until 07.
+accepted booklet behavior. Checkpoint 07 implements the linked v2 storage boundaries; runtime/tool integration
+below remains proposed until 08-11.
 
 ## Scope
 
@@ -220,7 +221,7 @@ is superseded optional remediation; reuse the installed shared providers under t
 accepted tradeoffs without provider changes. Application integration
 remains pending. The user explicitly stopped at the validated provider handoff;
 temporary apps/plugins are removed. Scope B for minimal checkpoints 07-11 was later
-approved on 2026-11-10; no implementation has started. Follow the
+approved on 2026-11-10; 07 storage is complete locally. Follow the
 [approval register](workflow-package/integration-handoff.md#approval-register): no tunnel,
 local MCP checks in 08-09, deployed conversion in 12; scope C pending with a selected
 future US$3 cap and no current spending authorization.

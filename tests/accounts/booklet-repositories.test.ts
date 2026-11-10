@@ -8,11 +8,17 @@ import {
 } from "../../src/lib/server/booklets/repository";
 import { bookletsServerExtension } from "../../src/project/booklets/server";
 import { fingerprint } from "../../src/lib/server/foundation/canonical";
-import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
+import {
+  bookletRepositoryV2,
+  createBookletV2Indexes,
+} from "../../src/lib/server/booklets/repository-v2";
 import {
   productionV2Schema,
   revisionV2Schema,
   storedProductionSchema,
+  workV2Schema,
+  assessmentDocumentV2Schema,
+  acceptanceDocumentV2Schema,
 } from "../../src/lib/server/booklets/documents-v2";
 import type {
   AppendInput,
@@ -218,7 +224,795 @@ test("booklet repositories preserve embedded identities and transactional bounda
       },
     };
   }
+  async function managerFixture() {
+    const f = await fixture();
+    await createBookletV2Indexes(f.db);
+    const v2 = bookletRepositoryV2(f.db, actor, f.now);
+    const order = structuredClone(f.order);
+    order._id = "order-v2";
+    order.value.id = "order-v2";
+    order.value.targetId = "production-v2";
+    await f.db.collection<typeof order>("consumptionOrders").insertOne(order);
+    await v2.createProduction({
+      ...f.creation,
+      id: "production-v2",
+      orderId: "order-v2",
+      key: "create-v2",
+    });
+    const lease = await v2.acquireLease("production-v2", {
+      key: "lease",
+      holderId: "worker",
+      expectedVersion: 1,
+      durationMs: 300000,
+    });
+    let version = lease.version;
+    let ordinal = 0;
+    async function write<T extends { version: number }>(
+      effect: (mutation: Mutation) => Promise<T>,
+    ) {
+      const result = await effect({
+        key: "write-" + ++ordinal,
+        expectedVersion: version,
+        holderId: "worker",
+        fence: lease.fence!,
+      });
+      version = result.version;
+      return result;
+    }
+    await write((m) =>
+      v2.addSubject("production-v2", {
+        ...m,
+        subject: {
+          id: "book-subject",
+          kind: "book",
+          label: "Book",
+          pageRole: null,
+        },
+      }),
+    );
+    await write((m) =>
+      v2.addArtifact("production-v2", {
+        ...m,
+        subjectId: "book-subject",
+        artifactId: "story-v2",
+        kind: "manuscript",
+      }),
+    );
+    const saved = await write((m) =>
+      v2.appendRevision("production-v2", {
+        ...m,
+        artifactId: "story-v2",
+        content: { kind: "manuscript", units: [] },
+        sources: [],
+        assets: [],
+        provenance: { runId: "run", operationId: "op", evidenceIds: [] },
+      }),
+    );
+    const revision = await v2.getRevision("production-v2", saved.revisionId!);
+    return {
+      ...f,
+      v2,
+      write,
+      revision,
+      source: {
+        artifactId: revision.artifactId,
+        revisionId: revision._id,
+        contentHash: revision.contentHash,
+      },
+    };
+  }
   try {
+    await t.test(
+      "v2 work state preserves unknown outcomes and enforces retries across runs",
+      async () => {
+        const f = await managerFixture();
+        const registration = {
+          callId: "call-0",
+          runId: "run-1",
+          actionKey: fingerprint("same-action"),
+          requestHash: fingerprint("request-0"),
+          service: "manuscript" as const,
+          operation: "write",
+          category: "paidLlm" as const,
+          targetIds: ["story-v2"],
+          sources: [f.source],
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...registration }),
+        );
+        await f.write((m) =>
+          f.v2.dispatchWork("production-v2", {
+            ...m,
+            callId: registration.callId,
+            requestHash: registration.requestHash,
+          }),
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.dispatchWork("production-v2", {
+              ...m,
+              callId: registration.callId,
+              requestHash: registration.requestHash,
+            }),
+          ),
+          /already dispatched/,
+        );
+        await f.write((m) =>
+          f.v2.recordWorkOutcome("production-v2", {
+            ...m,
+            callId: "call-0",
+            status: "unknown",
+            retryable: false,
+            evidenceIds: ["timeout-evidence"],
+          }),
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...registration,
+              callId: "unsafe-replay",
+              retryOf: "call-0",
+              runId: "new-run",
+            }),
+          ),
+          /reconcile/,
+        );
+        assert.equal(
+          (
+            await bookletRepositoryV2(f.db, actor, f.now).getWork(
+              "production-v2",
+              "call-0",
+            )
+          ).status,
+          "unknown",
+        );
+        await f.write((m) =>
+          f.v2.recordWorkOutcome("production-v2", {
+            ...m,
+            callId: "call-0",
+            status: "failed",
+            retryable: true,
+            evidenceIds: ["confirmed-failure"],
+          }),
+        );
+        for (let n = 1; n <= 2; n++) {
+          const retry = {
+            ...registration,
+            callId: "call-" + n,
+            retryOf: "call-" + (n - 1),
+            runId: "run-" + (n + 1),
+            requestHash: fingerprint("request-" + n),
+          };
+          await f.write((m) =>
+            f.v2.registerWork("production-v2", { ...m, ...retry }),
+          );
+          await f.write((m) =>
+            f.v2.dispatchWork("production-v2", {
+              ...m,
+              callId: retry.callId,
+              requestHash: retry.requestHash,
+            }),
+          );
+          await f.write((m) =>
+            f.v2.recordWorkOutcome("production-v2", {
+              ...m,
+              callId: retry.callId,
+              status: "failed",
+              retryable: true,
+              evidenceIds: ["failure-" + n],
+            }),
+          );
+        }
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...registration,
+              callId: "exhausted",
+              retryOf: "call-2",
+              runId: "fresh-run",
+            }),
+          ),
+          /allowance exhausted/,
+        );
+        assert.equal(await f.db.collection("bookletWork").countDocuments(), 3);
+        assert.equal(
+          (await f.v2.getWork("production-v2", "call-2")).retryOrdinal,
+          2,
+        );
+        assert.deepEqual(
+          (await f.v2.getWork("production-v2", "call-0")).evidenceIds,
+          ["timeout-evidence", "confirmed-failure"],
+        );
+        await assert.rejects(
+          bookletRepositoryV2(
+            f.db,
+            { uid: "other", authTime: 1 },
+            f.now,
+          ).getWork("production-v2", "call-0"),
+        );
+        const image = {
+          ...registration,
+          callId: "image",
+          actionKey: fingerprint("image-action"),
+          service: "image-executor" as const,
+          operation: "generate",
+          category: "paidImage" as const,
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...image }),
+        );
+        await f.write((m) =>
+          f.v2.dispatchWork("production-v2", {
+            ...m,
+            callId: image.callId,
+            requestHash: image.requestHash,
+          }),
+        );
+        await f.write((m) =>
+          f.v2.recordWorkOutcome("production-v2", {
+            ...m,
+            callId: image.callId,
+            status: "failed",
+            retryable: true,
+            evidenceIds: ["image-failure"],
+          }),
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...image,
+              callId: "image-retry",
+              retryOf: "image",
+            }),
+          ),
+          /allowance exhausted/,
+        );
+        const nonPaid = {
+          ...registration,
+          callId: "local-0",
+          actionKey: fingerprint("local-action"),
+          service: "image-executor" as const,
+          operation: "prepare",
+          category: "nonPaid" as const,
+        };
+        for (let n = 0; n <= 3; n++) {
+          const callId = "local-" + n;
+          await f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...nonPaid,
+              callId,
+              retryOf: n ? "local-" + (n - 1) : null,
+            }),
+          );
+          await f.write((m) =>
+            f.v2.dispatchWork("production-v2", {
+              ...m,
+              callId,
+              requestHash: nonPaid.requestHash,
+            }),
+          );
+          await f.write((m) =>
+            f.v2.recordWorkOutcome("production-v2", {
+              ...m,
+              callId,
+              status: "failed",
+              retryable: true,
+              evidenceIds: ["local-failure-" + n],
+            }),
+          );
+        }
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...nonPaid,
+              callId: "local-4",
+              retryOf: "local-3",
+            }),
+          ),
+          /allowance exhausted/,
+        );
+        assert.equal(
+          (await f.v2.getWork("production-v2", "local-3")).retryOrdinal,
+          3,
+        );
+      },
+    );
+    await t.test(
+      "correction allowances survive invocation changes and exclude technical retries",
+      async () => {
+        const f = await managerFixture();
+        const initial = {
+          callId: "initial",
+          runId: "run-initial",
+          actionKey: fingerprint("initial"),
+          requestHash: fingerprint("initial-request"),
+          service: "manuscript" as const,
+          operation: "write",
+          category: "paidLlm" as const,
+          targetIds: ["story-v2"],
+          sources: [f.source],
+        };
+        async function dispatch(
+          registration: Omit<
+            Parameters<typeof f.v2.registerWork>[1],
+            keyof Mutation
+          >,
+        ) {
+          await f.write((m) =>
+            f.v2.registerWork("production-v2", { ...m, ...registration }),
+          );
+          await f.write((m) =>
+            f.v2.dispatchWork("production-v2", {
+              ...m,
+              callId: registration.callId,
+              requestHash: registration.requestHash,
+            }),
+          );
+        }
+        async function outcome(
+          callId: string,
+          status: "succeeded" | "failed",
+          retryable = false,
+        ) {
+          await f.write((m) =>
+            f.v2.recordWorkOutcome("production-v2", {
+              ...m,
+              callId,
+              status,
+              retryable,
+              evidenceIds: ["observed-" + callId],
+            }),
+          );
+        }
+        await dispatch(initial);
+        await outcome(initial.callId, "succeeded");
+        const rootId = (await f.v2.getWork("production-v2", initial.callId))
+          .correctionRootId;
+        const review = {
+          ...initial,
+          callId: "review",
+          actionKey: fingerprint("review"),
+          service: "quality-reviewer" as const,
+          operation: "text",
+          reviewScope: {
+            targetHash: f.revision.contentHash,
+            referencePositions: [],
+          },
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...review }),
+        );
+        await f.write((m) =>
+          f.v2.dispatchWork("production-v2", {
+            ...m,
+            callId: review.callId,
+            requestHash: review.requestHash,
+          }),
+        );
+        await outcome(review.callId, "succeeded");
+        await f.write((m) =>
+          f.v2.recordAssessment("production-v2", {
+            ...m,
+            callId: review.callId,
+            policyBinding: "policy",
+            reviewerBinding: "reviewer",
+            evidenceIds: ["observed-review"],
+            assessment: {
+              mode: "text",
+              targetHash: f.revision.contentHash,
+              requestHash: null,
+              sources: [f.source],
+              coverage: { targetIds: ["story-v2"], referencePositions: [] },
+              disposition: "repair",
+              findings: [
+                {
+                  id: "missing-text",
+                  criterion: "lettering",
+                  classification: "confirmed",
+                  targetId: "story-v2",
+                  expected: "Exact text",
+                  observed: "Text omitted",
+                },
+              ],
+              limitations: [],
+            },
+          }),
+        );
+        const correction = {
+          rootId,
+          family: "llm" as const,
+          findingIds: ["missing-text"],
+        };
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...initial,
+              callId: "reset-root",
+              actionKey: fingerprint("reset"),
+              correction: { ...correction, rootId: "a".repeat(64) },
+            }),
+          ),
+          /identity changed/,
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.registerWork("production-v2", {
+              ...m,
+              ...initial,
+              callId: "invented-finding",
+              actionKey: fingerprint("invented"),
+              correction: { ...correction, findingIds: ["invented"] },
+            }),
+          ),
+          /confirmed findings/,
+        );
+        for (let n = 1; n <= 3; n++) {
+          const attempt = {
+            ...initial,
+            callId: "correction-" + n,
+            runId: "fresh-run-" + n,
+            actionKey: fingerprint("corrective-action-" + n),
+            requestHash: fingerprint("corrective-request-" + n),
+            correction,
+          };
+          await dispatch(attempt);
+          if (n === 1) {
+            await outcome(attempt.callId, "failed", true);
+            const retry = {
+              ...attempt,
+              callId: "technical-retry",
+              retryOf: attempt.callId,
+              requestHash: fingerprint("retry-envelope"),
+            };
+            await dispatch(retry);
+            await outcome(retry.callId, "succeeded");
+          } else await outcome(attempt.callId, "succeeded");
+          assert.equal(
+            (await f.v2.getCorrection("production-v2", rootId)).used,
+            n,
+          );
+        }
+        const exhausted = {
+          ...initial,
+          callId: "fourth-correction",
+          runId: "yet-another-run",
+          actionKey: fingerprint("fourth"),
+          requestHash: fingerprint("fourth-request"),
+          correction,
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...exhausted }),
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.dispatchWork("production-v2", {
+              ...m,
+              callId: exhausted.callId,
+              requestHash: exhausted.requestHash,
+            }),
+          ),
+          /Correction allowance exhausted/,
+        );
+        assert.deepEqual(
+          await bookletRepositoryV2(f.db, actor, f.now).getCorrection(
+            "production-v2",
+            rootId,
+          ),
+          { rootId, family: "llm", targetIds: ["story-v2"], used: 3, limit: 3 },
+        );
+        assert.equal(
+          (await f.v2.getWork("production-v2", exhausted.callId)).status,
+          "registered",
+        );
+        const image = {
+          ...initial,
+          callId: "image-initial",
+          actionKey: fingerprint("image-initial"),
+          service: "image-executor" as const,
+          operation: "generate",
+          category: "paidImage" as const,
+        };
+        await dispatch(image);
+        await outcome(image.callId, "succeeded");
+        const imageRoot = (await f.v2.getWork("production-v2", image.callId))
+          .correctionRootId;
+        const imageCorrection = {
+          ...image,
+          callId: "image-correction-1",
+          actionKey: fingerprint("image-correction-1"),
+          correction: {
+            rootId: imageRoot,
+            family: "image" as const,
+            findingIds: ["missing-text"],
+          },
+        };
+        await dispatch(imageCorrection);
+        await outcome(imageCorrection.callId, "failed", true);
+        assert.deepEqual(await f.v2.getCorrection("production-v2", imageRoot), {
+          rootId: imageRoot,
+          family: "image",
+          targetIds: ["story-v2"],
+          used: 1,
+          limit: 1,
+        });
+        const extraImage = {
+          ...imageCorrection,
+          callId: "image-correction-2",
+          actionKey: fingerprint("image-correction-2"),
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...extraImage }),
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.dispatchWork("production-v2", {
+              ...m,
+              callId: extraImage.callId,
+              requestHash: extraImage.requestHash,
+            }),
+          ),
+          /Correction allowance exhausted/,
+        );
+      },
+    );
+    await t.test(
+      "v2 assessments are repeatable and Manager acceptance is distinct from human/quality policy",
+      async () => {
+        const f = await managerFixture();
+        const selection = {
+          runId: "manager-run",
+          revisionId: f.revision._id,
+          contentHash: f.revision.contentHash,
+          targetIds: ["story-v2"],
+          assetIds: [],
+          evidenceIds: [],
+        };
+        const accepted = await f.write((m) =>
+          f.v2.recordAcceptance("production-v2", { ...m, ...selection }),
+        );
+        assert.ok(accepted.acceptanceId);
+        assert.equal(
+          (await f.v2.getProduction("production-v2")).subjects[0].artifacts[0]
+            .acceptedRevisionId,
+          f.revision._id,
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAcceptance("production-v2", {
+              ...m,
+              ...selection,
+              targetIds: ["story-v2", "foreign"],
+            }),
+          ),
+          /identity mismatch/,
+        );
+        const review = {
+          callId: "review-1",
+          runId: "review-run",
+          actionKey: fingerprint("review-action"),
+          requestHash: fingerprint("review-request"),
+          service: "quality-reviewer" as const,
+          operation: "text",
+          category: "paidLlm" as const,
+          targetIds: ["story-v2"],
+          sources: [f.source],
+          reviewScope: {
+            targetHash: f.revision.contentHash,
+            referencePositions: [],
+          },
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...review }),
+        );
+        await f.write((m) =>
+          f.v2.dispatchWork("production-v2", {
+            ...m,
+            callId: review.callId,
+            requestHash: review.requestHash,
+          }),
+        );
+        const assessment = {
+          mode: "text" as const,
+          targetHash: f.revision.contentHash,
+          requestHash: null,
+          sources: [f.source],
+          coverage: { targetIds: ["story-v2"], referencePositions: [] },
+          disposition: "pass" as const,
+          findings: [],
+          limitations: [],
+        };
+        const result = {
+          callId: review.callId,
+          policyBinding: "policy-1",
+          reviewerBinding: "reviewer-1",
+          assessment,
+          evidenceIds: ["trusted-review-evidence"],
+        };
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAssessment("production-v2", { ...m, ...result }),
+          ),
+          /observed review/,
+        );
+        await f.write((m) =>
+          f.v2.recordWorkOutcome("production-v2", {
+            ...m,
+            callId: review.callId,
+            status: "succeeded",
+            retryable: false,
+            evidenceIds: ["trusted-review-evidence"],
+          }),
+        );
+        await f.write((m) =>
+          f.v2.recordAssessment("production-v2", { ...m, ...result }),
+        );
+        await f.write((m) =>
+          f.v2.recordAssessment("production-v2", { ...m, ...result }),
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAssessment("production-v2", {
+              ...m,
+              ...result,
+              assessment: {
+                ...assessment,
+                coverage: { targetIds: [], referencePositions: [] },
+              },
+            }),
+          ),
+          /omitted inspected scope/,
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAssessment("production-v2", {
+              ...m,
+              ...result,
+              assessment: {
+                ...assessment,
+                disposition: "inconclusive",
+                coverage: {
+                  targetIds: ["story-v2", "book-subject"],
+                  referencePositions: [],
+                },
+              },
+            }),
+          ),
+          /unobserved coverage/,
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAssessment("production-v2", {
+              ...m,
+              ...result,
+              assessment: {
+                ...assessment,
+                disposition: "inconclusive",
+                coverage: { targetIds: ["story-v2"], referencePositions: [0] },
+              },
+            }),
+          ),
+          /unobserved coverage/,
+        );
+        assert.equal(
+          await f.db.collection("bookletAssessments").countDocuments({
+            "assessment.targetHash": f.revision.contentHash,
+            complete: true,
+          }),
+          2,
+        );
+        assert.equal(
+          await f.db.collection("bookletAcceptances").countDocuments(),
+          1,
+        );
+        assert.equal(
+          await f.db.collection("bookletQualityReviews").countDocuments(),
+          0,
+        );
+        assert.equal(await f.db.collection("runDecisions").countDocuments(), 0);
+        const wholeScope = {
+          targetHash: fingerprint("manifest-window"),
+          referencePositions: [0],
+          assetIds: ["original-1"],
+          continuityPairs: [["page-1", "page-2"]],
+        };
+        const whole = {
+          ...review,
+          callId: "whole-review",
+          actionKey: fingerprint("whole-review-action"),
+          requestHash: fingerprint("whole-review-request"),
+          operation: "whole_book",
+          reviewScope: wholeScope,
+        };
+        await f.write((m) =>
+          f.v2.registerWork("production-v2", { ...m, ...whole }),
+        );
+        await f.write((m) =>
+          f.v2.dispatchWork("production-v2", {
+            ...m,
+            callId: whole.callId,
+            requestHash: whole.requestHash,
+          }),
+        );
+        await f.write((m) =>
+          f.v2.recordWorkOutcome("production-v2", {
+            ...m,
+            callId: whole.callId,
+            status: "succeeded",
+            retryable: false,
+            evidenceIds: ["whole-observation"],
+          }),
+        );
+        const wholeBody = {
+          ...assessment,
+          mode: "whole_book" as const,
+          targetHash: wholeScope.targetHash,
+          coverage: {
+            targetIds: whole.targetIds,
+            referencePositions: [0],
+            assetIds: ["original-1"],
+            continuityPairs: [] as string[][],
+          },
+        };
+        const wholeResult = {
+          ...result,
+          callId: whole.callId,
+          assessment: wholeBody,
+          evidenceIds: ["whole-observation"],
+        };
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAssessment("production-v2", { ...m, ...wholeResult }),
+          ),
+          /omitted inspected scope/,
+        );
+        await assert.rejects(
+          f.write((m) =>
+            f.v2.recordAssessment("production-v2", {
+              ...m,
+              ...wholeResult,
+              assessment: {
+                ...wholeBody,
+                disposition: "inconclusive",
+                coverage: {
+                  ...wholeBody.coverage,
+                  assetIds: ["unseen-original"],
+                },
+              },
+            }),
+          ),
+          /unobserved coverage/,
+        );
+        await f.write((m) =>
+          f.v2.recordAssessment("production-v2", {
+            ...m,
+            ...wholeResult,
+            assessment: {
+              ...wholeBody,
+              coverage: {
+                ...wholeBody.coverage,
+                continuityPairs: wholeScope.continuityPairs,
+              },
+            },
+          }),
+        );
+        assert.equal(
+          await f.db
+            .collection("bookletAssessments")
+            .countDocuments({ callId: whole.callId, complete: true }),
+          1,
+        );
+        await bookletsServerExtension
+          .migrations!.find((m) => m.id === "booklets:0004-manager-state")!
+          .run(f.db);
+        assert.equal(await f.db.collection("bookletWork").countDocuments(), 2);
+      },
+    );
     await t.test(
       "v2 creation and checkpoints preserve v1, ownership and durable CAS",
       async () => {
@@ -1304,6 +2098,26 @@ test("canonical document example matches persistence schemas and embedded refere
     createdAt: new Date(example.v2StorageExamples.revision.createdAt),
   });
   assert.equal(v2Revision.contentHash, fingerprint(v2Revision.content));
+  const v2Work = workV2Schema.parse({
+    ...example.v2StorageExamples.work,
+    createdAt: new Date(example.v2StorageExamples.work.createdAt),
+    updatedAt: new Date(example.v2StorageExamples.work.updatedAt),
+  });
+  const v2Assessment = assessmentDocumentV2Schema.parse({
+    ...example.v2StorageExamples.assessment,
+    createdAt: new Date(example.v2StorageExamples.assessment.createdAt),
+  });
+  const v2Acceptance = acceptanceDocumentV2Schema.parse({
+    ...example.v2StorageExamples.acceptance,
+    createdAt: new Date(example.v2StorageExamples.acceptance.createdAt),
+  });
+  assert.equal(v2Assessment.callId, v2Work.callId);
+  assert.equal(v2Assessment.assessment.targetHash, v2Revision.contentHash);
+  assert.equal(v2Acceptance.revisionId, v2Revision._id);
+  assert.equal(
+    v2Parsed.subjects[0].artifacts[0].acceptedRevisionId,
+    v2Acceptance.revisionId,
+  );
   assert.equal(
     v2Parsed.subjects[0].artifacts[0].currentRevisionId,
     v2Revision._id,

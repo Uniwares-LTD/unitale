@@ -162,6 +162,8 @@ export const bookletAssessmentV2Schema = content({
     referencePositions: z
       .array(count)
       .refine((v) => new Set(v).size === v.length),
+    assetIds: ids.optional(),
+    continuityPairs: z.array(z.json()).optional(),
   }),
   findings: z.array(
     content({

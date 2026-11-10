@@ -133,6 +133,31 @@ v1 tools on old bindings; register only v2 on this Manager. Preserve catalog bou
 service credential permissions and per-request owned Run checks. Bind deployment
 identity from server context, never from model claims.
 
+### Checkpoint 07 storage boundary
+
+V2 storage now exists in the project repository; MCP/observer/admission wiring is
+still pending in 08-09. Work records use distinct call IDs, a server action identity,
+request hash and retry ordinal. Automatic retries require the latest confirmed
+retryable failure of that same action; unknown or terminal success cannot be replayed.
+Correction roots bind production/task/targets/funding, with distinct corrective
+actions counted once even when technically retried. Assessments and Manager selections
+have separate immutable records; human responses remain in existing Run decision storage.
+
+The 09 gateway must construct actionKey and category from the selected service and
+trusted task/target/funding context; never accept a model-supplied action key, retry
+category, usage, completeness or provider outcome as authority. Normalize retry
+identity by removing only invocation/call/item carrier IDs and transient native handles
+from the validated child request, preserving ordered inputs, source/asset identities,
+meaningful settings, feedback and constraints. Changed meaningful payload starts a
+new creative/corrective action only under its existing funding/correction authorization;
+it cannot masquerade as another technical attempt. requestHash still binds the exact
+per-attempt envelope as the native graph expects. Manual retry authorization, runtime
+observation, restricted reconciliation and financial checks remain 09 obligations.
+
+This storage slice is not proof of real provider execution, effective retries or
+application-connected recovery. The existing candidate still has retries/activation
+disabled and remains unchanged until the separately checked 09 integration slice.
+
 ### Context and transition facts
 
 Context supplies `checkpointVersion`, `checkpoint` (opaque saved intent/result), current
@@ -738,7 +763,7 @@ Scope A approved on 2026-11-10. User response: "I approve but it's important to 
 | Scope | Agreed scope | Current status / exclusions |
 | --- | --- | --- |
 | A: zero-cost feasibility probes | Up to three disposable `unitale10_capability_20261110_*` apps and their test-only workflow-tool/MCP bindings; deterministic nodes and synthetic PNG fixtures; import/publication/execution/readback, disconnect/retrieval and cleanup of those resources. Probe ordered MCP image conversion, retained node/iteration evidence, and safe action retry delay/reentry. Any fixture endpoint must use an already approved reachable route; no new host/network setup | Approved 2026-11-10 with minimum reasonable resource use. US$0; no LLM/image/provider calls, production app changes, shared plugin changes, application implementation or commits. If a reachable fixture route is absent, stop that probe and report it |
-| B: implementation kickoff | Checkpoints 07-11 in Unitale; demonstrated bounded generic changes in Unibase; local fixtures/checks, scoped commits/pushes/PRs/normal merges and reviewed exact template imports after required reviews | Approved 2026-11-10: "I approve with this note: keep everything simple and minimal, do not over-engineer". Reuse existing services/worker/Run UI; no new framework, scheduler, plugin or dashboard. No deployment, release/tag, new dependency, paid call, production migration or bypass of branch protections. External required reviews may still block; implementation started at 07.1/07.2 |
+| B: implementation kickoff | Checkpoints 07-11 in Unitale; demonstrated bounded generic changes in Unibase; local fixtures/checks, scoped commits/pushes/PRs/normal merges and reviewed exact template imports after required reviews | Approved 2026-11-10: "I approve with this note: keep everything simple and minimal, do not over-engineer". Reuse existing services/worker/Run UI; no new framework, scheduler, plugin or dashboard. No deployment, release/tag, new dependency, paid call, production migration or bypass of branch protections. External required reviews may still block; 07 complete locally; continuing at 08 |
 | C: staging acceptance | Exact reviewed application deployment/migration, specialist-first Dify publication/bindings, named test package/accounts, cleanup and finite paid acceptance | Pending by explicit choice "Keep C pending". User selected US$3 total for future provider acceptance; no spending until C approval. Review exact artifacts, deployment/configuration/migration, secure inputs and resource identities after 11; historical US$1 cap is not renewed |
 
 Scope A is closed for the minimum feasible probe; MCP live proof is deferred to 12.
@@ -758,7 +783,7 @@ an approval boundary. No technical approval establishes unverified capabilities.
 | --- | --- | --- | --- |
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README | Local checks can run unattended; no further implementation is needed for this handoff |
 | Provider/composition feasibility | Isolated probes and installed-source audit complete; SDK retries/default timeout/alias accepted | Reuse shared providers unchanged; current-provider configuration and all seven secret-free candidate import/readbacks now pass; actual execution of this revised binding and application acceptance remain unverified | No-money checks can run unattended with authorized staging access. No plugin installation or upstream release required; any further paid probes need a newly agreed finite scope/cap. Billing reconciliation needs account usage/invoice access |
-| 07: application contracts/persistence | Scope B approved; in progress | Follow the [bounded slices](../implementation-plan.md#07---application-contracts--persistence); v2 compatibility, action/assessment/checkpoint facts and retry snapshots | Kickoff approval covers 07-11 and scoped cross-repository publication; disposable local persistence only |
+| 07: application contracts/persistence | Complete locally; two clean same-agent reviews | Follow the [bounded slices](../implementation-plan.md#07---application-contracts--persistence); v2 compatibility, action/assessment/checkpoint facts and retry snapshots | Kickoff approval covers 07-11 and scoped cross-repository publication; disposable local persistence only |
 | 08: shared runtime seams | Conditional; not started | Prove existing observation/native-file/decision/Run extension points; only necessary generic fixes in Unibase, then reviewed exact import | Refresh stale Unibase checkout first; no provider release dependency. Local capability failures or required external reviews block only dependent work; live MCP conversion deferred to 12 |
 | 09: Unitale gateway/recovery | Not started | Manager MCP, prepaid admission, per-output retention, bounded retries, automatic evidence reconciliation and explicit continuation | Reuse existing worker/commerce; no new scheduler or blind replay; fake-provider tests unattended after dependencies |
 | 10: existing Run UI / T21 | Not started | Brief, quote/consent, progress, decisions, revisions and accessible history; retry settings/evidence in existing admin | Local browser fixtures; en/ar public and English/LTR admin; no standalone creator workspace |
@@ -766,7 +791,8 @@ an approval boundary. No technical approval establishes unverified capabilities.
 | 12: staging acceptance | Integrated acceptance pending | Publish specialists then Manager, verify bindings/tags, execute T18-T21 journeys and retain secret-free evidence | Final grouped approval: deployment/migration/publication, secure inputs, package/capacity, test accounts and selected US$3 total cap (no spend until approval); real staging MCP image proof; human consent remains human |
 
 
-Current execution: scope B started at 07; retain the validated candidate evidence.
+Current execution: 07 is complete locally; scope B continues at 08. Retain the
+validated candidate and local storage evidence.
 Scope B is approved for 07-11 with minimal implementation; scope C stays pending.
 Reuse the verified provider/structured-output behavior and existing services when
 implementation starts. No temporary tunnel is planned. A compatibility failure narrows or revises

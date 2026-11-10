@@ -31,7 +31,8 @@ and the adapter; the table does not require unrelated suites for every task.
   maps T18-T21, Unitale/Unibase ownership and approval gates; its
   [retry/reconciliation policy](features/booklet-generation/implementation-plan.md#action-retries-and-automatic-reconciliation)
   owns planned defaults and recovery semantics. The current amendment is documentation
-  only; application implementation has not started.
+  only at its original checkpoint; 07 storage is now implemented locally and reviewed.
+  Shared runtime and application integration remain 08-11.
   [Workflow package design](features/booklet-generation/workflow-design.md) owns
   issue #10's accepted Manager/app/service boundaries, integration gap assessment and
   open contract decisions. It distinguishes the target from current application code.
@@ -67,7 +68,9 @@ and the adapter; the table does not require unrelated suites for every task.
   Unitale repositories and schemas live in `src/lib/server/booklets`;
   [v2 content boundaries](../src/project/booklets/contracts-v2.ts) and the
   [v2 repository](../src/lib/server/booklets/repository-v2.ts) are opt-in 07 work,
-  preserving strict v1 readers and records.
+  preserving strict v1 readers and records. V2 work, scoped assessments and Manager
+  acceptance use project-owned collections and the index-only 0004 migration; trusted
+  runtime/tool wiring remains pending.
   `src/project/booklets/extension.ts` and `server.ts` own registration.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private catalog and

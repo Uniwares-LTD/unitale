@@ -523,7 +523,7 @@
     }
   },
   "v2StorageExamples": {
-    "status": "07.2 explicit version-2 storage boundary; independent synthetic draft, not converted or seeded data",
+    "status": "07 storage shapes; synthetic records, not chronological execution evidence or seed data",
     "production": {
       "_id": "production_v2_example",
       "documentVersion": 2,
@@ -591,7 +591,7 @@
               "id": "manuscript_v2",
               "kind": "manuscript",
               "currentRevisionId": "revision_v2_example",
-              "acceptedRevisionId": null
+              "acceptedRevisionId": "revision_v2_example"
             }
           ]
         }
@@ -651,6 +651,98 @@
       },
       "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
       "createdAt": "2026-11-07T09:00:00.000Z"
+    },
+    "work": {
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "createdAt": "2026-11-07T09:00:00.000Z",
+      "_id": "f2bee7706e163c567d95a4dde99c2f5137cc19ae0ff46b7faf42f76fd346cebd",
+      "callId": "review_v2_example",
+      "runId": "run_v2_example",
+      "actionKey": "5ae05143cdd87149c4b7086471188a086594739d942a532e8293fcf4ce5eabc7",
+      "requestHash": "03b4fbf8f06fd349363618eeb52266ba56b51e7bff27e0e6f88f62c9db09f92d",
+      "service": "quality-reviewer",
+      "operation": "text",
+      "targetIds": [
+        "manuscript_v2"
+      ],
+      "sources": [
+        {
+          "artifactId": "manuscript_v2",
+          "revisionId": "revision_v2_example",
+          "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+        }
+      ],
+      "category": "paidLlm",
+      "retryOf": null,
+      "reviewScope": {
+        "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+        "referencePositions": [],
+        "assetIds": [],
+        "continuityPairs": []
+      },
+      "correction": null,
+      "correctionRootId": "f8261f03c95bbda29daee46fcc9bf28ad7f0a57e62d8c8271e60a213d169610e",
+      "status": "succeeded",
+      "retryOrdinal": 0,
+      "retryable": false,
+      "evidenceIds": [
+        "observed_review_v2"
+      ],
+      "updatedAt": "2026-11-07T09:00:00.000Z"
+    },
+    "assessment": {
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "createdAt": "2026-11-07T09:00:00.000Z",
+      "_id": "4769c2611ec2e860eba71f7f8ed567c91d39d1df0eede5af1156d45c92e16d4e",
+      "callId": "review_v2_example",
+      "policyBinding": "policy_v2",
+      "reviewerBinding": "reviewer_v2",
+      "assessment": {
+        "mode": "text",
+        "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+        "requestHash": null,
+        "sources": [
+          {
+            "artifactId": "manuscript_v2",
+            "revisionId": "revision_v2_example",
+            "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+          }
+        ],
+        "coverage": {
+          "targetIds": [
+            "manuscript_v2"
+          ],
+          "referencePositions": []
+        },
+        "disposition": "pass",
+        "findings": [],
+        "limitations": []
+      },
+      "complete": true,
+      "evidenceIds": [
+        "observed_review_v2"
+      ]
+    },
+    "acceptance": {
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "createdAt": "2026-11-07T09:00:00.000Z",
+      "_id": "df5d2acc97511a87fb59224e61bb725470dd122cfaba61435e633f0fdb15d108",
+      "runId": "manager_v2",
+      "revisionId": "revision_v2_example",
+      "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+      "targetIds": [
+        "manuscript_v2"
+      ],
+      "assetIds": [],
+      "evidenceIds": [
+        "observed_review_v2"
+      ]
     }
   }
 }

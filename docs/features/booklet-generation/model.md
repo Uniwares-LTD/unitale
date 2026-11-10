@@ -7,7 +7,7 @@ fields. The example and diagrams are therefore unchanged by this documentation-o
 decision record. Update all model artifacts together when concrete schema changes
 are authorized; do not relabel existing approval/quality records as Manager acceptance.
 
-## Version 2 storage slice (07 in progress)
+## Version 2 storage boundary
 
 The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
 [v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing
@@ -24,7 +24,21 @@ quality or execution authority. Draft v2 revisions now write atomically with the
 exact text and verify local immutable source/owned original identities. Their contentHash
 is SHA-256 of canonical content, matching the Manager source contract; v1 keeps its
 hashVersion-1 wrapper. Active paid v2 writes remain blocked until the 09 admission guard.
-V2 assessment/action storage and lifecycle/MCP/Run UI integration remain pending; this slice does not activate workflows.
+V2 work, assessment and Manager acceptance storage is implemented alongside v1.
+Work uses registered/dispatching/succeeded/partial/failed/unknown states; only confirmed
+retryable failure permits a new attempt, bounded by the production snapshot. Unknown
+results remain unresolved until server observation. Correction roots bind task, target
+and funding identity. Counts derive from distinct dispatched corrective actions;
+technical retries reuse an action key. No separate correction-budget collection.
+Assessments bind observed review scope and evidence, coexist per revision, and derive
+completeness independently of model fields. Acceptance updates the exact revision
+pointer atomically without adding an app human/quality-policy gate.
+
+`booklets:0004-manager-state` creates the three new collection indexes, with no data
+conversion. These are storage services, not dispatch authority: trusted observer,
+prepaid admission, human correlation, MCP and Run UI wiring remain in 08-10. Existing
+review-request/runDecisions fields are reused for human correlation; no new human
+response collection or fabricated decision is introduced. No workflow is activated.
 The existing v1 service descriptions below retain their version-1 scope.
 
 ## Outcome
@@ -80,7 +94,8 @@ no generation calls.
   Its typed content embeds panels and lettering, story units, or accepted manifest
   entries. Sources and asset identities are bounded embedded references. Raw prompts
   and provider envelopes stay in evidence storage.
-- **Generation admissions**, review requests and quality reviews stay outside Production. Human submissions remain in existing `runDecisions`; revision requests, allocations and charges reuse commerce documents. Repair usage is derived from generation records grouped by `repairRoot`, bounded by the frozen package limit. No separate attempt, repair-budget or attachment collection is introduced.
+- **Generation admissions**, review requests and quality reviews stay outside Production. Human submissions remain in existing `runDecisions`; revision requests, allocations and charges reuse commerce documents. Repair usage is derived from generation records grouped by `repairRoot`, bounded by the frozen package limit. For v1 no separate attempt, repair-budget or attachment collection is introduced;
+  v2 uses the Work attempt records described above.
 - **Manifest** is a revision kind, not an Edition collection. Its nested page
   entries bind order, exact image revisions, original assets, quality and approval.
 - **Economy** reuses existing Unibase documents. Production references its order;

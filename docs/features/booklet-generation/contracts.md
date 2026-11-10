@@ -5,8 +5,9 @@ The accepted [workflow design](workflow-design.md) changes the target ownership 
 human approvals, quality gates and Manager acceptance, and records the required
 versioned extensions. The 07.1 [v2 content/assessment/retry parsers](../../../src/project/booklets/contracts-v2.ts)
 are implemented. V2 production/checkpoint persistence has started with explicit
-readers/writers and draft immutable revision storage; durable work/assessment records, tool integration
-and runtime policy remain pending. Preserve v1 parsing and
+readers/writers, draft immutable revisions and durable work/assessment/acceptance
+records. Correction counts derive from the same work history, separately from retry
+ordinals. Trusted runtime observation, tool integration and UI remain pending. Preserve v1 parsing and
 historical records. The [package specification](workflow-package-spec.md#concrete-runtime-record-and-ui-decisions)
 defines the planned v1/v2 compatibility boundary; minimal package boundaries are
 checked in the actual workflow YAML and runtime implementation follows 07 in the

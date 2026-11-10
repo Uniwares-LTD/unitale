@@ -85,6 +85,44 @@ export const documents = [
     ],
   },
   {
+    name: "Work attempt",
+    group: "lifecycle",
+    status: "I: 07 bookletWork storage; dispatch integration pending 09",
+    fields: [
+      "_id / documentVersion 2 / ownerId / productionId / callId / runId",
+      "actionKey / requestHash / service / operation / category",
+      "targetIds[] / sources[] / retryOf? / retryOrdinal",
+      "status / retryable / evidenceIds[] / createdAt / updatedAt",
+      "correctionRootId / correction? {rootId, family, findingIds[]}",
+      "reviewScope? {targetHash, referencePositions[], assetIds[], continuityPairs[]}",
+      "Corrections count distinct dispatched actionKey; retries keep that key",
+    ],
+  },
+  {
+    name: "Scoped assessment",
+    group: "lifecycle",
+    status: "I: 07 bookletAssessments; trusted observer wiring pending 09",
+    fields: [
+      "_id / documentVersion 2 / ownerId / productionId / callId",
+      "policyBinding / reviewerBinding / createdAt / evidenceIds[]",
+      "assessment {mode, targetHash, requestHash?, sources[],",
+      "  disposition, coverage, findings[], limitations[]}",
+      "complete (derived from registered scope, not model assertion)",
+      "Multiple assessments per revision; v1 quality uniqueness unchanged",
+    ],
+  },
+  {
+    name: "Manager acceptance",
+    group: "lifecycle",
+    status: "I: 07 bookletAcceptances storage; Manager integration pending 09",
+    fields: [
+      "_id / documentVersion 2 / ownerId / productionId / runId",
+      "revisionId / contentHash / targetIds[] / assetIds[]",
+      "evidenceIds[] / createdAt",
+      "Atomic acceptedRevisionId selection; distinct from human/quality policy",
+    ],
+  },
+  {
     name: "Repository write receipt",
     group: "core",
     status: "I: T14 bookletRepositoryWrites",
@@ -460,6 +498,18 @@ documents.push(
 );
 
 export const relationships = [
+  ["Work attempt", "Production", "productionId; frozen retry/correction scope"],
+  [
+    "Scoped assessment",
+    "Work attempt",
+    "observed callId and exact review scope",
+  ],
+  [
+    "Manager acceptance",
+    "Artifact revision",
+    "exact owned revision and contentHash",
+  ],
+  ["Manager acceptance", "Production", "accepted pointer updated atomically"],
   ["MCP transfer", "Production", "owned productionId"],
   ["MCP transfer part", "MCP transfer", "transferId"],
   [

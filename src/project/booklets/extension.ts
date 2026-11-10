@@ -11,6 +11,9 @@ export const bookletsExtension = defineExtension({
       "bookletProductions",
       "bookletRevisions",
       "bookletRepositoryWrites",
+      "bookletWork",
+      "bookletAssessments",
+      "bookletAcceptances",
     ],
   },
 });

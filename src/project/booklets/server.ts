@@ -6,6 +6,7 @@ import { createBookletMediaIndexes } from "../../lib/server/booklets/media";
 import { bookletDomain } from "./domain";
 import { bookletMcpTools } from "../../lib/server/booklets/mcp-tools";
 import { createBookletMcpIndexes } from "../../lib/server/booklets/mcp-transfers";
+import { createBookletV2Indexes } from "../../lib/server/booklets/repository-v2";
 async function indexes(db: Parameters<typeof createBookletIndexes>[0]) {
   await createBookletIndexes(db);
   await createBookletServiceIndexes(db);
@@ -16,6 +17,7 @@ export const bookletsServerExtension = defineServerExtension({
   indexes: async (db) => {
     await indexes(db);
     await createBookletMcpIndexes(db);
+    await createBookletV2Indexes(db);
   },
   domainAdapters: [bookletDomain],
   mcpTools: bookletMcpTools,
@@ -37,6 +39,12 @@ export const bookletsServerExtension = defineServerExtension({
       description:
         "Add bounded booklet MCP transfer and trusted publication binding indexes.",
       run: createBookletMcpIndexes,
+    },
+    {
+      id: "booklets:0004-manager-state",
+      description:
+        "Add v2 Manager work, assessment and acceptance indexes without converting records.",
+      run: createBookletV2Indexes,
     },
   ],
 });

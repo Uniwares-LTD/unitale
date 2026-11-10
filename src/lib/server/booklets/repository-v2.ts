@@ -6,6 +6,7 @@ import {
   bookletContentV2Schema,
   bookletRetryPolicySchema,
   bookletSourceV2Schema,
+  bookletAssessmentV2Schema,
 } from "../../../project/booklets/contracts-v2";
 import { assetIdentitySchema } from "../../../project/booklets/contracts";
 import type { CreditActor } from "../store/credit-types";
@@ -27,6 +28,13 @@ import {
   storedProductionSchema,
   type ProductionV2,
   type RevisionV2,
+  workRegistrationV2Schema,
+  workV2Schema,
+  assessmentDocumentV2Schema,
+  acceptanceDocumentV2Schema,
+  type WorkV2,
+  type AssessmentV2,
+  type AcceptanceV2,
 } from "./documents-v2";
 import type { BookletAsset } from "./media";
 
@@ -47,9 +55,45 @@ type Receipt = {
     fence?: number;
     revisionId?: string;
     ordinal?: number;
+    assessmentId?: string;
+    acceptanceId?: string;
   };
   createdAt: Date;
 };
+type Details = Pick<
+  Receipt["result"],
+  "revisionId" | "ordinal" | "assessmentId" | "acceptanceId"
+>;
+
+export async function createBookletV2Indexes(db: Db) {
+  await db
+    .collection("bookletWork")
+    .createIndex({ ownerId: 1, productionId: 1, callId: 1 }, { unique: true });
+  await db
+    .collection("bookletWork")
+    .createIndex(
+      { ownerId: 1, productionId: 1, actionKey: 1, retryOrdinal: 1 },
+      { unique: true },
+    );
+  await db.collection("bookletWork").createIndex({
+    ownerId: 1,
+    productionId: 1,
+    correctionRootId: 1,
+    status: 1,
+  });
+  await db.collection("bookletAssessments").createIndex({
+    ownerId: 1,
+    productionId: 1,
+    "assessment.targetHash": 1,
+    createdAt: 1,
+  });
+  await db
+    .collection("bookletAssessments")
+    .createIndex({ ownerId: 1, productionId: 1, "assessment.findings.id": 1 });
+  await db
+    .collection("bookletAcceptances")
+    .createIndex({ ownerId: 1, productionId: 1, revisionId: 1, createdAt: 1 });
+}
 
 // Explicit v2 entry point. Reuse v1 admission validation for newly created records
 // inside the same transaction; no existing record is converted or exposed as v1.
@@ -66,6 +110,37 @@ export function bookletRepositoryV2(
   );
   const receipts = db.collection<Receipt>("bookletRepositoryWrites");
   const revisions = db.collection<RevisionV2>("bookletRevisions");
+  const work = db.collection<WorkV2>("bookletWork");
+  const assessments = db.collection<AssessmentV2>("bookletAssessments");
+  const acceptances = db.collection<AcceptanceV2>("bookletAcceptances");
+  const ids = z.array(id).refine((v) => new Set(v).size === v.length);
+  function boundState(row: object) {
+    if (BSON.calculateObjectSize(row) > 4 * 1024 * 1024)
+      throw bookletConflict(
+        "Manager state exceeds its storage limit; retain large bodies in evidence storage.",
+      );
+  }
+  const correctionLimit = (p: ProductionV2, family: "llm" | "image") =>
+    family === "image"
+      ? Math.min(1, p.creativeConfigSnapshot.repairLimitPerOutput)
+      : 3;
+  async function usedCorrections(
+    p: ProductionV2,
+    rootId: string,
+    session: ClientSession,
+  ) {
+    return work.distinct(
+      "actionKey",
+      {
+        ownerId: actor.uid,
+        productionId: p._id,
+        correctionRootId: rootId,
+        correction: { $ne: null },
+        status: { $ne: "registered" },
+      },
+      { session },
+    );
+  }
   async function owned(productionId: string, session: ClientSession) {
     const row = await productions.findOne(
       { _id: id.parse(productionId), ownerId: actor.uid },
@@ -119,7 +194,7 @@ export function bookletRepositoryV2(
     effect: (
       p: ProductionV2,
       session: ClientSession,
-    ) => void | Promise<void | { revisionId: string; ordinal: number }>,
+    ) => void | Promise<void | Details>,
   ) {
     return context.transaction(async (session) => {
       const p = await owned(productionId, session);
@@ -225,6 +300,496 @@ export function bookletRepositoryV2(
     },
     getProduction(productionId: string) {
       return context.transaction((session) => owned(productionId, session));
+    },
+    getWork(productionId: string, callId: string) {
+      return context.transaction(async (session) => {
+        const p = await owned(productionId, session);
+        const row = await work.findOne(
+          { ownerId: actor.uid, productionId: p._id, callId: id.parse(callId) },
+          { session },
+        );
+        if (!row) throw bookletMissing();
+        return workV2Schema.parse(row);
+      });
+    },
+    getCorrection(productionId: string, rootId: string) {
+      return context.transaction(async (session) => {
+        const p = await owned(productionId, session);
+        const row = await work.findOne(
+          {
+            ownerId: actor.uid,
+            productionId: p._id,
+            correctionRootId: z
+              .string()
+              .regex(/^[a-f0-9]{64}$/)
+              .parse(rootId),
+          },
+          { session },
+        );
+        if (!row) throw bookletMissing();
+        const family = row.category === "paidImage" ? "image" : "llm";
+        return {
+          rootId,
+          family,
+          targetIds: row.targetIds,
+          used: (await usedCorrections(p, rootId, session)).length,
+          limit: correctionLimit(p, family),
+        };
+      });
+    },
+    registerWork(
+      productionId: string,
+      input: Mutation & z.input<typeof workRegistrationV2Schema>,
+    ) {
+      const value = mutationSchema
+        .extend(workRegistrationV2Schema.shape)
+        .parse(input);
+      return mutate(
+        productionId,
+        value,
+        "registerWork",
+        value,
+        async (p, session) => {
+          const expectedCategory =
+            value.service === "image-executor"
+              ? value.operation === "prepare"
+                ? "nonPaid"
+                : "paidImage"
+              : value.service === "manager" && value.operation !== "reason"
+                ? "nonPaid"
+                : "paidLlm";
+          if (value.category !== expectedCategory)
+            throw bookletConflict(
+              "Work category differs from its bound service.",
+            );
+          if (
+            value.service === "quality-reviewer" &&
+            (!value.reviewScope || !value.targetIds.length)
+          )
+            throw bookletConflict(
+              "Review work requires explicit target scope.",
+            );
+          const registration = {
+            callId: value.callId,
+            runId: value.runId,
+            actionKey: value.actionKey,
+            requestHash: value.requestHash,
+            service: value.service,
+            operation: value.operation,
+            targetIds: value.targetIds,
+            sources: value.sources,
+            category: value.category,
+            retryOf: value.retryOf,
+            reviewScope: value.reviewScope,
+            correction: value.correction,
+          };
+          const correctionRootId = fingerprint([
+            p._id,
+            value.service,
+            value.operation,
+            [...value.targetIds].sort(),
+            p.revisionChargeId ?? "platform",
+          ]);
+          const targets = new Set(
+            p.subjects.flatMap((s) => [s.id, ...s.artifacts.map((a) => a.id)]),
+          );
+          if (value.targetIds.some((target) => !targets.has(target)))
+            throw bookletConflict("Work target is not registered.");
+          for (const source of value.sources) {
+            const row = await revisions.findOne(
+              {
+                ownerId: actor.uid,
+                productionId: p._id,
+                _id: source.revisionId,
+                artifactId: source.artifactId,
+                contentHash: source.contentHash,
+              },
+              { session },
+            );
+            if (!row) throw bookletConflict("Work source identity mismatch.");
+          }
+          const previousRaw = await work
+            .find(
+              {
+                ownerId: actor.uid,
+                productionId: p._id,
+                actionKey: value.actionKey,
+              },
+              { session },
+            )
+            .sort({ retryOrdinal: -1 })
+            .limit(1)
+            .next();
+          const previous = previousRaw ? workV2Schema.parse(previousRaw) : null;
+          if (previous) {
+            if (
+              previous.callId !== value.retryOf ||
+              previous.status !== "failed" ||
+              !previous.retryable
+            )
+              throw bookletConflict(
+                "Reuse or reconcile existing work before retry.",
+              );
+            if (previous.retryOrdinal >= p.retryPolicy[previous.category])
+              throw bookletConflict("Action retry allowance exhausted.");
+            if (
+              fingerprint([
+                previous.service,
+                previous.operation,
+                previous.category,
+                previous.targetIds,
+                previous.sources,
+                previous.reviewScope,
+                previous.correction,
+              ]) !==
+              fingerprint([
+                value.service,
+                value.operation,
+                value.category,
+                value.targetIds,
+                value.sources,
+                value.reviewScope,
+                value.correction,
+              ])
+            )
+              throw bookletConflict("Retry scope changed.");
+          } else if (value.retryOf)
+            throw bookletConflict("Retry predecessor is unavailable.");
+          if (value.correction) {
+            const family = value.category === "paidImage" ? "image" : "llm";
+            if (
+              value.service === "quality-reviewer" ||
+              !value.targetIds.length ||
+              value.correction.rootId !== correctionRootId ||
+              value.correction.family !== family
+            )
+              throw bookletConflict(
+                "Correction task, target or funding identity changed.",
+              );
+            for (const findingId of value.correction.findingIds) {
+              const finding = await assessments.findOne(
+                {
+                  ownerId: actor.uid,
+                  productionId: p._id,
+                  "assessment.findings": {
+                    $elemMatch: {
+                      id: findingId,
+                      classification: "confirmed",
+                      targetId: { $in: value.targetIds },
+                    },
+                  },
+                },
+                { projection: { _id: 1 }, session },
+              );
+              if (!finding)
+                throw bookletConflict(
+                  "Correction requires scoped confirmed findings.",
+                );
+            }
+          }
+          const row = workV2Schema.parse({
+            ...registration,
+            _id: fingerprint([actor.uid, p._id, value.callId]),
+            documentVersion: 2,
+            ownerId: actor.uid,
+            productionId: p._id,
+            status: "registered",
+            retryOrdinal: previous ? previous.retryOrdinal + 1 : 0,
+            correctionRootId,
+            retryable: false,
+            evidenceIds: [],
+            createdAt: now(),
+            updatedAt: now(),
+          });
+          boundState(row);
+          await work.insertOne(row, { session });
+        },
+      );
+    },
+    dispatchWork(
+      productionId: string,
+      input: Mutation & { callId: string; requestHash: string },
+    ) {
+      const value = mutationSchema
+        .extend({ callId: id, requestHash: z.string().regex(/^[a-f0-9]{64}$/) })
+        .parse(input);
+      return mutate(
+        productionId,
+        value,
+        "dispatchWork",
+        value,
+        async (p, session) => {
+          const row = await work.findOne(
+            {
+              ownerId: actor.uid,
+              productionId: p._id,
+              callId: value.callId,
+              requestHash: value.requestHash,
+              status: "registered",
+            },
+            { session },
+          );
+          if (!row)
+            throw bookletConflict(
+              "Work already dispatched, changed or unresolved.",
+            );
+          if (row.correction) {
+            const used = await usedCorrections(
+              p,
+              row.correction.rootId,
+              session,
+            );
+            if (
+              !used.includes(row.actionKey) &&
+              used.length >= correctionLimit(p, row.correction.family)
+            )
+              throw bookletConflict("Correction allowance exhausted.");
+          }
+          const result = await work.updateOne(
+            {
+              ownerId: actor.uid,
+              productionId: p._id,
+              callId: value.callId,
+              requestHash: value.requestHash,
+              status: "registered",
+            },
+            { $set: { status: "dispatching", updatedAt: now() } },
+            { session },
+          );
+          if (result.modifiedCount !== 1)
+            throw bookletConflict(
+              "Work already dispatched, changed or unresolved.",
+            );
+        },
+      );
+    },
+    // Server observer only. The 09 gateway must verify execution/evidence origin;
+    // a model result alone never authorizes this transition or a retry.
+    recordWorkOutcome(
+      productionId: string,
+      input: Mutation & {
+        callId: string;
+        status: "succeeded" | "partial" | "failed" | "unknown";
+        retryable: boolean;
+        evidenceIds: string[];
+      },
+    ) {
+      const value = mutationSchema
+        .extend({
+          callId: id,
+          status: z.enum(["succeeded", "partial", "failed", "unknown"]),
+          retryable: z.boolean(),
+          evidenceIds: ids.min(1),
+        })
+        .refine(
+          (v) => !v.retryable || v.status === "failed",
+          "Only confirmed failures may be retryable.",
+        )
+        .parse(input);
+      return mutate(
+        productionId,
+        value,
+        "recordWorkOutcome",
+        value,
+        async (p, session) => {
+          const result = await work.updateOne(
+            {
+              ownerId: actor.uid,
+              productionId: p._id,
+              callId: value.callId,
+              status: { $in: ["dispatching", "unknown"] },
+            },
+            {
+              $set: {
+                status: value.status,
+                retryable: value.retryable,
+                updatedAt: now(),
+              },
+              $addToSet: { evidenceIds: { $each: value.evidenceIds } },
+            },
+            { session },
+          );
+          if (result.modifiedCount !== 1)
+            throw bookletConflict(
+              "Work outcome is terminal or was never dispatched.",
+            );
+        },
+      );
+    },
+    recordAssessment(
+      productionId: string,
+      input: Mutation & {
+        callId: string;
+        policyBinding: string;
+        reviewerBinding: string;
+        assessment: z.input<typeof bookletAssessmentV2Schema>;
+        evidenceIds: string[];
+      },
+    ) {
+      const value = mutationSchema
+        .extend({
+          callId: id,
+          policyBinding: id,
+          reviewerBinding: id,
+          assessment: bookletAssessmentV2Schema,
+          evidenceIds: ids.min(1),
+        })
+        .parse(input);
+      return mutate(
+        productionId,
+        value,
+        "recordAssessment",
+        value,
+        async (p, session) => {
+          const observedRaw = await work.findOne(
+            {
+              ownerId: actor.uid,
+              productionId: p._id,
+              callId: value.callId,
+              service: "quality-reviewer",
+              status: { $in: ["succeeded", "partial"] },
+            },
+            { session },
+          );
+          const observed = observedRaw ? workV2Schema.parse(observedRaw) : null;
+          if (
+            !observed?.reviewScope ||
+            observed.operation !== value.assessment.mode ||
+            observed.reviewScope.targetHash !== value.assessment.targetHash ||
+            fingerprint(observed.sources) !==
+              fingerprint(value.assessment.sources)
+          )
+            throw bookletConflict(
+              "Assessment is not bound to observed review work.",
+            );
+          if (
+            value.evidenceIds.some(
+              (evidence) => !observed.evidenceIds.includes(evidence),
+            )
+          )
+            throw bookletConflict(
+              "Assessment evidence differs from observed review work.",
+            );
+          if (
+            value.assessment.coverage.targetIds.some(
+              (target) => !observed.targetIds.includes(target),
+            ) ||
+            value.assessment.coverage.referencePositions.some(
+              (position) =>
+                !observed.reviewScope!.referencePositions.includes(position),
+            ) ||
+            (value.assessment.coverage.assetIds ?? []).some(
+              (asset) => !observed.reviewScope!.assetIds.includes(asset),
+            ) ||
+            (value.assessment.coverage.continuityPairs ?? []).some(
+              (pair) =>
+                !observed.reviewScope!.continuityPairs.some(
+                  (expected) => fingerprint(expected) === fingerprint(pair),
+                ),
+            )
+          )
+            throw bookletConflict("Assessment invented unobserved coverage.");
+          const complete =
+            fingerprint(observed.targetIds) ===
+              fingerprint(value.assessment.coverage.targetIds) &&
+            fingerprint(observed.reviewScope.referencePositions) ===
+              fingerprint(value.assessment.coverage.referencePositions) &&
+            fingerprint(observed.reviewScope.assetIds) ===
+              fingerprint(value.assessment.coverage.assetIds ?? []) &&
+            fingerprint(observed.reviewScope.continuityPairs) ===
+              fingerprint(value.assessment.coverage.continuityPairs ?? []);
+          if (value.assessment.disposition === "pass" && !complete)
+            throw bookletConflict("Assessment pass omitted inspected scope.");
+          const row = assessmentDocumentV2Schema.parse({
+            _id: fingerprint([actor.uid, p._id, "assessment", value.key]),
+            documentVersion: 2,
+            ownerId: actor.uid,
+            productionId: p._id,
+            callId: value.callId,
+            policyBinding: value.policyBinding,
+            reviewerBinding: value.reviewerBinding,
+            assessment: value.assessment,
+            complete,
+            evidenceIds: value.evidenceIds,
+            createdAt: now(),
+          });
+          boundState(row);
+          await assessments.insertOne(row, { session });
+          return { assessmentId: row._id };
+        },
+      );
+    },
+    recordAcceptance(
+      productionId: string,
+      input: Mutation & {
+        runId: string;
+        revisionId: string;
+        contentHash: string;
+        targetIds: string[];
+        assetIds: string[];
+        evidenceIds: string[];
+      },
+    ) {
+      const value = mutationSchema
+        .extend({
+          runId: id,
+          revisionId: id,
+          contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+          targetIds: ids.min(1),
+          assetIds: ids,
+          evidenceIds: ids,
+        })
+        .parse(input);
+      return mutate(
+        productionId,
+        value,
+        "recordAcceptance",
+        value,
+        async (p, session) => {
+          const revision = await revisions.findOne(
+            {
+              ownerId: actor.uid,
+              productionId: p._id,
+              _id: value.revisionId,
+              contentHash: value.contentHash,
+            },
+            { session },
+          );
+          const subject = p.subjects.find((s) => s.id === revision?.subjectId);
+          const artifact = subject?.artifacts.find(
+            (a) => a.id === revision?.artifactId,
+          );
+          if (
+            !revision ||
+            !subject ||
+            !artifact ||
+            artifact.kind !== revision.kind ||
+            value.targetIds.some(
+              (target) => target !== subject.id && target !== artifact.id,
+            ) ||
+            fingerprint([...value.assetIds].sort()) !==
+              fingerprint(revision.assets.map((a) => a.assetId).sort())
+          )
+            throw bookletConflict("Acceptance identity mismatch.");
+          const row = acceptanceDocumentV2Schema.parse({
+            runId: value.runId,
+            revisionId: value.revisionId,
+            contentHash: value.contentHash,
+            targetIds: value.targetIds,
+            assetIds: value.assetIds,
+            evidenceIds: value.evidenceIds,
+            _id: fingerprint([actor.uid, p._id, "acceptance", value.key]),
+            documentVersion: 2,
+            ownerId: actor.uid,
+            productionId: p._id,
+            createdAt: now(),
+          });
+          boundState(row);
+          await acceptances.insertOne(row, { session });
+          artifact.acceptedRevisionId = revision._id;
+          return { acceptanceId: row._id };
+        },
+      );
     },
     getRevision(productionId: string, revisionId: string) {
       return context.transaction(async (session) => {

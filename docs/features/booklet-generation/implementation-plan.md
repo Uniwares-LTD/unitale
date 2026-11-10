@@ -15,13 +15,14 @@ Earlier implementation evidence below retains its historical scope.
 
 ## Execution prerequisites
 
-**Readiness: checkpoints 01-06 are locally implemented and reviewed;
-application authorization and runtime evidence remain separate.** The
+**Readiness: candidate checkpoints 01-06 and local storage checkpoint 07 are
+implemented and reviewed. Scope B covers 07-11; checkpoint 08 is next. Runtime/live
+acceptance and scope C remain separate.** The
 [A01-A22 register](workflow-design.md#implementation-readiness-audit)
 links each resolution to the [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22).
 Checkpoints 01-12 below replace the application-first C0-C10 sequence. Deliver the
-candidate workflows and proposed application changes at 06, then stop before
-material application implementation at 07. E1-E5 retain partial or pending runtime evidence; E6 records current local checks, not
+candidate workflows and proposed application changes at 06. That initial stop was
+superseded by the recorded scope B approval; continue through 11, with 12 still gated. E1-E5 retain partial or pending runtime evidence; E6 records current local checks, not
 integrated acceptance; candidate validation is distinct from integrated/live acceptance.
 A failed probe blocks its dependent binding, not independent schemas/fake-provider work.
 No checkpoint starts merely because documentation has been updated.
@@ -321,22 +322,48 @@ Do not add a dedicated dashboard or rely on logs for authoritative accounting st
 
 ### 07 - Application Contracts & Persistence
 
-Current implementation evidence (07 in progress): 07.1 adds `src/project/booklets/contracts-v2.ts`
+Current implementation evidence (07 complete locally): 07.1 adds `src/project/booklets/contracts-v2.ts`
 for consumed native content, six-mode assessment and retry-policy boundaries. Existing
 v1 parsers remain unchanged. Focused contract checks pass 12 tests (including three
 v2 behavior cases). 07.2 adds explicit v2 production/revision schemas and atomic new
 production creation, retry-policy snapshots, short leases and bounded checkpoint
-CAS/idempotency in the v2 repository. The 18 repository and 17 lifecycle/media tests
+CAS/idempotency in the v2 repository. The 21 repository and 17 lifecycle/media tests
 pass; the v2 case covers owner isolation, unchanged v1 records, duplicate creation,
 changed payloads, lease replay, one-winner checkpoint races and oversized rollback.
 Draft immutable revision writing now preserves exact text and validates local source/
 original identities, with atomic pointers/ordinals and idempotent receipts; active v2
 writes stay closed until 09 admission integration. The new revision race/hash test passes.
-07.3 work/assessment/acceptance/correction storage remains pending. Checkpoint 07 completion and its final review pair are not claimed. Baseline candidate
+07.3 now adds work CAS transitions, snapshotted automatic retry limits, repeatable
+scoped assessments, Manager acceptance and correction counts from the same work history.
+Three new collections are registered with index-only `booklets:0004-manager-state`;
+v1 quality uniqueness and records are untouched. The 21 repository tests include
+unknown-outcome replay prevention across runs, retry limits 2/0/3, distinct correction
+limits 3/1, evidence/scope binding (including original IDs and continuity pairs), repeat
+assessments and atomic acceptance. Trusted
+dispatch/admission/observer wiring remains 08-09. Existing review-request/runDecisions
+storage fields support human correlation; wiring/authentic resume remains 09-10. Checkpoint 07 exit is locally complete. Two consecutive clean same-agent read-only
+reviews covered the final implementation after fixing unbounded finding reads and
+unobserved/incomplete assessment coverage. No independent-agent review is claimed.
+Reviewed source/test/model digest: `601e456d3e9998fd9e02b3a02e18d332bd25c6ffa761b6e29a89929dd2e041d5`
+(14 implementation/model files, relative path plus file SHA-256 list, base `2dc7b8c`;
+status/evidence-only docs excluded to avoid self-reference). Ignored reproducibility
+record: `output/tooling/checkpoint07-review.json`.
+
+Final checks: 21 repository, 17 lifecycle/media, 7 MCP, 12 contract and 34 candidate
+compatibility tests pass (91 total); typecheck, scoped ESLint, build including workers,
+check:env, check:docs, check:i18n and check:skills pass. One disposable Mongo teardown
+needed SIGKILL after its graceful shutdown timeout; tests exited successfully. No live
+migration was run. Candidate package digest remains
+`1cef1f643dd8a043a46eb52fb74c88a8978127de21d8b0a3f369405467e18df3`.
+
+Next: verify current Unibase main and inspect the specific 08 seams. Normal mutators
+still require live ownership/fences; restricted late-result retention needs the trusted
+observer path in 08-09, not an unguarded bypass. Manual retry grants, actual scheduling,
+paid admission and live file conversion remain runtime/integration work, not 07 claims. Baseline candidate
 checks pass 34 tests, typecheck, scoped lint, docs/i18n/skills and digest audit. Sandbox
 spawn/cache restrictions were resolved by running affected checks outside the sandbox.
 The model guide, independent v2 JSON example and both generated Mermaid schemas
-were updated together with 07.2. Typecheck, scoped lint and documentation checks pass.
+were updated together with the executable storage changes. Typecheck, scoped lint and documentation checks pass.
 No existing v1 data conversion, migration or live activation occurred.
 
 Unitale only. Implement four slices, each checked before proceeding:
@@ -586,19 +613,20 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
-Current task: documentation reconciliation only. Scope B for 07-11 is approved
-with minimal implementation and required reviews; no implementation has started.
-No temporary tunnel; scope C stays pending with a selected future US$3 ceiling.
-The following records the original completed 01-06 authorization, not a new task.
+Continue scope B on `feature/10-dify-workflow-design`: 01-06 native candidates and 07
+local storage are complete; 08 shared runtime seam verification is next. Read AGENTS,
+the accepted plan/handoff, current code and checkpoint evidence. Use prepared tools,
+small slices and the necessity/simplicity gate. Scope B already covers necessary
+Unitale/Unibase implementation, scoped code commits/pushes/PRs/merges and reviewed exact
+template imports after checks/reviews. Verify upstream Unibase main before branching;
+never patch copied shared core locally. No new framework, scheduler, plugin or dashboard.
 
-The DSL-first candidate through 06 is locally validated on
-`feature/10-dify-workflow-design` from `713da2d`. Read current candidate evidence,
-accepted specification and the necessity/simplicity gate before any further work.
-Stop at the validated Dify/provider handoff. Further application implementation in
-07-11 needs separate authorization. Preserve the US$1 probe accounting and shared
-experiment plugins; temporary probe apps/plugins are removed. Production activation
-and unrelated later product milestones remain gated.
-Preserve the seven roles, Manager-only app communication and pending E1-E5 evidence.
+Continue through 11 when dependencies are satisfied. Each checkpoint needs two clean
+read-only reviews. Do not confuse storage tests with verified Dify/application recovery.
+No temporary tunnel. Defer actual MCP file conversion to the real staging endpoint in
+12. Scope C remains pending; its selected future US$3 provider ceiling is not current
+spending approval. Preserve historical US$1 probe accounting and shared plugins. Stop
+before staging deployment/publication/migrations/paid acceptance without C approval.
 
 ## Foundation import
 
