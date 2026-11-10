@@ -406,6 +406,10 @@ content reconstruction is required. Artifact history reads return at most 20 met
 items with an initial ordinal snapshot; later appends require a fresh read and bodies
 are fetched separately by immutable revision ID. Human-response and execution reads
 remain pending. These reads share the same private native Manager and prepaid binding checks.
+`booklet_index_v2` atomically registers subject/artifact entries, returns stable ID maps
+and an advanced fence, and reuses matching entries without changing their revision
+pointers. Purchased capacity and one responsibility per subject are enforced. Changed
+identity metadata/reparenting and invalid batches fail without partial index writes.
 
 The `booklets` server extension registers these private v1 tools on the existing
 `/api/mcp`. One service credential with `extension:booklets:read` and

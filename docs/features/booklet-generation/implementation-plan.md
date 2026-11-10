@@ -672,6 +672,25 @@ build, sequential typecheck, scoped lint, model/docs, i18n and skills checks pas
 A separate same-agent read-only slice review found no blocking issue. Human-response/
 execution reads, remaining 09 integration and checkpoint-wide reviews remain pending.
 
+The fourteenth slice exposes `booklet_index_v2` using one atomic repository mutation.
+It reuses the existing subject capacity and artifact-responsibility checks for both
+single-entry callers and a batch. Matching entries retain stable IDs/pointers; changing
+existing identity metadata or reparenting artifacts fails. It also restores the already
+documented one-kind-per-subject invariant in v2 insertion, preventing a new candidate
+ID from creating another slot for the same responsibility. The actual MCP fixture
+checks receipt replay, identity reuse, rollback on a later invalid entry, capacity,
+reparenting, duplicate IDs and candidate-slot rejection. All 52 affected booklet tests,
+production build, sequential typecheck, scoped lint, model/docs, i18n and skills checks
+pass. A separate same-agent read-only slice review found no blocking issue. No stored
+field, index, collection, dependency or creative prompt changes. Checkpoint-wide 09
+reviews and application-connected execution remain pending.
+
+Before paid dispatch is exposed, bind each service/operation to its actual artifact
+responsibility. Work registration currently accepts any registered target ID; choosing
+a subject alias instead of its artifact must not reset the same task's correction
+scope. Verify the native role/operation outputs before adding that narrow guard; do
+not invent a second task registry or creative progression policy in the application.
+
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
 revision save, human request, evidence, assessment, sources, reconciliation, acceptance,

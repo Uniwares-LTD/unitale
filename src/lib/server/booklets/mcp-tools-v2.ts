@@ -9,8 +9,12 @@ import { fingerprint } from "../foundation/canonical";
 import { bookletContext, bookletMissing } from "./context";
 import { bookletRepositoryV2 } from "./repository-v2";
 import { registerBookletCreativeWorkV2 } from "./work-v2";
-import { workRegistrationV2Schema, type ProductionV2 } from "./documents-v2";
-import { id } from "./documents";
+import {
+  workRegistrationV2Schema,
+  artifactKindV2Schema,
+  type ProductionV2,
+} from "./documents-v2";
+import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
 
 const count = z.number().int().nonnegative().safe();
@@ -136,6 +140,45 @@ export function createBookletMcpToolsV2(
     };
   }
   return [
+    tool(
+      "index",
+      "Register stable subject and artifact identities atomically within purchased capacity; matching existing entries are reused.",
+      async (raw, s) => {
+        const request = z
+          .strictObject({
+            subjects: z.array(subjectInputSchema),
+            artifacts: z.array(
+              z.strictObject({
+                subjectId: id,
+                artifactId: id,
+                kind: artifactKindV2Schema,
+              }),
+            ),
+            fence: count,
+          })
+          .parse(raw);
+        const m = await mutation(s, "indexEntries", request, request.fence);
+        const receipt = await bookletRepositoryV2(s.db, s.actor, undefined, {
+          atomicMutations: true,
+        }).indexEntries(s.production._id, {
+          ...m,
+          subjects: request.subjects,
+          artifacts: request.artifacts,
+        });
+        return {
+          subjects: Object.fromEntries(
+            request.subjects.map((subject) => [subject.id, subject.id]),
+          ),
+          artifacts: Object.fromEntries(
+            request.artifacts.map((artifact) => [
+              artifact.artifactId,
+              artifact.artifactId,
+            ]),
+          ),
+          fence: receipt.fence,
+        };
+      },
+    ),
     tool(
       "read_document",
       "Read complete typed values or bounded decoded sections. Follow section and page cursors; incomplete responses are not whole documents.",

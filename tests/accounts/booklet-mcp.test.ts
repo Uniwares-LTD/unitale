@@ -1384,6 +1384,150 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             );
           },
         );
+        await t.test(
+          "index batches preserve identities, capacity and atomic rollback",
+          async () => {
+            const before = await db
+              .collection("bookletProductions")
+              .findOne({ _id: production._id as never });
+            const page = {
+              id: "page-v2",
+              kind: "page",
+              label: "First page",
+              pageRole: "story",
+            };
+            const spec = {
+              subjectId: page.id,
+              artifactId: "page-spec-v2",
+              kind: "page-spec",
+            };
+            const invalid = {
+              subjects: [page],
+              artifacts: [
+                spec,
+                {
+                  subjectId: page.id,
+                  artifactId: "wrong-responsibility",
+                  kind: "reference",
+                },
+              ],
+              fence: before!.fenceCounter,
+            };
+            assert.equal((await invoke("index", invalid)).isError, true);
+            assert.deepEqual(
+              await db
+                .collection("bookletProductions")
+                .findOne({ _id: production._id as never }),
+              before,
+            );
+            const request = {
+              subjects: [
+                {
+                  id: "book-subject",
+                  kind: "book",
+                  label: "Book",
+                  pageRole: null,
+                },
+                page,
+              ],
+              artifacts: [
+                {
+                  subjectId: "book-subject",
+                  artifactId: "story-v2",
+                  kind: "manuscript",
+                },
+                spec,
+              ],
+              fence: before!.fenceCounter,
+            };
+            const indexed = await successful("index", request);
+            assert.deepEqual(indexed, {
+              subjects: {
+                "book-subject": "book-subject",
+                "page-v2": "page-v2",
+              },
+              artifacts: {
+                "story-v2": "story-v2",
+                "page-spec-v2": "page-spec-v2",
+              },
+              fence: before!.fenceCounter + 1,
+            });
+            assert.deepEqual(await successful("index", request), indexed);
+            const added = await db
+              .collection("bookletProductions")
+              .findOne({ _id: production._id as never });
+            assert.equal(added!.subjects.length, before!.subjects.length + 1);
+            assert.deepEqual(added!.subjects[0], before!.subjects[0]);
+            assert.equal(added!.mutationLease, null);
+            const reused = await successful("index", {
+              ...request,
+              fence: indexed.fence,
+            });
+            const after = await db
+              .collection("bookletProductions")
+              .findOne({ _id: production._id as never });
+            assert.deepEqual(after!.subjects, added!.subjects);
+            assert.equal(after!.version, added!.version + 1);
+            assert.equal(
+              (await invoke("index", {
+                subjects: [],
+                artifacts: [{
+                  subjectId: "book-subject",
+                  artifactId: "new-candidate-id",
+                  kind: "manuscript",
+                }],
+                fence: reused.fence,
+              })).isError,
+              true,
+            );
+            const overCapacity = {
+              subjects: Array.from(
+                { length: production.creativeConfigSnapshot.storyPages + 1 },
+                (_, index) => ({
+                  id: "excess-page-" + index,
+                  kind: "page",
+                  label: "Page",
+                  pageRole: "story",
+                }),
+              ),
+              artifacts: [],
+              fence: reused.fence,
+            };
+            assert.equal((await invoke("index", overCapacity)).isError, true);
+            assert.equal(
+              (
+                await invoke("index", {
+                  subjects: [],
+                  artifacts: [
+                    {
+                      subjectId: page.id,
+                      artifactId: "story-v2",
+                      kind: "manuscript",
+                    },
+                  ],
+                  fence: reused.fence,
+                })
+              ).isError,
+              true,
+            );
+            assert.equal(
+              (
+                await invoke("index", {
+                  subjects: [page, page],
+                  artifacts: [],
+                  fence: reused.fence,
+                })
+              ).isError,
+              true,
+            );
+            assert.deepEqual(
+              await db
+                .collection("bookletProductions")
+                .findOne({ _id: production._id as never }),
+              after,
+            );
+          },
+        );
         for (const change of [
           { cancelRequested: true },
           { "run.target.version": "1" },

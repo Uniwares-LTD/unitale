@@ -67,6 +67,11 @@ so the JSON example and both Mermaid views remain unchanged.
 Artifact history reads page existing immutable revision metadata with an initial
 ordinal snapshot. Later appends do not change that cursor's window. This query uses
 the existing revision index and adds no collection, index or model field.
+V2 index batches register subjects/artifact slots in one version/fence transaction.
+Matching entries retain their pointers and IDs. Existing capacities and per-subject
+responsibilities are reused; another candidate ID cannot create a duplicate artifact
+responsibility. This restores the documented uniqueness invariant in v2 insertion
+without changing stored fields; the example and diagrams remain applicable.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.

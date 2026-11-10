@@ -241,6 +241,75 @@ export function bookletRepositoryV2(
         );
     }
   }
+  const indexArtifact = z.strictObject({
+    subjectId: id,
+    artifactId: id,
+    kind: artifactKindV2Schema,
+  });
+  function insertSubject(
+    p: ProductionV2,
+    subject: z.infer<typeof subjectInputSchema>,
+  ) {
+    const limits = {
+      book: 1,
+      character: p.creativeConfigSnapshot.maxCharacters,
+      location: p.creativeConfigSnapshot.maxLocations,
+      "style-sample": p.creativeConfigSnapshot.styleSamples,
+      page:
+        p.creativeConfigSnapshot.storyPages +
+        Number(p.creativeConfigSnapshot.includeCover),
+    };
+    if (
+      p.subjects.filter((s) => s.kind === subject.kind).length >=
+      limits[subject.kind]
+    )
+      throw bookletConflict("Subject capacity exceeded.");
+    if (
+      subject.pageRole === "cover" &&
+      (!p.creativeConfigSnapshot.includeCover ||
+        p.subjects.some((s) => s.pageRole === "cover"))
+    )
+      throw bookletConflict("Cover capacity exceeded.");
+    if (
+      subject.pageRole === "story" &&
+      p.subjects.filter((s) => s.pageRole === "story").length >=
+        p.creativeConfigSnapshot.storyPages
+    )
+      throw bookletConflict("Story page capacity exceeded.");
+    p.subjects.push({ ...subject, artifacts: [] });
+  }
+  function insertArtifact(
+    p: ProductionV2,
+    entry: z.infer<typeof indexArtifact>,
+  ) {
+    const subject = p.subjects.find((s) => s.id === entry.subjectId);
+    if (!subject) throw bookletMissing();
+    const kinds: Record<typeof subject.kind, readonly string[]> = {
+      book: [
+        "concept",
+        "outline",
+        "manuscript",
+        "roster",
+        "style",
+        "book-layout",
+        "book-manifest",
+      ],
+      character: ["description", "image-spec", "reference"],
+      location: ["description", "image-spec", "reference"],
+      "style-sample": ["image-spec", "reference"],
+      page: ["page-spec", "page-image"],
+    };
+    if (!kinds[subject.kind].includes(entry.kind))
+      throw bookletConflict("Artifact responsibility mismatch.");
+    if (subject.artifacts.some((artifact) => artifact.kind === entry.kind))
+      throw bookletConflict("Duplicate responsibility for subject.");
+    subject.artifacts.push({
+      id: entry.artifactId,
+      kind: entry.kind,
+      currentRevisionId: null,
+      acceptedRevisionId: null,
+    });
+  }
   async function owned(productionId: string, session: ClientSession) {
     return context.owned(id.parse(productionId), session, 2);
   }
@@ -985,6 +1054,56 @@ export function bookletRepositoryV2(
         return revisionV2Schema.parse(row);
       });
     },
+    indexEntries(
+      productionId: string,
+      input: Mutation & {
+        subjects: z.input<typeof subjectInputSchema>[];
+        artifacts: z.input<typeof indexArtifact>[];
+      },
+    ) {
+      const value = mutationInput
+        .extend({
+          subjects: z.array(subjectInputSchema),
+          artifacts: z.array(indexArtifact),
+        })
+        .refine(
+          (v) => v.subjects.length + v.artifacts.length > 0,
+          "Index entries are required.",
+        )
+        .refine(
+          (v) =>
+            new Set(v.subjects.map((s) => s.id)).size === v.subjects.length &&
+            new Set(v.artifacts.map((a) => a.artifactId)).size ===
+              v.artifacts.length,
+          "Duplicate index identity.",
+        )
+        .parse(input);
+      return mutate(productionId, value, "indexEntries", value, (p) => {
+        for (const subject of value.subjects) {
+          const existing = p.subjects.find((row) => row.id === subject.id);
+          if (existing) {
+            if (
+              existing.kind !== subject.kind ||
+              existing.label !== subject.label ||
+              existing.pageRole !== subject.pageRole
+            )
+              throw bookletConflict("Existing subject identity changed.");
+          } else insertSubject(p, subject);
+        }
+        for (const entry of value.artifacts) {
+          const parent = p.subjects.find((row) =>
+            row.artifacts.some((artifact) => artifact.id === entry.artifactId),
+          );
+          const existing = parent?.artifacts.find(
+            (artifact) => artifact.id === entry.artifactId,
+          );
+          if (existing) {
+            if (parent?.id !== entry.subjectId || existing.kind !== entry.kind)
+              throw bookletConflict("Existing artifact identity changed.");
+          } else insertArtifact(p, entry);
+        }
+      });
+    },
     addSubject(
       productionId: string,
       input: Mutation & { subject: z.input<typeof subjectInputSchema> },
@@ -993,33 +1112,7 @@ export function bookletRepositoryV2(
         .extend({ subject: subjectInputSchema })
         .parse(input);
       return mutate(productionId, value, "addSubject", value, (p) => {
-        const limits = {
-          book: 1,
-          character: p.creativeConfigSnapshot.maxCharacters,
-          location: p.creativeConfigSnapshot.maxLocations,
-          "style-sample": p.creativeConfigSnapshot.styleSamples,
-          page:
-            p.creativeConfigSnapshot.storyPages +
-            Number(p.creativeConfigSnapshot.includeCover),
-        };
-        if (
-          p.subjects.filter((s) => s.kind === value.subject.kind).length >=
-          limits[value.subject.kind]
-        )
-          throw bookletConflict("Subject capacity exceeded.");
-        if (
-          value.subject.pageRole === "cover" &&
-          (!p.creativeConfigSnapshot.includeCover ||
-            p.subjects.some((s) => s.pageRole === "cover"))
-        )
-          throw bookletConflict("Cover capacity exceeded.");
-        if (
-          value.subject.pageRole === "story" &&
-          p.subjects.filter((s) => s.pageRole === "story").length >=
-            p.creativeConfigSnapshot.storyPages
-        )
-          throw bookletConflict("Story page capacity exceeded.");
-        p.subjects.push({ ...value.subject, artifacts: [] });
+        insertSubject(p, value.subject);
       });
     },
     addArtifact(
@@ -1034,31 +1127,7 @@ export function bookletRepositoryV2(
         .extend({ subjectId: id, artifactId: id, kind: artifactKindV2Schema })
         .parse(input);
       return mutate(productionId, value, "addArtifact", value, (p) => {
-        const subject = p.subjects.find((s) => s.id === value.subjectId);
-        if (!subject) throw bookletMissing();
-        const kinds: Record<typeof subject.kind, readonly string[]> = {
-          book: [
-            "concept",
-            "outline",
-            "manuscript",
-            "roster",
-            "style",
-            "book-layout",
-            "book-manifest",
-          ],
-          character: ["description", "image-spec", "reference"],
-          location: ["description", "image-spec", "reference"],
-          "style-sample": ["image-spec", "reference"],
-          page: ["page-spec", "page-image"],
-        };
-        if (!kinds[subject.kind].includes(value.kind))
-          throw bookletConflict("Artifact responsibility mismatch.");
-        subject.artifacts.push({
-          id: value.artifactId,
-          kind: value.kind,
-          currentRevisionId: null,
-          acceptedRevisionId: null,
-        });
+        insertArtifact(p, value);
       });
     },
     appendRevision(

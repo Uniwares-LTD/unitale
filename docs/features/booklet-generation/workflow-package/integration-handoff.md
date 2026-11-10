@@ -123,6 +123,14 @@ latest ordinal on the initial page, excludes later appends and never loads revis
 bodies for the history page. Fetch those separately by immutable revision ID.
 Human-response and execution reads remain pending.
 
+The local v2 `index` tool accepts `subjects` entries `{id,kind,label,pageRole}` and
+`artifacts` entries `{subjectId,artifactId,kind}`, plus the current `fence`. It registers
+the batch atomically and returns `subjects`/`artifacts` ID maps and the advanced fence.
+Matching entries are reused, preserving revision pointers; changed existing identity
+metadata or artifact parents are rejected. Existing purchased capacities, allowed
+responsibilities and one artifact kind per subject apply. New candidate revisions
+reuse that artifact ID. A rejected batch rolls back its entries and fence together.
+
 | Capability | Request arguments / result | Existing service to reuse or extend |
 | --- | --- | --- |
 | context | `{}` -> bounded facts below | existing context + owned production/read services |
