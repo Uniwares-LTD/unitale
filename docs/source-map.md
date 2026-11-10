@@ -55,8 +55,8 @@ and the adapter; the table does not require unrelated suites for every task.
   01-06 deliver a candidate package before application changes; 07-12 are gated
   application integration and staging acceptance. Its execution procedure owns slice
   order, two-pass review, evidence/resume records and dependency reassessment.
-  Package boundary contracts are proposals for the app; implemented model docs
-  remain unchanged until 07. The package integration handoff is created in 01 and
+  Package boundaries describe the target integration; 07 implements opt-in v2 storage
+  in the model docs, with runtime wiring remaining in 08-11. The package integration handoff is created in 01 and
   closed in 06, without a second application implementation queue.
   [Implementation-readiness audit](features/booklet-generation/workflow-design.md#implementation-readiness-audit)
   maps A01-A22 to selected technical resolutions and their remaining verification gates.

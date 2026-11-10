@@ -19,7 +19,7 @@ local candidate is complete on `feature/10-dify-workflow-design` from `713da2d`.
 The [candidate README](features/booklet-generation/workflow-package/README.md)
 records current checks/reviews. Follow the
 [compatibility runbook](features/booklet-generation/workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
-before relying on target bindings; checkpoint 07 is the next application gate.
+before relying on target bindings; checkpoint 08 is the next application integration step.
 
 The user subsequently requested committing the reviewed candidate/plan and executing
 approved scope B. Baseline committed as `2dc7b8c`; 07 local storage is complete and reviewed,

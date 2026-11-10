@@ -139,7 +139,7 @@ engine for tests. Code size is a review signal, never permission to omit require
 | 04 - Composition and images DSL | Page Composer, deterministic Prepare, exact Generate and all Reviewer modes | Exact Unicode/routing, ordered originals, partial/unknown outcomes and scoped coverage fixtures; two clean reviews |
 | 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
 | 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
-| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Scope B approved; implementation not started; isolated provider feasibility established; preserve v1 records and update model/example/both Mermaid versions together |
+| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Locally complete with two clean reviews; v1 preserved; model/example/both Mermaid versions updated; runtime integration remains 08-11 |
 | 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Scope B covers demonstrated generic changes and reviewed imports; no speculative core extensions |
 | 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
 | 10 - Run UI Integration | T21 brief, quotes, progress, decisions, revisions and history in existing Run UI | Browser/race checks; no separate creator workspace |
@@ -149,8 +149,8 @@ engine for tests. Code size is a review signal, never permission to omit require
 ### Remaining implementation: kickoff and ownership
 
 Planning amendment accepted 2026-11-10. **Scope B execution started.** The user requested committing the current changes
-and executing 07-11. Candidate/planning baseline committed as `2dc7b8c`; 07.1 is in
-progress. Scope C and paid/live operations remain pending. The plan targets unattended
+and executing 07-11. Candidate/planning baseline committed as `2dc7b8c`; checkpoint 07
+is complete through `867759c`, with 08 next. Scope C and paid/live operations remain pending. The plan targets unattended
 Sol Medium work under the recorded approval.
 
 The [capability audit and approval register](workflow-package/integration-handoff.md#approval-register)
@@ -182,7 +182,8 @@ Continue Unitale on `feature/10-dify-workflow-design`. Create an Unibase work br
 from verified upstream main, never develop on main. The 2026-11-10 read-only check
 found local Unibase at `65e70ca35786c8e81ba1039dd258a7a010d40df0`, while upstream main
 and Unitale's recorded import were `cee55c143c9f19a3e2a454c087b7d6fefe9d20dc`.
-Refresh and verify before implementation; do not build on that stale checkout.
+The checkout was subsequently refreshed and `feature/booklet-runtime-seams` created
+from that verified upstream revision before checkpoint 08 changes.
 Follow both repositories' guidance and retained Handbook baseline above. Use prepared
 local tools, fake providers and disposable databases; no credentials are needed for
 local 07-11 work. Establish affected baselines and preserve unrelated changes.
@@ -195,9 +196,9 @@ patches locally. No booklet roles, collections or policy in Unibase.
 
 | Milestone | Verified progress | Remaining coverage |
 | --- | --- | --- |
-| T18 | Specialist candidates implemented locally in 01-04/06 | 07-09 bindings, originals and 11-12 integration/acceptance |
-| T19 | Six Reviewer modes and correction workflow implemented locally | 07 durable assessments/counters, 09 enforcement, 11-12 proof |
-| T20 | Manager candidate implemented locally in 05-06 | 07-10 authenticated decisions, retry/recovery and continuation; 11-12 proof |
+| T18 | Specialist candidates implemented locally in 01-04/06; opt-in v2 storage in 07 | 08-09 bindings/originals and 11-12 integration/acceptance |
+| T19 | Six Reviewer modes, correction candidate and 07 durable assessment/counter storage | 09 runtime enforcement and 11-12 proof |
+| T20 | Manager candidate implemented locally in 05-06; 07 durable work/checkpoint storage | 08-10 authenticated decisions, retry/recovery and continuation; 11-12 proof |
 | T21 | Generic Run capabilities exist | 09 backend and 10 brief, quote/consent, progress, decisions, revisions and history; 11-12 proof |
 
 No T18-T20 behavior is intentionally omitted. Complete T21 through existing Run
@@ -224,8 +225,9 @@ Documentation review on 2026-11-10 against the accepted PRD and T18-T21 scope:
 No accepted requirement is removed by the no-tunnel decision. This is a planning
 conformance check, not proof of implemented behavior. Scopes A/B/C and technical
 evidence are recorded separately in the handoff; unresolved integration proof stays
-visible. The current documentation-only change leaves model JSON/diagrams and runtime
-artifacts unchanged.
+visible. The original documentation-only readiness audit left model JSON/diagrams
+and runtime artifacts unchanged; subsequent checkpoint 07 implementation updated them
+together as recorded in its evidence below.
 
 ### Action retries and automatic reconciliation
 
@@ -394,6 +396,39 @@ immutable lineage, stale fences, duplicate/conflicting writes, one-winner checkp
 repeat assessments, durable counters and idempotent migration pass on disposable data.
 
 ### 08 - Verify runtime seams and import necessary Unibase changes
+
+In progress: refreshed Unibase from upstream `cee55c143c9f19a3e2a454c087b7d6fefe9d20dc`
+onto `feature/booklet-runtime-seams`. First bounded slice committed locally as
+`c5c66ab5ecec79a7ef57710ed6f17ea8aaf6be3b`: optional native MCP image projection,
+unchanged JSON/text defaults, permissions and encoded-result/response limits.
+Official-client HTTP tests preserve two images byte-for-byte and in order; synthetic
+8 MiB capacity, invalid MIME/empty payload, aggregate overflow and full-response
+overflow checks pass. Eight MCP plus 18 Dify/tracing/MCP-foundation tests pass;
+typecheck, scoped ESLint, production build/workers, docs, environment, i18n and
+skills checks pass. Separate same-agent read-only slice reviews found no blocking
+issue; checkpoint-wide reviews remain due after the remaining seams are complete.
+Second slice committed and pushed on the same Unibase branch as
+`a8b5232480bd236ebee752b81e436f79f88c6fc1`: opt-in private node observations for live
+stream/reconnect/terminal readback, plus an optional transactional domain hook under
+the existing worker lease fence. Reported retry/loop identities, truncation flags and
+unknown values are preserved; inputs/process data are excluded. Public Run events
+and usage summaries never receive the private payload. The existing redacted evidence
+writer now accepts the caller transaction, with rollback/idempotence/fence tests.
+Two clean separate same-agent read-only slice reviews found no blocking issue after
+the final fixes. Checks: 16 Dify/tracing tests and 21 AI-job/foundation tests pass;
+the preceding Run regression command passed 34 overlapping worker/foundation/Run
+tests. Typecheck, scoped ESLint, production build/workers, docs, template consistency,
+environment, i18n and skills checks pass. These are local shared-seam checks, not
+verified application recovery. Both upstream slice commits are pushed; no PR/merge
+or template import has occurred yet.
+
+No live configuration, Dify conversion or provider call occurred. Model storage and
+diagrams are unaffected by these generic transport/observation changes. Next: verify
+automatic wait/resume and existing Run UI extension needs. The current automatic
+decision processor requires a persona answerer, so it does not yet prove a no-money,
+app-controlled retry wait. Reuse its worker/submission machinery; do not introduce a
+second scheduler or paid responder merely to resume an internal wait. Full 08 exit,
+checkpoint-wide reviews and reviewed import remain pending.
 
 First prove existing extension points against current upstream; no fixed expansion list.
 
@@ -620,6 +655,9 @@ small slices and the necessity/simplicity gate. Scope B already covers necessary
 Unitale/Unibase implementation, scoped code commits/pushes/PRs/merges and reviewed exact
 template imports after checks/reviews. Verify upstream Unibase main before branching;
 never patch copied shared core locally. No new framework, scheduler, plugin or dashboard.
+Unibase `feature/booklet-runtime-seams` already contains pushed MCP image and private
+node-observation slices through `a8b5232`; continue with wait/resume and UI seam
+verification rather than recreating them. No shared changes have been imported yet.
 
 Continue through 11 when dependencies are satisfied. Each checkpoint needs two clean
 read-only reviews. Do not confuse storage tests with verified Dify/application recovery.
