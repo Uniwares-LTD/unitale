@@ -15,8 +15,8 @@ Earlier implementation evidence below retains its historical scope.
 
 ## Execution prerequisites
 
-**Readiness: candidate checkpoints 01-06 and local storage checkpoint 07 are
-implemented and reviewed. Scope B covers 07-11; checkpoint 08 is next. Runtime/live
+**Readiness: candidate checkpoints 01-06, local storage 07 and shared-runtime import 08 are
+implemented and reviewed. Scope B covers 07-11; checkpoint 09 is next. Runtime/live
 acceptance and scope C remain separate.** The
 [A01-A22 register](workflow-design.md#implementation-readiness-audit)
 links each resolution to the [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22).
@@ -50,8 +50,8 @@ with cleanup verified; revised-binding execution and integrated runtime proof re
 
 The initial delivery authorization covered local DSL-first implementation through 06.
 That initial authorization stopped at the validated Dify/provider handoff. Scope B
-was subsequently approved on 2026-11-10 for 07-11 as recorded below; implementation
-has not started. This reconciliation task is documentation only.
+was subsequently approved on 2026-11-10 for 07-11 as recorded below. Implementation
+has started: 07 storage and the reviewed 08 shared-runtime import are complete locally.
 The user authorized
 committing/pushing the reviewed candidate and updating issue #10 on 2026-11-09.
 Scope B now covers scoped code publication/merges after checks and reviews;
@@ -140,7 +140,7 @@ engine for tests. Code size is a review signal, never permission to omit require
 | 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
 | 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
 | 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Locally complete with two clean reviews; v1 preserved; model/example/both Mermaid versions updated; runtime integration remains 08-11 |
-| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Scope B covers demonstrated generic changes and reviewed imports; no speculative core extensions |
+| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Complete locally at Unitale `2873e60`; exact Unibase PR #49/#50 import, checks and two clean same-agent reviews; live conversion remains 12 |
 | 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
 | 10 - Run UI Integration | T21 brief, quotes, progress, decisions, revisions and history in existing Run UI | Browser/race checks; no separate creator workspace |
 | 11 - Integrated Verification | Actual workflows against implemented application interfaces | Real integrated offline checks and two clean reviews |
@@ -150,7 +150,7 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 Planning amendment accepted 2026-11-10. **Scope B execution started.** The user requested committing the current changes
 and executing 07-11. Candidate/planning baseline committed as `2dc7b8c`; checkpoint 07
-is complete through `867759c`, with 08 next. Scope C and paid/live operations remain pending. The plan targets unattended
+is complete through `867759c`, and 08 is imported/verified at `2873e60`; 09 is next. Scope C and paid/live operations remain pending. The plan targets unattended
 Sol Medium work under the recorded approval.
 
 The [capability audit and approval register](workflow-package/integration-handoff.md#approval-register)
@@ -422,8 +422,28 @@ Two consecutive separate same-agent read-only full-candidate reviews at `473affe
 found no blocking issue; no independent review is claimed. These establish generic
 local seams, not application-connected recovery or deployed Dify image conversion.
 No live configuration or provider call occurred. Booklet storage/model diagrams are
-unaffected by generic Run metadata. Next: import the exact reviewed merge through
-`template:update`, verify Unitale integration, then complete the checkpoint reviews.
+unaffected by generic Run metadata.
+
+Integration found an eager AI-job/domain registry import cycle in the real Unitale
+extension. [Unibase PR #50](https://github.com/Uniwares-LTD/unibase/pull/50) corrects
+it by resolving domains during event handling, without another interface. It passed
+32 upstream AI-job/Run tests, typecheck, scoped lint, worker build and two separate
+same-agent read-only passes. Unitale imported corrected merge
+`98b77fd1926bc38cefa172a1c90e4735597ca6db` through `template:update` as `2873e60`;
+`project.source.json` records it. Project registries, booklet implementation,
+configuration and dependencies are preserved. The actual previously failing consumer
+suites now pass all 38 repository/lifecycle tests, including v1/v2 storage and media.
+The disposable Mongo fixture required forced-stop cleanup; the test process passed.
+The first import also passed 81 shared-runtime and 55 other booklet/package/migration
+tests; those results did not prove the failing initialization order. Corrected Unitale
+production build, sequential typecheck and full lint pass. Final documentation,
+environment, i18n, skills, model-view and template checks pass; the corrected import
+also passes all 32 Unitale AI-job/Run regressions.
+An initial concurrent build/typecheck raced generated `.next/types`; use sequential
+checks. The superseded build was stopped before importing the correction.
+Two clean separate same-agent integrated source reviews at `2873e60` found no blocking
+issue; no independent reviewer is claimed. Checkpoint 08 is complete locally. Native
+deployed MCP conversion and application-specific recovery remain 09-12 evidence.
 
 08 wait/resume resolution: the existing worker already schedules paused Runs and
 the decision submission helper journals uncertain submissions. Reuse those paths.
@@ -679,16 +699,15 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 ### New-session goal prompt
 
 Continue scope B on `feature/10-dify-workflow-design`: 01-06 native candidates and 07
-local storage are complete; 08 exact shared-runtime import and integrated verification are next. Read AGENTS,
+storage and 08 shared-runtime integration are complete locally; continue at 09. Read AGENTS,
 the accepted plan/handoff, current code and checkpoint evidence. Use prepared tools,
 small slices and the necessity/simplicity gate. Scope B already covers necessary
 Unitale/Unibase implementation, scoped code commits/pushes/PRs/merges and reviewed exact
 template imports after checks/reviews. Verify upstream Unibase main before branching;
 never patch copied shared core locally. No new framework, scheduler, plugin or dashboard.
-Unibase PR #49 merged the reviewed shared seams at
-`61001a0174ac53f542d1e93f6ad7d08a2bd32dd0`; import that exact revision through
-`template:update` and verify the integrated state rather than recreating the seams.
-No shared changes have been imported yet.
+Unibase PRs #49/#50 merged the reviewed shared seams and initialization correction.
+Exact import `98b77fd1926bc38cefa172a1c90e4735597ca6db` is in Unitale `2873e60`.
+Checks and two clean same-agent integrated reviews pass; continue 09 rather than recreating the seams.
 
 Continue through 11 when dependencies are satisfied. Each checkpoint needs two clean
 read-only reviews. Do not confuse storage tests with verified Dify/application recovery.

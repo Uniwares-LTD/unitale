@@ -32,7 +32,7 @@ and the adapter; the table does not require unrelated suites for every task.
   [retry/reconciliation policy](features/booklet-generation/implementation-plan.md#action-retries-and-automatic-reconciliation)
   owns planned defaults and recovery semantics. The current amendment is documentation
   only at its original checkpoint; 07 storage is now implemented locally and reviewed.
-  Shared runtime and application integration remain 08-11.
+  Shared runtime seams are imported and locally verified in 08; application integration remains 09-11.
   [Workflow package design](features/booklet-generation/workflow-design.md) owns
   issue #10's accepted Manager/app/service boundaries, integration gap assessment and
   open contract decisions. It distinguishes the target from current application code.
@@ -56,7 +56,7 @@ and the adapter; the table does not require unrelated suites for every task.
   application integration and staging acceptance. Its execution procedure owns slice
   order, two-pass review, evidence/resume records and dependency reassessment.
   Package boundaries describe the target integration; 07 implements opt-in v2 storage
-  in the model docs, with runtime wiring remaining in 08-11. The package integration handoff is created in 01 and
+  in the model docs, with application-specific runtime wiring remaining in 09-11. The package integration handoff is created in 01 and
   closed in 06, without a second application implementation queue.
   [Implementation-readiness audit](features/booklet-generation/workflow-design.md#implementation-readiness-audit)
   maps A01-A22 to selected technical resolutions and their remaining verification gates.
