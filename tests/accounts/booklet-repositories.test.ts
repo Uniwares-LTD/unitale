@@ -312,6 +312,22 @@ test("booklet repositories preserve embedded identities and transactional bounda
   try {
     await t.test("creative work derives retry identity from the actual request and bound paid Run", async () => {
       const f = await managerFixture();
+      await f.write((m) => f.v2.indexEntries("production-v2", { ...m,
+        subjects: [
+          { id: "character-v2", kind: "character", label: "Mira", pageRole: null },
+          { id: "location-v2", kind: "location", label: "Garden", pageRole: null },
+          { id: "sample-v2", kind: "style-sample", label: "Style", pageRole: null },
+          { id: "page-v2", kind: "page", label: "Page", pageRole: "story" },
+        ], artifacts: [
+          ...(["concept", "outline", "roster", "style", "book-layout"] as const).map((kind) => ({ subjectId: "book-subject", artifactId: "book-" + kind, kind })),
+          ...(["character", "location"] as const).flatMap((kind) => [
+            { subjectId: kind + "-v2", artifactId: kind + "-description", kind: "description" as const },
+            { subjectId: kind + "-v2", artifactId: kind + "-spec", kind: "image-spec" as const },
+          ]),
+          { subjectId: "sample-v2", artifactId: "sample-spec", kind: "image-spec" },
+          { subjectId: "page-v2", artifactId: "page-spec", kind: "page-spec" },
+        ],
+      }));
       await createCreditIndexes(f.db);
       await createConsumptionIndexes(f.db);
       await grantCredits(f.db, actor.uid, "work-funding", { amount: 500, source: "purchase", reference: "fixture" });
@@ -332,7 +348,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const m = () => ({ key: "registration-" + ++ordinal, holderId: jobId, fence, expectedVersion: version });
       const request = {
         contractVersion: 2, invocationId: "invocation-1", callId: "call-1", service: "manuscript", operation: "write", intent: "create",
-        items: [{ itemId: "item-1", targetId: "story-v2", input: { instruction: "Keep exact text." } }],
+        items: [{ itemId: "item-1", targetId: "book-subject", input: { instruction: "Keep exact text." } }],
         sources: [{ ...f.source, content: f.revision.content }],
         references: [{ assetId: "original-1", sha256: "a".repeat(64), bytes: 100, nativeFileId: "handle-1", url: "https://files.invalid/old" }],
         constraints: { language: "ar" },
@@ -349,6 +365,20 @@ test("booklet repositories preserve embedded identities and transactional bounda
       changed.sources[0].content = { kind: "manuscript", units: [{ id: "altered", texts: [] }] };
       await assert.rejects(invoke(firstMutation, payload(changed)), /source content/);
       await assert.rejects(invoke(firstMutation, { ...payload(request), childRequest: { ...request, constraints: { authorization: "private" } } }), /Private bindings/);
+      for (const target of ["book-subject", "book-concept", "missing-target"]) {
+        const invalid = structuredClone(request);
+        invalid.items[0].targetId = target;
+        await assert.rejects(invoke(firstMutation, { ...payload(invalid), targets: [target] }), /artifact responsibility/);
+      }
+      const wrongSubject = { ...request, service: "art-director", operation: "character_spec",
+        items: [{ ...request.items[0], targetId: "location-v2" }] };
+      await assert.rejects(invoke(firstMutation, { ...payload(wrongSubject), targets: ["location-spec"] }), /artifact responsibility/);
+      const inheritedOperation = { ...request, operation: "constructor" };
+      await assert.rejects(invoke(firstMutation, payload(inheritedOperation)), /Unsupported child operation/);
+      const escapedSubject = { ...request, items: [{ ...request.items[0], targetId: "character-v2" }] };
+      await assert.rejects(invoke(firstMutation, payload(escapedSubject)), /Child subject escapes/);
+      const artifactSelector = { ...request, items: [{ ...request.items[0], targetId: "story-v2" }] };
+      await assert.rejects(invoke(firstMutation, payload(artifactSelector)), /Child subject escapes/);
       const registered = await invoke(firstMutation, payload(request));
       version = registered.version;
       fence = registered.fence!;
@@ -373,6 +403,40 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const second = await repo.getWork(p._id, "call-2");
       assert.equal(second.actionKey, first.actionKey);
       assert.equal(second.retryOrdinal, 1);
+      const tasks = [
+        ["story-planner", "concept", "book-concept"], ["story-planner", "outline", "book-outline"],
+        ["story-planner", "cast", "book-roster"], ["story-planner", "cast", "character-description"],
+        ["story-planner", "locations", "book-roster"], ["story-planner", "locations", "location-description"],
+        ["manuscript", "reconcile_characters", "character-description"], ["manuscript", "reconcile_locations", "location-description"],
+        ["art-director", "style", "book-style"], ["art-director", "sample_spec", "sample-spec"],
+        ["art-director", "character_spec", "character-spec"], ["art-director", "location_spec", "location-spec"],
+        ["page-composer", "paginate", "book-book-layout"], ["page-composer", "compose", "page-spec"],
+      ];
+      for (const [service, operation, targetId] of tasks) {
+        const subjectId = targetId.startsWith("character-") ? "character-v2" : targetId.startsWith("location-") ? "location-v2" : targetId === "sample-spec" ? "sample-v2" : targetId === "page-spec" ? "page-v2" : "book-subject";
+        const child = { ...request, service, operation, callId: "scoped-" + service + "-" + operation + "-" + targetId,
+          items: [{ ...request.items[0], targetId: subjectId }] };
+        const result = await invoke(m(), { ...payload(child), targets: [targetId] });
+        version = result.version;
+        fence = result.fence!;
+        const work = await repo.getWork(p._id, child.callId);
+        assert.deepEqual(work.targetIds, [targetId], service + ":" + operation);
+      }
+      const localSubject = { ...request, service: "story-planner", operation: "cast", callId: "local-character-proposal",
+        items: [{ ...request.items[0], targetId: "new-local-character" }] };
+      const localResult = await invoke(m(), { ...payload(localSubject), targets: ["book-roster"] });
+      version = localResult.version;
+      fence = localResult.fence!;
+      assert.deepEqual((await repo.getWork(p._id, localSubject.callId)).targetIds, ["book-roster"]);
+      const wrongKnownSubject = { ...localSubject, callId: "wrong-known-character", items: [{ ...request.items[0], targetId: "location-v2" }] };
+      await assert.rejects(invoke(m(), { ...payload(wrongKnownSubject), targets: ["book-roster"] }), /Child subject escapes/);
+      const grouped = { ...request, callId: "grouped-revision", service: "manuscript", operation: "reconcile_characters", intent: "revise",
+        items: [{ itemId: "grouped-item", input: { instruction: "Reconcile the selected character." }, targetIds: ["character-v2"],
+          baseline: { name: "Mira" }, feedback: { instruction: "Keep established facts." } }] };
+      const groupedResult = await invoke(m(), { childRequest: grouped, targets: ["character-description"],
+        requestHash: fingerprint({ ...grouped, references: grouped.references.map(({ assetId, sha256, bytes }) => ({ assetId, sha256, bytes })) }) });
+      version = groupedResult.version;
+      fence = groupedResult.fence!;
       const different = structuredClone(retry); different.callId = "call-3"; different.items[0].input.instruction = "Changed instructions.";
       await assert.rejects(invoke(m(), payload(different, "call-2")), /predecessor/);
       await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId: "foreign-run" } });
@@ -388,7 +452,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
 
       p = await repo.getProduction(p._id);
       assert.equal(p.version, version);
-      assert.equal(await f.db.collection("bookletWork").countDocuments({ productionId: p._id }), 2);
+      assert.equal(await f.db.collection("bookletWork").countDocuments({ productionId: p._id }), 4 + tasks.length);
       const nextJobId = "successor-manager";
       const nextFlowId = "successor-flow";
       const oldJob = await f.db.collection("aiJobs").findOne({ _id: jobId as never });

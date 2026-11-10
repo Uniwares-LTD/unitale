@@ -180,6 +180,15 @@ observation, restricted reconciliation and financial checks remain 09 obligation
 The local `registerBookletCreativeWorkV2` service now validates the actual creative-text
 child envelope for Planner, Manuscript, Art Director and Page Composer, checks exact
 source content and the declared hash, and derives normalized retry identity/category.
+Registration `targets` must identify the stored artifact responsibilities for the
+selected native operation and subject kind. Child item `targetId`/`targetIds` select
+subject IDs, matching native proposal `subjectId`; each selected subject must parent
+a declared artifact target. Initial roster creation can use new invocation-local subject
+keys under the declared roster artifact; those keys never become accounting targets.
+Grouped revision selectors retain their native meaning.
+Subject aliases, unrelated artifact kinds and invented operations cannot create a new
+work accounting scope. This is an extension of the existing operation allowlist, not
+an application creative scheduler or a new role registry.
 Active registration rechecks the owned native Manager Run and its actual consumption
 workflow/job binding in the mutation transaction. Registration records intent only.
 Dispatch now rechecks that active binding, cancellation and native execution status;

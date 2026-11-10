@@ -685,11 +685,28 @@ pass. A separate same-agent read-only slice review found no blocking issue. No s
 field, index, collection, dependency or creative prompt changes. Checkpoint-wide 09
 reviews and application-connected execution remain pending.
 
-Before paid dispatch is exposed, bind each service/operation to its actual artifact
-responsibility. Work registration currently accepts any registered target ID; choosing
-a subject alias instead of its artifact must not reset the same task's correction
-scope. Verify the native role/operation outputs before adding that narrow guard; do
-not invent a second task registry or creative progression policy in the application.
+The fifteenth slice binds creative-text registration to the actual native operation
+output kinds and subject kinds, extending its existing operation allowlist. Registration
+`targets` are artifact IDs; a subject alias or unrelated responsibility cannot establish
+another accounting scope. Native item `targetId`/`targetIds` remain subject IDs, as the
+pack nodes compare them with proposal `subjectId`; the gateway checks their parents
+against the declared artifact targets. It also accepts native grouped revision selectors
+instead of incorrectly requiring a single `targetId`. The actual owned-Run fixture
+covers all thirteen operations, both roster/description targets, wrong kinds, alias and
+child-scope rejection, unsupported inherited operation names and grouped revision.
+Initial roster creation still permits invocation-local subject keys under its declared
+roster artifact; these keys do not become accounting identities. All 52 affected booklet
+tests, production build, sequential typecheck, scoped lint, model/docs, i18n and skills
+checks pass. A separate same-agent read-only slice review found no blocking issue.
+No new wire field, task registry or
+application creative progression policy. Paid dispatch and trusted per-output retention
+remain pending.
+
+Native pack follow-up: Story Planner currently requires a roster proposal for every
+cast/location result, including a revision scoped only to one description. Its revision
+scope check then rejects an unrequested book-roster proposal. Keep initial creation's
+roster requirement, but let targeted revision omit that unrelated roster; prove it with
+the actual exported pack node before enabling the affected path.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,

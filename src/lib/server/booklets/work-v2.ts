@@ -15,10 +15,27 @@ import { id, mutationSchema, type Mutation } from "./documents";
 // Only the currently consumed creative-text boundary. Image preparation/generation
 // and independently observed review scopes have their own registration checks.
 const operations = {
-  "story-planner": ["concept", "outline", "cast", "locations"],
-  manuscript: ["write", "reconcile_characters", "reconcile_locations"],
-  "art-director": ["style", "sample_spec", "character_spec", "location_spec"],
-  "page-composer": ["paginate", "compose"],
+  "story-planner": {
+    concept: { book: ["concept"] },
+    outline: { book: ["outline"] },
+    cast: { book: ["roster"], character: ["description"] },
+    locations: { book: ["roster"], location: ["description"] },
+  },
+  manuscript: {
+    write: { book: ["manuscript"] },
+    reconcile_characters: { character: ["description"] },
+    reconcile_locations: { location: ["description"] },
+  },
+  "art-director": {
+    style: { book: ["style"] },
+    sample_spec: { "style-sample": ["image-spec"] },
+    character_spec: { character: ["image-spec"] },
+    location_spec: { location: ["image-spec"] },
+  },
+  "page-composer": {
+    paginate: { book: ["book-layout"] },
+    compose: { page: ["page-spec"] },
+  },
 } as const;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const ids = z
@@ -108,27 +125,23 @@ export async function registerBookletCreativeWorkV2(
   const request = value.childRequest;
   if (Buffer.byteLength(JSON.stringify(request)) > 256 * 1024)
     throw bookletConflict("Child request exceeds its accepted capacity.");
-  if (
-    !(operations[request.service] as readonly string[]).includes(
-      request.operation,
-    )
-  )
+  const supported = operations[request.service] as Record<
+    string,
+    Readonly<Record<string, readonly string[]>>
+  >;
+  if (!Object.hasOwn(supported, request.operation))
     throw bookletConflict("Unsupported child operation.");
+  const responsibilities = supported[request.operation];
   if (
     new Set(request.items.map((item) => item.itemId)).size !==
     request.items.length
   )
     throw bookletConflict("Duplicate child item identity.");
   for (const item of request.items) {
-    const selected = [
-      ...(item.targetIds ?? []),
-      ...(item.targetId ? [item.targetId] : []),
-    ];
-    if (selected.some((target) => !value.targets.includes(target)))
-      throw bookletConflict("Child target escapes registered work scope.");
+    const selected = item.targetIds ?? (item.targetId ? [item.targetId] : []);
     if (
       request.intent === "revise" &&
-      (!item.targetId || !item.baseline || !item.feedback)
+      (!selected.length || !item.baseline || !item.feedback)
     )
       throw bookletConflict(
         "Revision requires its selected target, baseline and feedback.",
@@ -155,6 +168,48 @@ export async function registerBookletCreativeWorkV2(
   const p = await repo.getProduction(productionId);
   if (p.lifecycleState !== "in-progress")
     throw bookletConflict("Creative work requires an admitted production.");
+  const targetSubjects = new Set<string>();
+  let allowLocalSubjects = false;
+  for (const target of value.targets) {
+    const subject = p.subjects.find((subject) =>
+      subject.artifacts.some((artifact) => artifact.id === target),
+    );
+    const artifact = subject?.artifacts.find(
+      (artifact) => artifact.id === target,
+    );
+    if (
+      !subject ||
+      !artifact ||
+      !responsibilities[subject.kind]?.includes(artifact.kind)
+    )
+      throw bookletConflict(
+        "Creative target must identify an artifact responsibility for the selected operation.",
+      );
+    targetSubjects.add(subject.id);
+    if (request.intent === "create" && artifact.kind === "roster")
+      allowLocalSubjects = true;
+  }
+  const existingIds = new Set(
+    p.subjects.flatMap((subject) => [
+      subject.id,
+      ...subject.artifacts.map((artifact) => artifact.id),
+    ]),
+  );
+  for (const item of request.items) {
+    // Native pack nodes compare proposal.subjectId with these child selectors.
+    // Accounting targets remain artifact IDs, never interchangeable aliases.
+    const selected = item.targetIds ?? (item.targetId ? [item.targetId] : []);
+    if (
+      selected.some(
+        (subjectId) =>
+          !targetSubjects.has(subjectId) &&
+          !(allowLocalSubjects && !existingIds.has(subjectId)),
+      )
+    )
+      throw bookletConflict(
+        "Child subject escapes the registered artifact scope.",
+      );
+  }
   const actionKey = fingerprint({
     productionId,
     funding: p.revisionChargeId ?? "platform",

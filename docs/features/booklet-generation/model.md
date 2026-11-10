@@ -72,6 +72,12 @@ Matching entries retain their pointers and IDs. Existing capacities and per-subj
 responsibilities are reused; another candidate ID cannot create a duplicate artifact
 responsibility. This restores the documented uniqueness invariant in v2 insertion
 without changing stored fields; the example and diagrams remain applicable.
+Creative registration targets resolve to actual artifact responsibilities for the
+native operation and subject kind. Child selectors retain subject IDs and must belong
+to those artifact parents. This distinction closes subject-alias accounting resets
+without changing the stored schema or native wire fields; grouped revisions remain
+supported. New local subject keys during initial roster creation stay under the roster
+artifact's accounting scope. The example and diagrams need no field/relationship changes.
 Assessments bind observed review scope and evidence, coexist per revision, and derive
 completeness independently of model fields. Acceptance updates the exact revision
 pointer atomically without adding an app human/quality-policy gate.

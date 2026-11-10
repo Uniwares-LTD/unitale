@@ -1058,7 +1058,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           items: [
             {
               itemId: "item-v2",
-              targetId: "story-v2",
+              targetId: "book-subject",
               input: { instruction: "Write the story." },
             },
           ],
