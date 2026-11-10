@@ -11,7 +11,9 @@ import { fingerprint } from "../../src/lib/server/foundation/canonical";
 import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
 import { bookletDomain, bookletDomainV2 } from "../../src/project/booklets/domain";
 import { createCreditIndexes, grantCredits } from "../../src/lib/server/store/credits";
-import { createConsumptionIndexes, startConsumption, continueConsumption, finishConsumptionWorkflow } from "../../src/lib/server/commerce/orders";
+import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
+import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
+import { bookletContext } from "../../src/lib/server/booklets/context";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import {
   bookletRepositoryV2,
@@ -325,22 +327,16 @@ test("booklet repositories preserve embedded identities and transactional bounda
           source: "purchase",
           reference: "fixture",
         });
-        const paid = await startConsumption(
-          f.db,
-          actor,
-          "order-v2",
-          "initial",
-          async (session) => {
-            await f.db
-              .collection("bookletProductions")
-              .updateOne(
-                { _id: "production-v2" as never, lifecycleState: "draft" },
-                { $set: { lifecycleState: "in-progress" } },
-                { session },
-              );
-          },
-        );
+        const lifecycle = bookletLifecycleV2(f.db, actor);
+        const paid = await lifecycle.start("production-v2");
+        assert.equal((await lifecycle.start("production-v2")).workflowId, paid.workflowId);
         const before = await f.v2.getProduction("production-v2");
+        const legacy = await f.repo.getProduction("production");
+        const context = bookletContext(f.db, actor);
+        await assert.rejects(context.transaction((session) => context.save(
+          { ...before, _id: "production", orderId: "order" }, legacy.version, session,
+        )), /Production changed/);
+        assert.equal((await f.repo.getProduction("production")).documentVersion, 1);
         const definition = orchestratorSchema.parse({
           id: "booklet-manager-v2",
           name: "Booklet fixture",
@@ -404,7 +400,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
           assert.equal(job!.credits, 0);
           assert.equal(job!.consumption.orderId, "order-v2");
           await assert.rejects(
-            finishConsumptionWorkflow(f.db, actor, "order-v2", paid.workflowId),
+            lifecycle.finishRun("production-v2", paid.workflowId),
             /Reconcile/,
           );
           await f.db
@@ -414,7 +410,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
               { $set: { status: "failed", terminationEvidence: "unverified" } },
             );
           await assert.rejects(
-            finishConsumptionWorkflow(f.db, actor, "order-v2", paid.workflowId),
+            lifecycle.finishRun("production-v2", paid.workflowId),
             /Reconcile/,
           );
           await f.db
@@ -423,15 +419,9 @@ test("booklet repositories preserve embedded identities and transactional bounda
               { _id: admitted.attemptId as never },
               { $set: { terminationEvidence: "provider-failed" } },
             );
-          await finishConsumptionWorkflow(f.db, actor, "order-v2", paid.workflowId);
-          const nextFlow = await continueConsumption(
-            f.db,
-            actor,
-            "order-v2",
-            "explicit-continuation",
-            fingerprint("continuation"),
-            async () => {},
-          );
+          await lifecycle.finishRun("production-v2", paid.workflowId);
+          const nextFlow = await lifecycle.continue("production-v2", "explicit-continuation");
+          assert.equal(await lifecycle.continue("production-v2", "explicit-continuation"), nextFlow);
           const successor = await enqueueBookletRun(f.db, actor, "production-v2", {
             ...input,
             key: "v2-continuation",
@@ -455,7 +445,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
           assert.deepEqual(after.retryPolicy, before.retryPolicy);
           assert.deepEqual(after.checkpoint, before.checkpoint);
           assert.deepEqual(after.subjects, before.subjects);
-          assert.equal(after.version, before.version + 2);
+          assert.equal(after.version, before.version + 3);
           await f.db
             .collection("orchestrators")
             .updateOne(

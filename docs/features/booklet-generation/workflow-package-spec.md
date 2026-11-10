@@ -244,14 +244,16 @@ generic worker additionally requires native execution success. No shared normali
 or second result protocol is needed. This local 09 slice has pure-Code/Run-parser
 fixtures; its target Dify execution and v2 application wiring remain pending.
 
-Keep v1 semantics and records. Necessary v2 boundaries are proposals; do not design
-all collections/indexes before the workflows establish their need. Reuse existing
+Keep v1 semantics and records. Opt-in v2 storage is implemented at 07 and the generic
+shared-runtime seams are imported at 08; application wiring remains in progress at 09.
+Do not design collections/indexes beyond demonstrated workflow needs. Reuse existing
 production/revision/original-media, consumption, execution and Run services. Human
 cards identify exact request/presentation/targets; authenticate and correlate submissions.
 App stores Manager intent opaquely and enforces fences, ownership, entitlement,
 product locks and durable counters. It supplies facts, never creative eligible routes.
-Implemented model documents/JSON example/both Mermaid versions remain unchanged because
-this package does not change application schemas or persistence. Update all at 07.
+The model guide, JSON example and both Mermaid versions describe implemented 07
+storage. Later persistence changes update them together, or record why the existing
+fields/relationships remain applicable; local tests do not establish live acceptance.
 
 Initial model slots retain reference choices: `gpt-6-luna` for Manager/creative work,
 `gpt-6-sol` for independent review, `gpt-image-2.5-sunburst` for images.
@@ -265,7 +267,8 @@ were simplified on 2026-11-09. Accepted behavior remains in the sections above.
 ### A01-A03 - Wire, storage and identity
 
 Keep essential versioned boundaries, exact Unicode, stable IDs and immutable provenance.
-Defer executable application schema/storage changes to 07; omit generated type inventories.
+The 07 schema/storage implementation remains opt-in; omit generated type inventories
+and add only boundaries needed by actual 09 consumers.
 
 ### A04 - MCP transition ownership
 

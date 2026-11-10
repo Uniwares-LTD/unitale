@@ -158,25 +158,7 @@ export async function enqueueBookletRun(
         (live.expiresAt && live.expiresAt <= new Date())
       )
         throw bookletConflict("Paid workflow admission changed.");
-      if (live.documentVersion === 1) await c.save(live, live.version, session);
-      else {
-        // Fence admission against concurrent production writes without converting
-        // the record or changing its durable work/checkpoint/retry snapshots.
-        const changed = await db
-          .collection("bookletProductions")
-          .updateOne(
-            {
-              _id: live._id as never,
-              ownerId: actor.uid,
-              documentVersion: 2,
-              version: live.version,
-            },
-            { $inc: { version: 1 }, $set: { updatedAt: new Date() } },
-            { session },
-          );
-        if (changed.modifiedCount !== 1)
-          throw bookletConflict("Paid workflow admission changed.");
-      }
+      await c.save(live, live.version, session);
     },
   );
   return { id: logicalId, attemptId: job._id };

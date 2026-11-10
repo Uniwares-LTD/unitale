@@ -535,7 +535,15 @@ scoped lint, model/docs, environment, i18n and skills checks pass. The Mongo fix
 used its forced-stop cleanup fallback; the test runner passed. A separate same-agent
 read-only slice review found no blocking issue. No model/example/diagram field or
 relationship changed; regenerated diagram content remains unchanged.
-Next: v2 start/continuation/revision services and Manager MCP context/read/lease,
+The third slice adds v2 start/continuation/finish lifecycle calls using existing
+commerce journals, and reuses the schema-checked version-aware save instead of a
+separate admission update. The admission fixture now calls those real services;
+repeated start/continue is idempotent and unknown termination prevents release.
+All 46 affected repository/lifecycle/media/MCP tests pass; a final 22-test repository
+run also verifies a version-changing save is rejected. Build, sequential typecheck,
+scoped lint, generated model/docs, i18n and skills checks pass. A separate same-agent
+read-only slice review found no blocking issue. No fields, migration, dispatch or scheduler.
+Next: v2 revision services and Manager MCP context/read/lease,
 reusing the 07 repository and existing commerce; implement each boundary in small
 verified slices. No current slice enables execution or closes checkpoint 09.
 

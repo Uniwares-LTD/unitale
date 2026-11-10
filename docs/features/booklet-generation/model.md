@@ -255,8 +255,13 @@ check inside the caller transaction; default v1 readers still reject v2 records.
 Admission increments only the production version/update time, preserving checkpoint,
 work, retry snapshots and immutable content, and reuses the existing consumption/job
 binding. The v2 adapter rejects generic Run admission and does not apply v1 creative
-approval gates. This does not implement the remaining v2 start/revision/MCP/recovery
-services or activate an orchestrator.
+approval gates. `bookletLifecycleV2` starts and continues that production through the
+existing consumption journals, and finishes a workflow only with verified termination.
+Shared version-aware persistence validates the selected schema and fences the stored
+document version, preventing conversion through a save. These calls preserve opaque
+checkpoints, retry policy and content; the service does not dispatch providers. V2
+revision, MCP and automatic recovery wiring remain subsequent work; no orchestrator
+is activated here.
 
 No document field, relationship, index or migration changes in this admission slice;
 the JSON example and both Mermaid schema versions remain applicable unchanged.

@@ -29,7 +29,9 @@ export function bookletContext(
   actor: CreditActor,
   now = () => new Date(),
 ) {
-  const productions = db.collection<ProductionDocument>("bookletProductions");
+  const productions = db.collection<ProductionDocument | ProductionV2>(
+    "bookletProductions",
+  );
   async function owned(
     productionId: string,
     session?: ClientSession,
@@ -120,7 +122,11 @@ export function bookletContext(
     consumptionOrderSchema.parse(order.value);
     return order;
   }
-  function fence(p: ProductionDocument, value: Mutation, checkState = true) {
+  function fence(
+    p: Pick<ProductionDocument, "lifecycleState" | "version" | "mutationLease">,
+    value: Mutation,
+    checkState = true,
+  ) {
     if (
       (checkState && p.lifecycleState !== "in-progress") ||
       p.version !== value.expectedVersion ||
@@ -131,7 +137,7 @@ export function bookletContext(
       throw bookletConflict("Production changed or mutation lease expired.");
   }
   async function save(
-    p: ProductionDocument,
+    p: ProductionDocument | ProductionV2,
     version: number,
     session: ClientSession,
     mutation?: Mutation,
@@ -139,7 +145,8 @@ export function bookletContext(
     if (mutation) fence(p, mutation, false);
     p.version = version + 1;
     p.updatedAt = now();
-    productionDocumentSchema.parse(p);
+    if (p.documentVersion === 2) productionV2Schema.parse(p);
+    else productionDocumentSchema.parse(p);
     if (BSON.calculateObjectSize(p) > 1024 * 1024)
       throw new AppError(
         "BOOKLET_TOO_LARGE",
@@ -149,7 +156,12 @@ export function bookletContext(
     if (
       !(
         await productions.replaceOne(
-          { _id: p._id, ownerId: actor.uid, version },
+          {
+            _id: p._id,
+            ownerId: actor.uid,
+            version,
+            documentVersion: p.documentVersion,
+          },
           p,
           { session },
         )
