@@ -427,6 +427,8 @@ export function createDifyWorkflow(
             const node = z
               .object({
                 id,
+                node_type: z.string().nullish(),
+                elapsed_time: z.unknown().optional(),
                 execution_metadata: z
                   .record(z.string(), z.unknown())
                   .nullable()
@@ -438,11 +440,15 @@ export function createDifyWorkflow(
               })
               .safeParse(envelope.data);
             if (node.success) {
+              // Container metadata repeats child usage, not another billable call.
+              const container = ["loop", "iteration"].includes(node.data.node_type ?? "");
               const reported = parseUsage(
-                node.data.outputs?.usage ?? node.data.execution_metadata,
+                container ? undefined : node.data.outputs?.usage ?? node.data.execution_metadata,
                 "node",
                 node.data.id,
               );
+              const elapsed = z.number().finite().nonnegative().safeParse(node.data.elapsed_time).data;
+              reported.elapsedMs = elapsed === undefined ? null : Math.round(elapsed * 1000);
               await emit({ type: "usage", usage: reported });
             }
           }

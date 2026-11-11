@@ -606,3 +606,37 @@ test("opt-in starts retain actual publication before nodes without replaying his
   assert.equal(dispatches, 1);
   assert.deepEqual(observed.map((event) => event.type), ["identity"]);
 });
+
+test("container aggregate usage is not another charge and native node duration stays reported", async () => {
+  for (const type of ["loop", "iteration"]) {
+    const seen: ProviderEvent[] = [];
+    const provider = createDifyWorkflow(live, live.bindings[0], async () => sse(started,
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: {
+        id: "00000000-0000-4000-8000-000000000011", node_id: "llm", node_type: "llm", status: "succeeded", elapsed_time: 0.25,
+        execution_metadata: { total_price: "0.1", currency: "USD", total_tokens: 10 },
+      } },
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: {
+        id: "00000000-0000-4000-8000-000000000013", node_id: "second-llm", node_type: "llm", status: "succeeded", elapsed_time: -1,
+        execution_metadata: { total_price: "0.2", currency: "USD", total_tokens: 2 },
+      } },
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: {
+        id: "00000000-0000-4000-8000-000000000012", node_id: "container", node_type: type, status: "succeeded", elapsed_time: 1,
+        execution_metadata: { total_price: "0.3", currency: "USD", total_tokens: 10 },
+        outputs: { usage: { total_price: "0.3", currency: "USD", total_tokens: 10 } },
+      } },
+      { event: "workflow_finished", workflow_run_id: runId, task_id: taskId, data: { ...detail, total_price: "0.3", currency: "USD" } },
+    ));
+    const outcome = await provider.start(input, async (event) => { seen.push(event); });
+    assert.equal(outcome.kind, "ok");
+    const usages = seen.filter((event) => event.type === "usage");
+    assert.equal(usages.length, 3);
+    assert.equal(usages[0].usage.cost?.amount, "0.1");
+    assert.equal(usages[0].usage.elapsedMs, 250);
+    assert.equal(usages[1].usage.cost?.amount, "0.2");
+    assert.equal(usages[1].usage.elapsedMs, null);
+    assert.equal(usages[2].usage.cost, null);
+    assert.equal(usages[2].usage.totalTokens, null);
+    assert.equal(usages[2].usage.elapsedMs, 1000);
+    if (outcome.kind === "ok") assert.equal(outcome.value.usage.cost?.amount, "0.3");
+  }
+});

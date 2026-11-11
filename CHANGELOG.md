@@ -20,6 +20,9 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Exclude Loop/Iteration child-cost aggregates from additive native node billing,
+  while retaining step records and reported node durations in existing usage.
+
 - Retain the actual Dify publication from opt-in workflow-start events before node
   observers run, without replaying historical running state on reconnect.
 
@@ -74,6 +77,9 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 - Add opt-in v1 commerce and execution-measurement contracts for immutable catalog terms, consumption orders, entitlements, subscriptions, promotions and provider evidence. Existing runtime behavior and records remain unchanged.
 
 ### Upgrade notes
+
+- Newly observed container usage has unknown node-level cost/tokens; parent totals
+  remain authoritative. Existing accepted usage records are not rewritten.
 
 - Existing opt-in node observers can receive publication identity before the first
   node result through the existing running-execution event. No data migration or

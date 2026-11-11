@@ -143,6 +143,13 @@ fourth `retainEvidence` argument so evidence and the hook transaction commit/rol
 together. Existing callers retain their own transaction behavior. Derive immutable
 evidence identities from the accepted Run, native execution, status/retry identity
 and payload hash; Dify can reuse a native execution ID across retry observations.
+Loop/Iteration metadata repeats accumulated child usage; the adapter excludes those
+aggregates from additive node prices/tokens and retains their native identity and
+duration. Parent execution totals remain available. This follows the engine
+[Loop metadata](https://github.com/langgenius/graphon/blob/v0.7.0/src/graphon/graph_engine/loop_container_handler.py);
+existing ledger records are not rewritten. Reported node durations are retained in
+the existing usage field, including when activity logs are cleaned.
+
 Node retry indexes are Dify's reported values, not a count of hidden provider SDK attempts. This seam does not itself
 implement action retry policy, scheduling or recovery.
 
