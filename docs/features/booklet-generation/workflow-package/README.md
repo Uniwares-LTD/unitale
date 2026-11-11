@@ -155,8 +155,10 @@ boundary verification, not target Dify or provider execution.
 Current slice: 41/41 compatibility tests pass (11 preserved v1 and 30 native-package
 tests), plus 18 MCP and 30 repository tests. Build, typecheck, scoped test lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
-found a remaining container-usage normalization defect in the shared adapter; 09.2
-remains In progress until its correction is imported and verified. Current
+found and corrected container-usage normalization through Unibase PR #52; its exact
+reviewed merge is imported. Task 09.2 is locally Verified; 09.3 is In progress.
+Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
+Current
 implementation SHA-256:
 `f553145a9fe6fa96a3a056f1085528fc5f91e559e63b774d7f2d092611cd2188`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total

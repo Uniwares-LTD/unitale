@@ -529,8 +529,8 @@ use estimated completion percentages as acceptance evidence.
 | Task | State | Required outcome and exit evidence |
 | --- | --- | --- |
 | 09.1 Manager context and bindings | Verified | Local configuration/identity, bounded context/navigation, complete checkpoint and atomic fence tests pass. Actual remote/plugin readback remains checkpoint 12 evidence. |
-| 09.2 One complete text action | In progress | Finish register/dispatch safeguards and trusted usage, including Manager reasoning without parent/child double counting. Actual gateway/YAML boundaries complete a deterministic child, retain and publish exact text, and advance a compact checkpoint. Lost replies never repeat execution or publication. |
-| 09.3 Assessment and image actions | Pending | Complete assessment gateway/all six modes, correction-finding lineage, preparation/preflight, verified originals, image publication and revalidation. Exact retained assessments/coverage cannot be altered; partial results survive and attachment/save retries never regenerate. |
+| 09.2 One complete text action | Verified | Local guarded dispatch, native usage, exact retained text/publication and compact checkpoint journey pass, including lost-reply/replay denial. Provider/target limitations remain accepted and explicitly labelled below. |
+| 09.3 Assessment and image actions | In progress | Complete assessment gateway/all six modes, correction-finding lineage, preparation/preflight, verified originals, image publication and revalidation. Exact retained assessments/coverage cannot be altered; partial results survive and attachment/save retries never regenerate. |
 | 09.4 Human decisions and completion | Pending | Connect existing authentic first-wins decisions, Manager acceptance, manifest drafts, structural completion and backend history reads. Correct requests resume; stale responses and invalid purchased structures fail without partial finalization. |
 | 09.5 Bounded recovery | Pending | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
 | 09.6 Connected journeys | Pending | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
@@ -543,6 +543,13 @@ Routine implementation choices need no further approval. Demonstrate a named beh
 gap before adding an interface, persisted field or abstraction, and record the smallest
 necessary amendment here. No speculative scaffolding, framework, generator, scheduler,
 dependency, custom provider plugin, dashboard or additional tracking hierarchy.
+
+The 2026-11-11 acceptance amendment applies throughout the remaining sequence:
+provider gaps that require broader scope or implementation are accepted limitations.
+Record their verified effect, fallback and missing evidence, then continue. Do not
+add provider controls, plugins, telemetry interfaces or infrastructure to close them.
+Keep the accepted application ownership, funding, persistence and replay safeguards;
+target execution stays a separately authorized checkpoint 12 activity.
 
 For 09.3, preparation and generation use distinct action/call IDs. Generation consumes
 the exact retained prepared request, including its preparation identity. Replace the
@@ -687,15 +694,24 @@ a compact checkpoint and publishes exact text once. Replay attempts with fresh c
 fail, while lost write replies reuse receipts. Image references/dispatch and remaining
 review-mode safeguards stay in 09.3. No execution switch or live binding was changed.
 
-09.2 final accounting review found a confirmed remaining blocker: Dify 1.17.1's Graphon
-0.7.0 Loop/Iteration metadata includes accumulated child cost. The shared adapter
-currently treats this as another additive node usage record. Correct normalization
-in Unibase before marking 09.2 Verified; preserve step/timing evidence and parent
-execution totals, without rewriting accepted records or adding a ledger.
-The current project slice passes 48 repository/MCP tests and 41 compatibility tests,
-build, post-build typecheck, scoped lint and required checks. Read-only review records
-the container billing blocker above; 09.2 remains In progress until its correction is
-imported and verified. Model JSON/diagrams and the native package digest are unchanged.
+09.2 exit accounting review corrected additive Loop/Iteration child-cost aggregates
+in Unibase [PR #52](https://github.com/Uniwares-LTD/unibase/pull/52), imported through
+`template:update` at exact revision `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`.
+Native step/duration records and parent execution totals remain; invalid timing does
+not discard valid pricing. Accepted records are not rewritten and no ledger is added.
+The correction passes 18 native adapter/tracing and 17 shared worker tests, build,
+separate typecheck and two clean same-agent read-only reviews. The final Unitale state
+passes 18 MCP, 30 repository, 18 native adapter/tracing and 41 compatibility tests,
+build, post-build typecheck, scoped lint, template consistency and required checks.
+The separate task review found no remaining local text-action blocker. Model JSON/
+diagrams and the native package digest are unchanged. Checkpoint-wide final reviews
+remain 09.7 work.
+
+Accepted provider limits: SDK attempts and complete nested charges can be unknown;
+Manager prompt inputs are not exposed by the existing private hook; elapsed coverage
+is a reported lower bound; current remote bindings/file conversion and live execution
+remain unverified. Preserve these labels and safe unresolved-work handling. They do
+not trigger broader provider implementation or block the remaining local tasks.
 Build, post-build typecheck, scoped lint, environment and docs/i18n/skills checks pass.
 A separate same-agent read-only slice review (cold-review fallback) found no blocking
 issue; checkpoint-wide final reviews remain 09.7 work.
