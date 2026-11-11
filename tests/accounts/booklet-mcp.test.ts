@@ -1207,6 +1207,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         assert.equal(facts.productionId, production._id);
         assert.equal(facts.fence, registered.fence);
         assert.equal(facts.usage.canDispatch, false);
+        assert.equal(facts.usage.workAttempts.paidLlm, 0);
         assert.equal(facts.work[0].callId, "call-v2");
         assert.equal(facts.work[0].resultAvailable, false);
         assert.equal(facts.reviewerBinding, bindingRow.reviewer.publicationId);
@@ -1225,11 +1226,14 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             actionKey: fingerprint(["context-action", i]), createdAt: new Date(Date.now() + 1000 + i),
           }));
           await db.collection("bookletWork").insertMany(rows);
+          await db.collection("bookletWork").updateMany({ _id: { $in: rows.slice(0, 20).map((row) => row._id) } }, { $set: { status: "unknown" } });
           await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: {
             checkpoint: { pending: { callId: "call-v2", action: "manuscript" } },
           } });
           const context = await successful("context", {});
           assert.equal(context.workComplete, false);
+          assert.equal(context.usage.workAttempts.paidLlm, 20);
+          assert.equal(context.usage.workAttempts.unresolved, 20);
           assert.equal(context.work[0].callId, "call-v2");
           assert.equal(context.workHistoryDocument.kind, "work_history");
           assert.ok(Buffer.byteLength(JSON.stringify(context)) < 65536);

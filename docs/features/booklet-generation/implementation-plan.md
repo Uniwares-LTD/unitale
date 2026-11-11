@@ -605,6 +605,13 @@ blocking issue. The disposable Mongo fixture needed forced shutdown once; a subs
 process inventory found no remaining mongod process. This is local verification, not
 integrated Dify execution. Checkpoint-wide review pair remains 09.7 work.
 
+09.2 in progress: context now reports production-owned dispatched work-attempt counts
+by paid LLM/image/non-paid category, with active and unresolved totals. Registered
+intents are excluded and aggregation covers all owned work, not its recent preview.
+These are application-attempt facts, not provider-internal counts or complete native
+usage. Native reasoning/cost integration, dispatch safeguards and the complete text
+journey remain pending; `usage.canDispatch` stays false.
+
 In progress; not ready for activation. Checkpoint 07 storage and checkpoint 08 shared
 seams are complete locally. Current 09 implementation provides:
 

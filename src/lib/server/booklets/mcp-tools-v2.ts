@@ -8,7 +8,7 @@ import { authorizedRun } from "../runs/capabilities";
 import { fingerprint } from "../foundation/canonical";
 import { bookletContext, bookletConflict, bookletMissing } from "./context";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { registerBookletWorkV2 } from "./work-v2";
+import { registerBookletWorkV2, bookletWorkUsageV2 } from "./work-v2";
 import {
   workRegistrationV2Schema,
   artifactKindV2Schema,
@@ -359,7 +359,11 @@ export function createBookletMcpToolsV2(
           correctionsComplete:
             workFacts.length === work.length &&
             correctionFacts.length === correctionRoots.length,
-          usage: { canDispatch: false, reason: "dispatch_safeguards_pending" },
+          usage: {
+            canDispatch: false,
+            reason: "dispatch_safeguards_pending",
+            workAttempts: await bookletWorkUsageV2(s.db, s.production),
+          },
         };
         if (Buffer.byteLength(JSON.stringify(facts)) > 128 * 1024)
           throw bookletConflict(

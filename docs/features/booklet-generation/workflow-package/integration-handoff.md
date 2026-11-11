@@ -257,6 +257,10 @@ profile/revision/orchestrator/configuration tuple. No new collection or index is
 The validator matches the actual Manager child nodes and Reviewer publication; these
 configured identities do not prove current remote publications or installed plugin versions.
 Operator readback/provisioning stays pending; no model may submit this configuration.
+`usage.workAttempts` counts all dispatched owned work by `paidLlm`, `paidImage` and
+`nonPaid`, plus `active` (dispatching) and `unresolved` (unknown) totals. Registered
+intents do not consume these counts. This is not a provider-internal attempt count
+or complete native reasoning/cost accounting; those integrations remain 09.2 work.
 Context returns at most 16 source/work and 8 assessment summaries, with an 8 KiB budget
 per summary group and explicit completeness flags. Correction facts describe selected
 work roots. Context carries the complete checkpoint and has a 128 KiB UTF-8 envelope
