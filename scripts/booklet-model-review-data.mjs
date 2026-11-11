@@ -97,6 +97,7 @@ export const documents = [
       "resultObservation? {runId, nodeId, executionId, retryIndex, iterationId, loopId}",
       "reconciliation? {nextAt?, failedReads, leaseId?, leaseUntil, reason?}",
       "retryAuthorization? {key, authorizedAt, consumedByCallId?}",
+      "retryNotBefore? (Date; confirmed failure/registered retry eligibility)",
       "targetIds[] / sources[] / retryOf? / retryOrdinal",
       "status / retryable / evidenceIds[] / createdAt / updatedAt",
       "correctionRootId / correction? {rootId, family, findingIds[]}",

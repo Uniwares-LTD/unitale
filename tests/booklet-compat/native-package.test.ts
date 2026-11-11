@@ -891,6 +891,9 @@ test("Manager never replays unknown/completed work or dispatches modified source
   const r = request();
   const c = register(r);
   assert.equal(guard(r.service, r, c).paid, "yes");
+  c.work[0].dispatchReady = false;
+  assert.throws(() => guard(r.service, r, c), /backoff pending/);
+  c.work[0].dispatchReady = true;
   c.work[0].status = "unknown";
   assert.throws(() => guard(r.service, r, c), /reconcile/);
   c.work[0].status = "succeeded";

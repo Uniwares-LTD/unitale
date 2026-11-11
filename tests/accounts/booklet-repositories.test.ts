@@ -496,7 +496,8 @@ test("booklet repositories preserve embedded identities and transactional bounda
         run: { target: { adapter: "booklet", version: "2", kind: "booklet-production", id: "production-v2" } },
       });
       await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
-      const repo = bookletRepositoryV2(f.db, actor, undefined, { atomicMutations: true });
+      let clockAdvance = 0;
+      const repo = bookletRepositoryV2(f.db, actor, () => new Date(Date.now() + clockAdvance), { atomicMutations: true });
       let p = await repo.getProduction("production-v2");
       let version = p.version;
       let fence = p.fenceCounter;
@@ -621,6 +622,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const second = await repo.getWork(p._id, "call-2");
       assert.equal(second.actionKey, first.actionKey);
       assert.equal(second.retryOrdinal, 1);
+      clockAdvance = 60000; // Advance the accepted retry's clock, never sleep in tests.
       const tasks = [
         ["story-planner", "concept", "book-concept"], ["story-planner", "outline", "book-outline"],
         ["story-planner", "cast", "book-roster"], ["story-planner", "cast", "character-description"],
@@ -1113,9 +1115,11 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const paid = await bookletLifecycleV2(f.db, actor).start("production-v2"), jobId = "retry-manager";
       await f.db.collection("aiJobs").insertOne({ _id: jobId as never, uid: actor.uid, status: "running", cancelRequested: false,
         runId: crypto.randomUUID(), consumption: { orderId: "order-v2", workflowId: paid.workflowId },
-        run: { target: { adapter: "booklet", version: "2", kind: "booklet-production", id: "production-v2" } } });
+        run: { retryBaseSeconds: 2, retryMaxSeconds: 8,
+          target: { adapter: "booklet", version: "2", kind: "booklet-production", id: "production-v2" } } });
       await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
-      const repo = bookletRepositoryV2(f.db, actor, undefined, { atomicMutations: true });
+      let retryClock = new Date();
+      const repo = bookletRepositoryV2(f.db, actor, () => retryClock, { atomicMutations: true });
       let ordinal = 0;
       const mutation = async () => {
         const p = await repo.getProduction("production-v2");
@@ -1152,8 +1156,15 @@ test("booklet repositories preserve embedded identities and transactional bounda
       assert.equal((await repo.getWork("production-v2", "extra")).retryOrdinal, 1);
       assert.deepEqual(await repo.authorizeRetry("production-v2", value), first); // Receipt replay cannot add another grant.
       assert.equal(await f.db.collection("auditEvents").countDocuments({ event: "booklet-action-retry-authorized" }), 1);
+      const waiting = await repo.getProduction("production-v2");
+      await assert.rejects(repo.dispatchWork("production-v2", { ...await mutation(), callId: "extra", requestHash: fingerprint(request("extra")) }), /backoff/);
+      assert.deepEqual(await repo.getProduction("production-v2"), waiting);
+      assert.equal((await repo.getWork("production-v2", "extra")).retryNotBefore!.getTime(), retryClock.getTime() + 2000);
+      retryClock = new Date(retryClock.getTime() + 2000);
       await repo.dispatchWork("production-v2", { ...await mutation(), callId: "extra", requestHash: fingerprint(request("extra")) });
-      await repo.recordWorkOutcome("production-v2", { ...await mutation(), callId: "extra", status: "failed", retryable: true, evidenceIds: ["trusted-outcome"] });
+      await repo.recordWorkOutcome("production-v2", { ...await mutation(), callId: "extra", status: "failed", retryable: true,
+        retryAfterMs: 60000, evidenceIds: ["trusted-outcome"] });
+      assert.equal((await repo.getWork("production-v2", "extra")).retryNotBefore!.getTime(), retryClock.getTime() + 8000);
       await assert.rejects(register("unapproved", "extra", await mutation()), /allowance exhausted/);
       assert.equal((await repo.getProduction("production-v2")).retryPolicy.paidLlm, before.retryPolicy.paidLlm);
       const read = await readBookletDocumentV2(f.db, actor, "production-v2", { kind: "work", id: "initial" }) as { value: Record<string, unknown> };
@@ -1371,6 +1382,9 @@ test("booklet repositories preserve embedded identities and transactional bounda
           await f.write((m) =>
             f.v2.registerWork("production-v2", { ...m, ...retry }),
           );
+          const previous = await f.v2.getWork("production-v2", retry.retryOf);
+          assert.equal((await f.v2.getWork("production-v2", retry.callId)).retryNotBefore!.getTime(), previous.updatedAt.getTime() + 2 ** n * 1000);
+          f.advance(10000);
           await f.write((m) =>
             f.v2.dispatchWork("production-v2", {
               ...m,
@@ -1472,6 +1486,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
               retryOf: n ? "local-" + (n - 1) : null,
             }),
           );
+          if (n) f.advance(10000);
           await f.write((m) =>
             f.v2.dispatchWork("production-v2", {
               ...m,
@@ -1728,6 +1743,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
               retryOf: attempt.callId,
               requestHash: fingerprint("retry-envelope"),
             };
+            f.advance(10000);
             await dispatch(retry);
             await outcome(retry.callId, "succeeded");
           } else await outcome(attempt.callId, "succeeded");

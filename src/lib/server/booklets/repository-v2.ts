@@ -143,6 +143,15 @@ export function bookletRepositoryV2(
         "Manager state exceeds its storage limit; retain large bodies in evidence storage.",
       );
   }
+  async function retryTime(row: Pick<WorkV2, "runId" | "productionId" | "retryOrdinal" | "updatedAt">,
+    session: ClientSession, retryAfterMs = 0) {
+    const job = await db.collection<AiJob>("aiJobs").findOne({ _id: row.runId, uid: actor.uid,
+      "run.target.adapter": "booklet", "run.target.version": "2", "run.target.id": row.productionId },
+    { session, projection: { "run.retryBaseSeconds": 1, "run.retryMaxSeconds": 1 } });
+    const maximum = (job?.run?.retryMaxSeconds ?? 60) * 1000;
+    const delay = Math.min(maximum, (job?.run?.retryBaseSeconds ?? 2) * 1000 * 2 ** Math.min(row.retryOrdinal, 30));
+    return new Date(row.updatedAt.getTime() + Math.max(delay, Math.min(retryAfterMs, maximum)));
+  }
   const correctionLimit = (p: ProductionV2, family: "llm" | "image") =>
     family === "image"
       ? Math.min(1, p.creativeConfigSnapshot.repairLimitPerOutput)
@@ -845,6 +854,7 @@ export function bookletRepositoryV2(
             productionId: p._id,
             status: "registered",
             retryOrdinal: previous ? previous.retryOrdinal + 1 : 0,
+            ...(previous ? { retryNotBefore: previous.retryNotBefore ?? await retryTime(previous, session) } : {}),
             correctionRootId,
             retryable: false,
             evidenceIds: [],
@@ -942,6 +952,8 @@ export function bookletRepositoryV2(
               }
             }
           }
+          if (row.retryNotBefore && row.retryNotBefore > now())
+            throw bookletConflict("Retry backoff is still pending.");
           const result = await work.updateOne(
             {
               ownerId: actor.uid,
@@ -976,6 +988,7 @@ export function bookletRepositoryV2(
         callId: string;
         status: "succeeded" | "partial" | "failed" | "unknown";
         retryable: boolean;
+        retryAfterMs?: number;
         evidenceIds: string[];
       },
     ) {
@@ -984,6 +997,7 @@ export function bookletRepositoryV2(
           callId: id,
           status: z.enum(["succeeded", "partial", "failed", "unknown"]),
           retryable: z.boolean(),
+          retryAfterMs: z.number().int().nonnegative().safe().optional(),
           evidenceIds: ids.min(1),
         })
         .refine(
@@ -997,6 +1011,10 @@ export function bookletRepositoryV2(
         "recordWorkOutcome",
         value,
         async (p, session) => {
+          const timestamp = now();
+          const previous = value.retryable ? await work.findOne({ ownerId: actor.uid, productionId: p._id,
+            callId: value.callId, status: { $in: ["dispatching", "unknown"] } }, { session }) : null;
+          const retryNotBefore = previous ? await retryTime({ ...previous, updatedAt: timestamp }, session, value.retryAfterMs) : null;
           const result = await work.updateOne(
             {
               ownerId: actor.uid,
@@ -1008,7 +1026,8 @@ export function bookletRepositoryV2(
               $set: {
                 status: value.status,
                 retryable: value.retryable,
-                updatedAt: now(),
+                ...(retryNotBefore ? { retryNotBefore } : {}),
+                updatedAt: timestamp,
               },
               $addToSet: { evidenceIds: { $each: value.evidenceIds } },
             },

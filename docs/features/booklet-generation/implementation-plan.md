@@ -1128,6 +1128,30 @@ keep conservative stop/reconciliation as an accepted provider limitation. Remain
 application work in 09.5 is retry eligibility timing and deterministic recovery
 routing for failed actions; do not count this backend grant as a wired creator control.
 
+09.5 retry-timing amendment: persist optional `retryNotBefore` on a confirmed
+retriable failed work record and carry it to its registered successor. Derive the
+delay from the originating Run's existing base/max settings and durable retry ordinal;
+honor trusted `retryAfterMs` within the same maximum. Older metadata-only records use
+the existing 2/60-second timing defaults. No new timing setting or scheduler. Enforce
+the stored time at dispatch; context/owned reads expose it with `dispatchReady` for
+the native guard. A waiting action remains registered and may be reused after a safe
+continuation. Pause instead of spending reasoning calls to poll time. Native stage
+isolation/provider outcome gaps still use the accepted stop/reconcile fallback;
+failed-action routing and the 09.5 exit audit remain incomplete.
+
+Retry-timing slice checks: 32 repository, 28 MCP and 43 native/v1 compatibility
+tests pass, plus build, post-build typecheck, scoped lint, docs/i18n/skills and the
+13-path hash/disabled-gate audit. Controlled-clock fixtures prove the 2/4-second
+ordinal backoff, early-dispatch rollback, exact eligibility, bounded retry-after,
+retained registered intent, and unchanged retry/correction policy. Older fixtures
+now advance their clock rather than bypass the new guard or sleep. A separate
+same-agent read-only slice review fixed failure/eligibility timestamp consistency;
+its follow-up found no further blocking issue. The model guide/JSON/complete diagram,
+native Manager prompt/guard, fixtures and package identity are refreshed together;
+the regenerated abbreviated core diagram is unchanged. This is local timing proof,
+not proof that target provider failures are safe to repeat. Remaining: deterministic
+failed-action routing and the full 09.5 exit audit; 09.6-09.7 remain Pending.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

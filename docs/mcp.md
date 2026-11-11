@@ -445,6 +445,13 @@ registration consumes it atomically without resetting retry/correction counters.
 Context exposes the ordinal/authorization flag and owned work reads expose the grant
 timestamp/consuming call, omitting the click key. This method is not an MCP tool and
 Manager cannot grant retries. Its creator control and native recovery routing remain pending.
+Confirmed retriable failures persist `retryNotBefore`, derived from the originating
+Run's backoff snapshot and retry ordinal; trusted retry-after is capped by that same
+maximum. Registered retries inherit the stored time. Context/owned reads expose ISO
+timing and context's `dispatchReady` flag; both native and application guards deny
+early dispatch. Waiting pauses retain registered intent without a lease or paid
+reasoning poll. Recovery routing remains 09.5 work; actual provider stage evidence
+remains unproved and does not authorize replay.
 The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original

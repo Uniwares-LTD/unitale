@@ -419,6 +419,7 @@ export async function readBookletDocumentV2(
       status: row.status,
       category: row.category,
       retryOrdinal: row.retryOrdinal,
+      retryNotBefore: row.retryNotBefore?.toISOString() ?? null,
       retryable: row.retryable,
       ...(row.retryAuthorization ? { retryAuthorization: {
         authorizedAt: row.retryAuthorization.authorizedAt.toISOString(),

@@ -34,6 +34,14 @@ missing request bodies remain ineligible. Work DTOs expose the timestamp/consumi
 without the authorization key. The JSON example notes this optional field and the
 complete Mermaid includes it; the regenerated core Mermaid's abbreviated fields are unchanged.
 
+Work may also carry `retryNotBefore` (a database Date). A trusted confirmed retriable
+failure sets its next eligible time from the accepted Run's base/max backoff and retry
+ordinal, including bounded retry-after. The next registered attempt carries that exact
+time; new Run identities cannot shorten it. Dispatch checks it before changing work
+state. Context exposes `dispatchReady` and ISO timing; owned reads return the ISO time.
+The JSON example notes this optional field and the complete diagram includes it;
+the regenerated core diagram remains abbreviated and unchanged.
+
 The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
 [v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing
 collections and owned transaction/admission validation. New v2 production creation is

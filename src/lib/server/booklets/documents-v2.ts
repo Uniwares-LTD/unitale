@@ -188,6 +188,7 @@ export const workV2Schema = workRegistrationV2Schema.extend({
   retryOrdinal: z.number().int().nonnegative().safe(),
   correctionRootId: hash,
   retryable: z.boolean(),
+  retryNotBefore: z.date().optional(),
   evidenceIds: ids,
   updatedAt: z.date(),
   retryAuthorization: z.strictObject({

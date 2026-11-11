@@ -263,6 +263,7 @@ workflow:
                 Use correction root/family and durable counters: three text/request and one image correction after the initial attempt. Reviews do not consume corrections.
                 Never create a new root/candidate/call to reset an existing task's counter. Customer revisions use their own actual purchased allocation.
                 Unknown paid work is never replayed. Reconcile it through reconcile_work/read_document; use existing results and retain known outputs independently.
+                A registered retry with dispatchReady false must wait until retryNotBefore. Pause with that time and preserve the registered call; do not poll with paid reasoning or repeat successful work. Continue can reuse it after verified predecessor termination.
                 Keep call identity separate from output keys. Retain each original and save its individual revision; never use a display derivative as an original.
                 After source changes, inspect affected content. Revalidate unchanged bytes/content using a new immutable source-bound revision, otherwise revise the smallest affected artifact.
                 Continue reads current authoritative state and checkpoint; revise honors scoped user feedback, locks and allowance. Reacquire short leases after waits.
@@ -439,6 +440,8 @@ workflow:
                     work = next((w for w in c["work"] if w.get("callId") == request.get("callId")), None)
                     if not work or work.get("status") != "registered" or work.get("requestHash") != request_hash:
                         raise ValueError("Unregistered/changed/already dispatched or unknown work; reconcile before replay")
+                    if work.get("dispatchReady") is False:
+                        raise ValueError("Retry backoff pending; preserve this call and pause until retryNotBefore")
                     if c.get("cancelled") or c.get("leaseHeld"):
                         raise ValueError("Child dispatch currently blocked")
                     if paid:

@@ -207,12 +207,17 @@ The application-only explicit-retry backend is locally verified (32 repository a
 28 MCP tests): one authenticated, journaled grant permits one additional registration
 after automatic exhaustion, preserving counters and financial guards. Its UI control,
 retry timing and native routing remain pending; no new Manager MCP action was added.
+Retry timing is now locally verified: persisted eligibility uses the originating
+Run's bounded backoff/retry-after, and both native/application guards reject early
+dispatch without losing registered work. Checks pass: 32 repository, 28 MCP and 43
+compatibility tests, build/typecheck, scoped lint, docs/i18n/skills and hash audit.
+Recovery routing and the 09.5 exit audit remain in progress.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`7a07fdcaad468d2e0535fdad2f5a0dacff1769c9fe9eea5bb5d13189ddbf5a6b`.
+`3342964e6664b9658a025ac00d329afde394458ec12ef59a4545c125d644b6a4`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-245,379 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+245,823 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

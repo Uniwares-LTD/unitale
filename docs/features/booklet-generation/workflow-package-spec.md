@@ -296,6 +296,11 @@ attempt; ordinals, funding, correction history and dispatch guards are preserved
 Manager receives facts about authorization and cannot issue it through MCP. Unknown
 paid outcomes remain ineligible. Native failures without sufficient stage/outcome
 evidence stop conservatively; they do not become safe retry evidence.
+Registered retries now carry `retryNotBefore` from the confirmed failure. The original
+Run's base/max settings and ordinal determine backoff, with bounded trusted retry-after.
+Context returns timing/`dispatchReady`; application and native guards reject early
+dispatch. Preserve the registered call during pause/continuation rather than polling
+with reasoning, acquiring a long lease or replaying the workflow.
 
 Follow the [accepted retry/reconciliation policy](implementation-plan.md#action-retries-and-automatic-reconciliation):
 production-snapshotted paid LLM/image retries 2/0, retriable non-paid retries 3, no
