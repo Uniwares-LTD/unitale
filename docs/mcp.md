@@ -390,7 +390,7 @@ the same strictly named `MCP_TOKEN_*` credentials and Run client selection.
 
 Checkpoint 09 now adds versioned project tools alongside the v1 catalog:
 `booklet_checkpoint_v2`, atomic fence refresh through `booklet_lease_v2`, and
-creative-text/Reviewer registration and guarded text or unpaid image-preparation dispatch
+specialist registration and guarded text/image/preparation dispatch
 through `booklet_begin_work_v2`.
 Each accepts private `runContext` plus a bounded JSON-string `request` and returns
 an explicit `result` object. They require an owned native v2 Manager Run and its current
@@ -398,18 +398,23 @@ prepaid workflow/job binding, use atomic version/fence checks and leave no lease
 calls. Exact retries replay existing receipts. Initial atomic checkpoints accept fence
 zero. The core catalog version is unchanged; these project-extension contracts are
 versioned in their names. Dispatch accepts registered creative text, image generation,
-text/specification/image-request review or unpaid preparation without image references. Paid work checks
+all six review modes and unpaid preparation with bounded owned original references. Paid work checks
 configured suite, ownership, funding, locks, attempts, reported cost and native execution
 bounds; unpaid preparation uses the same durable dispatch and native-result retention.
 Image-request review must match an exact retained preparation, including target, source
 tuples and ordered original identities; image generation uses that same retained
 preparation guard. Context separates text (`canDispatch`) and image (`canDispatchImage`)
-call eligibility. Other visual review modes remain pending 09.3 safeguards. The candidate
-execution switch stays disabled.
+call eligibility. Visual image review/publication is locally verified; whole-book,
+correction lineage and revalidation integration remain 09.3 work. The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
-`booklet_sources_v2` verifies owned immutable `{sources,references:[]}` text tuples;
-foreign/changed revisions and nonempty image-reference lists fail explicitly until
-the original-image bridge is completed. It never silently drops requested references.
+`booklet_sources_v2` verifies owned immutable source tuples and requested original
+identities, returning `{references:[{assetId,sha256,bytes}]}` plus ordered native MCP
+image blocks. Binary carriers are excluded from JSON. Every image is read with owned
+byte/hash verification; derivatives, changed identities and foreign assets fail.
+References have a maximum of 16 entries and an 8 MiB aggregate transfer allowance;
+capacity failure never drops references or resizes originals. See the handoff's
+existing MCP-limit configuration for base64/response capacity. Actual Dify conversion
+of these blocks into native files remains checkpoint 12 evidence.
 `booklet_retain_original_v2` accepts `{callId,outputKey,nativeFile,fence}` and returns
 `{asset:{id,sha256,bytes,mime,width,height,...},fence}`. It matches the exact observed
 Generate output, refreshes the mutation fence with a replay receipt, and uses the existing
@@ -452,7 +457,7 @@ settlement. The native transport is locally tested with deterministic readback o
 and an advanced fence, and reuses matching entries without changing their revision
 pointers. Purchased capacity and one responsibility per subject are enforced. Changed
 identity metadata/reparenting and invalid batches fail without partial index writes.
-`booklet_save_revision_v2` currently publishes retained creative-text proposals. Its
+`booklet_save_revision_v2` publishes retained text proposals or selected observed originals. Its
 arguments are `{artifactId,content,sources,assets,evidence,mutationKey,fence}`. Prefer
 `content:{callId,itemId,proposalIndex}` to select an exact retained successful proposal;
 no creative text is copied through the model. Typed content or `{transferId}` containing
@@ -461,7 +466,11 @@ The server derives producer/Run provenance, checks the current prepaid Manager, 
 target scope, evidence, locks and product limits, then atomically advances the pointer.
 Replies contain actual revision/hash/fence identities. Cast/location roster deltas merge
 structurally while preserving the other kind and their previous-roster source lineage.
-Images, changed-source revalidation and final acceptance are not enabled by this path.
+For images supply `content:{kind:"reference"|"page-image",asset:{assetId,sha256}}`
+and exactly that single identity in `assets`, using the originating Generate evidence
+and sources. Each original/artifact publishes once; other returned originals can have
+separate candidate revisions without another generation. Changed-source revalidation
+and final acceptance are not enabled by this path.
 
 The `booklets` server extension registers these private v1 tools on the existing
 `/api/mcp`. One service credential with `extension:booklets:read` and

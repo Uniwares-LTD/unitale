@@ -92,6 +92,8 @@ and the adapter; the table does not require unrelated suites for every task.
   Registration records intent without dispatching providers.
   `media.ts` reuses the original byte store for v2 observed Generate outputs, selected
   by a server-only ownership option; `mcp-tools-v2.ts` matches native files before download.
+  The same gateway returns ordered original MCP image blocks separately from JSON;
+  `repository-v2.ts` publishes one selected original/artifact effect per observed output.
   `observations-v2.ts` retains matching child envelopes through the existing native
   worker hook; raw creative bodies stay separate from redacted diagnostic traces.
   V2 transfer reuses `mcp-transfers.ts` with server-selected versioned ownership.

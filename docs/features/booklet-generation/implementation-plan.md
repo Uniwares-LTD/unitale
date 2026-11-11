@@ -770,6 +770,34 @@ slice review (cold-review fallback) found no blocking issue; checkpoint-wide rev
 pairs remain 09.7. The lifecycle fixture needed forced Mongo shutdown; the subsequent
 process inventory found no remaining mongod process.
 
+09.3 original-input/publication slice: `sources` now returns ordered verified original
+MCP image blocks with separate identity metadata, using the imported native image seam.
+It rejects changed/foreign/derivative bytes and insufficient response capacity. The
+demonstrated 16 MiB MCP tool ceiling requires an explicit 8 MiB aggregate/16-original
+carrier bound; existing admin limits are documented for base64 expansion, without
+changing shared defaults, live configuration or product counts. Creative/visual work
+registration verifies owned original metadata; the real source read verifies bytes.
+Actual native Manager/Executor fixtures bind synthetic native handles for edit input.
+Image publication reuses revision/asset storage and guards each selected observed
+original, sources, evidence, funding and locks. Each original/artifact has one saved
+effect, allowing separate candidate revisions for different outputs from one Generate.
+The Manager prompt now names that exact image-content boundary. The visual-review
+fixture reads these saved revisions and actual original pixels, then retains/records
+exact native coverage. No schema, collection, index or model relationship changes;
+the model guide records why its JSON example and both diagrams remain valid.
+All review modes are dispatchable, but whole-book/correction integration and finding
+lineage/revalidation still require their 09.3 exit evidence. Target Dify conversion
+remains an accepted unverified capability; no plugin/provider work is added.
+Slice evidence: 22 MCP, 30 repository and 42 compatibility tests pass, including
+old-candidate replay without pointer rollback. Build, post-build typecheck, scoped
+lint, model/docs/i18n/skills/environment checks and the independent 13-path hash audit
+pass. A separate same-agent read-only slice review (cold-review fallback) found no
+blocking issue. The repository registration fixture now supplies owned original
+metadata; full byte integrity is proved separately by the MCP fixture. The native
+Reviewer fixture uses an explicit local execution flag without changing candidate
+gates. No remaining mongod process was observed. Task 09.3 stays In progress;
+checkpoint-wide final review pairs remain 09.7 work.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

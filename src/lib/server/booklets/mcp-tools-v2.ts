@@ -9,7 +9,7 @@ import { authorizedRun } from "../runs/capabilities";
 import { fingerprint } from "../foundation/canonical";
 import { bookletContext, bookletConflict, bookletMissing } from "./context";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { registerBookletWorkV2 } from "./work-v2";
+import { registerBookletWorkV2, bookletReferencesV2Schema } from "./work-v2";
 import {
   workRegistrationV2Schema,
   artifactKindV2Schema,
@@ -497,7 +497,7 @@ export function createBookletMcpToolsV2(
     ),
     tool(
       "save_revision",
-      "Publish an exact retained creative proposal with trusted producer evidence, current funding and locks. Prefer content {callId,itemId,proposalIndex} to avoid copying model text; typed JSON and complete {transferId} payloads are also supported.",
+      "Publish an exact retained text proposal or selected observed original with producer evidence, current funding and locks. Prefer content {callId,itemId,proposalIndex} for text; image content is {kind,asset:{assetId,sha256}} with the same single attached asset.",
       async (raw, s) => {
         const request = z
           .strictObject({
@@ -720,14 +720,26 @@ export function createBookletMcpToolsV2(
         });
       },
     ),
-    tool(
-      "sources",
-      "Verify owned immutable text sources. Original-image binding remains unavailable until image safeguards are implemented.",
-      async (raw, s) => {
+    {
+      name: "booklet_sources_v2",
+      description: "Verify owned immutable sources and return exact original pixels in requested order. Never return derivatives or resize originals.",
+      permission: "extension:booklets:read",
+      write: false,
+      runContext: true,
+      input,
+      // Strip the internal binary carrier before JSON output. The existing MCP
+      // handler projects it separately as ordered image content blocks.
+      output: z.object({ result: z.object({ references: bookletReferencesV2Schema }) }),
+      images: (result) => z.array(z.object({ data: z.instanceof(Uint8Array), mimeType: z.string() })).parse(result.images),
+      async run(raw, context) {
+        const value = input.parse(raw);
+        const s = await scope(value.runContext, "booklet_sources_v2", context);
+        const payload: unknown = JSON.parse(value.request);
+        if (JSON.stringify(payload).includes(s.secret)) throw bookletConflict("Private Run context cannot enter source requests.");
         const request = z.strictObject({
           sources: z.array(bookletSourceV2Schema),
-          references: z.array(z.json()).max(0),
-        }).parse(raw);
+          references: bookletReferencesV2Schema,
+        }).parse(payload);
         const records = await s.db.collection<RevisionV2>("bookletRevisions").find({
           ownerId: s.actor.uid,
           productionId: s.production._id,
@@ -737,10 +749,27 @@ export function createBookletMcpToolsV2(
         for (const source of request.sources)
           if (!records.some((row) => row._id === source.revisionId && row.artifactId === source.artifactId && row.contentHash === source.contentHash))
             throw bookletConflict("Source identity differs from its owned immutable revision.");
-        return { references: [] };
+        const media = bookletMedia(s.db, s.actor, { documentVersion: 2, maxBytes: 8 * 1024 * 1024 });
+        const images: { data: Uint8Array; mimeType: string }[] = [];
+        const references: { assetId: string; sha256: string; bytes: number }[] = [];
+        for (const ref of request.references) {
+          s.signal.throwIfAborted();
+          if (!await s.db.collection("bookletAssets").findOne({
+            _id: ref.assetId as never, ownerId: s.actor.uid, originalAssetId: null, state: "ready",
+            sha256: ref.sha256, bytes: ref.bytes,
+          }, { projection: { _id: 1 } }))
+            throw bookletConflict("Source must match its exact retained original identity.");
+          const original = await media.read(s.production._id, ref.assetId);
+          if (original.asset.originalAssetId || original.asset.sha256 !== ref.sha256 || original.asset.bytes !== ref.bytes)
+            throw bookletConflict("Source must match its exact retained original identity.");
+          references.push({ assetId: ref.assetId, sha256: ref.sha256, bytes: ref.bytes });
+          images.push({ data: original.bytes, mimeType: original.asset.mime });
+        }
+        s.signal.throwIfAborted();
+        if (JSON.stringify(references).includes(s.secret)) throw bookletConflict("Private Run context cannot be returned.");
+        return { result: { references }, images };
       },
-      false,
-    ),
+    },
     tool(
       "begin_work",
       "Register child intent or atomically authorize configured text/image work or unpaid preparation, checking ownership, funding, locks and usage.",
@@ -763,12 +792,12 @@ export function createBookletMcpToolsV2(
           await readBookletSuiteV2(s.db, s.production, s.job);
           const repo = bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true });
           const work = await repo.getWork(s.production._id, request.callId);
-          const payload = z.object({ references: z.array(z.json()).max(0) }).safeParse(work.requestPayload);
+          const payload = z.object({ references: bookletReferencesV2Schema }).safeParse(work.requestPayload);
           const prepare = work.service === "image-executor" && work.operation === "prepare" && work.category === "nonPaid";
           const generate = work.service === "image-executor" && work.operation === "generate" && work.category === "paidImage";
           if ((!prepare && !generate && work.category !== "paidLlm") || work.service === "manager" || (work.service === "image-executor" && !prepare && !generate) ||
-            (work.service === "quality-reviewer" && !["text", "specification", "image_request"].includes(work.operation)) || !payload.success)
-            throw bookletConflict("Only registered text/image work or unpaid preparation without image references is available for dispatch.");
+            (work.service === "quality-reviewer" && !["text", "specification", "image_request", "image", "whole_book", "correction"].includes(work.operation)) || !payload.success)
+            throw bookletConflict("Only registered specialist work with bounded original references is available for dispatch.");
           const m = await mutation(s, "dispatchWork", request, request.fence);
           const receipt = await repo.dispatchWork(s.production._id, {
             ...m, callId: request.callId, requestHash: request.requestHash,

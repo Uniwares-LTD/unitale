@@ -164,7 +164,11 @@ retention outbound. Verify actual bytes, hash, MIME, dimensions, order and expir
 stateful file plugin or child-to-app callback. Do not reconstruct large image bytes
 in Code nodes or substitute thumbnails. Pending native-file mapping blocks activation.
 Candidate JSON carriers are bounded at 256 KiB and originals at 8 MiB pending measured
-target capacities; fail explicitly without truncation or silently limiting the product.
+target capacities. The local MCP image carrier also bounds a whole ordered reference
+transfer to 8 MiB (at most 16 originals), allowing its base64 representation under the
+existing 16 MiB tool-result ceiling. This is a transport allowance, not a product-count
+limit: repartition when possible or report capacity explicitly, without truncation,
+dropping required references or resizing originals. Target capacities remain unverified.
 
 ### Operation lifecycle and error handling
 

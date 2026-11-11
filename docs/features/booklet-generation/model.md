@@ -25,8 +25,11 @@ is SHA-256 of canonical content, matching the Manager source contract; v1 keeps 
 hashVersion-1 wrapper. Active creative-text writes now require a current owned prepaid
 Manager and a unique retained native proposal, exact evidence/sources and matching
 funding. Stage locks and purchased page/canvas/panel limits remain server enforced.
-The same producer/artifact publishes once, including across continuation. Image writes
-and acceptance/revalidation wiring remain checkpoint 09 work.
+The same text producer/artifact publishes once, including across continuation.
+Image writes now match a selected original from observed Generate work, using its
+exact sources, funding and evidence. Each original/artifact publishes once; several
+returned originals may have distinct candidate revisions without another generation.
+Acceptance/revalidation wiring remains checkpoint 09 work.
 
 V2 image registration/dispatch now consumes the exact retained preparation, preserving
 its call ID/hash, target and source identities. Image eligibility uses its own configured
@@ -40,8 +43,12 @@ callId and sourceRevisions.sha256 stores each source contentHash. No collection,
 field is added. The JSON example records this interpretation and both diagrams show
 the v2 work relationship. The MCP retention gateway matches the exact observed native
 file and uses the existing restricted downloader; fixture HTTP responses are synthetic.
-MCP image delivery to specialist inputs and image publication remain 09.3 work;
-this is local service verification, not provider execution.
+MCP source delivery now returns ordered verified original pixels separately from JSON
+identity metadata; the local fixture binds synthetic native handles to the actual
+Manager/Reviewer Code nodes and records exact visual coverage of a published image.
+Actual Dify file conversion is unverified. This uses existing work/revision/asset fields
+and relationships; the JSON example and both Mermaid versions remain structurally valid.
+This is local service verification, not provider execution.
 
 Planner cast/location roster proposals are deltas for their respective subject kinds.
 The revision writer preserves the other kind's current IDs and records the preceding

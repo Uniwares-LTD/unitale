@@ -54,6 +54,16 @@ const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const ids = z
   .array(id)
   .refine((values) => new Set(values).size === values.length);
+// Actual child/source-tool boundary. Bound the whole native-image transfer, not
+// product size; Manager must repartition requests that exceed this carrier.
+export const bookletReferencesV2Schema = z.array(z.strictObject({
+  assetId: id,
+  sha256: hash,
+  bytes: z.number().int().positive().max(8 * 1024 * 1024),
+  nativeFileId: id.optional(),
+  url: z.string().max(4096).optional(),
+})).max(16).refine((refs) => refs.reduce((sum, ref) => sum + ref.bytes, 0) <= 8 * 1024 * 1024,
+  "Original transfer exceeds 8 MiB; repartition without resizing.");
 const childRequest = z.strictObject({
   contractVersion: z.literal(2),
   invocationId: id,
@@ -84,19 +94,7 @@ const childRequest = z.strictObject({
   sources: z.array(
     bookletSourceV2Schema.extend({ content: bookletContentV2Schema }),
   ),
-  references: z.array(
-    z.strictObject({
-      assetId: id,
-      sha256: hash,
-      bytes: z
-        .number()
-        .int()
-        .positive()
-        .max(8 * 1024 * 1024),
-      nativeFileId: id.optional(),
-      url: z.string().max(4096).optional(),
-    }),
-  ),
+  references: bookletReferencesV2Schema,
   constraints: z.record(z.string(), z.json()),
 });
 const registration = z.strictObject({
@@ -161,8 +159,8 @@ export async function registerBookletWorkV2(
     throw bookletConflict("Unsupported child operation.");
   const responsibilities = supported[request.operation];
   if (prepare) {
-    if (request.items.length !== 1 || value.targets.length !== 1 || request.references.length)
-      throw bookletConflict("Prepare requires one image target; original references are not yet available.");
+    if (request.items.length !== 1 || value.targets.length !== 1)
+      throw bookletConflict("Prepare requires one image target.");
     const data = request.items[0].input;
     const specification = bookletContentV2Schema.parse(data.specification);
     const style = bookletContentV2Schema.parse(data.style);
@@ -238,8 +236,8 @@ export async function registerBookletWorkV2(
     return prepared;
   }
   if (generate) {
-    if (request.items.length !== 1 || value.targets.length !== 1 || request.references.length)
-      throw bookletConflict("Generate requires one image target; original references are not yet available.");
+    if (request.items.length !== 1 || value.targets.length !== 1)
+      throw bookletConflict("Generate requires one image target.");
     const prepared = await requirePreparation(request.items[0].input.prepared, value.targets);
     if (prepared.callId === request.callId)
       throw bookletConflict("Generate requires a distinct call identity from Prepare.");
@@ -249,27 +247,27 @@ export async function registerBookletWorkV2(
   const reviewScopes = review
     ? request.items.map((item) => reviewInputV2Schema.parse(item.input))
     : [];
+  for (const ref of request.references) {
+    const original = await db.collection("bookletAssets").findOne({
+      _id: ref.assetId as never,
+      ownerId: actor.uid,
+      productionId: p._id,
+      state: "ready",
+      originalAssetId: null,
+      sha256: ref.sha256,
+      bytes: ref.bytes,
+    });
+    if (!original)
+      throw bookletConflict(
+        "Original identity differs from owned bytes.",
+      );
+  }
   if (review) {
     const requested = [
       ...new Set(reviewScopes.flatMap((scope) => scope.targetIds)),
     ].sort();
     if (fingerprint(requested) !== fingerprint([...value.targets].sort()))
       throw bookletConflict("Review scope differs from registered targets.");
-    for (const ref of request.references) {
-      const original = await db.collection("bookletAssets").findOne({
-        _id: ref.assetId as never,
-        ownerId: actor.uid,
-        productionId: p._id,
-        state: "ready",
-        originalAssetId: null,
-        sha256: ref.sha256,
-        bytes: ref.bytes,
-      });
-      if (!original)
-        throw bookletConflict(
-          "Review original identity differs from owned bytes.",
-        );
-    }
     for (const scope of reviewScopes) {
       if (
         scope.referencePositions.some(

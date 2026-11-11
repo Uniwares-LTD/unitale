@@ -53,7 +53,7 @@ import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
 import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
-import { bookletMedia } from "../../src/lib/server/booklets/media";
+import { bookletMedia, type BookletAsset } from "../../src/lib/server/booklets/media";
 import { persistAiEvent, type AiJob } from "../../src/lib/server/ai/jobs";
 import { createDifyWorkflow } from "../../src/lib/server/ai/dify";
 import { parseDifyConfig } from "../../src/lib/config/dify";
@@ -1073,6 +1073,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           name: string,
           request: unknown,
           token = v2Token,
+          limits = mcpLimitsSchema.parse({ requestBytes: 2 * 1024 * 1024, toolResultBytes: 256 * 1024, responseBytes: 1024 * 1024 }),
         ) => {
           const response = await rawCall("tools/call", {
             name: "booklet_" + name + "_v2",
@@ -1081,7 +1082,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
               request:
                 typeof request === "string" ? request : JSON.stringify(request),
             },
-          }, serviceToken, mcpLimitsSchema.parse({ requestBytes: 2 * 1024 * 1024, toolResultBytes: 256 * 1024, responseBytes: 1024 * 1024 }));
+          }, serviceToken, limits);
           assert.equal(response.status, 200);
           return (await response.json()).result;
         };
@@ -1438,7 +1439,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assets: [],
         });
         await db.collection("bookletRevisions").insertOne(revision as never);
-        await t.test("text source binding rejects foreign or changed tuples and never drops image references", async () => {
+        await t.test("source binding rejects foreign or changed tuples and malformed original references", async () => {
           const source = { artifactId: revision.artifactId, revisionId: revision._id, contentHash: revision.contentHash };
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
           assert.deepEqual(await successful("sources", { sources: [source], references: [] }), { references: [] });
@@ -2192,6 +2193,126 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           } finally {
             await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { cancelRequested: false } });
           }
+        });
+        await t.test("original source delivery preserves ordered bytes and binds visual child inputs without binary JSON", async () => {
+          const media = bookletMedia(db, { uid: "owner", authTime: 1 }, { documentVersion: 2, store: null });
+          const assets = await db.collection<BookletAsset>("bookletAssets").find({ productionId: production._id,
+            operationId: "generate-action", originalAssetId: null }).sort({ outputKey: -1 }).toArray();
+          assert.equal(assets.length, 2);
+          const references = assets.map((asset) => ({ assetId: asset._id, sha256: asset.sha256, bytes: asset.bytes }));
+          const request = { sources: [], references };
+          const response = await invoke("sources", request);
+          assert.notEqual(response.isError, true, JSON.stringify(response));
+          assert.deepEqual(response.structuredContent, { result: { references } });
+          assert.ok(!JSON.stringify(response.structuredContent).includes("data"));
+          const images = response.content.filter((block: { type: string }) => block.type === "image");
+          assert.equal(images.length, 2);
+          for (const [i, image] of images.entries()) {
+            const original = await media.read(production._id, references[i].assetId);
+            assert.deepEqual(Buffer.from(image.data, "base64"), original.bytes);
+            assert.equal(image.mimeType, original.asset.mime);
+          }
+          const tooSmall = mcpLimitsSchema.parse({ requestBytes: 2097152, toolResultBytes: 1024, responseBytes: 4096 });
+          assert.equal((await invoke("sources", request, v2Token, tooSmall)).isError, true);
+          for (const change of [{ sha256: "f".repeat(64) }, { bytes: references[0].bytes + 1 }, { assetId: "foreign" }])
+            assert.equal((await invoke("sources", { ...request, references: [{ ...references[0], ...change }] })).isError, true);
+          assert.equal((await invoke("sources", { ...request, references: references.map((ref) => ({ ...ref, bytes: 5 * 1024 * 1024 })) })).isError, true);
+          const derivative = await media.derivative(production._id, references[0].assetId, 512);
+          assert.equal((await invoke("sources", { sources: [], references: [{ assetId: derivative.id,
+            sha256: derivative.sha256, bytes: derivative.bytes }] })).isError, true);
+
+          const specSource = await db.collection("bookletRevisions").findOne({ _id: "prepare-source-0" as never });
+          const styleSource = await db.collection("bookletRevisions").findOne({ _id: "prepare-source-1" as never });
+          const child = { contractVersion: 2, invocationId: "prepare-edit", callId: "prepare-edit", service: "image-executor",
+            operation: "prepare", intent: "create", items: [{ itemId: "prepare-edit-item", targetId: "sample-prepare", input: {
+              imageKind: "style-sample", specification: specSource!.content, style: styleSource!.content,
+              settings: { mode: "edit", model: "gpt-image-2.5-sunburst", count: 1, canvas: { width: 1024, height: 1024 },
+                quality: "high", background: "opaque", format: "png" },
+            } }], sources: [specSource!, styleSource!].map((source) => ({ artifactId: source.artifactId,
+              revisionId: source._id, contentHash: source.contentHash, content: source.content })), references, constraints: {} };
+          const current = await successful("context", {});
+          const registered = await successful("begin_work", { action: "register", childRequest: child,
+            requestHash: fingerprint(child), targets: ["sample-output"], fence: current.fence });
+          const files = references.map(() => ({ related_id: randomUUID() })); // Synthetic target conversion; no Dify execution.
+          const bound = JSON.parse(runNativeCode("manager", "bind-originals", { raw: response.structuredContent,
+            request: JSON.stringify(child), files }).request);
+          assert.deepEqual(bound.references.map((ref: { nativeFileId: string }) => ref.nativeFileId), files.map((file) => file.related_id));
+          const prepared = JSON.parse(runNativeCode("image-executor", "validate", {
+            request: JSON.stringify(bound), references: files,
+          }).result).items[0].prepared;
+          assert.deepEqual(prepared.references, references);
+          assert.equal(prepared.settings.mode, "edit");
+          assert.equal((await successful("begin_work", { action: "dispatch", callId: child.callId,
+            requestHash: fingerprint(child), fence: registered.fence })).status, "dispatching");
+        });
+        await t.test("image outputs publish once per original and visual review binds the saved image to actual pixels", async () => {
+          const assets = await db.collection<BookletAsset>("bookletAssets").find({ productionId: production._id,
+            operationId: "generate-action", originalAssetId: null }).sort({ outputKey: 1 }).toArray();
+          const producer = await db.collection("bookletWork").findOne({ productionId: production._id, callId: "generate-action" });
+          const current = await successful("context", {});
+          const request = { artifactId: "sample-output", content: { kind: "reference", asset: {
+            assetId: assets[0]._id, sha256: assets[0].sha256,
+          } }, assets: [{ assetId: assets[0]._id, sha256: assets[0].sha256 }], sources: producer!.sources,
+            evidence: producer!.evidenceIds, mutationKey: "image-output-zero", fence: current.fence };
+          assert.equal((await invoke("save_revision", { ...request, content: { ...request.content, asset: {
+            ...request.content.asset, sha256: "f".repeat(64),
+          } } })).isError, true);
+          const first = await successful("save_revision", request);
+          assert.deepEqual(await successful("save_revision", request), first);
+          const other = { ...request, content: { kind: "reference", asset: { assetId: assets[1]._id, sha256: assets[1].sha256 } },
+            assets: [{ assetId: assets[1]._id, sha256: assets[1].sha256 }], mutationKey: "image-output-one", fence: first.fence };
+          const second = await successful("save_revision", other);
+          assert.notEqual(first.revisionId, second.revisionId);
+          assert.equal((await successful("save_revision", { ...other, mutationKey: "same-output-new-key", fence: second.fence })).revisionId, second.revisionId);
+          const replayed = await successful("save_revision", { ...request, mutationKey: "old-output-new-key",
+            fence: (await successful("context", {})).fence });
+          assert.equal(replayed.revisionId, first.revisionId);
+          const pointers = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          assert.equal(pointers!.subjects.find((subject: { id: string }) => subject.id === "sample-prepare")
+            .artifacts.find((artifact: { id: string }) => artifact.id === "sample-output").currentRevisionId, second.revisionId);
+          assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId: production._id,
+            artifactId: "sample-output", "provenance.operationId": producer!.callId }), 2);
+          assert.ok((await db.collection<BookletAsset>("bookletAssets").findOne({ _id: assets[1]._id }))!.attachments.includes(second.revisionId));
+          const selected = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions")
+            .findOne({ _id: second.revisionId });
+          assert.deepEqual(selected!.content, other.content);
+          const references = [assets[1], assets[0]].map((asset) => ({ assetId: asset._id, sha256: asset.sha256, bytes: asset.bytes }));
+          const child = { contractVersion: 2, invocationId: "visual-review", callId: "visual-review", service: "quality-reviewer",
+            operation: "image", intent: "create", items: [{ itemId: "visual-item", input: {
+              targetIds: ["sample-output"], targetHash: selected!.contentHash, referencePositions: [0],
+            } }], sources: [{ artifactId: selected!.artifactId, revisionId: selected!._id,
+              contentHash: selected!.contentHash, content: selected!.content }], references, constraints: {} };
+          const review = { action: "register", childRequest: child, requestHash: fingerprint(child), targets: ["sample-output"],
+            fence: (await successful("context", {})).fence };
+          const omitted = { ...child, items: [{ ...child.items[0], input: { ...child.items[0].input, referencePositions: [1] } }] };
+          assert.equal((await invoke("begin_work", { ...review, childRequest: omitted, requestHash: fingerprint(omitted) })).isError, true);
+          const registered = await successful("begin_work", review);
+          const response = await invoke("sources", { sources: child.sources.map(({ artifactId, revisionId, contentHash }) =>
+            ({ artifactId, revisionId, contentHash })), references });
+          assert.notEqual(response.isError, true);
+          const files = references.map(() => ({ related_id: randomUUID() })); // Target conversion remains unverified.
+          const bound = JSON.parse(runNativeCode("manager", "bind-originals", { raw: response.structuredContent,
+            request: JSON.stringify(child), files }).request);
+          runNativeCode("quality-reviewer", "validate", { request: JSON.stringify(bound), references: files, execution_ready: "true" });
+          const dispatched = await successful("begin_work", { action: "dispatch", callId: child.callId,
+            requestHash: review.requestHash, fence: registered.fence });
+          const result = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(bound), response: {
+            items: [{ itemId: "visual-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "sample-output", content: {
+              coverage: { targetIds: ["sample-output"], referencePositions: [0] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
+          const session = db.client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: parent!.runId!, id: "visual-execution", nodeId: "child-quality-reviewer", nodeType: "tool",
+            status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+            outputs: { json: [{ result: JSON.stringify(result) }] }, outputsTruncated: false, error: null, executionMetadata: null,
+          }, session)); } finally { await session.endSession(); }
+          const assessment = await successful("record_assessment", { assessment: result.items[0].proposals[0].content,
+            executionLocator: { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "visual-execution" }, fence: dispatched.fence });
+          assert.equal(assessment.complete, true);
+          const saved = await db.collection("bookletAssessments").findOne({ _id: assessment.assessmentId as never });
+          assert.deepEqual(saved!.assessment.coverage.assetIds, [assets[1]._id]);
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });

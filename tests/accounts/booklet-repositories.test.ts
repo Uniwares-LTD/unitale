@@ -481,6 +481,12 @@ test("booklet repositories preserve embedded identities and transactional bounda
       changed.sources[0].content = { kind: "manuscript", units: [{ id: "altered", texts: [] }] };
       await assert.rejects(invoke(firstMutation, payload(changed)), /source content/);
       await assert.rejects(invoke(firstMutation, { ...payload(request), childRequest: { ...request, constraints: { authorization: "private" } } }), /Private bindings/);
+      // Registration checks owned retained metadata; the MCP suite separately
+      // verifies complete original bytes and native image delivery.
+      await f.db.collection("bookletAssets").insertOne({ _id: "original-1" as never,
+        ownerId: actor.uid, productionId: p._id, originalAssetId: null, state: "ready",
+        sha256: "a".repeat(64), bytes: 100,
+      });
       for (const target of ["book-subject", "book-concept", "missing-target"]) {
         const invalid = structuredClone(request);
         invalid.items[0].targetId = target;

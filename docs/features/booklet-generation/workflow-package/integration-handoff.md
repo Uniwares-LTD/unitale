@@ -207,7 +207,7 @@ it cannot masquerade as another technical attempt. requestHash still binds the e
 per-attempt envelope as the native graph expects. Manual retry authorization, runtime
 observation, restricted reconciliation and financial checks remain 09 obligations.
 
-The local `registerBookletCreativeWorkV2` service now validates the actual creative-text
+The local `registerBookletWorkV2` service validates the actual creative-text
 child envelope for Planner, Manuscript, Art Director and Page Composer, checks exact
 source content and the declared hash, and derives normalized retry identity/category.
 Registration `targets` must identify the stored artifact responsibilities for the
@@ -232,17 +232,20 @@ carrier and explicit `result` wrapper. They require a current private native Man
 capability and owned prepaid workflow/job binding. Checkpoints accept the initial fence
 zero; subsequent atomic writes return the advanced fence. Exact retries reuse existing
 receipts, including after later mutations. Dispatch's configured suite must match the
-accepted Manager publication. It accepts registered creative text, text/specification/
-image-request review, image generation and unpaid image preparation, with no image references yet.
+accepted Manager publication. It accepts registered creative text, all six review modes,
+image generation and unpaid preparation with bounded owned original references.
 Preparation uses the existing work category `nonPaid`; native observations retain its
 exact result before Manager clears pending intent. Preflight registration requires that
 exact retained prepared object and its original target/source/reference identities.
 Generation consumes that same retained preparation and uses `paidImage` accounting;
 context's `canDispatchImage` reports its separate configured call eligibility, while
 `canDispatch` remains the text/reasoning eligibility. Manager owns exact preflight policy.
-Visual review modes and runtime recovery remain pending.
-`sources` verifies exact owned immutable source tuples and rejects nonempty reference
-lists until the image bridge exists. No workflow is activated by these handlers.
+Visual image review is locally verified; whole-book/correction lineage and runtime
+recovery remain in the remaining tasks. `sources` verifies exact owned immutable source
+tuples and returns ordered original bytes as MCP image blocks with identity metadata.
+It rejects derivatives, changed identities and foreign assets without partial delivery.
+The JSON result excludes binary carriers. Actual target conversion to Dify native files
+remains checkpoint 12 evidence. No workflow is activated by these handlers.
 
 `retain_original` matches the exact native file/outputKey in retained Generate work,
 then reuses the existing restricted Dify downloader and byte store. Its 8 MiB download
@@ -268,10 +271,14 @@ typed-content and complete-transfer inputs remain available. The app checks the
 selected producer, sources, current Manager/funding and locks, not creative merit.
 Roster deltas combine only structural subject IDs; their previous roster is retained
 as a source. The original child envelope is unchanged. No new fields, collection,
-framework or provider call. Native Manager checkpoint/source hydration still needs
-integration so large bodies are referenced throughout the journey; this API alone
-does not prove that complete path. Image and changed-source revalidation paths remain
-pending until their own trusted guards are implemented.
+framework or provider call. Actual native Code/MCP fixtures reference retained work
+through checkpoint/source hydration for large text. Image publication now takes
+`content:{kind:"reference"|"page-image",asset:{assetId,sha256}}`, with `assets:[the same
+identity]` and the originating Generate work's exact sources/evidence. The repository
+matches its observed output and ready original receipt. Each original/artifact saves
+once; different returned originals may have separate candidate revisions from the same
+Generate. Replays do not change the selected pointer or regenerate. Changed-source
+revalidation remains pending.
 
 The local context handler derives `usage.canDispatch` from known text attempts,
 reported spending and native execution bounds. Dispatch rechecks those facts in its
@@ -316,11 +323,16 @@ cap, separate from the unchanged 64 KiB stored checkpoint cap. This accommodates
 checkpoint plus bounded facts without a merge/partial-state protocol. Complete
 document reads remain available through `checkpointDocument`.
 Configure the existing MCP limits for this integration with `requestBytes` at least
-2097152, `toolResultBytes` at least 262144 and `responseBytes` at least 1048576.
+2097152, `toolResultBytes` 16777216 and `responseBytes` 33554432.
 The request allowance carries the accepted 256 KiB child envelope through JSON-string
-and RPC escaping; the response allowances carry wrapped context. The large-text
-Reviewer fixture verifies this request path. Shared defaults remain unchanged. The local v2 transport fixture uses these
-explicit settings; the default-sized v1 transport tests remain separate.
+and RPC escaping. The image response allowances carry an 8 MiB original transfer after
+base64 expansion, with room for metadata and the MCP wrapper. Requests have at most
+16 originals and 8 MiB aggregate bytes. The demonstrated existing tool-result ceiling
+cannot carry sixteen 8 MiB originals, so this is an explicit initial transport capacity,
+not a product limit; repartition or report capacity without dropping/altering originals.
+The large-text Reviewer fixture verifies the request path. Shared defaults and live
+configuration remain unchanged. Small local PNG fixtures use lower explicit response
+limits and also prove that insufficient limits fail. V1 default-sized tests stay separate.
 At checkpoint 12, verify that the target Dify Code/Loop string and tool-response
 limits support the 128 KiB context envelope. Configure existing supported limits
 under scope C if needed; offline Python fixtures do not prove target host limits.
@@ -414,8 +426,9 @@ Durably save partial outputs and original receipts before selecting a manifest.
 
 Keep leases short. Gateway-local mutations check the expected production version and
 existing fence, advance the fence and leave no lease in the same database transaction.
-The creative-text registration service now uses this atomic repository mode; other
-facades remain pending. No transaction or lease spans model/tool/Human Input waits.
+Registration, guarded dispatch, revision publication and assessment writes use this
+atomic repository mode; later facades remain pending. No transaction or lease spans
+model/tool/Human Input waits.
 Re-read current context for a valid mutation fence after external waits. On a version
 race stop and recover from authoritative facts.
 The pre-action checkpoint receipt must return its authoritative `fence` alongside

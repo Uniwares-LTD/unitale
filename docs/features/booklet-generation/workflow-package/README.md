@@ -157,21 +157,24 @@ result retention. Generate consumes the exact retained preparation under a disti
 call ID. The original-retention gateway matches observed files, downloads through the
 existing restricted helper and preserves independently keyed original bytes. Fixtures
 prove partial output, byte/canvas/format checks, cancellation and storage replay without
-regeneration. Specialist original-input delivery, visual reviews, image publication and
-the remaining 09.3 safeguards are still pending.
+regeneration. Originals now travel as ordered MCP image blocks, outside JSON, and the
+native Manager/Reviewer fixture verifies a saved image's exact original coverage.
+Image publication saves each selected original once, allowing separate returned
+candidates without another generation. Whole-book/correction lineage and revalidation
+remain 09.3 work; actual Dify image-block conversion remains unverified.
 
 Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
-tests), plus 20 MCP and 17 lifecycle/media tests; the previous repository slice passed
-30 tests. Build, typecheck, scoped lint, docs/i18n/skills checks and an
+tests), plus 22 MCP and 30 repository tests (the previous media slice passed 17).
+Build, typecheck, scoped lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
 found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
 remains imported. Task 09.2 is locally Verified; 09.3 is In progress.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`e0f4759df2c5c1175cccb0365198a1740ccd5f74702841ba866ec8956fd330fc`.
+`77a47271c47ba67ab5394ad707678bfee640aaddd2e3b47668cfe8cb484a9c00`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-242,343 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+242,810 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

@@ -1340,6 +1340,7 @@ export function bookletRepositoryV2(
             throw bookletConflict("Revision kind mismatch.");
           let content = value.content;
           let sources = value.sources;
+          const image = content.kind === "reference" || content.kind === "page-image";
           if (p.lifecycleState !== "draft") {
             await activeManager(
               p,
@@ -1359,13 +1360,14 @@ export function bookletRepositoryV2(
             const observed = raw ? workV2Schema.parse(raw) : null;
             if (
               !observed?.resultObservation ||
-              observed.category !== "paidLlm" ||
-              ![
-                "story-planner",
-                "manuscript",
-                "art-director",
-                "page-composer",
-              ].includes(observed.service) ||
+              (image
+                ? observed.category !== "paidImage" || observed.service !== "image-executor" || observed.operation !== "generate"
+                : observed.category !== "paidLlm" || ![
+                    "story-planner",
+                    "manuscript",
+                    "art-director",
+                    "page-composer",
+                  ].includes(observed.service)) ||
               observed.correctionRootId !==
                 correctionRoot(p, observed, p.revisionChargeId ?? "platform") ||
               !value.provenance.evidenceIds.length ||
@@ -1373,32 +1375,53 @@ export function bookletRepositoryV2(
                 (id) => !observed.evidenceIds.includes(id),
               ) ||
               fingerprint(value.sources) !== fingerprint(observed.sources) ||
-              value.assets.length
+              (!image && value.assets.length)
             )
               throw bookletConflict(
                 "Revision requires matching retained creative work and funding.",
               );
-            const envelope = z
-              .object({
-                items: z.array(
-                  z.object({
-                    status: z.string(),
-                    proposals: z
-                      .array(
-                        z.object({
-                          subjectId: id,
-                          kind: artifactKindV2Schema,
-                          content: bookletContentV2Schema,
-                        }),
-                      )
-                      .default([]),
-                  }),
-                ),
-              })
-              .parse(observed.resultPayload);
-            const proposals = envelope.items
-              .filter((item) => item.status === "succeeded")
-              .flatMap((item) => item.proposals);
+            let proposals: {
+              subjectId: string;
+              kind: z.infer<typeof artifactKindV2Schema>;
+              content: z.infer<typeof bookletContentV2Schema>;
+            }[];
+            if (content.kind === "reference" || content.kind === "page-image") {
+              if (value.assets.length !== 1 || fingerprint(content) !== fingerprint({ kind: content.kind, asset: value.assets[0] }))
+                throw bookletConflict("Image revision requires exactly its selected original identity.");
+              const original = await db.collection<BookletAsset>("bookletAssets").findOne({
+                _id: content.asset.assetId, ownerId: actor.uid, productionId: p._id, operationId: observed.callId,
+                sha256: content.asset.sha256, originalAssetId: null, state: "ready",
+              }, { session });
+              const result = z.object({ items: z.array(z.object({ outputs: z.array(z.object({ outputKey: id })) })).length(1) })
+                .safeParse(observed.resultPayload);
+              if (!original || !result.success || result.data.items[0].outputs.filter((output) => output.outputKey === original.outputKey).length !== 1)
+                throw bookletConflict("Image revision requires a retained original from the observed Generate output.");
+              // The image identity comes from the verified output receipt; the
+              // Image Executor returns files, not a model-authored text proposal.
+              proposals = [{ subjectId: subject.id, kind: content.kind, content }];
+            } else {
+              const envelope = z
+                .object({
+                  items: z.array(
+                    z.object({
+                      status: z.string(),
+                      proposals: z
+                        .array(
+                          z.object({
+                            subjectId: id,
+                            kind: artifactKindV2Schema,
+                            content: bookletContentV2Schema,
+                          }),
+                        )
+                        .default([]),
+                    }),
+                  ),
+                })
+                .parse(observed.resultPayload);
+              proposals = envelope.items
+                .filter((item) => item.status === "succeeded")
+                .flatMap((item) => item.proposals);
+            }
             const matching = proposals.filter(
               (proposal) =>
                 proposal.subjectId === subject.id &&
@@ -1486,6 +1509,7 @@ export function bookletRepositoryV2(
                 productionId: p._id,
                 artifactId: artifact.id,
                 "provenance.operationId": observed.callId,
+                ...(content.kind === "reference" || content.kind === "page-image" ? { "assets.assetId": content.asset.assetId } : {}),
               },
               { session },
             );
