@@ -113,7 +113,11 @@ that exact wrapper before binding; unexpected wrappers fail closed.
 V2 read_document returns decoded, typed JSON sections with completeness/cursor metadata.
 Reuse existing bounded storage reads, but keep byte/base64 transport outside the model:
 Manager must not reconstruct base64 chunks or invent content from an incomplete section.
-The local `booklet_read_document_v2` now reads owned revision, work and assessment DTOs.
+The local `booklet_read_document_v2` now reads owned production, revision, work and assessment DTOs.
+`kind:production` uses the current production ID and exposes only its brief, creative
+configuration, subjects, locks, state/version, manifest pointer and expiry. Order,
+owner, lease and private checkpoint fields are excluded. This uses the same bounded
+section reader and does not introduce another storage representation.
 Small values return `type:value`, `value`, `complete:true`. Larger objects/arrays return
 ordered `sections` with a key and either a complete value or a child cursor; a top-level
 cursor continues that node's page. Large text returns decoded `text` with code-point

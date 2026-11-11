@@ -81,6 +81,23 @@ export type RevisionV2 = z.infer<typeof revisionV2Schema>;
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const ids = z.array(id).refine((v) => new Set(v).size === v.length);
+export const reviewInputV2Schema = z
+  .object({
+    targetHash: hash,
+    targetIds: ids.min(1),
+    referencePositions: z
+      .array(z.number().int().nonnegative().safe())
+      .refine((v) => new Set(v).size === v.length)
+      .default([]),
+    continuityPairs: z.array(z.json()).default([]),
+    pageIds: ids.optional(),
+    prepared: z.json().optional(),
+    before: z.json().optional(),
+    after: z.json().optional(),
+    findings: z.array(z.json()).optional(),
+    visual: z.boolean().optional(),
+  })
+  .catchall(z.json());
 const scope = {
   _id: hash,
   documentVersion: z.literal(2),

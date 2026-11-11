@@ -14,7 +14,7 @@ import { createCreditIndexes, grantCredits } from "../../src/lib/server/store/cr
 import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { bookletContext } from "../../src/lib/server/booklets/context";
-import { registerBookletCreativeWorkV2 } from "../../src/lib/server/booklets/work-v2";
+import { registerBookletWorkV2 } from "../../src/lib/server/booklets/work-v2";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
 import type { AiJob } from "../../src/lib/server/ai/jobs";
 import type { ProviderExecution, ProviderNodeObservation } from "../../src/lib/server/ai/types";
@@ -316,6 +316,115 @@ test("booklet repositories preserve embedded identities and transactional bounda
     };
   }
   try {
+    await t.test("Reviewer registration retains both immutable correction revisions without duplicate sources", async () => {
+      const f = await managerFixture();
+      const after = { kind: "manuscript" as const, units: [{ id: "corrected", texts: [] }] };
+      const saved = await f.write((m) => f.v2.appendRevision("production-v2", {
+        ...m, artifactId: "story-v2", content: after, sources: [f.source], assets: [],
+        provenance: { runId: "draft", operationId: "correction-fixture", evidenceIds: [] },
+      }));
+      const revision = await f.v2.getRevision("production-v2", saved.revisionId!);
+      await createCreditIndexes(f.db);
+      await createConsumptionIndexes(f.db);
+      await grantCredits(f.db, actor.uid, "review-funding", { amount: 500, source: "purchase", reference: "fixture" });
+      const paid = await bookletLifecycleV2(f.db, actor).start("production-v2");
+      const jobId = "review-manager";
+      await f.db.collection("aiJobs").insertOne({
+        _id: jobId as never, uid: actor.uid, authTime: actor.authTime,
+        status: "running", cancelRequested: false, runId: crypto.randomUUID(),
+        consumption: { orderId: "order-v2", workflowId: paid.workflowId },
+        run: { target: { adapter: "booklet", version: "2", kind: "booklet-production", id: "production-v2" } },
+      });
+      await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
+      const repo = bookletRepositoryV2(f.db, actor, undefined, { atomicMutations: true });
+      const p = await repo.getProduction("production-v2");
+      const mutation = { key: "review-registration", holderId: jobId, expectedVersion: p.version, fence: p.fenceCounter };
+      const request = {
+        contractVersion: 2, invocationId: "review-invocation", callId: "review-correction",
+        service: "quality-reviewer", operation: "correction", intent: "create",
+        items: [{ itemId: "review-item", input: {
+          targetIds: ["story-v2"], targetHash: revision.contentHash,
+          before: f.revision.content, after, findings: [{ id: "original-finding", summary: "Correct the text." }],
+        } }],
+        sources: [{ ...f.source, content: f.revision.content }, {
+          artifactId: revision.artifactId, revisionId: revision._id, contentHash: revision.contentHash, content: after,
+        }],
+        references: [], constraints: {},
+      };
+      const invoke = (childRequest: typeof request) => registerBookletWorkV2(f.db, actor, p._id, jobId, mutation, {
+        childRequest, targets: ["story-v2"], requestHash: fingerprint(childRequest),
+      });
+      const duplicated = structuredClone(request);
+      duplicated.sources.push(duplicated.sources[0]);
+      await assert.rejects(invoke(duplicated), /Duplicate immutable review source/);
+      const changed = structuredClone(request);
+      changed.sources[1].content = f.revision.content as typeof after;
+      await assert.rejects(invoke(changed), /source content changed/);
+      const wrongTarget = structuredClone(request);
+      wrongTarget.items[0].input.targetHash = "0".repeat(64);
+      await assert.rejects(invoke(wrongTarget), /Review hash/);
+      // A batch may review different immutable versions of the same artifact.
+      request.items.push({ itemId: "review-earlier", input: {
+        ...request.items[0].input, targetHash: f.revision.contentHash,
+        before: after, after: f.revision.content as typeof after,
+      } });
+      request.items.push({ ...structuredClone(request.items[1]), itemId: "review-earlier-again" });
+      const registered = await invoke(request);
+      const work = await repo.getWork(p._id, request.callId);
+      assert.equal(work.service, "quality-reviewer");
+      assert.equal(work.category, "paidLlm");
+      assert.deepEqual(work.sources.map((source) => source.revisionId), [f.revision._id, revision._id]);
+      assert.deepEqual(work.requestPayload, request);
+      assert.equal(work.status, "registered");
+      const assessment = {
+        mode: "correction" as const, targetHash: f.revision.contentHash, requestHash: null,
+        sources: work.sources, coverage: { targetIds: ["story-v2"], referencePositions: [] },
+        disposition: "pass" as const, findings: [], limitations: [],
+      };
+      const alternate = { ...assessment, disposition: "inconclusive" as const };
+      await f.db.collection("bookletWork").updateOne({ _id: work._id as never }, { $set: { status: "dispatching" } });
+      const parent = await f.db.collection("aiJobs").findOne({ _id: jobId as never });
+      const workflowId = crypto.randomUUID();
+      const job = { ...parent, execution: { workflowId, status: "running" },
+        run: { ...parent!.run, orchestrator: { id: "booklet-manager", workflowId } },
+      } as unknown as AiJob;
+      const nativeResult = { contractVersion: 2, invocationId: request.invocationId, callId: request.callId,
+        service: request.service, operation: request.operation, status: "partial", items: [
+          { itemId: "review-item", status: "failed", proposals: [] },
+          { itemId: "review-earlier", status: "succeeded", proposals: [{ content: assessment }] },
+          { itemId: "review-earlier-again", status: "succeeded", proposals: [{ content: alternate }] },
+        ] };
+      const session = client.startSession();
+      try {
+        await session.withTransaction(async () => {
+          await observeBookletNodeV2(f.db, job, {
+            runId: job.runId!, id: "native-review", nodeId: "child-quality-reviewer", nodeType: "tool",
+            status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+            outputs: { json: [{ result: JSON.stringify(nativeResult) }] }, outputsTruncated: false,
+            error: null, executionMetadata: null,
+          }, session);
+        });
+      } finally { await session.endSession(); }
+      const observed = await repo.getWork(p._id, work.callId);
+      assert.deepEqual(observed.resultPayload, nativeResult);
+      assert.equal(observed.status, "partial");
+      const assessmentInput = {
+        key: "batch-second-assessment", holderId: jobId, fence: registered.fence!, expectedVersion: registered.version,
+        callId: work.callId, policyBinding: "policy-fixture", reviewerBinding: "reviewer-fixture",
+        evidenceIds: observed.evidenceIds, assessment,
+      };
+      await assert.rejects(repo.recordAssessment(p._id, {
+        ...assessmentInput, assessment: { ...assessment, disposition: "blocked" },
+      }), /observed review work|retained native proposal/);
+      const recorded = await repo.recordAssessment(p._id, assessmentInput);
+      assert.ok(recorded.assessmentId);
+      const repeated = await repo.recordAssessment(p._id, {
+        ...assessmentInput, key: "batch-repeated-scope", expectedVersion: recorded.version,
+        fence: recorded.fence!, assessment: alternate,
+      });
+      assert.ok(repeated.assessmentId);
+      assert.notEqual(repeated.assessmentId, recorded.assessmentId);
+    });
     await t.test("creative work derives retry identity from the actual request and bound paid Run", async (t) => {
       const f = await managerFixture();
       await f.write((m) => f.v2.indexEntries("production-v2", { ...m,
@@ -364,7 +473,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
         requestHash: fingerprint({ ...childRequest, references: childRequest.references.map(({ assetId, sha256, bytes }) => ({ assetId, sha256, bytes })) }),
       });
       const firstMutation = m();
-      const invoke = (mutation: Mutation, value: unknown) => registerBookletCreativeWorkV2(f.db, actor, p._id, jobId, mutation, value);
+      const invoke = (mutation: Mutation, value: unknown) => registerBookletWorkV2(f.db, actor, p._id, jobId, mutation, value);
       await assert.rejects(invoke(firstMutation, { ...payload(request), category: "nonPaid" }));
       await assert.rejects(invoke(firstMutation, { ...payload(request), requestHash: "0".repeat(64) }), /actual payload/);
       const changed = structuredClone(request);

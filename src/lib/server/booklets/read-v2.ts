@@ -9,7 +9,7 @@ import { bookletConflict, bookletMissing } from "./context";
 import { id } from "./documents";
 
 export const bookletReadV2Schema = z.strictObject({
-  kind: z.enum(["revision", "work", "assessment", "history"]),
+  kind: z.enum(["production", "revision", "work", "assessment", "history"]),
   id,
   cursor: z.string().max(16384).optional(),
 });
@@ -130,7 +130,22 @@ export async function readBookletDocumentV2(
     };
   }
   let document: unknown;
-  if (request.kind === "revision") {
+  if (request.kind === "production") {
+    if (request.id !== productionId) throw bookletMissing();
+    const row = await repo.getProduction(productionId);
+    document = {
+      productionId: row._id,
+      bookletId: row.bookletId,
+      version: row.version,
+      state: row.lifecycleState,
+      brief: row.brief,
+      creativeConfig: row.creativeConfigSnapshot,
+      subjects: row.subjects,
+      stageLocks: row.stageLocks,
+      currentManifestRevisionId: row.currentManifestRevisionId,
+      expiresAt: row.expiresAt?.toISOString() ?? null,
+    };
+  } else if (request.kind === "revision") {
     const row = await repo.getRevision(productionId, request.id);
     document = {
       revisionId: row._id,

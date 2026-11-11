@@ -1138,6 +1138,13 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         assert.equal(work.value.callId, "call-v2");
         assert.deepEqual(work.value.requestPayload, childRequest);
         assert.equal(work.value.ownerId, undefined);
+        const productionRead = await successful("read_document", { kind: "production", id: production._id });
+        assert.equal(productionRead.complete, true);
+        assert.deepEqual(productionRead.value.brief, production.brief);
+        assert.equal(productionRead.value.productionId, production._id);
+        for (const field of ["ownerId", "orderId", "mutationLease", "checkpoint", "creationHash"])
+          assert.equal(productionRead.value[field], undefined);
+        assert.equal((await invoke("read_document", { kind: "production", id: "foreign-production" })).isError, true);
         const pendingWork = await successful("reconcile_work", { callId: "call-v2" });
         assert.equal(pendingWork.status, "registered");
         assert.equal(pendingWork.resultAvailable, false);

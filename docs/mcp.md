@@ -389,7 +389,7 @@ the same strictly named `MCP_TOKEN_*` credentials and Run client selection.
 ## Unitale booklet catalog (T17)
 
 Checkpoint 09 now adds versioned project tools alongside the v1 catalog:
-`booklet_checkpoint_v2` and creative-text registration through `booklet_begin_work_v2`.
+`booklet_checkpoint_v2` and creative-text/Reviewer registration through `booklet_begin_work_v2`.
 Each accepts private `runContext` plus a bounded JSON-string `request` and returns
 an explicit `result` object. They require an owned native v2 Manager Run and its current
 prepaid workflow/job binding, use atomic version/fence checks and leave no lease across
@@ -397,7 +397,7 @@ calls. Exact retries replay existing receipts. Initial atomic checkpoints accept
 zero. The core catalog version is unchanged; these project-extension contracts are
 versioned in their names. Paid dispatch and the remaining v2 handlers are pending.
 No Dify binding, credential, shared provider or live configuration changes are included.
-`booklet_read_document_v2` additionally exposes owned revision/work/assessment DTOs
+`booklet_read_document_v2` additionally exposes owned production/revision/work/assessment DTOs
 under `extension:booklets:read`. Its existing `{kind,id,cursor?}` request returns whole
 small JSON values or bounded typed sections, array pages and decoded text fragments.
 Each response identifies its path, hash and completeness; cursors reject changed or

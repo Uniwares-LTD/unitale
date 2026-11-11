@@ -8,7 +8,7 @@ import { authorizedRun } from "../runs/capabilities";
 import { fingerprint } from "../foundation/canonical";
 import { bookletContext, bookletConflict, bookletMissing } from "./context";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { registerBookletCreativeWorkV2 } from "./work-v2";
+import { registerBookletWorkV2 } from "./work-v2";
 import {
   workRegistrationV2Schema,
   artifactKindV2Schema,
@@ -384,7 +384,7 @@ export function createBookletMcpToolsV2(
     ),
     tool(
       "begin_work",
-      "Register validated creative-text intent. Paid dispatch is unavailable until its remaining safeguards are implemented.",
+      "Register validated creative-text or scoped Reviewer intent. Paid dispatch is unavailable until its remaining safeguards are implemented.",
       async (raw, s) => {
         const request = z
           .strictObject({
@@ -413,7 +413,7 @@ export function createBookletMcpToolsV2(
           correction,
         };
         const m = await mutation(s, "registerWork", request, fence);
-        const receipt = await registerBookletCreativeWorkV2(
+        const receipt = await registerBookletWorkV2(
           s.db,
           s.actor,
           s.production._id,

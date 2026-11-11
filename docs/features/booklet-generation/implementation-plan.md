@@ -527,6 +527,13 @@ seams are complete locally. Current 09 implementation provides:
 - Creative-text registration for the thirteen native operations. Artifact accounting
   targets and child subject selectors are checked separately. Correction limits remain
   durable across regrouping, technical retries, continuation and funding scopes.
+- Reviewer registration validates all six modes against immutable target hashes and
+  owned source/original identities. Distinct before/after revisions of one artifact
+  are allowed; identical source tuples are rejected. Each batch item's scope is
+  retained. Current request-backed assessment writes require that item's exact
+  retained native proposal, rather than treating the first item as the entire batch.
+  This does not yet supply the assessment MCP gateway, immutable Reviewer binding,
+  dispatch authorization or complete correction-finding verification.
 - Owned revision/work/assessment reads with typed sections and Unicode text fragments;
   artifact history uses a stable ordinal snapshot. Complete bodies never truncate.
 - Durable meaningful request bodies in the existing work record (optional for older
@@ -560,16 +567,20 @@ seams are complete locally. Current 09 implementation provides:
   No Unibase extension was needed. Full registration still requires the remaining
   tools and Human Input integration; revised candidate import/execution remains pending.
 
-The exposed v2 tools are checkpoint, index, transfer, creative-text work registration,
+The exposed v2 tools are checkpoint, index, transfer, creative-text/Reviewer work registration,
 native work reconciliation, creative-text publication and the partial document reader.
 Registration does not authorize paid dispatch. Automatic recovery, image publication/reviews,
 human decisions and accounting remain incomplete. There is no complete application-connected
 journey. The latest YAML identity and verification are maintained in the
 [candidate README](workflow-package/README.md#current-integration-slice).
 
-Current application verification: 56 affected repository, lifecycle/media and MCP
+Current application verification: 57 affected repository, lifecycle/media and MCP
 tests pass, including native retention/readback, continuation publication, roster
 lineage, product-capacity rejection and large exact-text reference/transfer publication.
+Reviewer tests use the real native observation hook for a partial batch, preserve
+before/after source revisions, save distinct assessments of the same scope and reject
+altered assessment content. Owned production reads exclude order/owner/lease/checkpoint
+fields. These checks do not establish Reviewer publication identity or paid dispatch.
 The revised native package passes 39 compatibility tests, including private Start
 inspection against existing application code. Its hashes/digest are refreshed.
 Production build, sequential typecheck, scoped lint, environment and model/docs/i18n/

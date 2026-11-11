@@ -8,12 +8,12 @@ import {
   bookletSourceV2Schema,
 } from "../../../project/booklets/contracts-v2";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { workRegistrationV2Schema } from "./documents-v2";
+import { workRegistrationV2Schema, reviewInputV2Schema } from "./documents-v2";
 import { bookletConflict } from "./context";
 import { id, mutationSchema, type Mutation } from "./documents";
 
-// Only the currently consumed creative-text boundary. Image preparation/generation
-// and independently observed review scopes have their own registration checks.
+// Creative responsibilities; Reviewer operations use explicit immutable scopes
+// below. Image preparation/generation registration is not yet enabled.
 const operations = {
   "story-planner": {
     concept: { book: ["concept"] },
@@ -50,6 +50,7 @@ const childRequest = z.strictObject({
     "manuscript",
     "art-director",
     "page-composer",
+    "quality-reviewer",
   ]),
   operation: id,
   intent: z.enum(["create", "revise"]),
@@ -106,7 +107,7 @@ function containsPrivate(value: unknown): boolean {
 
 /** Validate the actual child payload; caller supplies authenticated actor, Run and
  * mutation fence. This registers an intent only, never dispatch authority. */
-export async function registerBookletCreativeWorkV2(
+export async function registerBookletWorkV2(
   db: Db,
   actor: CreditActor,
   productionId: string,
@@ -125,11 +126,22 @@ export async function registerBookletCreativeWorkV2(
   const request = value.childRequest;
   if (Buffer.byteLength(JSON.stringify(request)) > 256 * 1024)
     throw bookletConflict("Child request exceeds its accepted capacity.");
-  const supported = operations[request.service] as Record<
-    string,
-    Readonly<Record<string, readonly string[]>>
-  >;
-  if (!Object.hasOwn(supported, request.operation))
+  const review = request.service === "quality-reviewer";
+  const supported = (
+    review ? {} : operations[request.service as keyof typeof operations]
+  ) as Record<string, Readonly<Record<string, readonly string[]>>>;
+  if (
+    review
+      ? ![
+          "text",
+          "specification",
+          "image_request",
+          "image",
+          "whole_book",
+          "correction",
+        ].includes(request.operation)
+      : !Object.hasOwn(supported, request.operation)
+  )
     throw bookletConflict("Unsupported child operation.");
   const responsibilities = supported[request.operation];
   if (
@@ -150,6 +162,17 @@ export async function registerBookletCreativeWorkV2(
   for (const source of request.sources)
     if (fingerprint(source.content) !== source.contentHash)
       throw bookletConflict("Child source content changed.");
+  const sourceKeys = request.sources.map((source) =>
+    review
+      ? fingerprint([source.artifactId, source.revisionId, source.contentHash])
+      : source.artifactId,
+  );
+  if (new Set(sourceKeys).size !== request.sources.length)
+    throw bookletConflict(
+      review
+        ? "Duplicate immutable review source."
+        : "Select one immutable revision per source artifact.",
+    );
   const meaningful = {
     ...request,
     references: request.references.map(({ assetId, sha256, bytes }) => ({
@@ -167,10 +190,167 @@ export async function registerBookletCreativeWorkV2(
   });
   const p = await repo.getProduction(productionId);
   if (p.lifecycleState !== "in-progress")
-    throw bookletConflict("Creative work requires an admitted production.");
+    throw bookletConflict("Child work requires an admitted production.");
   const targetSubjects = new Set<string>();
   let allowLocalSubjects = false;
-  for (const target of value.targets) {
+  const reviewScopes = review
+    ? request.items.map((item) => reviewInputV2Schema.parse(item.input))
+    : [];
+  if (review) {
+    const requested = [
+      ...new Set(reviewScopes.flatMap((scope) => scope.targetIds)),
+    ].sort();
+    if (fingerprint(requested) !== fingerprint([...value.targets].sort()))
+      throw bookletConflict("Review scope differs from registered targets.");
+    for (const ref of request.references) {
+      const original = await db.collection("bookletAssets").findOne({
+        _id: ref.assetId as never,
+        ownerId: actor.uid,
+        productionId: p._id,
+        state: "ready",
+        originalAssetId: null,
+        sha256: ref.sha256,
+        bytes: ref.bytes,
+      });
+      if (!original)
+        throw bookletConflict(
+          "Review original identity differs from owned bytes.",
+        );
+    }
+    for (const scope of reviewScopes) {
+      if (
+        scope.referencePositions.some(
+          (position) => position >= request.references.length,
+        )
+      )
+        throw bookletConflict("Review reference position is unavailable.");
+      if (
+        ["image", "whole_book"].includes(request.operation) &&
+        !scope.referencePositions.length
+      )
+        throw bookletConflict(
+          "Actual original pixels are required for this review.",
+        );
+      if (request.operation === "image_request") {
+        const prepared = z
+          .object({ requestHash: hash })
+          .catchall(z.json())
+          .parse(scope.prepared);
+        const { requestHash, ...body } = prepared;
+        if (
+          requestHash !== scope.targetHash ||
+          fingerprint(body) !== requestHash
+        )
+          throw bookletConflict("Review requires the exact prepared request.");
+      } else if (request.operation === "whole_book") {
+        const manifest = await db.collection("bookletRevisions").findOne({
+          ownerId: actor.uid,
+          productionId: p._id,
+          kind: "book-manifest",
+          contentHash: scope.targetHash,
+        });
+        const pages = z
+          .object({ pages: z.array(z.object({ pageId: id, assetId: id })) })
+          .parse(manifest?.content).pages;
+        if (
+          !scope.pageIds?.length ||
+          scope.pageIds.length > 4 ||
+          fingerprint(scope.pageIds) !== fingerprint(scope.targetIds) ||
+          scope.pageIds.some(
+            (pageId) => !pages.some((page) => page.pageId === pageId),
+          ) ||
+          scope.pageIds.some(
+            (pageId) =>
+              !scope.referencePositions.some(
+                (position) =>
+                  request.references[position].assetId ===
+                  pages.find((page) => page.pageId === pageId)!.assetId,
+              ),
+          )
+        )
+          throw bookletConflict(
+            "Review window must identify its actual manifest pages and originals.",
+          );
+      } else {
+        const selected = request.sources.filter(
+          (source) =>
+            scope.targetIds.includes(source.artifactId) ||
+            p.subjects.some(
+              (subject) =>
+                scope.targetIds.includes(subject.id) &&
+                subject.artifacts.some(
+                  (artifact) => artifact.id === source.artifactId,
+                ),
+            ),
+        );
+        const exact = selected.filter(
+          (source) => source.contentHash === scope.targetHash,
+        );
+        const covers = (sources: typeof selected) =>
+          scope.targetIds.every((target) =>
+            sources.some(
+              (source) =>
+                source.artifactId === target ||
+                p.subjects.some(
+                  (subject) =>
+                    subject.id === target &&
+                    subject.artifacts.some(
+                      (artifact) => artifact.id === source.artifactId,
+                    ),
+                ),
+            ),
+          );
+        const identities = selected.map(
+          ({ artifactId, revisionId, contentHash }) => ({
+            artifactId,
+            revisionId,
+            contentHash,
+          }),
+        );
+        if (
+          !selected.length ||
+          !covers(selected) ||
+          (!(exact.length === 1 && covers(exact)) &&
+            fingerprint(identities) !== scope.targetHash)
+        )
+          throw bookletConflict(
+            "Review hash must identify its selected immutable target or ordered target group.",
+          );
+        if (
+          request.operation === "image" &&
+          selected.some((source) => {
+            if (
+              source.content.kind !== "reference" &&
+              source.content.kind !== "page-image"
+            )
+              return true;
+            const assetId = source.content.asset.assetId;
+            return !scope.referencePositions.some(
+              (position) => request.references[position].assetId === assetId,
+            );
+          })
+        )
+          throw bookletConflict("Review omitted its target original.");
+        if (
+          request.operation === "correction" &&
+          (!scope.before ||
+            !scope.after ||
+            !scope.findings?.length ||
+            !request.sources.some(
+              (source) => fingerprint(scope.before) === source.contentHash,
+            ) ||
+            !selected.some(
+              (source) => fingerprint(scope.after) === source.contentHash,
+            ) ||
+            (scope.visual && scope.referencePositions.length < 2))
+        )
+          throw bookletConflict(
+            "Correction review needs exact before/after sources and original findings.",
+          );
+      }
+    }
+  }
+  for (const target of review ? [] : value.targets) {
     const subject = p.subjects.find((subject) =>
       subject.artifacts.some((artifact) => artifact.id === target),
     );
@@ -200,6 +380,7 @@ export async function registerBookletCreativeWorkV2(
     // Accounting targets remain artifact IDs, never interchangeable aliases.
     const selected = item.targetIds ?? (item.targetId ? [item.targetId] : []);
     if (
+      !review &&
       selected.some(
         (subjectId) =>
           !targetSubjects.has(subjectId) &&
@@ -247,5 +428,15 @@ export async function registerBookletCreativeWorkV2(
     })),
     retryOf: value.retryOf,
     correction: value.correction,
+    reviewScope: review
+      ? {
+          targetHash: reviewScopes[0].targetHash,
+          referencePositions: reviewScopes[0].referencePositions,
+          assetIds: reviewScopes[0].referencePositions.map(
+            (position) => request.references[position].assetId,
+          ),
+          continuityPairs: reviewScopes[0].continuityPairs,
+        }
+      : null,
   });
 }

@@ -32,6 +32,7 @@ import {
   workV2Schema,
   assessmentDocumentV2Schema,
   acceptanceDocumentV2Schema,
+  reviewInputV2Schema,
   type WorkV2,
   type AssessmentV2,
   type AcceptanceV2,
@@ -899,16 +900,92 @@ export function bookletRepositoryV2(
             { session },
           );
           const observed = observedRaw ? workV2Schema.parse(observedRaw) : null;
+          // Current registrations retain every item scope. The legacy metadata-only
+          // representation remains readable, without treating a batch as one target.
+          const request =
+            observed?.requestPayload === undefined
+              ? null
+              : z
+                  .object({
+                    items: z.array(
+                      z.object({ itemId: id, input: reviewInputV2Schema }),
+                    ),
+                    references: z.array(z.object({ assetId: id })),
+                  })
+                  .parse(observed.requestPayload);
+          const retained = request
+            ? z
+                .object({
+                  items: z.array(
+                    z.object({
+                      itemId: id,
+                      status: z.string(),
+                      proposals: z
+                        .array(z.object({ content: bookletAssessmentV2Schema }))
+                        .default([]),
+                    }),
+                  ),
+                })
+                .parse(observed!.resultPayload)
+            : null;
+          const item = request?.items.find(
+            (item) =>
+              item.input.targetHash === value.assessment.targetHash &&
+              fingerprint(item.input.targetIds) ===
+                fingerprint(value.assessment.coverage.targetIds) &&
+              fingerprint(item.input.referencePositions) ===
+                fingerprint(value.assessment.coverage.referencePositions) &&
+              retained?.items.some(
+                (result) =>
+                  result.itemId === item.itemId &&
+                  result.status === "succeeded" &&
+                  result.proposals.some(
+                    (proposal) =>
+                      fingerprint(proposal.content) ===
+                      fingerprint(value.assessment),
+                  ),
+              ),
+          );
+          const scope = request
+            ? item
+              ? {
+                  ...item.input,
+                  assetIds: item.input.referencePositions.map(
+                    (position) => request.references[position].assetId,
+                  ),
+                }
+              : null
+            : observed?.reviewScope
+              ? { ...observed.reviewScope, targetIds: observed.targetIds }
+              : null;
           if (
-            !observed?.reviewScope ||
+            !observed ||
+            !scope ||
             observed.operation !== value.assessment.mode ||
-            observed.reviewScope.targetHash !== value.assessment.targetHash ||
+            scope.targetHash !== value.assessment.targetHash ||
             fingerprint(observed.sources) !==
               fingerprint(value.assessment.sources)
           )
             throw bookletConflict(
               "Assessment is not bound to observed review work.",
             );
+          if (request) {
+            const matches = retained!.items
+              .filter(
+                (result) =>
+                  result.itemId === item?.itemId &&
+                  result.status === "succeeded",
+              )
+              .flatMap((result) => result.proposals);
+            if (
+              !observed.resultObservation ||
+              matches.length !== 1 ||
+              fingerprint(matches[0].content) !== fingerprint(value.assessment)
+            )
+              throw bookletConflict(
+                "Assessment differs from its retained native proposal.",
+              );
+          }
           if (
             value.evidenceIds.some(
               (evidence) => !observed.evidenceIds.includes(evidence),
@@ -919,31 +996,30 @@ export function bookletRepositoryV2(
             );
           if (
             value.assessment.coverage.targetIds.some(
-              (target) => !observed.targetIds.includes(target),
+              (target) => !scope.targetIds.includes(target),
             ) ||
             value.assessment.coverage.referencePositions.some(
-              (position) =>
-                !observed.reviewScope!.referencePositions.includes(position),
+              (position) => !scope.referencePositions.includes(position),
             ) ||
             (value.assessment.coverage.assetIds ?? []).some(
-              (asset) => !observed.reviewScope!.assetIds.includes(asset),
+              (asset) => !scope.assetIds.includes(asset),
             ) ||
             (value.assessment.coverage.continuityPairs ?? []).some(
               (pair) =>
-                !observed.reviewScope!.continuityPairs.some(
+                !scope.continuityPairs.some(
                   (expected) => fingerprint(expected) === fingerprint(pair),
                 ),
             )
           )
             throw bookletConflict("Assessment invented unobserved coverage.");
           const complete =
-            fingerprint(observed.targetIds) ===
+            fingerprint(scope.targetIds) ===
               fingerprint(value.assessment.coverage.targetIds) &&
-            fingerprint(observed.reviewScope.referencePositions) ===
+            fingerprint(scope.referencePositions) ===
               fingerprint(value.assessment.coverage.referencePositions) &&
-            fingerprint(observed.reviewScope.assetIds) ===
+            fingerprint(scope.assetIds) ===
               fingerprint(value.assessment.coverage.assetIds ?? []) &&
-            fingerprint(observed.reviewScope.continuityPairs) ===
+            fingerprint(scope.continuityPairs) ===
               fingerprint(value.assessment.coverage.continuityPairs ?? []);
           if (value.assessment.disposition === "pass" && !complete)
             throw bookletConflict("Assessment pass omitted inspected scope.");

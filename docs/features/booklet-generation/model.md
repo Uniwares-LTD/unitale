@@ -54,8 +54,13 @@ file handles. Owned work reads expose it through the existing bounded typed read
 This preserves text and extension fields without diagnostic redaction, so restart
 does not require reconstructing a request from a hash. Older records may omit it;
 their missing body is not proof that dispatch can resume. No new collection or index.
-The JSON example and both diagrams include this optional field. Image/review gateway
-and runtime wiring remain 09 work.
+The JSON example and both diagrams include this optional field. Reviewer registration
+now retains each item's immutable target scope in that same request body. Reviews can
+compare distinct revisions of one artifact; duplicate source tuples fail. Request-backed
+assessment writes match the selected item's scope and exact retained native proposal.
+Legacy metadata-only server records retain their existing behavior. No persisted fields
+changed, so the JSON example and both diagrams remain structurally unchanged. Image
+registration, the assessment MCP gateway and complete runtime wiring remain 09 work.
 The native v2 observer now retains matching complete child envelopes in optional
 `resultPayload` (at most 1 MiB), with `resultObservation` carrying native execution,
 node, retry and loop identities. These fields share the work record and its 4 MiB
