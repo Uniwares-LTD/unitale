@@ -567,3 +567,42 @@ test("opt-in private node observations retain retry identity and outputs without
     2,
   );
 });
+
+test("opt-in starts retain actual publication before nodes without replaying historical starts", async () => {
+  const node = { id: "child-execution", node_id: "child", node_type: "tool", status: "succeeded",
+    outputs: { result: "retained body" }, outputs_truncated: false };
+  for (const enabled of [false, true]) {
+    const seen: ProviderEvent[] = [];
+    const provider = createDifyWorkflow(live, live.bindings[0], async () => sse(
+      { ...started, data: { id: runId, workflow_id: workflowId, inputs: { private: "private-input-canary" } } },
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: node },
+      { event: "workflow_finished", workflow_run_id: runId, task_id: taskId, data: detail },
+    ), undefined, enabled);
+    assert.equal((await provider.start(input, async (event) => { seen.push(event); })).kind, "ok");
+    const running = seen.findIndex((event) => event.type === "execution" && event.execution.status === "running");
+    assert.equal(running >= 0, enabled);
+    if (enabled) {
+      const event = seen[running];
+      assert.equal(event.type, "execution");
+      if (event.type === "execution") {
+        assert.equal(event.execution.workflowId, workflowId);
+        assert.equal(event.execution.outputs, null);
+        assert.equal(event.execution.usage.cost, null);
+      }
+      assert.ok(running < seen.findIndex((event) => event.type === "node-observation"));
+      seen.length = 0;
+      await provider.stream!(runId, input.user, async (event) => { seen.push(event); });
+      assert.equal(seen.some((event) => event.type === "execution" && event.execution.status === "running"), false);
+    }
+    assert.ok(!JSON.stringify(seen).includes("private-input-canary"));
+  }
+  let dispatches = 0;
+  const observed: ProviderEvent[] = [];
+  const foreign = createDifyWorkflow(live, live.bindings[0], async () => {
+    dispatches++;
+    return sse({ ...started, data: { id: runId, workflow_id: "00000000-0000-4000-8000-000000000099" } });
+  }, undefined, true);
+  assert.equal((await foreign.start(input, async (event) => { observed.push(event); })).kind, "unknown");
+  assert.equal(dispatches, 1);
+  assert.deepEqual(observed.map((event) => event.type), ["identity"]);
+});

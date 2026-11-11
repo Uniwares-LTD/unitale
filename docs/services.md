@@ -130,6 +130,13 @@ dispatch or account-ownership authority. This allows restricted retention while
 cancellation is pending; ordinary publication/dispatch checks still apply. Hook
 failures roll back and propagate rather than becoming a successful observation.
 Private node observations are never written to public `runEvents` or usage summaries.
+
+Opt-in native node observers receive a running execution observation with the actual
+publication from `workflow_started` before node events. Missing legacy identities are
+not inferred; publication mismatches stop observation without retrying dispatch.
+Reconnect does not replay this historical running state over newer evidence. No
+provider inputs are included, and initial usage remains unknown until reported.
+
 Keep raw outputs/errors out of logs and user DTOs; use the existing redacted private
 evidence writer for diagnostic retention, passing the supplied session as the optional
 fourth `retainEvidence` argument so evidence and the hook transaction commit/roll back

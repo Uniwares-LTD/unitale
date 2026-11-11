@@ -328,6 +328,23 @@ export function createDifyWorkflow(
               await emit({ type: "identity", runId, taskId });
             }
           }
+          if (
+            nodeObservations &&
+            !reconnectRunId &&
+            envelope.event === "workflow_started"
+          ) {
+            // Persist the actual publication before opt-in node observers run.
+            // Legacy events may omit it; never substitute the configured identity.
+            const started = z
+              .object({ id, workflow_id: id })
+              .safeParse(envelope.data);
+            if (started.success) {
+              await emit({
+                type: "execution",
+                execution: checked({ ...started.data, status: "running", outputs: null }, runId),
+              });
+            }
+          }
           if (envelope.event === "error")
             return { kind: "unknown", failure: "unavailable" };
           if (

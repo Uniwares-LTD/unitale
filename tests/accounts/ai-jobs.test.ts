@@ -414,6 +414,7 @@ test("durable AI jobs, credit boundaries and recovery", async (t) => {
         const provider: WorkflowProvider = {
           async start(_input, observe) {
             await observe({ type: "identity", runId, taskId });
+            await observe({ type: "execution", execution: { ...execution, status: "running", outputs: null } });
             await observe({
               type: "node-observation",
               node: nodeObservation(runId, {
@@ -440,6 +441,8 @@ test("durable AI jobs, credit boundaries and recovery", async (t) => {
           observeNode: async (job, node, session) => {
             assert.equal(job._id, saved._id);
             assert.equal(job.runId, runId);
+            assert.equal(job.execution?.workflowId, execution.workflowId);
+            assert.equal(job.execution?.status, "running");
             assert.equal(job.uid, actor.uid);
             assert.equal(node.retryIndex, 1);
             assert(session.inTransaction());

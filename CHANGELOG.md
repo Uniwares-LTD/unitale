@@ -20,6 +20,9 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Retain the actual Dify publication from opt-in workflow-start events before node
+  observers run, without replaying historical running state on reconnect.
+
 - Defer domain lookup until Run event handling so project extensions may import
   AI job services during registration without a module initialization cycle.
 
@@ -71,6 +74,10 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 - Add opt-in v1 commerce and execution-measurement contracts for immutable catalog terms, consumption orders, entitlements, subscriptions, promotions and provider evidence. Existing runtime behavior and records remain unchanged.
 
 ### Upgrade notes
+
+- Existing opt-in node observers can receive publication identity before the first
+  node result through the existing running-execution event. No data migration or
+  configuration change is required; legacy missing identities still need readback.
 
 - Server extensions needing late-result readback may opt into `reconcile(db, now)`.
   The callback must fence its own accepted work and cannot dispatch paid actions.
