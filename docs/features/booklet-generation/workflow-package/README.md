@@ -168,21 +168,22 @@ Specification and whole-book fixtures now verify actual registration, native
 retention and exact assessment recording. Whole-book inputs bind the selected
 immutable manifest, page-image sources and inspected originals; page/manifest
 metadata is staged, so publication/completion remains 09.4 evidence. Actual Dify
-image-block conversion remains unverified. The bounded-assessment preview guard
-still needs correction before 09.3 can be marked Verified.
+image-block conversion remains unverified. Registered Generate work now carries
+its exact preflight fact outside the recent assessment preview. Correction finding
+lineage is verified at registration, so older findings need not remain in that preview.
 
 Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
 tests), plus 24 MCP and 30 repository tests (the previous media slice passed 17).
 Build, typecheck, scoped lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
 found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
-remains imported. Task 09.2 is locally Verified; 09.3 is In progress.
+remains imported. Tasks 09.1-09.3 are locally Verified; 09.4 is next.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`e6071ad0bd5b7980473d978af02d0b09077c1713174e62a96eaa4d8324dfae5e`.
+`f63a43f7016e4ccd78b6218593d72dc7d95b1275e06f30ea3df3192d0e263953`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-243,319 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+243,180 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

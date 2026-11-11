@@ -891,7 +891,7 @@ test("Manager never replays unknown/completed work or dispatches modified source
   assert.throws(() => guard(r.service, r, c), /[Mm]odified source/);
 });
 
-test("Manager enforces durable correction limits and confirmed findings across candidates/continuation", () => {
+test("Manager enforces durable correction limits without treating assessment previews as finding authority", () => {
   const r = request();
   const correction = {
     rootId: "task-root",
@@ -910,7 +910,9 @@ test("Manager enforces durable correction limits and confirmed findings across c
   ];
   assert.throws(() => guard(r.service, r, c), /exhausted/);
   c.corrections[0].used = 2;
-  assert.throws(() => guard(r.service, r, c), /confirmed findings/);
+  // The app verified finding lineage when it registered this exact request.
+  // Older findings need not appear in the bounded recent preview.
+  assert.equal(guard(r.service, r, c).paid, "yes");
   c.assessments = [
     {
       findings: [
@@ -941,7 +943,12 @@ test("Manager requires exact preflight and whole-book actual-pixel coverage", ()
       reviewerBinding: c.reviewerBinding,
     },
   ];
+  c.work[0].preflight = c.assessments[0];
+  c.assessments = [];
   assert.equal(guard(r.service, r, c).paid, "yes");
+  c.work[0].preflight = { ...c.work[0].preflight, policyBinding: "wrong-policy" };
+  assert.throws(() => guard(r.service, r, c), /preflight/);
+  c.work[0].preflight.policyBinding = c.policyBinding;
   const manifest = {
     pages: [
       { pageId: "p1", assetId: "a1" },

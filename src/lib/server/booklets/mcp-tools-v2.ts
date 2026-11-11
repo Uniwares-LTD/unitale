@@ -258,6 +258,10 @@ export function createBookletMcpToolsV2(
             correctionRootId: row.correctionRootId,
             resultAvailable: row.resultAvailable,
             document: { kind: "work", id: row.callId },
+            preflight: null as null | {
+              mode: string; targetHash: string; disposition: string; complete: boolean;
+              policyBinding: string; reviewerBinding: string;
+            },
           })),
           16,
         );
@@ -308,6 +312,7 @@ export function createBookletMcpToolsV2(
             correctionRootId: retained.correctionRootId,
             resultAvailable: retained.resultPayload !== undefined,
             document: { kind: "work", id: retained.callId },
+            preflight: null,
           };
           workFacts.unshift(focused);
           while (
@@ -320,6 +325,32 @@ export function createBookletMcpToolsV2(
               );
             workFacts.pop();
           }
+        }
+        // The recent assessment preview is navigation, not all prior evidence.
+        // Resolve the exact preflight needed by each registered Generate action.
+        for (const fact of workFacts) {
+          if (fact.status !== "registered" || fact.service !== "image-executor" || fact.operation !== "generate") continue;
+          const selected = await s.db.collection<WorkV2>("bookletWork").findOne({ ...owned, callId: fact.callId });
+          const prepared = z.object({ items: z.array(z.object({ input: z.object({
+            prepared: z.object({ requestHash: z.string() }),
+          }) })).length(1) }).safeParse(selected?.requestPayload);
+          if (!prepared.success) continue;
+          const match = await s.db.collection<AssessmentV2>("bookletAssessments").findOne({
+            ...owned, "assessment.mode": "image_request",
+            "assessment.targetHash": prepared.data.items[0].input.prepared.requestHash,
+            "assessment.coverage.targetIds": selected!.targetIds,
+            "assessment.disposition": "pass", complete: true,
+            policyBinding: binding.policyBinding, reviewerBinding: binding.reviewerBinding,
+          }, { projection: { assessment: 1, complete: 1, policyBinding: 1, reviewerBinding: 1 } });
+          if (match) fact.preflight = {
+            mode: match.assessment.mode, targetHash: match.assessment.targetHash,
+            disposition: match.assessment.disposition, complete: match.complete,
+            policyBinding: match.policyBinding, reviewerBinding: match.reviewerBinding,
+          };
+        }
+        while (Buffer.byteLength(JSON.stringify(workFacts)) > 8192) {
+          if (workFacts.length === 1) throw bookletConflict("Pending work summary exceeds context capacity; read its document.");
+          workFacts.pop();
         }
         const repo = bookletRepositoryV2(s.db, s.actor);
         const correctionRoots = [

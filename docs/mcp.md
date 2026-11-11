@@ -404,8 +404,12 @@ bounds; unpaid preparation uses the same durable dispatch and native-result rete
 Image-request review must match an exact retained preparation, including target, source
 tuples and ordered original identities; image generation uses that same retained
 preparation guard. Context separates text (`canDispatch`) and image (`canDispatchImage`)
-call eligibility. Visual image review/publication is locally verified; whole-book,
-corrective-generation integration remain 09.3 work. The candidate execution switch stays disabled.
+call eligibility. All six assessment modes, original retention/publication,
+corrective generation and revalidation are locally verified. Whole-book inputs bind
+the selected immutable manifest and actual page-image sources/originals. Registered
+Generate work summaries expose exact preflight facts outside the recent assessment
+preview; correction finding lineage is verified at registration. Acceptance, human
+decisions and completion remain 09.4 work. The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original
 identities, returning `{references:[{assetId,sha256,bytes}]}` plus ordered native MCP

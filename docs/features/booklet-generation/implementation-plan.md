@@ -530,7 +530,7 @@ use estimated completion percentages as acceptance evidence.
 | --- | --- | --- |
 | 09.1 Manager context and bindings | Verified | Local configuration/identity, bounded context/navigation, complete checkpoint and atomic fence tests pass. Actual remote/plugin readback remains checkpoint 12 evidence. |
 | 09.2 One complete text action | Verified | Local guarded dispatch, native usage, exact retained text/publication and compact checkpoint journey pass, including lost-reply/replay denial. Provider/target limitations remain accepted and explicitly labelled below. |
-| 09.3 Assessment and image actions | In progress | Complete assessment gateway/all six modes, correction-finding lineage, preparation/preflight, verified originals, image publication and revalidation. Exact retained assessments/coverage cannot be altered; partial results survive and attachment/save retries never regenerate. |
+| 09.3 Assessment and image actions | Verified | Local handler/native Code fixtures cover all six modes, correction lineage, exact preparation/preflight, original bytes, publication and revalidation. Exact assessments/coverage cannot be altered; partial results and save/attachment replay preserve originals. Live Dify conversion remains checkpoint 12 evidence. |
 | 09.4 Human decisions and completion | Pending | Connect existing authentic first-wins decisions, Manager acceptance, manifest drafts, structural completion and backend history reads. Correct requests resume; stale responses and invalid purchased structures fail without partial finalization. |
 | 09.5 Bounded recovery | Pending | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
 | 09.6 Connected journeys | Pending | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
@@ -858,17 +858,33 @@ creation journey (09.6). Native file conversion is synthetic, not target evidenc
 These are input-validation changes; persisted schemas, model JSON/diagrams and
 the package digest are unchanged.
 
-09.3 exit audit still requires fixing the native guard's use of the eight-row
-assessment preview as complete authorization history. A confirmed finding or exact
-preflight can fall outside that window. Reuse owned assessment reads/validation;
-do not raise the preview cap or add a second quality-policy framework. Completion
-and acceptance must also avoid this mistake when connected in 09.4. Until this
-is verified, 09.3 remains In progress.
+09.3 exit audit fixed the native guard's use of the eight-row assessment preview
+as complete authorization history. Context now resolves the registered Generate
+action's exact complete passing preflight under the configured policy/publication,
+with matching targets, outside the recent preview. It exposes that compact fact on
+the existing work summary; the summary retains its 8 KiB bound. The native guard
+checks it instead of searching recent assessments. Correction dispatch relies on
+the confirmed finding/baseline lineage already verified at registration and keeps
+the durable allowance check. No stored field, provider change or second quality
+policy was added. Fixtures prove preflight outside nine newer assessments, reject
+wrong policy, and dispatch an app-registered correction with an empty preview.
+Acceptance/completion must likewise avoid bounded-preview authority in 09.4.
 
 This slice passes 24 MCP tests, production build, post-build typecheck, scoped lint
 and docs/i18n/skills checks. A separate same-agent read-only review found no blocking
 issue in its source/manifest binding and exact-assessment changes. The known preview
-guard issue above remains open; this is not checkpoint exit or target Dify evidence.
+guard issue was subsequently fixed as described above.
+
+09.3 exit evidence: 24 MCP and 42 native/v1 compatibility tests pass, including all
+six review modes, partial originals, exact source delivery, corrective generation,
+revalidation, immutable selected manifests and preview-independent preflight.
+Production build, post-build typecheck, scoped lint and the independent 13-path
+hash/disabled-gate audit pass. A separate same-agent read-only slice review found
+no blocking issue after the preview fix. No stored schema changed; model JSON and
+diagrams remain applicable. This establishes local 09.3 behavior, not target Dify
+execution or connected creation/completion. The final checkpoint review pair is
+still 09.7 work. Next: 09.4 authentic decisions, acceptance, manifest publication,
+structural completion and backend history; no checkpoint 10 UI implementation.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,

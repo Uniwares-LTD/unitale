@@ -2099,11 +2099,20 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal((await invoke("begin_work", { ...generationRequest, childRequest: forgedGeneration,
             requestHash: fingerprint(forgedGeneration) })).isError, true);
           const imageRegistered = await successful("begin_work", generationRequest);
+          const newerAssessmentIds = Array.from({ length: 9 }, (_, i) => "newer-preflight-preview-" + i);
+          await db.collection("bookletAssessments").insertMany(newerAssessmentIds.map((_id, i) => ({
+            ...accepted!, _id, callId: _id, assessment: { ...accepted!.assessment, mode: "text", targetHash: "0".repeat(64) },
+            createdAt: new Date(Date.now() + i + 1000),
+          })) as never);
           const imageContext = await successful("context", {});
           assert.equal(imageContext.usage.canDispatchImage, true);
+          assert.equal(imageContext.assessmentsComplete, false);
+          assert.equal(imageContext.assessments.some((row: { assessmentId: string }) => row.assessmentId === assessment.assessmentId), false);
+          assert.equal(imageContext.work.find((row: { callId: string }) => row.callId === generation.callId).preflight.targetHash, prepared.requestHash);
           const imagePlan = runNativeCode("manager", "guard", { context: JSON.stringify(imageContext), decision: {
             action: generation.service, request_json: JSON.stringify(generation), reason: "Generate the reviewed exact request" } });
           assert.equal(imagePlan.paid, "yes");
+          await db.collection("bookletAssessments").deleteMany({ _id: { $in: newerAssessmentIds as never[] } });
           assert.equal(JSON.parse(imagePlan.dispatch).requestHash, generationRequest.requestHash);
           assert.equal(runNativeCode("image-executor", "validate", { request: JSON.stringify(generation), execution_ready: "true" }).count, 3);
           const imageIntent = await successful("checkpoint", JSON.parse(imagePlan.checkpoint));
@@ -2383,7 +2392,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
               requestHash: fingerprint(request), targets: ["sample-output"], correction: correctionMetadata,
               fence: (await successful("context", {})).fence });
             if (request.service === "image-executor" && request.operation === "generate")
-              assert.equal(runNativeCode("manager", "guard", { context: JSON.stringify(await successful("context", {})), decision: {
+              assert.equal(runNativeCode("manager", "guard", { context: JSON.stringify({ ...await successful("context", {}), assessments: [] }), decision: {
                 action: "image-executor", request_json: JSON.stringify(request), reason: "Correct the confirmed scoped finding" } }).paid, "yes");
             return successful("begin_work", { action: "dispatch", callId: request.callId,
               requestHash: fingerprint(request), fence: registration.fence });
