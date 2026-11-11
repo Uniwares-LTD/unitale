@@ -8,7 +8,7 @@ import { authorizedRun } from "../runs/capabilities";
 import { fingerprint } from "../foundation/canonical";
 import { bookletContext, bookletConflict, bookletMissing } from "./context";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { registerBookletWorkV2, bookletWorkUsageV2 } from "./work-v2";
+import { registerBookletWorkV2 } from "./work-v2";
 import {
   workRegistrationV2Schema,
   artifactKindV2Schema,
@@ -20,7 +20,7 @@ import { readBookletDocumentV2 } from "./read-v2";
 import { bookletTransfers, transferSchema } from "./mcp-transfers";
 import { reconcileBookletWorkV2 } from "./reconcile-v2";
 import { readBookletSuiteV2 } from "./suite-v2";
-import { bookletNativeCostsV2 } from "./usage-v2";
+import { bookletNativeCostsV2, bookletWorkUsageV2 } from "./usage-v2";
 import {
   bookletContentV2Schema,
   bookletSourceV2Schema,

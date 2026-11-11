@@ -656,6 +656,24 @@ docs/i18n/skills checks and an independent 13-path hash audit. A separate same-a
 read-only review (cold-review fallback) found no blocking issue in this slice. Full
 09.2 exit evidence and the checkpoint-wide review pair remain pending.
 
+Repository dispatch now checks production-wide paid LLM/image attempt limits and the
+reported spending ceiling in its existing atomic mutation. Active creative dispatch
+also reuses the publication-stage lock and current revision-allocation checks, so
+forbidden work is rejected before execution. Reviews remain possible for locked
+creative stages; draft storage fixtures keep their existing construction behavior.
+Attempt totals moved into the existing usage reader to avoid a repository/registration
+import cycle. No new ledger, reservation, contract field or dependency is introduced.
+Thirty repository and 16 MCP tests pass, including rollback of dispatch denied by
+usage, price, lock and funding guards. Model JSON/diagrams and YAML digest are unchanged.
+The native stream currently persists its run/task identity before node observations
+but does not persist a publication identity until execution readback. The v2 observer
+requires that identity, so normal in-stream retention is not yet established. Resolve
+this demonstrated identity timing gap and configured-suite dispatch binding before
+claiming the text journey complete. MCP dispatch and `usage.canDispatch` remain gated.
+Build, post-build typecheck, scoped lint, environment and docs/i18n/skills checks pass.
+A separate same-agent read-only slice review (cold-review fallback) found no blocking
+issue; checkpoint-wide final reviews remain 09.7 work.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

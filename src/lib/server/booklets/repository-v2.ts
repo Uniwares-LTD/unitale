@@ -39,6 +39,7 @@ import {
 } from "./documents-v2";
 import type { BookletAsset } from "./media";
 import type { AiJob } from "../ai/jobs";
+import { bookletWorkUsageV2, bookletNativeCostsV2 } from "./usage-v2";
 
 type CreateInput = Parameters<
   ReturnType<typeof bookletRepository>["createProduction"]
@@ -240,6 +241,74 @@ export function bookletRepositoryV2(
         throw bookletConflict(
           "An active owned prepaid Manager Run is required.",
         );
+    }
+  }
+  async function guardCreativeTargets(
+    p: ProductionV2,
+    targetIds: string[],
+    session: ClientSession,
+  ) {
+    for (const targetId of targetIds) {
+      const subject = p.subjects.find((s) => s.artifacts.some((a) => a.id === targetId));
+      const artifact = subject?.artifacts.find((a) => a.id === targetId);
+      if (!subject || !artifact)
+        throw bookletConflict("Creative target is unavailable.");
+      const story = [
+        "concept",
+        "outline",
+        "manuscript",
+        "roster",
+        "description",
+      ].includes(artifact.kind);
+      const style =
+        artifact.kind === "style" || subject.kind === "style-sample";
+      const reference =
+        ["character", "location"].includes(subject.kind) &&
+        artifact.kind === "image-spec";
+      if (
+        (story && p.stageLocks.story) ||
+        (style && p.stageLocks.style) ||
+        (reference && p.stageLocks.references)
+      )
+        throw bookletConflict("This revision stage is locked.");
+      if (p.revisionChargeId) {
+        const category = style
+          ? "style"
+          : reference
+            ? "reference"
+            : subject.kind === "page"
+              ? "page"
+              : "story";
+        const allocated = await db
+          .collection("consumptionAllocations")
+          .find(
+            {
+              orderId: p.orderId,
+              ownerId: actor.uid,
+              chargeId: p.revisionChargeId,
+              category,
+              revoked: false,
+            },
+            { session },
+          )
+          .toArray();
+        if (
+          !allocated.some(
+            (allocation) =>
+              category === "story" ||
+              allocation.subjectId === subject.id ||
+              (artifact.kind === "style" &&
+                p.subjects
+                  .filter((s) => s.kind === "style-sample")
+                  .every((s) =>
+                    allocated.some((a) => a.subjectId === s.id),
+                  )),
+          )
+        )
+          throw bookletConflict(
+            "Revision is outside the current financial consent.",
+          );
+      }
     }
   }
   const indexArtifact = z.strictObject({
@@ -748,6 +817,26 @@ export function bookletRepositoryV2(
               "Work already dispatched, changed or unresolved.",
             );
           await activeManager(p, value.holderId, value.holderId, session);
+          const usage = await bookletWorkUsageV2(db, p, session);
+          const costs = await bookletNativeCostsV2(db, p, session);
+          const limits = p.creativeConfigSnapshot.execution;
+          if (
+            (row.category === "paidLlm" &&
+              usage.paidLlm >= limits.maxTextCalls) ||
+            (row.category === "paidImage" &&
+              usage.paidImage >= limits.maxImageCalls) ||
+            (row.category !== "nonPaid" && costs.overCeiling)
+          )
+            throw bookletConflict(
+              "Production call or reported spending ceiling reached.",
+            );
+          if (
+            p.lifecycleState === "in-progress" &&
+            row.category !== "nonPaid" &&
+            row.service !== "manager" &&
+            row.service !== "quality-reviewer"
+          )
+            await guardCreativeTargets(p, row.targetIds, session);
           const funding = p.revisionChargeId ?? "platform";
           if (row.correctionRootId !== correctionRoot(p, row, funding))
             throw bookletConflict("Work funding identity changed.");
@@ -1389,62 +1478,7 @@ export function bookletRepositoryV2(
               throw bookletConflict(
                 "Revision escaped the registered artifact scope.",
               );
-            const story = [
-              "concept",
-              "outline",
-              "manuscript",
-              "roster",
-              "description",
-            ].includes(artifact.kind);
-            const style =
-              artifact.kind === "style" || subject.kind === "style-sample";
-            const reference =
-              ["character", "location"].includes(subject.kind) &&
-              artifact.kind === "image-spec";
-            if (
-              (story && p.stageLocks.story) ||
-              (style && p.stageLocks.style) ||
-              (reference && p.stageLocks.references)
-            )
-              throw bookletConflict("This revision stage is locked.");
-            if (p.revisionChargeId) {
-              const category = style
-                ? "style"
-                : reference
-                  ? "reference"
-                  : subject.kind === "page"
-                    ? "page"
-                    : "story";
-              const allocated = await db
-                .collection("consumptionAllocations")
-                .find(
-                  {
-                    orderId: p.orderId,
-                    ownerId: actor.uid,
-                    chargeId: p.revisionChargeId,
-                    category,
-                    revoked: false,
-                  },
-                  { session },
-                )
-                .toArray();
-              if (
-                !allocated.some(
-                  (allocation) =>
-                    category === "story" ||
-                    allocation.subjectId === subject.id ||
-                    (artifact.kind === "style" &&
-                      p.subjects
-                        .filter((s) => s.kind === "style-sample")
-                        .every((s) =>
-                          allocated.some((a) => a.subjectId === s.id),
-                        )),
-                )
-              )
-                throw bookletConflict(
-                  "Revision is outside the current financial consent.",
-                );
-            }
+            await guardCreativeTargets(p, [artifact.id], session);
             const priorWrite = await revisions.findOne(
               {
                 ownerId: actor.uid,

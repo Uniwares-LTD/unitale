@@ -1,5 +1,6 @@
 import "server-only";
 import type { Db, ClientSession } from "mongodb";
+import { z } from "zod";
 import type { AiJob, AiUsage } from "../ai/jobs";
 import type { ProductionV2 } from "./documents-v2";
 import { bookletConflict } from "./context";
@@ -94,4 +95,65 @@ export async function bookletNativeCostsV2(
     // Nested providers/SDK retries can be absent even when every row has a price.
     complete: false,
   };
+}
+
+/** App attempt facts, independent of context preview size. Provider-internal
+ * attempts and unregistered native reasoning are not inferred from these rows. */
+export async function bookletWorkUsageV2(
+  db: Db,
+  production: ProductionV2,
+  session?: ClientSession,
+) {
+  const rows = await db
+    .collection("bookletWork")
+    .aggregate<{
+      _id: "paidLlm" | "paidImage" | "nonPaid";
+      attempts: number;
+      unresolved: number;
+      active: number;
+    }>(
+      [
+        {
+          $match: {
+            ownerId: production.ownerId,
+            productionId: production._id,
+            documentVersion: 2,
+            status: { $ne: "registered" },
+          },
+        },
+        {
+          $group: {
+            _id: "$category",
+            attempts: { $sum: 1 },
+            unresolved: {
+              $sum: { $cond: [{ $eq: ["$status", "unknown"] }, 1, 0] },
+            },
+            active: {
+              $sum: { $cond: [{ $eq: ["$status", "dispatching"] }, 1, 0] },
+            },
+          },
+        },
+      ],
+      { session },
+    )
+    .toArray();
+  const totals = {
+    paidLlm: 0,
+    paidImage: 0,
+    nonPaid: 0,
+    unresolved: 0,
+    active: 0,
+  };
+  for (const row of rows) {
+    const category = z.enum(["paidLlm", "paidImage", "nonPaid"]).parse(row._id);
+    totals[category] = z
+      .number()
+      .int()
+      .nonnegative()
+      .safe()
+      .parse(row.attempts);
+    totals.unresolved += row.unresolved;
+    totals.active += row.active;
+  }
+  return totals;
 }

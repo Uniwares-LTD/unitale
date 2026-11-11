@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import type { Db, ClientSession } from "mongodb";
+import type { Db } from "mongodb";
 import type { CreditActor } from "../store/credit-types";
 import { fingerprint } from "../foundation/canonical";
 import {
@@ -11,7 +11,6 @@ import { bookletRepositoryV2 } from "./repository-v2";
 import {
   workRegistrationV2Schema,
   reviewInputV2Schema,
-  type ProductionV2,
 } from "./documents-v2";
 import { bookletConflict } from "./context";
 import { id, mutationSchema, type Mutation } from "./documents";
@@ -42,66 +41,6 @@ const operations = {
   },
 } as const;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
-/** App attempt facts, independent of context preview size. Provider-internal
- * attempts and unregistered native reasoning are not inferred from these rows. */
-export async function bookletWorkUsageV2(
-  db: Db,
-  production: ProductionV2,
-  session?: ClientSession,
-) {
-  const rows = await db
-    .collection("bookletWork")
-    .aggregate<{
-      _id: "paidLlm" | "paidImage" | "nonPaid";
-      attempts: number;
-      unresolved: number;
-      active: number;
-    }>(
-      [
-        {
-          $match: {
-            ownerId: production.ownerId,
-            productionId: production._id,
-            documentVersion: 2,
-            status: { $ne: "registered" },
-          },
-        },
-        {
-          $group: {
-            _id: "$category",
-            attempts: { $sum: 1 },
-            unresolved: {
-              $sum: { $cond: [{ $eq: ["$status", "unknown"] }, 1, 0] },
-            },
-            active: {
-              $sum: { $cond: [{ $eq: ["$status", "dispatching"] }, 1, 0] },
-            },
-          },
-        },
-      ],
-      { session },
-    )
-    .toArray();
-  const totals = {
-    paidLlm: 0,
-    paidImage: 0,
-    nonPaid: 0,
-    unresolved: 0,
-    active: 0,
-  };
-  for (const row of rows) {
-    const category = z.enum(["paidLlm", "paidImage", "nonPaid"]).parse(row._id);
-    totals[category] = z
-      .number()
-      .int()
-      .nonnegative()
-      .safe()
-      .parse(row.attempts);
-    totals.unresolved += row.unresolved;
-    totals.active += row.active;
-  }
-  return totals;
-}
 const ids = z
   .array(id)
   .refine((values) => new Set(values).size === values.length);

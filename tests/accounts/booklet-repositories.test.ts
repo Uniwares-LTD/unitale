@@ -14,7 +14,8 @@ import { createCreditIndexes, grantCredits } from "../../src/lib/server/store/cr
 import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { bookletContext } from "../../src/lib/server/booklets/context";
-import { registerBookletWorkV2, bookletWorkUsageV2 } from "../../src/lib/server/booklets/work-v2";
+import { registerBookletWorkV2 } from "../../src/lib/server/booklets/work-v2";
+import { bookletWorkUsageV2 } from "../../src/lib/server/booklets/usage-v2";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
 import type { AiJob } from "../../src/lib/server/ai/jobs";
 import type { ProviderExecution, ProviderNodeObservation } from "../../src/lib/server/ai/types";
@@ -518,6 +519,49 @@ test("booklet repositories preserve embedded identities and transactional bounda
       retry.invocationId = "invocation-2"; retry.callId = "call-2"; retry.items[0].itemId = "item-2";
       retry.references[0].nativeFileId = "handle-2"; retry.references[0].url = "https://files.invalid/renewed";
       await assert.rejects(invoke(m(), payload(retry, "call-1")), /Reuse or reconcile/);
+      await t.test("dispatch rejects exhausted usage, reported cost, locked stages and unfunded revisions atomically", async () => {
+        const before = await repo.getProduction(p._id);
+        const call = () => repo.dispatchWork(p._id, { ...m(), callId: first.callId, requestHash: first.requestHash });
+        const unchanged = async () => {
+          assert.equal((await repo.getWork(p._id, first.callId)).status, "registered");
+          const current = await repo.getProduction(p._id);
+          assert.equal(current.version, before.version);
+          assert.equal(current.fenceCounter, before.fenceCounter);
+        };
+        const counted = { ...first, _id: fingerprint("counted-manager") as never,
+          callId: "counted-manager", actionKey: fingerprint("counted-manager-action"),
+          service: "manager", operation: "reason", status: "unknown" };
+        await f.db.collection("bookletWork").insertOne(counted);
+        await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: {
+          "creativeConfigSnapshot.execution.maxTextCalls": 1,
+        } });
+        await assert.rejects(call(), /call or reported spending ceiling/);
+        await unchanged();
+        await f.db.collection("bookletWork").deleteOne({ _id: counted._id });
+        await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: {
+          "creativeConfigSnapshot.execution.maxTextCalls": before.creativeConfigSnapshot.execution.maxTextCalls,
+        } });
+        const costId = fingerprint("dispatch-cost-fixture");
+        await f.db.collection("aiUsage").insertOne({ _id: costId as never, uid: actor.uid, jobId,
+          scope: "execution", cost: { amount: "999999", currency: before.creativeConfigSnapshot.execution.spendingCeiling.currency } });
+        await assert.rejects(call(), /call or reported spending ceiling/);
+        await unchanged();
+        await f.db.collection("aiUsage").deleteOne({ _id: costId as never });
+        await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: {
+          "stageLocks.story": { operationId: "locked-before-dispatch", lockedAt: new Date(), sourceRevisionIds: [] },
+        } });
+        await assert.rejects(call(), /stage is locked/);
+        await unchanged();
+        await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: {
+          "stageLocks.story": null, revisionChargeId: "unfunded-revision",
+        } });
+        await assert.rejects(call(), /financial consent/);
+        await unchanged();
+        await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: {
+          revisionChargeId: before.revisionChargeId,
+        } });
+        assert.deepEqual(await repo.getProduction(p._id), before);
+      });
       const dispatch = await repo.dispatchWork(p._id, { ...m(), callId: "call-1", requestHash: first.requestHash });
       version = dispatch.version;
       fence = dispatch.fence!;
