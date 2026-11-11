@@ -1208,6 +1208,48 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         assert.equal(facts.fence, registered.fence);
         assert.equal(facts.usage.canDispatch, false);
         assert.equal(facts.usage.workAttempts.paidLlm, 0);
+        await t.test("native cost facts preserve unknowns and never add a Run summary to its nodes", async () => {
+          const native = (id: string, scope: "node" | "execution", price: string | null, currency = "USD") => ({
+            _id: fingerprint(["cost-fixture", id]) as never, uid: "owner", jobId: "run-v2", runId: "native-v2",
+            id, scope, inputTokens: null, outputTokens: null, totalTokens: null,
+            cost: price === null ? null : { amount: price, currency, source: "provider" },
+            elapsedMs: null, provider: "fake", capability: "workflow", timestamp: new Date(),
+          });
+          const rows = [native("node-a", "node", "0.1"), native("node-b", "node", "0.2"), native("unknown", "node", null)];
+          await db.collection("aiUsage").insertMany(rows);
+          let costs = (await successful("context", {})).usage.costs;
+          assert.equal(costs.reportedSubtotal, "0.3");
+          assert.equal(costs.unknownNativeRecords, 1);
+          assert.equal(costs.complete, false);
+          const summary = native("summary", "execution", "0.25");
+          await db.collection("aiUsage").insertOne(summary);
+          costs = (await successful("context", {})).usage.costs;
+          assert.equal(costs.reportedSubtotal, "0.3");
+          await db.collection("aiUsage").updateOne({ _id: summary._id }, { $set: { "cost.amount": "0.5" } });
+          assert.equal((await successful("context", {})).usage.costs.reportedSubtotal, "0.5");
+          await db.collection("aiUsage").updateOne({ _id: summary._id }, { $set: { "cost.amount": String(production.creativeConfigSnapshot.execution.spendingCeiling.amountMinor) } });
+          assert.equal((await successful("context", {})).usage.costs.overCeiling, true);
+          const foreign = { ...native("foreign", "execution", "999999999"), uid: "foreign-owner" };
+          const other = native("other-currency", "node", "1", "EUR");
+          await db.collection("aiUsage").insertMany([foreign, other]);
+          await db.collection("aiUsage").deleteOne({ _id: summary._id });
+          costs = (await successful("context", {})).usage.costs;
+          assert.equal(costs.reportedSubtotal, "0.3");
+          assert.equal(costs.otherCurrencyRecords, 1);
+          const parent = await db.collection("aiJobs").findOne({ _id: "run-v2" as never });
+          const continuationId = "cost-continuation", unrelatedId = "cost-other-production";
+          await db.collection("aiJobs").insertMany([
+            { ...parent!, _id: continuationId as never, runId: "native-cost-continuation", status: "succeeded" },
+            { ...parent!, _id: unrelatedId as never, run: { ...parent!.run, target: { ...parent!.run.target, id: "other-production" } } },
+          ]);
+          const continued = { ...native("continued", "execution", "0.4"), jobId: continuationId, runId: "native-cost-continuation" };
+          const unrelated = { ...native("unrelated", "execution", "1000"), jobId: unrelatedId };
+          await db.collection("aiUsage").insertMany([continued, unrelated]);
+          assert.equal((await successful("context", {})).usage.costs.reportedSubtotal, "0.7");
+          await db.collection("aiUsage").deleteMany({ _id: { $in: [continued._id, unrelated._id] } });
+          await db.collection("aiJobs").deleteMany({ _id: { $in: [continuationId, unrelatedId] as never[] } });
+          await db.collection("aiUsage").deleteMany({ _id: { $in: [...rows, foreign, other].map((row) => row._id) } });
+        });
         assert.equal(facts.work[0].callId, "call-v2");
         assert.equal(facts.work[0].resultAvailable, false);
         assert.equal(facts.reviewerBinding, bindingRow.reviewer.publicationId);

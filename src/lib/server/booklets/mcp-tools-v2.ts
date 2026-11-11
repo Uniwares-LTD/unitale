@@ -20,6 +20,7 @@ import { readBookletDocumentV2 } from "./read-v2";
 import { bookletTransfers, transferSchema } from "./mcp-transfers";
 import { reconcileBookletWorkV2 } from "./reconcile-v2";
 import { readBookletSuiteV2 } from "./suite-v2";
+import { bookletNativeCostsV2 } from "./usage-v2";
 import {
   bookletContentV2Schema,
   bookletSourceV2Schema,
@@ -366,6 +367,7 @@ export function createBookletMcpToolsV2(
             canDispatch: false,
             reason: "dispatch_safeguards_pending",
             workAttempts: await bookletWorkUsageV2(s.db, s.production),
+            costs: await bookletNativeCostsV2(s.db, s.production),
           },
         };
         if (Buffer.byteLength(JSON.stringify(facts)) > 128 * 1024)

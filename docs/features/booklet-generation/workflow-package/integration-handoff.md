@@ -261,6 +261,13 @@ Operator readback/provisioning stays pending; no model may submit this configura
 `nonPaid`, plus `active` (dispatching) and `unresolved` (unknown) totals. Registered
 intents do not consume these counts. This is not a provider-internal attempt count
 or complete native reasoning/cost accounting; those integrations remain 09.2 work.
+`usage.costs` now reads the existing native usage ledger for owned production Runs.
+It returns the configured currency, exact-decimal `reportedSubtotal`, counts of
+unknown native records/other-currency records and `overCeiling`. Per Run it selects
+the larger of execution-summary cost and node subtotal, without adding overlapping
+views. `complete:false` explicitly excludes any claim of a full invoice or visibility
+into hidden SDK/nested-provider charges. Missing ledger rows are not evidence of free
+work. This is a usage safeguard, not a provider spending reservation or guarantee.
 Context returns at most 16 source/work and 8 assessment summaries, with an 8 KiB budget
 per summary group and explicit completeness flags. Correction facts describe selected
 work roots. Context carries the complete checkpoint and has a 128 KiB UTF-8 envelope
@@ -271,6 +278,9 @@ Configure the existing MCP limits for this integration with `toolResultBytes` at
 262144 and `responseBytes` at least 1048576, allowing the wrapped context response.
 The shared defaults remain unchanged. The local v2 transport fixture uses these
 explicit settings; the default-sized v1 transport tests remain separate.
+At checkpoint 12, verify that the target Dify Code/Loop string and tool-response
+limits support the 128 KiB context envelope. Configure existing supported limits
+under scope C if needed; offline Python fixtures do not prove target host limits.
 Source previews are navigational facts, not a complete authorization list. The app
 validates owned source tuples at registration, and the native guard matches the full
 meaningful registered request hash before a paid child call while checking exact

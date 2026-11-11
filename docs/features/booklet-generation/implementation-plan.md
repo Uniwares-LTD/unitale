@@ -624,6 +624,24 @@ integration, dispatch safeguards and the text journey remain pending;
 `usage.canDispatch` stays false. Existing work fields suffice; model JSON and diagrams
 are structurally unaffected.
 
+09.2 cost facts now reuse the existing `aiUsage` ledger through production-owned Runs.
+Per Run, the larger of a reported execution total and the reported node subtotal is
+used, never their sum; a lagging summary cannot hide already reported node cost.
+Decimal arithmetic is exact. Missing/invalid reports and other currencies are counted
+explicitly, not converted or claimed as a zero invoice. The reported subtotal is
+compared with the configured minor-unit ceiling, with `complete:false` because nested
+provider/SDK costs may be absent. No duplicate ledger, estimate pricing configuration
+or spending reservation is introduced. Dispatch integration remains pending.
+The cost-fact slice passes 16 MCP tests (exact decimals, lagging summaries, unknowns,
+cross-Run accumulation and owner/production isolation), build, post-build typecheck,
+scoped lint and docs checks. A separate same-agent read-only review fixed the lagging
+summary issue and found no further blocking issue in this addition. No stored fields
+changed, so the model JSON/diagrams and native package digest remain applicable.
+Remaining native text-journey finding: `decide` still reads the initial `facts.context`,
+and Loop assigners currently update only result/done. Carry confirmed fresh context
+between turns and verify two consecutive actions before closing 09.2. This is a
+demonstrated wiring defect, not a new orchestration feature.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,
