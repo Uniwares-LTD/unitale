@@ -637,10 +637,24 @@ cross-Run accumulation and owner/production isolation), build, post-build typech
 scoped lint and docs checks. A separate same-agent read-only review fixed the lagging
 summary issue and found no further blocking issue in this addition. No stored fields
 changed, so the model JSON/diagrams and native package digest remain applicable.
-Remaining native text-journey finding: `decide` still reads the initial `facts.context`,
-and Loop assigners currently update only result/done. Carry confirmed fresh context
-between turns and verify two consecutive actions before closing 09.2. This is a
-demonstrated wiring defect, not a new orchestration feature.
+Native text-journey reassessment: the previous stale-context finding was not confirmed.
+The actual `turn -> context -> facts -> can-reason -> decide` path is inside the Loop,
+so `facts.context` is refreshed each iteration. Preserve this existing path and verify
+two consecutive actions before closing 09.2; no additional Loop state is required.
+
+Paid child checkpoints now retain a compact owned work reference instead of copying
+the response body. The consume node clears pending intent only after fresh context
+confirms matching retained work; missing results, changed identity and unknown outcomes
+stop advancement. Complete/partial proposal bodies remain in existing work storage.
+The real MCP fixture publishes exact oversized text, saves/replays a compact checkpoint,
+then exercises a second read/checkpoint action using fresh context and advancing fences.
+It executes actual YAML Code functions against actual handler replies, not a Dify
+interpreter. This verifies local boundaries; dispatch and full Manager execution remain
+gated. No schema or storage field changed, so the model JSON/diagrams are unaffected.
+This slice passes 16 MCP and 41 native/v1 compatibility tests, typecheck, scoped lint,
+docs/i18n/skills checks and an independent 13-path hash audit. A separate same-agent
+read-only review (cold-review fallback) found no blocking issue in this slice. Full
+09.2 exit evidence and the checkpoint-wide review pair remain pending.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,

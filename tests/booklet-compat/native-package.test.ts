@@ -109,6 +109,15 @@ function register(r: any, c = context(), correction?: any) {
   });
   return c;
 }
+function retained(r: any, c = context()) {
+  register(r, c);
+  c.checkpoint = JSON.parse(guard(r.service, r, c).checkpoint).state;
+  Object.assign(c.work.at(-1), {
+    service: r.service, operation: r.operation,
+    status: "partial", resultAvailable: true,
+  });
+  return c;
+}
 test("Manager context preserves a complete large checkpoint within its separate context budget", () => {
   const c = context();
   c.checkpoint = { keep: "x".repeat(64000) };
@@ -972,7 +981,7 @@ test("durable checkpoint confirmation is required; version races and fabricated 
 
 test("fresh post-call context supplies the new fence; checkpoint races stop result application", () => {
   const r = request();
-  const c = { ...context(), checkpointVersion: 5, fence: 11 };
+  const c = retained(r, { ...context(), checkpointVersion: 5, fence: 11 });
   const result = {
     contractVersion: 2,
     invocationId: r.invocationId,
@@ -991,6 +1000,7 @@ test("fresh post-call context supplies the new fence; checkpoint races stop resu
   };
   const consumed = run("manager", "consume", args);
   assert.equal(JSON.parse(consumed.checkpoint).fence, 11);
+  assert.deepEqual(JSON.parse(consumed.checkpoint).state.lastResult.document, { kind: "work", id: r.callId });
   assert.equal(consumed.done, false);
   c.checkpointVersion = 6;
   assert.throws(
@@ -1215,13 +1225,13 @@ test("request identities match existing JavaScript canonical JSON for fractional
 });
 
 test("Manager capacity measures UTF-8 bytes without overcounting escaped RTL text", () => {
-  const c = { ...context(), checkpointVersion: 5, note: "ا".repeat(20000) };
+  const r = request();
+  const c = retained(r, { ...context(), checkpointVersion: 5, note: "ا".repeat(20000) });
   const facts = run("manager", "facts", {
     raw: [{ result: c }],
     execution_ready: "true",
   });
   assert.equal(facts.route, "reason");
-  const r = request();
   const result = {
     invocationId: r.invocationId,
     callId: r.callId,
@@ -1238,6 +1248,30 @@ test("Manager capacity measures UTF-8 bytes without overcounting escaped RTL tex
     version: 5,
   });
   assert.ok(Buffer.byteLength(output.checkpoint, "utf8") < 65536);
+});
+
+test("paid child results checkpoint retained references, including oversized partial text", () => {
+  const r = request("manuscript", "write");
+  const c = retained(r, { ...context(), checkpointVersion: 5 });
+  const result = { ...r, status: "partial", items: [{ itemId: "item-1", status: "succeeded",
+    proposals: [{ kind: "manuscript", content: { exactText: "ا🙂".repeat(30000) } }] }] };
+  assert.ok(Buffer.byteLength(JSON.stringify(result)) > 65536);
+  const args = { raw: [{ result }], action: r.service, request: JSON.stringify(r), context: c, version: 5 };
+  const consumed = run("manager", "consume", args);
+  assert.ok(Buffer.byteLength(consumed.checkpoint) < 1024);
+  const state = JSON.parse(consumed.checkpoint).state;
+  assert.equal(state.pending, null);
+  assert.deepEqual(state.lastResult, { document: { kind: "work", id: r.callId }, requestHash: hash(r), status: "partial" });
+  for (const change of [
+    { resultAvailable: false }, { requestHash: "changed" }, { service: "story-planner" },
+    { operation: "other" }, { status: "dispatching" }, { status: "unknown" },
+  ]) {
+    const changed = structuredClone(c);
+    Object.assign(changed.work[0], change);
+    assert.throws(() => run("manager", "consume", { ...args, context: changed }), /reconcile before advancing/);
+    assert.equal(changed.checkpoint.pending.callId, r.callId);
+  }
+  assert.throws(() => run("manager", "consume", { ...args, context: { ...c, work: [] } }), /reconcile before advancing/);
 });
 
 test("post-action checkpoint preserves intent and uses only the authoritative fence", () => {

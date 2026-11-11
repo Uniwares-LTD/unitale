@@ -265,7 +265,7 @@ workflow:
                 Whole-book review uses windows of at most four actual pages plus explicit cross-window recurring-subject comparisons. Complete only with full actual-pixel coverage.
                 App owns structural/product/authentication/funding/fencing/counter checks; you own creative sequence, quality and human policy. No child app callbacks.
                 Use existing record/read/transfer services, bounded context and explicit capacity failures; do not invent tools or unsupported arguments.
-                Checkpoint automatically happens before/after actions. It stores intent/results, not proof of execution. App work facts override stale intent.
+                Checkpoint automatically happens before/after actions. Paid child results are retained in work documents; read the checkpoint's lastResult.document for complete proposals. A checkpoint stores intent/references, not proof of execution. App work facts override stale intent.
                 When missing facts, exhausted corrections, unresolved evidence or no safe useful action remain, pause with a readable reason. Do not invent progress.
                 Action payloads follow integration-handoff.md. Child request_json is the complete child envelope; MCP payloads contain only that operation's arguments.
                 record_acceptance supplies contentHash and exact targetIds/assetIds. complete supplies the selected manifest {pages:[{pageId,assetId,...}], continuityPairs:[...]}.
@@ -1953,7 +1953,14 @@ workflow:
                 form = result.get("formContent", "")
                 if c["checkpointVersion"] != version:
                     raise ValueError("Checkpoint changed during external work; reconcile before applying")
-                state = {**c.get("checkpoint", {}), "lastAction": action, "lastResult": result, "pending": None}
+                saved_result = result
+                if action in SERVICES and not (action == "image-executor" and r.get("operation") == "prepare"):
+                    pending = c.get("checkpoint", {}).get("pending") or {}
+                    rows = [w for w in c.get("work", []) if w.get("callId") == r.get("callId") and w.get("requestHash") == pending.get("requestHash") and w.get("service") == action and w.get("operation") == r.get("operation")]
+                    if pending.get("action") != action or pending.get("callId") != r.get("callId") or pending.get("invocationId") != r.get("invocationId") or len(rows) != 1 or rows[0].get("resultAvailable") is not True or rows[0].get("status") not in ("succeeded", "partial", "failed"):
+                        raise ValueError("Child result not confirmed in retained work; reconcile before advancing")
+                    saved_result = {"document": {"kind": "work", "id": r["callId"]}, "requestHash": rows[0]["requestHash"], "status": rows[0]["status"]}
+                state = {**c.get("checkpoint", {}), "lastAction": action, "lastResult": saved_result, "pending": None}
                 checkpoint = {"expectedVersion": version, "fence": c["fence"], "state": state}
                 if len(json.dumps(checkpoint, ensure_ascii=False).encode("utf-8")) > 65536:
                     raise ValueError("Retain oversized result through trusted observation/transfer before checkpoint; do not truncate")

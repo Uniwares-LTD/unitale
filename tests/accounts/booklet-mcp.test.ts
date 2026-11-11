@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import { validateBookletSuiteV2 } from "../../src/lib/server/booklets/suite-v2";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
@@ -1746,7 +1748,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           },
         );
         await t.test("retained large proposals publish through the v2 transfer and revision tools exactly once", async () => {
-          const workflowId = crypto.randomUUID();
+          const workflowId = configured.workflowId;
           await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
             "run.orchestrator.workflowId": workflowId, "execution.workflowId": workflowId,
           } });
@@ -1786,6 +1788,50 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(stored!.provenance.operationId, "call-v2");
           assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId: production._id,
             artifactId: "story-v2", "provenance.operationId": "call-v2" }), 1);
+
+          // Exercise actual Code functions against real tool replies, not a Dify interpreter.
+          const runCode = (id: string, args: Record<string, unknown>) => {
+            const python = process.env.BOOKLET_PYTHON ?? (existsSync("output/tooling/python312/python.exe")
+              ? resolve("output/tooling/python312/python.exe") : "python3");
+            const executed = spawnSync(python, ["-c",
+              "import json,sys; v=json.load(sys.stdin); s={}; exec(v['code'],s); print(json.dumps(s['main'](**v['args']),ensure_ascii=False))"], {
+              input: JSON.stringify({ code: configured.graph.nodes.find((node) => node.id === id)!.data.code, args }),
+              encoding: "utf8", timeout: 5000, env: { ...process.env, PYTHONUTF8: "1" },
+            });
+            assert.equal(executed.status, 0, executed.stderr || String(executed.error));
+            return JSON.parse(executed.stdout);
+          };
+          let current = await successful("context", {});
+          const pending = await successful("checkpoint", { expectedVersion: current.checkpointVersion, fence: current.fence,
+            state: { ...current.checkpoint, pending: { action: "manuscript", callId: childRequest.callId,
+              invocationId: childRequest.invocationId, requestHash: registration.requestHash } } });
+          current = await successful("context", {});
+          assert.equal(current.work.find((row: { callId: string }) => row.callId === childRequest.callId).resultAvailable, true);
+          const consumed = runCode("consume", { raw: [{ result }], action: "manuscript", request: JSON.stringify(childRequest),
+            context: current, version: pending.checkpointVersion });
+          const compact = JSON.parse(consumed.checkpoint);
+          assert.ok(Buffer.byteLength(consumed.checkpoint) < 1024);
+          assert.deepEqual(compact.state.lastResult.document, { kind: "work", id: childRequest.callId });
+          const confirmed = await successful("checkpoint", compact);
+          assert.deepEqual(await successful("checkpoint", compact), confirmed);
+
+          // A second action consumes new context/version/fence without repeating publication.
+          current = await successful("context", {});
+          const facts = runCode("facts", { raw: { result: current }, execution_ready: "false" });
+          assert.equal(facts.route, "pause"); // Full Manager activation is still gated.
+          assert.equal(JSON.parse(facts.context).checkpointVersion, confirmed.checkpointVersion);
+          const read = runCode("guard", { context: facts.context, decision: { action: "read_document",
+            request_json: JSON.stringify(compact.state.lastResult.document), reason: "Inspect retained exact proposals" } });
+          const readIntent = await successful("checkpoint", JSON.parse(read.checkpoint));
+          const rebound = runCode("saved", { raw: { result: readIntent }, context: facts.context,
+            request: read.request, dispatch: read.dispatch, action: "read_document" });
+          const body = await successful("read_document", JSON.parse(rebound.request));
+          const readResult = runCode("consume", { raw: { result: body }, action: "read_document", request: rebound.request,
+            context: await successful("context", {}), version: rebound.version });
+          const second = await successful("checkpoint", JSON.parse(readResult.checkpoint));
+          assert.equal(second.checkpointVersion, confirmed.checkpointVersion + 2);
+          assert.ok(second.fence > confirmed.fence);
+          assert.deepEqual((await db.collection("bookletWork").findOne({ productionId: production._id, callId: childRequest.callId }))!.resultPayload, result);
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });

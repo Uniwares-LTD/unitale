@@ -143,14 +143,19 @@ oversize rejection; the application transport fixture uses the existing configur
 MCP limits documented in the handoff. Installed-plugin and remote binding readback
 remain distinct pending evidence.
 
-Current slice: 40/40 compatibility tests pass (11 preserved v1 and 29 native-package
-tests). Typecheck, scoped test lint, docs/i18n/skills checks and an independent hash audit
-pass. A separate same-agent read-only review of the context amendment found and fixed
-the source-preview limit defect; follow-up found no further blocking issue. Current
+Paid child checkpoints now store references to exact retained work rather than copying
+full responses. Fresh work facts must confirm retention before pending intent is
+cleared. The real MCP fixture checks exact large-text publication and two successive
+checkpoint actions, including lost-reply replay; full Manager dispatch is still gated.
+
+Current slice: 41/41 compatibility tests pass (11 preserved v1 and 30 native-package
+tests), plus 16 MCP tests. Typecheck, scoped test lint, docs/i18n/skills checks and an
+independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
+found no blocking issue in this slice. Current
 implementation SHA-256:
-`555258ca9cd67de2e53d8972845b3e5b188b0803a2c430b133ea330f644c5564`.
+`f553145a9fe6fa96a3a056f1085528fc5f91e559e63b774d7f2d092611cd2188`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-240,141 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+241,285 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

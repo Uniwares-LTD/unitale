@@ -358,7 +358,14 @@ Checkpoint writes atomically compare version/fence and persist opaque bounded st
 Before an action it contains pending action/call/item/source identities and request hash/reason;
 large request bodies stay outside the checkpoint. Preserve the prior opaque state while
 recording pending intent. Afterward it preserves that state and updates lastAction,
-lastResult and pending:null. The checkpoint fence always comes from the fresh
+lastResult and pending:null. Paid child results use `lastResult:{document:{kind:"work",id:callId},requestHash,status}`,
+not a copy of their full body. Before clearing pending intent, the native consume node
+requires matching call/invocation/request identity and fresh application work facts
+confirming a retained terminal result. Unknown or not-yet-retained outcomes leave the
+saved intent available for reconciliation. Read the owned work document for complete
+proposals, including partial successes. Unpaid image preparation still uses its bounded
+result until the preparation/retention path is completed in 09.3.
+The checkpoint fence always comes from the fresh
 authoritative context, never a child/document result field.
 Do not replace authoritative work facts with intent.
 Durably save partial outputs and original receipts before selecting a manifest.
