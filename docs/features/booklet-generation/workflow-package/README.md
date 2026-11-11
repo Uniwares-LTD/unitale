@@ -166,8 +166,9 @@ The local corrective-generation fixture also proves preflight, bounded dispatch,
 retention/publication and final review without resetting the image allowance.
 Specification and whole-book fixtures now verify actual registration, native
 retention and exact assessment recording. Whole-book inputs bind the selected
-immutable manifest, page-image sources and inspected originals; page/manifest
-metadata is staged, so publication/completion remains 09.4 evidence. Actual Dify
+immutable manifest, page-image sources and inspected originals. Manifest publication
+and revalidation now use actual handlers; page metadata remains staged, so this is
+not yet a complete page-creation/completion journey. Actual Dify
 image-block conversion remains unverified. Registered Generate work now carries
 its exact preflight fact outside the recent assessment preview. Correction finding
 lineage is verified at registration, so older findings need not remain in that preview.
@@ -181,8 +182,10 @@ remains imported. Tasks 09.1-09.3 are locally Verified; 09.4 is In progress.
 Its acceptance gateway/owned reader and human request/response correlation are
 locally implemented. Existing Run submission provides authenticated first-wins
 answers; uncertain submissions stay pending until trusted confirmation. Human forms
-checkpoint compact references. Manifest publication/completion and remaining history
-reads are pending; actual Dify form rendering/readback remains unverified.
+checkpoint compact references. Manager manifest publication/revalidation is locally
+verified without a provider call or automatic completion. Structural completion,
+remaining history reads and native acceptance/completion proof beyond the recent
+assessment preview remain pending; actual Dify form rendering/readback is unverified.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:

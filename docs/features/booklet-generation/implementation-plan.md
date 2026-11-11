@@ -940,6 +940,44 @@ checkpoint-wide review pairs remain 09.7 work. Next within 09.4: manifest draft
 publication, structural completion and remaining backend histories, including the
 known acceptance/completion assessment-preview integration item.
 
+09.4 manifest-publication slice: the existing `save_revision` gateway now resolves
+typed/transfer content before selecting a producer. A Manager-assembled book manifest
+uses the admitted Manager identity and a `manifest:` snapshot operation ID, without
+inventing a specialist result or dispatching work. Its page IDs must select owned
+immutable page-image sources, and attachments must be exactly those originals. Any
+supplied evidence must belong to the production; assembly may use an empty evidence
+array. Text/image publication still requires its retained producer evidence and
+creative funding/locks. Manifest assembly/selection is metadata over saved artifacts,
+so it does not require a new story allocation during a page-only paid revision.
+The active prepaid Manager and ownership checks remain mandatory.
+
+The existing immutable writer also revalidates unchanged manifest content/assets
+with replacement sources and `revalidatedFrom`, without another provider. Exact
+replays and equivalent snapshot writes return the prior revision without rewinding
+the selected candidate. The enhanced whole-book fixture now saves and revalidates
+actual manifests (only page metadata remains staged), reviews the explicitly selected
+revision among equal-content snapshots, and records Manager selection through the
+app gateway. Neither save nor selection sets production completion or its final
+manifest pointer. No schema field/collection changed: the model guide records the
+existing provenance semantics, and the JSON/diagrams remain structurally applicable.
+Completion, remaining backend histories and native acceptance/completion proof beyond
+the recent assessment preview remain 09.4 work.
+
+Manifest slice checks: 26 MCP and 30 repository tests, production build, post-build
+typecheck, scoped lint and docs/i18n/skills checks pass. A separate same-agent
+read-only slice review found no blocking issue in publication, immutable revalidation
+or original/source binding. No native YAML or hash-covered fixture changed, so the
+existing 42 compatibility tests and package identity remain applicable. The native
+whole-book acceptance guard is still an open integration item, not established by
+the fixture's direct acceptance gateway call. Final checkpoint review pairs remain
+09.7 work.
+
+Completion must distinguish the latest draft from Manager's selected candidate.
+Equal-content manifest revisions can have different source contexts, as the fixture
+now demonstrates. Bind an explicit immutable selection and aggregate review evidence
+for that exact manifest revision, rather than its content hash or recent preview
+alone. Keep quality policy in Manager and structural/financial checks in the app.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

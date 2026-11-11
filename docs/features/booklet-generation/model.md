@@ -44,6 +44,15 @@ revision identities and reviewed targets. Correction review preserves the origin
 finding body and before/after source identities. These guards reuse existing work,
 assessment and revision fields; the JSON example and both Mermaid views are unchanged.
 
+V2 Manager manifest assembly now reuses the immutable revision writer. Each page
+binds an owned page-image source and its exact original attachment. Provenance uses
+the admitted Manager Run and a `manifest:` snapshot operation ID; it does not claim
+a specialist execution or create a work attempt. Unchanged manifests can retain
+`revalidatedFrom` with replacement dependency sources. These use existing content,
+source, asset and provenance fields, so the JSON example and both diagrams remain
+structurally unchanged. Draft publication and Manager selection do not complete a
+production or change its final manifest pointer. Structural completion remains 09.4 work.
+
 V2 image registration/dispatch now consumes the exact retained preparation, preserving
 its call ID/hash, target and source identities. Image eligibility uses its own configured
 call ceiling; Manager retains preflight policy ownership. Partial native image results

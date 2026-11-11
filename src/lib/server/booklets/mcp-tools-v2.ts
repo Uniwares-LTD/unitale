@@ -566,7 +566,7 @@ export function createBookletMcpToolsV2(
     ),
     tool(
       "save_revision",
-      "Publish an exact retained text proposal or selected observed original with producer evidence, current funding and locks. Prefer content {callId,itemId,proposalIndex} for text; image content is {kind,asset:{assetId,sha256}} with the same single attached asset.",
+      "Publish an exact retained proposal/original, or a Manager-assembled manifest bound to immutable page-image sources and originals. Text/image producer evidence and creative funding/locks remain required; manifest assembly needs no provider call. Prefer content {callId,itemId,proposalIndex} for text.",
       async (raw, s) => {
         const request = z
           .strictObject({
@@ -579,12 +579,22 @@ export function createBookletMcpToolsV2(
             revalidatedFrom: id.optional(),
             sources: z.array(bookletSourceV2Schema),
             assets: z.array(assetIdentitySchema),
-            evidence: z.array(id).min(1),
+            evidence: z.array(id),
             mutationKey: id,
             fence: count,
           })
           .parse(raw);
-        const producers = await s.db
+        let resolved = request.content;
+        if (resolved === undefined) {
+          if (!request.revalidatedFrom) throw bookletConflict("Content or a revalidatedFrom revision is required.");
+          resolved = (await bookletRepositoryV2(s.db, s.actor).getRevision(s.production._id, request.revalidatedFrom)).content;
+        } else if (!("kind" in resolved) && "transferId" in resolved) {
+          resolved = bookletContentV2Schema.parse(JSON.parse((await bookletTransfers(s.db, s.actor, s.production._id, 2)
+            .read(resolved.transferId, "revision", s.signal)).toString("utf8")));
+        }
+        const manifest = "kind" in resolved && resolved.kind === "book-manifest";
+        if (!manifest && !request.evidence.length) throw bookletConflict("Retained producer evidence is required.");
+        const producers = manifest ? [] : await s.db
           .collection<WorkV2>("bookletWork")
           .find({
             ownerId: s.actor.uid,
@@ -594,18 +604,14 @@ export function createBookletMcpToolsV2(
           })
           .limit(2)
           .toArray();
-        if (producers.length !== 1)
+        if (!manifest && producers.length !== 1)
           throw bookletConflict(
             "An unambiguous retained producer is required.",
           );
         let content: z.infer<typeof bookletContentV2Schema>;
-        if (request.content === undefined) {
-          if (!request.revalidatedFrom) throw bookletConflict("Content or a revalidatedFrom revision is required.");
-          content = (await bookletRepositoryV2(s.db, s.actor).getRevision(s.production._id, request.revalidatedFrom)).content;
-        }
-        else if ("kind" in request.content) content = request.content;
-        else if ("callId" in request.content) {
-          const reference = request.content;
+        if ("kind" in resolved) content = resolved;
+        else if ("callId" in resolved) {
+          const reference = resolved;
           if (reference.callId !== producers[0].callId)
             throw bookletConflict(
               "Proposal reference differs from the retained producer.",
@@ -633,18 +639,7 @@ export function createBookletMcpToolsV2(
           if (!selected)
             throw bookletConflict("Retained proposal is unavailable.");
           content = selected.content;
-        } else
-          content = bookletContentV2Schema.parse(
-            JSON.parse(
-              (
-                await bookletTransfers(s.db, s.actor, s.production._id, 2).read(
-                  request.content.transferId,
-                  "revision",
-                  s.signal,
-                )
-              ).toString("utf8"),
-            ),
-          );
+        } else throw bookletConflict("Revision content could not be resolved.");
         const m = await mutation(s, "appendRevision", request, request.fence);
         const repo = bookletRepositoryV2(s.db, s.actor, undefined, {
           atomicMutations: true,
@@ -658,7 +653,7 @@ export function createBookletMcpToolsV2(
           ...(request.revalidatedFrom ? { revalidatedFrom: request.revalidatedFrom } : {}),
           provenance: {
             runId: s.job._id,
-            operationId: producers[0].callId,
+            operationId: manifest ? "manifest:" + fingerprint([request.artifactId, content, request.sources, request.assets]) : producers[0].callId,
             evidenceIds: request.evidence,
           },
         });

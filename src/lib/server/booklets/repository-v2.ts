@@ -126,6 +126,16 @@ export function bookletRepositoryV2(
     ? mutationSchema.extend({ fence: z.number().int().nonnegative().safe() })
     : mutationSchema;
   const ids = z.array(id).refine((v) => new Set(v).size === v.length);
+  async function guardEvidence(p: ProductionV2, evidenceIds: string[], session: ClientSession) {
+    for (const evidenceId of evidenceIds) {
+      const observed = await work.findOne({ ownerId: actor.uid, productionId: p._id,
+        evidenceIds: evidenceId }, { session, projection: { _id: 1 } });
+      const assessment = observed ? null : await assessments.findOne({ _id: evidenceId,
+        ownerId: actor.uid, productionId: p._id }, { session, projection: { _id: 1 } });
+      if (!observed && !assessment)
+        throw bookletConflict("Evidence does not belong to this production.");
+    }
+  }
   function boundState(row: object) {
     if (BSON.calculateObjectSize(row) > 4 * 1024 * 1024)
       throw bookletConflict(
@@ -1228,15 +1238,8 @@ export function bookletRepositoryV2(
             throw bookletConflict("Acceptance identity mismatch.");
           if (p.lifecycleState === "in-progress") {
             await activeManager(p, value.runId, value.holderId, session);
-            await guardCreativeTargets(p, [revision.artifactId], session);
-            for (const evidenceId of value.evidenceIds) {
-              const observed = await work.findOne({ ownerId: actor.uid, productionId: p._id,
-                evidenceIds: evidenceId }, { session, projection: { _id: 1 } });
-              const assessment = observed ? null : await assessments.findOne({ _id: evidenceId,
-                ownerId: actor.uid, productionId: p._id }, { session, projection: { _id: 1 } });
-              if (!observed && !assessment)
-                throw bookletConflict("Acceptance evidence does not belong to this production.");
-            }
+            if (revision.kind !== "book-manifest") await guardCreativeTargets(p, [revision.artifactId], session);
+            await guardEvidence(p, value.evidenceIds, session);
           }
           const row = acceptanceDocumentV2Schema.parse({
             runId: value.runId,
@@ -1397,9 +1400,34 @@ export function bookletRepositoryV2(
           let content = value.content;
           let sources = value.sources;
           const image = content.kind === "reference" || content.kind === "page-image";
+          const manifest = content.kind === "book-manifest";
+          if (content.kind === "book-manifest" && p.lifecycleState === "in-progress") {
+            await activeManager(p, value.provenance.runId, value.holderId, session);
+            await guardEvidence(p, value.provenance.evidenceIds, session);
+            const pageAssets = new Map<string, string>();
+            for (const page of content.pages) {
+              const parent = p.subjects.find((subject) => subject.kind === "page" && subject.id === page.pageId);
+              const artifact = parent?.artifacts.find((artifact) => artifact.kind === "page-image");
+              const source = sources.find((source) => source.artifactId === artifact?.id);
+              const selected = source && await revisions.findOne({ ownerId: actor.uid, productionId: p._id,
+                _id: source.revisionId, artifactId: source.artifactId, contentHash: source.contentHash, kind: "page-image",
+              }, { session });
+              if (selected?.content.kind !== "page-image" || selected.content.asset.assetId !== page.assetId)
+                throw bookletConflict("Manifest pages must identify their owned immutable page-image sources.");
+              pageAssets.set(page.assetId, selected.content.asset.sha256);
+            }
+            if (pageAssets.size !== value.assets.length || value.assets.some((asset) => pageAssets.get(asset.assetId) !== asset.sha256))
+              throw bookletConflict("Manifest attachments must match its selected page originals.");
+            if (!value.revalidatedFrom) {
+              const prior = await revisions.findOne({ ownerId: actor.uid, productionId: p._id, artifactId: artifact.id,
+                contentHash: fingerprint(content), sources, assets: value.assets,
+              }, { session });
+              if (prior) return { revisionId: prior._id, ordinal: prior.ordinal };
+            }
+          }
           if (value.revalidatedFrom) {
             await activeManager(p, value.provenance.runId, value.holderId, session);
-            await guardCreativeTargets(p, [artifact.id], session);
+            if (!manifest) await guardCreativeTargets(p, [artifact.id], session);
             const previous = await revisions.findOne({ _id: value.revalidatedFrom, ownerId: actor.uid,
               productionId: p._id, artifactId: artifact.id }, { session });
             if (!previous || fingerprint(previous.content) !== fingerprint(content) ||
@@ -1409,13 +1437,13 @@ export function bookletRepositoryV2(
             const expectedSources = [{ artifactId: previous.artifactId, revisionId: previous._id, contentHash: previous.contentHash }, ...value.sources];
             const retainedProducer = value.provenance.operationId === previous.provenance.operationId &&
               value.provenance.evidenceIds.every((evidence) => previous.provenance.evidenceIds.includes(evidence));
-            const assessed = await assessments.findOne({ ownerId: actor.uid, productionId: p._id,
+            const assessed = manifest ? null : await assessments.findOne({ ownerId: actor.uid, productionId: p._id,
               callId: value.provenance.operationId, complete: true, "assessment.targetHash": previous.contentHash,
               evidenceIds: { $all: value.provenance.evidenceIds },
             }, { session });
-            if (!value.provenance.evidenceIds.length || (!retainedProducer && (!assessed ||
+            if (!manifest && (!value.provenance.evidenceIds.length || (!retainedProducer && (!assessed ||
               fingerprint(assessed.assessment.sources) !== fingerprint(expectedSources) ||
-              !assessed.assessment.coverage.targetIds.some((target) => target === artifact.id || target === subject.id))))
+              !assessed.assessment.coverage.targetIds.some((target) => target === artifact.id || target === subject.id)))))
               throw bookletConflict("Revalidation requires retained producer evidence or recorded review of the exact replacement context.");
             if (!retainedProducer && image && (!['image', 'correction'].includes(assessed!.assessment.mode) || previous.assets.some((asset) =>
               !(assessed!.assessment.coverage.assetIds ?? []).includes(asset.assetId))))
@@ -1423,7 +1451,7 @@ export function bookletRepositoryV2(
             const prior = await revisions.findOne({ ownerId: actor.uid, productionId: p._id, artifactId: artifact.id,
               revalidatedFrom: previous._id, sources: value.sources }, { session });
             if (prior) return { revisionId: prior._id, ordinal: prior.ordinal };
-          } else if (p.lifecycleState !== "draft") {
+          } else if (p.lifecycleState !== "draft" && !manifest) {
             await activeManager(
               p,
               value.provenance.runId,

@@ -125,7 +125,7 @@
     6
   ],
   "review": {
-    "mode": "09.4 human-request slice verified locally; 09.1-09.3 verified locally; checkpoint-wide reviews pending; 01-06 reviews historical",
+    "mode": "09.4 human/manifest publication slices verified locally; 09.1-09.3 verified locally; checkpoint-wide reviews pending; 01-06 reviews historical",
     "implementationSha256": "09d66bac7a99df7bebd8840d41431cc2f9a424d6a81c85f82e83077784c01f1a",
     "independentAgentReview": false
   }

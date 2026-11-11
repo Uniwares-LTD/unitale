@@ -416,7 +416,10 @@ retains a current-target raw-v1 presentation in its existing mutation receipt;
 `read_document` kind `human_response` correlates authenticated Run answers by
 original attempt, native node and exact presentation. Unknown/mismatched answers
 stay pending; changed targets are stale. Existing Run submission provides first-wins.
-Manifest publication, completion and remaining histories are still 09.4 work.
+Manager manifest publication/revalidation now binds immutable page-image sources
+and exact original attachments, without a provider call or automatic completion.
+Creative text/images retain their producer and financial guards. Completion, remaining
+histories and native acceptance/completion proof beyond the recent preview are still 09.4 work.
 The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original

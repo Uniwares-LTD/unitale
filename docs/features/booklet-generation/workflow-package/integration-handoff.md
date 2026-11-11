@@ -273,7 +273,19 @@ It records a Manager selection without imposing application quality/human policy
 `read_document {kind:"acceptance",id}` returns its owned bounded DTO. Sources stay
 on the selected immutable revision rather than being copied into another record.
 Exact receipt replay remains stable after later writes or stage locks. Structural
-completion and manifest publication remain 09.4 work.
+completion and native acceptance/completion proof beyond the recent preview remain
+09.4 work.
+
+Manager manifest publication uses `save_revision` with book-manifest content, one
+owned page-image source per selected page, and the exact original attachments.
+Evidence may be empty for this structural assembly; any supplied IDs must be owned.
+The gateway records the current Manager and a `manifest:` snapshot operation ID,
+without a child call or work attempt. Equivalent snapshots reuse an immutable
+revision without rewinding the selected pointer. `revalidatedFrom` can copy unchanged
+manifest content/assets with replacement sources. Typed and transferred content use
+the existing carrier. Creative text/images retain their producer/evidence, lock and
+funding guards. Manifest assembly/selection does not consume another story allocation
+when finalizing page revisions, and does not mark the production complete.
 
 `request_human` accepts current immutable source tuples in `targets` (or an empty
 list for a brief question), `{mode:"raw-v1"}` in `responseContract`, and

@@ -2644,22 +2644,47 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const pairs = [{ pageId: "page-v2", referenceAssetId: originals[1]._id }];
           const pageContent = { kind: "page-image", asset: { assetId: originals[0]._id, sha256: originals[0].sha256 } };
           const manifest = { kind: "book-manifest", pages: [{ pageId: "page-v2", assetId: originals[0]._id }], continuityPairs: pairs };
-          // Owned immutable review inputs, staged independently of 09.4 publication/completion.
-          const rows = [revisionV2Schema.parse({ ...revision, _id: "whole-page-fixture", ordinal: 1,
+          // The page's immutable metadata is staged; Manager manifest publication is actual.
+          const pageRevision = revisionV2Schema.parse({ ...revision, _id: "whole-page-fixture", ordinal: 1,
             artifactId: "whole-page-image", subjectId: "page-v2", kind: "page-image", content: pageContent,
-            contentHash: fingerprint(pageContent), sources: [], assets: [pageContent.asset] }),
-          revisionV2Schema.parse({ ...revision, _id: "whole-manifest-fixture", ordinal: 1,
-            artifactId: "whole-manifest", subjectId: "book-subject", kind: "book-manifest", content: manifest,
-            contentHash: fingerprint(manifest), sources: [], assets: [] })];
-          const selectedManifest = { ...rows[1], _id: "whole-manifest-selected", ordinal: 2 };
-          await db.collection("bookletRevisions").insertMany([...rows, selectedManifest] as never);
+            contentHash: fingerprint(pageContent), sources: [], assets: [pageContent.asset] });
+          await db.collection("bookletRevisions").insertOne(pageRevision as never);
+          const pageSource = { artifactId: pageRevision.artifactId, revisionId: pageRevision._id, contentHash: pageRevision.contentHash };
+          const draft = { artifactId: "whole-manifest", content: manifest, sources: [pageSource], assets: [pageContent.asset],
+            evidence: [], mutationKey: "assemble-manifest", fence: indexed.fence };
+          const workCount = await db.collection("bookletWork").countDocuments({ productionId: production._id });
+          for (const changed of [{ ...draft, sources: [] }, { ...draft, assets: [] },
+            { ...draft, content: { ...manifest, pages: [{ pageId: "page-v2", assetId: originals[1]._id }] } },
+            { ...draft, evidence: ["invented-producer"] }])
+            assert.equal((await invoke("save_revision", changed)).isError, true);
+          const first = await successful("save_revision", draft);
+          assert.deepEqual(await successful("save_revision", draft), first);
+          const extra = await db.collection("bookletRevisions").findOne({ _id: "prepare-source-0" as never });
+          const replacementSources = [pageSource, { artifactId: extra!.artifactId, revisionId: extra!._id, contentHash: extra!.contentHash }];
+          const second = await successful("save_revision", { ...draft, content: undefined, sources: replacementSources,
+            revalidatedFrom: first.revisionId, mutationKey: "revalidate-manifest-context", fence: first.fence });
+          assert.notEqual(second.revisionId, first.revisionId);
+          assert.equal(second.contentHash, first.contentHash);
+          assert.equal((await successful("save_revision", { ...draft, mutationKey: "same-draft-new-key", fence: second.fence })).revisionId, first.revisionId);
+          assert.equal(await db.collection("bookletWork").countDocuments({ productionId: production._id }), workCount);
+          const state = await successful("read_document", { kind: "production", id: production._id });
+          assert.equal(state.value.state, "in-progress");
+          assert.equal(state.value.currentManifestRevisionId, null);
+          const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const selected = p!.subjects[0].artifacts.find((artifact: { id: string }) => artifact.id === "whole-manifest");
+          assert.equal(selected.currentRevisionId, second.revisionId);
+          assert.equal(selected.acceptedRevisionId, null);
+          const selectedManifest = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions").findOne({ _id: second.revisionId });
+          assert.equal(selectedManifest!.revalidatedFrom, first.revisionId);
+          assert.deepEqual(selectedManifest!.content, manifest);
+          assert.ok(selectedManifest!.provenance.operationId.startsWith("manifest:"));
           const references = originals.map((asset) => ({ assetId: asset._id, sha256: asset.sha256, bytes: asset.bytes }));
           const child = { contractVersion: 2, invocationId: "whole-review", callId: "whole-review", service: "quality-reviewer",
             operation: "whole_book", intent: "create", items: [{ itemId: "whole-item", input: {
               targetIds: ["page-v2"], pageIds: ["page-v2"], targetHash: fingerprint(manifest), referencePositions: [0, 1], continuityPairs: pairs,
-            } }], sources: [rows[0], selectedManifest].map((row) => ({ artifactId: row.artifactId, revisionId: row._id, contentHash: row.contentHash,
+            } }], sources: [pageRevision, selectedManifest!].map((row) => ({ artifactId: row.artifactId, revisionId: row._id, contentHash: row.contentHash,
               content: row.content })), references, constraints: {} };
-          const registration = { action: "register", childRequest: child, requestHash: fingerprint(child), targets: ["page-v2"], fence: indexed.fence };
+          const registration = { action: "register", childRequest: child, requestHash: fingerprint(child), targets: ["page-v2"], fence: p!.fenceCounter };
           for (const sources of [[child.sources[0]], [child.sources[1]]]) {
             const omitted = { ...child, sources };
             assert.equal((await invoke("begin_work", { ...registration, childRequest: omitted, requestHash: fingerprint(omitted) })).isError, true);
@@ -2697,6 +2722,13 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const recorded = await successful("record_assessment", request);
           assert.equal(recorded.complete, true);
           assert.deepEqual(await successful("record_assessment", request), recorded);
+          const accepted = await successful("record_acceptance", { revisionId: selectedManifest!._id,
+            contentHash: selectedManifest!.contentHash, targetIds: ["whole-manifest"], assetIds: [pageContent.asset.assetId],
+            sources: selectedManifest!.sources, evidence: [recorded.assessmentId], fence: recorded.fence });
+          assert.ok(accepted.acceptanceId);
+          const after = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          assert.equal(after!.lifecycleState, "in-progress");
+          assert.equal(after!.currentManifestRevisionId, null);
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
