@@ -53,7 +53,9 @@ import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
 import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
-import type { AiJob } from "../../src/lib/server/ai/jobs";
+import { persistAiEvent, type AiJob } from "../../src/lib/server/ai/jobs";
+import { createDifyWorkflow } from "../../src/lib/server/ai/dify";
+import { parseDifyConfig } from "../../src/lib/config/dify";
 import {
   productionV2Schema,
   revisionV2Schema,
@@ -1750,20 +1752,43 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         await t.test("retained large proposals publish through the v2 transfer and revision tools exactly once", async () => {
           const workflowId = configured.workflowId;
           await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
-            "run.orchestrator.workflowId": workflowId, "execution.workflowId": workflowId,
+            "run.orchestrator.workflowId": workflowId, execution: null, runId: null, taskId: null,
+            lease: "fixture-worker", leaseUntil: new Date(Date.now() + 180000), capability: "booklet-fixture",
+            binding: { name: "booklet-fixture", revision: "1", mode: "fake", kind: "workflow", fingerprint: "fixture" },
           } });
           await db.collection("bookletWork").updateOne({ productionId: production._id, callId: "call-v2" }, { $set: { status: "dispatching" } });
           const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
           const result = { contractVersion: 2, invocationId: childRequest.invocationId, callId: childRequest.callId,
             service: "manuscript", operation: "write", status: "succeeded", items: [{ itemId: childRequest.items[0].itemId,
               status: "succeeded", proposals: [{ kind: "manuscript", subjectId: "book-subject", content }] }] };
-          const session = db.client.startSession();
-          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
-            runId: "native-v2", id: "retained-text-node", nodeId: "child-manuscript", nodeType: "tool", status: "succeeded",
-            retryIndex: 0, iterationId: null, loopId: "iteration-v2", outputs: { json: [{ result: JSON.stringify(result) }] },
-            outputsTruncated: false, error: null, executionMetadata: null,
-          }, session)); } finally { await session.endSession(); }
+          const nativeId = randomUUID(), taskId = randomUUID();
+          const config = parseDifyConfig({ DIFY_MODE: "live", DIFY_BASE_URL: "https://offline.invalid/v1",
+            DIFY_KEY_FIXTURE: "fixture-not-a-key", DIFY_ORCHESTRATORS_JSON: JSON.stringify([{
+              id: "fixture", name: "Fixture", description: "", order: 0, enabled: true,
+              keyEnv: "DIFY_KEY_FIXTURE", workflowId, inputs: [], pricing: null, recovery: null,
+            }]) });
+          assert.equal(config.mode, "live");
+          if (config.mode !== "live") throw new Error("Invalid fixture config");
+          const provider = createDifyWorkflow(config, config.bindings[0], async (url, options) => {
+            assert.equal(url, "https://offline.invalid/v1/workflows/" + workflowId + "/run");
+            assert.equal(options?.method, "POST");
+            const events = [
+              { event: "workflow_started", workflow_run_id: nativeId, task_id: taskId,
+                data: { id: nativeId, workflow_id: workflowId } },
+              { event: "node_finished", workflow_run_id: nativeId, task_id: taskId, data: {
+                id: "retained-text-node", node_id: "child-manuscript", node_type: "tool", status: "succeeded",
+                retry_index: 0, loop_id: "iteration-v2", outputs: { json: [{ result: JSON.stringify(result) }] }, outputs_truncated: false,
+              } },
+            ];
+            return new Response(events.map((event) => "data: " + JSON.stringify(event) + "\n\n").join(""),
+              { headers: { "content-type": "text/event-stream" } });
+          }, undefined, true);
+          const streamed = await provider.start({ user: "fixture", inputs: {} }, (event) =>
+            persistAiEvent(db, parent!, event, new Date(), (job, node, session) => observeBookletNodeV2(db, job, node, session)));
+          assert.equal(streamed.kind, "unknown"); // Dropped before parent completion; never POST again.
           const captured = await db.collection("bookletWork").findOne({ productionId: production._id, callId: "call-v2" });
+          assert.deepEqual(captured!.resultPayload, result);
+          assert.equal((await db.collection<AiJob>("aiJobs").findOne({ _id: parent!._id }))!.execution!.status, "running");
           const evidence = [captured!.evidenceIds.at(-1)];
           const bytes = Buffer.from(JSON.stringify(content));
           const transfer = await successful("transfer", { action: "open", key: "publish-large-manuscript",

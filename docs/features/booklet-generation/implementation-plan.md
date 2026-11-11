@@ -665,11 +665,21 @@ Attempt totals moved into the existing usage reader to avoid a repository/regist
 import cycle. No new ledger, reservation, contract field or dependency is introduced.
 Thirty repository and 16 MCP tests pass, including rollback of dispatch denied by
 usage, price, lock and funding guards. Model JSON/diagrams and YAML digest are unchanged.
-The native stream currently persists its run/task identity before node observations
-but does not persist a publication identity until execution readback. The v2 observer
-requires that identity, so normal in-stream retention is not yet established. Resolve
-this demonstrated identity timing gap and configured-suite dispatch binding before
-claiming the text journey complete. MCP dispatch and `usage.canDispatch` remain gated.
+The native stream's demonstrated identity timing gap is resolved through Unibase
+[PR #51](https://github.com/Uniwares-LTD/unibase/pull/51), imported with `template:update`
+at exact reviewed merge revision `949ac66d2e02ab5c9ed4a6fa59b0ad66c97742d4`.
+Opt-in observers receive the actual initial publication through the existing running
+execution event before node results. Legacy missing identities are not inferred;
+reconnect preserves newer state. No generic interface or stored field was added.
+Shared verification passes 17 Dify/tracing and 17 AI-job tests, build, separate
+typecheck and required checks; two same-agent read-only reviews are clean. The Unitale
+MCP fixture now uses the actual Dify parser and worker event persistence before its
+Booklet observer, then publishes/checkpoints exact large text after a stream drops
+before parent completion. All 16 MCP and 34 imported adapter/tracing/worker tests pass
+in Unitale, along with template consistency, build, typecheck and required checks.
+Configured-suite dispatch/source
+bindings and complete text-journey exit evidence remain pending; MCP dispatch and
+`usage.canDispatch` remain gated.
 Build, post-build typecheck, scoped lint, environment and docs/i18n/skills checks pass.
 A separate same-agent read-only slice review (cold-review fallback) found no blocking
 issue; checkpoint-wide final reviews remain 09.7 work.
