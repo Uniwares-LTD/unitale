@@ -408,8 +408,11 @@ call eligibility. All six assessment modes, original retention/publication,
 corrective generation and revalidation are locally verified. Whole-book inputs bind
 the selected immutable manifest and actual page-image sources/originals. Registered
 Generate work summaries expose exact preflight facts outside the recent assessment
-preview; correction finding lineage is verified at registration. Acceptance, human
-decisions and completion remain 09.4 work. The candidate execution switch stays disabled.
+preview; correction finding lineage is verified at registration. The acceptance
+gateway records the current Manager's exact owned revision/source/original selection
+with admission, lock, funding and evidence checks. It grants no human or quality
+authority. The bounded reader supports owned `acceptance` records. Human decisions,
+manifest publication and completion remain 09.4 work. The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original
 identities, returning `{references:[{assetId,sha256,bytes}]}` plus ordered native MCP

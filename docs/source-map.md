@@ -75,7 +75,7 @@ and the adapter; the table does not require unrelated suites for every task.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
   `mcp-tools-v2.ts` its v2 checkpoint/index/creative-registration handlers and typed-read wrapper;
-  `read-v2.ts` owns v2 production/checkpoint/revision/work/assessment DTOs, bounded typed sections and artifact history metadata;
+  `read-v2.ts` owns v2 production/checkpoint/revision/work/assessment/acceptance DTOs, bounded typed sections and artifact history metadata;
   `suite-v2.ts` validates server-owned Manager/child-tool mappings and resolves the configured Reviewer policy;
   `usage-v2.ts` reads owned work-attempt totals, native Run costs and execution bounds for context and dispatch guards without adding an accounting ledger;
   `mcp-transfers.ts` owns bounded staging. `npm run test:booklet-mcp` verifies the

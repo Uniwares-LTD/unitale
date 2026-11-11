@@ -241,7 +241,8 @@ Generation consumes that same retained preparation and uses `paidImage` accounti
 context's `canDispatchImage` reports its separate configured call eligibility, while
 `canDispatch` remains the text/reasoning eligibility. Manager owns exact preflight policy.
 Visual image review is locally verified; whole-book/correction lineage and runtime
-recovery remain in the remaining tasks. `sources` verifies exact owned immutable source
+recovery were remaining at that earlier slice. All six review modes and correction
+lineage are now locally verified; runtime recovery remains pending. `sources` verifies exact owned immutable source
 tuples and returns ordered original bytes as MCP image blocks with identity metadata.
 It rejects derivatives, changed identities and foreign assets without partial delivery.
 The JSON result excludes binary carriers. Actual target conversion to Dify native files
@@ -263,6 +264,15 @@ This storage slice is not proof of real provider execution, effective retries or
 application-connected recovery. The candidate still has retries/activation disabled.
 
 ### Context and transition facts
+
+`record_acceptance` is locally implemented with the table's exact revision, target,
+asset, source and evidence arguments. The gateway derives the Manager Run identity;
+the immutable writer rechecks current admission, locks, funding and owned evidence.
+It records a Manager selection without imposing application quality/human policy.
+`read_document {kind:"acceptance",id}` returns its owned bounded DTO. Sources stay
+on the selected immutable revision rather than being copied into another record.
+Exact receipt replay remains stable after later writes or stage locks. Human
+response correlation and structural completion remain 09.4 work.
 
 The creative-text `save_revision` implementation accepts an exact retained proposal
 reference in `content:{callId,itemId,proposalIndex}`. This small boundary refinement

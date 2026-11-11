@@ -1980,6 +1980,45 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(stored!.reviewerBinding, bindingRow.reviewer.publicationId);
           assert.equal(await db.collection("bookletAssessments").countDocuments({ productionId: production._id, callId: child.callId }), 1);
         });
+        await t.test("Manager acceptance binds exact revision identity and sources without creating human or quality authority", async () => {
+          const current = await successful("context", {});
+          const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const artifact = p!.subjects.flatMap((subject: { artifacts: unknown[] }) => subject.artifacts)
+            .find((artifact: { id: string }) => artifact.id === "story-v2");
+          const revision = await db.collection("bookletRevisions").findOne({ _id: artifact.currentRevisionId });
+          const assessment = await db.collection("bookletAssessments").findOne({ productionId: production._id,
+            "assessment.mode": "text", "assessment.targetHash": revision!.contentHash });
+          const request = { revisionId: revision!._id, contentHash: revision!.contentHash,
+            targetIds: ["story-v2"], assetIds: [], sources: revision!.sources, evidence: [assessment!._id], fence: current.fence };
+          const planned = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: {
+            action: "record_acceptance", request_json: JSON.stringify(request), reason: "Select the reviewed exact text" } });
+          const intent = await successful("checkpoint", JSON.parse(planned.checkpoint));
+          const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(current),
+            request: planned.request, dispatch: planned.dispatch, action: "record_acceptance" }).request);
+          for (const changed of [
+            { ...ready, contentHash: "0".repeat(64) }, { ...ready, targetIds: ["foreign"] },
+            { ...ready, assetIds: ["invented"] }, { ...ready, evidence: ["foreign-evidence"] },
+            { ...ready, sources: [{ artifactId: "story-v2", revisionId: "foreign", contentHash: revision!.contentHash }] },
+            { ...ready, runId: "model-selected-manager" },
+          ]) assert.equal((await invoke("record_acceptance", changed)).isError, true);
+          const accepted = await successful("record_acceptance", ready);
+          assert.deepEqual(await successful("record_acceptance", ready), accepted);
+          const read = await successful("read_document", { kind: "acceptance", id: accepted.acceptanceId });
+          assert.equal(read.value.runId, "run-v2");
+          assert.equal(read.value.revisionId, revision!._id);
+          assert.deepEqual(read.value.evidenceIds, [assessment!._id]);
+          const after = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          assert.equal(after!.subjects[0].artifacts.find((artifact: { id: string }) => artifact.id === "story-v2").acceptedRevisionId, revision!._id);
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { "stageLocks.story": {
+            operationId: "fixture-stage-lock", lockedAt: new Date(), sourceRevisionIds: [revision!._id],
+          } } });
+          assert.equal((await invoke("record_acceptance", { ...ready, fence: accepted.fence })).isError, true);
+          assert.deepEqual(await successful("record_acceptance", ready), accepted); // Exact receipt does not mutate a locked stage.
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { "stageLocks.story": null } });
+          const stored = await db.collection("bookletAcceptances").findOne({ _id: accepted.acceptanceId as never });
+          await db.collection("bookletAcceptances").insertOne({ ...stored!, _id: "foreign-acceptance" as never, ownerId: "foreign" });
+          assert.equal((await invoke("read_document", { kind: "acceptance", id: "foreign-acceptance" })).isError, true);
+        });
         await t.test("unpaid preparation uses registered native work and retains the exact prepared identity", async () => {
           const before = await successful("context", {});
           const indexed = await successful("index", {

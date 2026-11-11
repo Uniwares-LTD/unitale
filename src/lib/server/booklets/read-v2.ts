@@ -4,7 +4,7 @@ import type { Db } from "mongodb";
 import type { CreditActor } from "../store/credit-types";
 import { fingerprint } from "../foundation/canonical";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { assessmentDocumentV2Schema, revisionV2Schema } from "./documents-v2";
+import { acceptanceDocumentV2Schema, assessmentDocumentV2Schema, revisionV2Schema } from "./documents-v2";
 import { bookletConflict, bookletMissing } from "./context";
 import { id } from "./documents";
 
@@ -16,6 +16,7 @@ export const bookletReadV2Schema = z.strictObject({
     "revision",
     "work",
     "assessment",
+    "acceptance",
     "history",
     "work_history",
     "assessment_history",
@@ -297,6 +298,16 @@ export async function readBookletDocumentV2(
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };
+  } else if (request.kind === "acceptance") {
+    await repo.getProduction(productionId);
+    const stored = await db.collection("bookletAcceptances").findOne({
+      _id: request.id as never, ownerId: actor.uid, productionId,
+    });
+    if (!stored) throw bookletMissing();
+    const row = acceptanceDocumentV2Schema.parse(stored);
+    document = { acceptanceId: row._id, runId: row.runId, revisionId: row.revisionId,
+      contentHash: row.contentHash, targetIds: row.targetIds, assetIds: row.assetIds,
+      evidenceIds: row.evidenceIds, createdAt: row.createdAt.toISOString() };
   } else {
     await repo.getProduction(productionId);
     const stored = await db.collection("bookletAssessments").findOne({

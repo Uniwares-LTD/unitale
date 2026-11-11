@@ -1190,6 +1190,18 @@ export function bookletRepositoryV2(
               fingerprint(revision.assets.map((a) => a.assetId).sort())
           )
             throw bookletConflict("Acceptance identity mismatch.");
+          if (p.lifecycleState === "in-progress") {
+            await activeManager(p, value.runId, value.holderId, session);
+            await guardCreativeTargets(p, [revision.artifactId], session);
+            for (const evidenceId of value.evidenceIds) {
+              const observed = await work.findOne({ ownerId: actor.uid, productionId: p._id,
+                evidenceIds: evidenceId }, { session, projection: { _id: 1 } });
+              const assessment = observed ? null : await assessments.findOne({ _id: evidenceId,
+                ownerId: actor.uid, productionId: p._id }, { session, projection: { _id: 1 } });
+              if (!observed && !assessment)
+                throw bookletConflict("Acceptance evidence does not belong to this production.");
+            }
+          }
           const row = acceptanceDocumentV2Schema.parse({
             runId: value.runId,
             revisionId: value.revisionId,

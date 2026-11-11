@@ -487,6 +487,28 @@ export function createBookletMcpToolsV2(
       },
     ),
     tool(
+      "record_acceptance",
+      "Record the current Manager's selection of an exact owned revision, sources and originals. This is distinct from a Reviewer assessment or authenticated human response.",
+      async (raw, s) => {
+        const request = z.strictObject({
+          revisionId: id, contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+          targetIds: z.array(id).min(1), assetIds: z.array(id),
+          sources: z.array(bookletSourceV2Schema), evidence: z.array(id), fence: count,
+        }).parse(raw);
+        const repo = bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true });
+        const revision = await repo.getRevision(s.production._id, request.revisionId);
+        if (fingerprint(revision.sources) !== fingerprint(request.sources))
+          throw bookletConflict("Acceptance sources differ from the selected immutable revision.");
+        const m = await mutation(s, "recordAcceptance", request, request.fence);
+        const receipt = await repo.recordAcceptance(s.production._id, {
+          ...m, runId: s.job._id, revisionId: request.revisionId,
+          contentHash: request.contentHash, targetIds: request.targetIds,
+          assetIds: request.assetIds, evidenceIds: request.evidence,
+        });
+        return { acceptanceId: receipt.acceptanceId, version: receipt.version, fence: receipt.fence };
+      },
+    ),
+    tool(
       "retain_original",
       "Retain one exact observed native image output using the restricted Dify downloader and existing original-byte store. Storage retries never regenerate.",
       async (raw, s) => {

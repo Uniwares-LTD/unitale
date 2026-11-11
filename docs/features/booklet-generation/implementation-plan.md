@@ -531,7 +531,7 @@ use estimated completion percentages as acceptance evidence.
 | 09.1 Manager context and bindings | Verified | Local configuration/identity, bounded context/navigation, complete checkpoint and atomic fence tests pass. Actual remote/plugin readback remains checkpoint 12 evidence. |
 | 09.2 One complete text action | Verified | Local guarded dispatch, native usage, exact retained text/publication and compact checkpoint journey pass, including lost-reply/replay denial. Provider/target limitations remain accepted and explicitly labelled below. |
 | 09.3 Assessment and image actions | Verified | Local handler/native Code fixtures cover all six modes, correction lineage, exact preparation/preflight, original bytes, publication and revalidation. Exact assessments/coverage cannot be altered; partial results and save/attachment replay preserve originals. Live Dify conversion remains checkpoint 12 evidence. |
-| 09.4 Human decisions and completion | Pending | Connect existing authentic first-wins decisions, Manager acceptance, manifest drafts, structural completion and backend history reads. Correct requests resume; stale responses and invalid purchased structures fail without partial finalization. |
+| 09.4 Human decisions and completion | In progress | Connect existing authentic first-wins decisions, Manager acceptance, manifest drafts, structural completion and backend history reads. Correct requests resume; stale responses and invalid purchased structures fail without partial finalization. |
 | 09.5 Bounded recovery | Pending | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
 | 09.6 Connected journeys | Pending | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
 | 09.7 Review and handoff | Pending | Fix blockers, apply demonstrated simplifications, run final affected checks and two consecutive clean read-only reviews on the same final state. Consolidate evidence and revise checkpoint 10 around completed interfaces, then stop before its implementation. |
@@ -885,6 +885,27 @@ diagrams remain applicable. This establishes local 09.3 behavior, not target Dif
 execution or connected creation/completion. The final checkpoint review pair is
 still 09.7 work. Next: 09.4 authentic decisions, acceptance, manifest publication,
 structural completion and backend history; no checkpoint 10 UI implementation.
+
+09.4 acceptance slice: `record_acceptance` now records the current prepaid Manager's
+selection through the existing immutable acceptance writer. Request sources must
+equal the selected revision's sources; revision/hash/target/original identities are
+checked. Admitted writes recheck active Manager, stage locks, revision funding and
+owned work/assessment evidence in the transaction. This does not add app quality
+or human-approval gates. `read_document` adds the owned `acceptance` DTO through its
+existing bounded reader. Fixtures execute the actual Manager guard/checkpoint and
+MCP gateway, reject changed identities, foreign evidence/sources and model-supplied
+Run identity, preserve exact replay after a stage lock, and reject a foreign
+acceptance read. The existing 07 acceptance schema is reused unchanged; model JSON
+and both diagrams are unaffected. Human request/response correlation, manifest
+publication, structural completion and remaining backend histories are still 09.4
+work; 09.5-09.7 remain Pending.
+
+Acceptance slice checks: 25 MCP and 30 repository tests pass, plus production build,
+post-build typecheck, scoped lint and docs/i18n/skills checks. A separate same-agent
+read-only review found no blocking issue in the gateway, immutable reader or
+transactional admission/evidence checks. The first MCP run exposed an invalid
+boolean lock fixture; the corrected schema-valid fixture passes. No native YAML,
+package digest, stored schema, Unibase code or live configuration changed.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
