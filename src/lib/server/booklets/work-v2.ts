@@ -12,6 +12,7 @@ import {
   workRegistrationV2Schema,
   reviewInputV2Schema,
   type WorkV2,
+  type RevisionV2,
 } from "./documents-v2";
 import { bookletConflict } from "./context";
 import { id, mutationSchema, type Mutation } from "./documents";
@@ -253,13 +254,15 @@ export async function registerBookletWorkV2(
     const original = await db.collection("bookletAssets").findOne({
       _id: ref.assetId as never,
       ownerId: actor.uid,
-      productionId: p._id,
       state: "ready",
       originalAssetId: null,
       sha256: ref.sha256,
       bytes: ref.bytes,
     });
-    if (!original)
+    if (!original || (original.productionId !== p._id && !await db.collection<RevisionV2>("bookletRevisions").findOne({
+      ownerId: actor.uid, productionId: p._id, documentVersion: 2, _id: { $in: original.attachments as string[] },
+      assets: { $elemMatch: { assetId: ref.assetId, sha256: ref.sha256 } },
+    })))
       throw bookletConflict(
         "Original identity differs from owned bytes.",
       );

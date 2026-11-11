@@ -533,8 +533,8 @@ use estimated completion percentages as acceptance evidence.
 | 09.3 Assessment and image actions | Verified | Local handler/native Code fixtures cover all six modes, correction lineage, exact preparation/preflight, original bytes, publication and revalidation. Exact assessments/coverage cannot be altered; partial results and save/attachment replay preserve originals. Live Dify conversion remains checkpoint 12 evidence. |
 | 09.4 Human decisions and completion | Verified | Authentic first-wins response correlation, exact Manager acceptance, manifest publication and structural completion pass local handler/native Code fixtures. Owned acceptance/human/execution/production histories page beyond previews and exclude private/foreign records. Actual Dify rendering remains checkpoint 12 evidence. |
 | 09.5 Bounded recovery | Verified | Local repository/handler/worker and native Code fixtures prove durable retry eligibility, explicit retry authorization, automatic technical waits, bounded readback, terminal continuation, cancellation and replay without lost successful work or another charge. Provider-safe failure classification remains an accepted limitation; unknown/unisolatable outcomes stop for reconciliation. Creator controls remain 10. |
-| 09.6 Connected journeys | In progress | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
-| 09.7 Review and handoff | Pending | Fix blockers, apply demonstrated simplifications, run final affected checks and two consecutive clean read-only reviews on the same final state. Consolidate evidence and revise checkpoint 10 around completed interfaces, then stop before its implementation. |
+| 09.6 Connected journeys | Verified | Real handlers/native Code fixtures cover creation, correction, purchased revision, continuation, predecessor reuse and completion; all review modes, large exact text, originals, human waits, partial results and v1/unrelated Run regressions pass locally. Target graph execution remains 12. |
+| 09.7 Review and handoff | In progress | Fix blockers, apply demonstrated simplifications, run final affected checks and two consecutive clean read-only reviews on the same final state. Consolidate evidence and revise checkpoint 10 around completed interfaces, then stop before its implementation. |
 
 Execute in order; existing code from later tasks remains reusable. Verify each exit
 before marking its task Verified. Within a task implement coherent slices, run focused
@@ -1263,6 +1263,59 @@ revision allocation/charge. Three new revisions produce the revised specificatio
 original and manifest; the retry snapshot is unchanged. No application code or shared
 runtime change was needed. Docs/i18n/skills checks and a separate same-agent read-only
 slice review pass. Predecessor reuse and the full 09.6 exit audit remain pending.
+
+09.6 predecessor-reuse amendment (R02): a new paid production must be able to select
+owned predecessor content without paying to recreate unchanged text or originals.
+Current v2 reads and revalidation are restricted to the current production, despite
+the stored `sourceProductionId`. Verify that gap with a selected-predecessor fixture.
+Reuse existing `read_document` and `save_revision.revalidatedFrom` boundaries: expose
+only the direct owned v2 predecessor in the same booklet, and copy exact content/assets
+into an empty matching responsibility as an unaccepted candidate. Keep replacement
+dependencies local. Original bytes stay in their existing store with an additional
+verified attachment, rather than duplicating storage or inventing provider work.
+Manager still decides review and acceptance; compatible body-review lineage may be
+reported as inherited, never as a review of the new context. No new tool, schema field,
+generator, plugin, dependency or shared-runtime change is needed.
+
+Evidence must reject foreign/unselected sources, changed content/assets, occupied
+responsibilities and incompatible page originals; prove receipt replay, current
+ownership, original delivery and fresh Manager acceptance through actual handlers.
+The existing v1 paths remain unchanged; this amendment does not migrate legacy content
+into the v2 content contract. JSON/diagram relationships already contain the optional
+lineage and source-production links; update their explanatory model notes together.
+
+The reuse slice also checks subsequent source-context revalidation of an imported
+image. Its owned immutable reuse origin supplies write provenance; unchanged bytes
+and compatible body-review lineage remain explicit. Do not require a fabricated
+current producer or a paid body review just to preserve an already imported original.
+The same write path now applies the existing purchased-layout validation to both
+generated and revalidated layouts. This removes the duplicate producer-only gate and
+rejects incompatible page count/canvas/direction/panels before reused content can
+advance. The connected negative fixture checks changed assets and incompatible
+layout/page-original snapshots with rollback, then restores the valid fixture snapshot.
+
+09.6 exit audit (2026-11-12) supersedes earlier slice-level pending claims:
+
+| Required boundary | Verified local evidence |
+| --- | --- |
+| Creation/completion | Five-page real book/production/prepaid admission journey, seven native roles, exact publication/acceptance and completion. Whole-book windows reject four-of-five coverage before completing five. |
+| Purchased revision | Actual quote/consent/admission, scoped composition/image/review and a new manifest; one five-credit fixture charge/allocation, unchanged other pages and immutable previous content. Revisions use a new logical Run. |
+| Correction | Existing MCP confirmed-finding, corrective Prepare/preflight/Generate/publication/correction-review path; repository fixtures preserve three text/one image limits separately from technical retries. |
+| Continuation/recovery | Actual successor after verified terminal fixture preserves checkpoint, retry policy, saved revisions and package charge; old capability rejected. Focused 09.5 fixtures cover unknown/late work, cancellation, bounded readback, retry authorization/timing and automatic waits. |
+| Predecessor reuse | Separately paid v2 version copies selected predecessor candidates, adds no original storage or creative work, preserves labelled compatible body review, performs fresh whole-book reviews and completes. Imported-image revalidation, altered assets, incompatible layout/page originals, occupied targets and foreign/unselected sources are checked. |
+| Human/large/partial | Real handler fixtures cover authenticated first-wins questions, uncertain submission, large Unicode publication/transfer, ordered original image blocks and partial successful siblings. Actual Code functions cover native failure/capacity gates. |
+| Compatibility | V1 lifecycle/media includes successive paid-version reuse; generic Run/AI fixtures cover unrelated execution, credit holds, private observations, internal waits, decision uncertainty and successor fencing. |
+
+Current checks pass: 31 MCP, 33 repository, 17 lifecycle/media, 46 compatibility and
+32 generic Run/AI tests; production build, post-build typecheck, scoped ESLint,
+model generation, docs/i18n/skills and 13-path hash/disabled-gate audit. Separate
+same-agent read-only slice review corrected imported-image provenance and shared
+structural validation; follow-up found no blocking issue. The model guide/JSON notes
+are updated; both regenerated Mermaid versions remain structurally unchanged.
+No new tool, schema field, dependency, byte store, provider control or Unibase change.
+This is local handler/fake-provider/Code evidence, not Dify graph execution, real image
+quality or UI acceptance. Revised import/resume/file conversion remains 12, and UI
+remains 10. Proceed to 09.7 whole-package review, evidence consolidation and the 10 plan.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,

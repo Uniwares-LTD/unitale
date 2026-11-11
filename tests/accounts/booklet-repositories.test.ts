@@ -1951,6 +1951,46 @@ test("booklet repositories preserve embedded identities and transactional bounda
         }
       },
     );
+    await t.test("v2 predecessor reuse preserves owned selected content and empty responsibilities", async () => {
+      const f = await managerFixture();
+      await f.write((m) => f.v2.recordAcceptance("production-v2", { ...m, runId: "manager-run", revisionId: f.revision._id,
+        contentHash: f.revision.contentHash, targetIds: ["story-v2"], assetIds: [], evidenceIds: [] }));
+      const nextOrder = { ...structuredClone(f.order), _id: "next-order", value: { ...f.order.value, id: "next-order", targetId: "next-production" } };
+      await f.db.collection<typeof nextOrder>("consumptionOrders").insertOne(nextOrder);
+      await f.v2.createProduction({ ...f.creation, id: "next-production", orderId: "next-order", key: "next-create", sourceProductionId: "production-v2" });
+      assert.deepEqual(await f.v2.getRevision("next-production", f.revision._id), f.revision);
+      await assert.rejects(f.v2.getRevision("production", f.revision._id));
+      const foreign = bookletRepositoryV2(f.db, { uid: "foreign", authTime: 1 });
+      await assert.rejects(foreign.getRevision("next-production", f.revision._id));
+      await f.db.collection("bookletProductions").updateOne({ _id: "production-v2" as never }, { $set: { "subjects.0.artifacts.0.acceptedRevisionId": null } });
+      await assert.rejects(f.v2.getRevision("next-production", f.revision._id));
+      await f.db.collection("bookletProductions").updateOne({ _id: "production-v2" as never }, { $set: { "subjects.0.artifacts.0.acceptedRevisionId": f.revision._id } });
+      const lease = await f.v2.acquireLease("next-production", { key: "reuse-lease", holderId: "worker", expectedVersion: 1, durationMs: 10000 });
+      const indexed = await f.v2.indexEntries("next-production", { key: "reuse-index", holderId: "worker", expectedVersion: lease.version, fence: lease.fence!,
+        subjects: [{ id: "book-subject", kind: "book", label: "Book", pageRole: null }],
+        artifacts: [{ subjectId: "book-subject", artifactId: "story-v2", kind: "manuscript" }] });
+      const reuse = { key: "reuse-copy", holderId: "worker", expectedVersion: indexed.version, fence: lease.fence!, artifactId: "story-v2",
+        content: f.revision.content, revalidatedFrom: f.revision._id, sources: [], assets: [],
+        provenance: { operationId: "reuse:" + f.revision._id, runId: "worker", evidenceIds: [] } };
+      await assert.rejects(f.v2.appendRevision("next-production", { ...reuse, content: { kind: "manuscript", units: [{ id: "changed", texts: [] }] } }), /preserve exact/);
+      const copied = await f.v2.appendRevision("next-production", reuse);
+      assert.deepEqual(await f.v2.appendRevision("next-production", reuse), copied);
+      const row = await f.v2.getRevision("next-production", copied.revisionId!);
+      assert.equal(row.revalidatedFrom, f.revision._id);
+      assert.deepEqual(row.content, f.revision.content);
+      assert.equal((await f.v2.getProduction("next-production")).subjects[0].artifacts[0].acceptedRevisionId, null);
+      await f.db.collection("bookletProductions").updateOne({ _id: "production-v2" as never }, { $set: { "subjects.0.artifacts.0.acceptedRevisionId": null } });
+      assert.deepEqual(await f.v2.getRevision("next-production", f.revision._id), f.revision); // Immutable copied lineage remains readable.
+      const changed = await f.write((m) => f.v2.appendRevision("production-v2", { ...m, artifactId: "story-v2",
+        content: { kind: "manuscript", units: [{ id: "later-source", texts: [] }] }, sources: [], assets: [],
+        provenance: { runId: "worker", operationId: "later-source", evidenceIds: [] } }));
+      const nextSource = await f.v2.getRevision("production-v2", changed.revisionId!);
+      await f.write((m) => f.v2.recordAcceptance("production-v2", { ...m, runId: "manager-run", revisionId: nextSource._id,
+        contentHash: nextSource.contentHash, targetIds: ["story-v2"], assetIds: [], evidenceIds: [] }));
+      const target = await f.v2.getProduction("next-production");
+      await assert.rejects(f.v2.appendRevision("next-production", { ...reuse, key: "occupied-reuse", expectedVersion: target.version,
+        revalidatedFrom: nextSource._id, content: nextSource.content }), /empty responsibility/);
+    });
     await t.test(
       "v2 assessments are repeatable and Manager acceptance is distinct from human/quality policy",
       async () => {

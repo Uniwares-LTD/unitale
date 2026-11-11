@@ -76,6 +76,7 @@ and the adapter; the table does not require unrelated suites for every task.
   `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
   `mcp-tools-v2.ts` its v2 checkpoint/index/creative-registration handlers and typed-read wrapper;
   `read-v2.ts` owns v2 production/checkpoint/revision/work/assessment/acceptance/execution DTOs, authenticated human-response correlation, bounded typed sections and owned artifact/action/acceptance/human/execution/production history metadata;
+  direct owned v2 predecessor reads and exact revalidation copy use the same readers/repository, with verified original attachments and separately selected current candidates;
   `suite-v2.ts` validates server-owned Manager/child-tool mappings and resolves the configured Reviewer policy;
   `usage-v2.ts` reads owned work-attempt totals, native Run costs and execution bounds for context and dispatch guards without adding an accounting ledger;
   `reconcile-v2.ts` supplies one leased, non-paid accepted-work readback per existing AI-worker cycle, including after a parent Run terminates; it retains results/logs without dispatch or successor creation;

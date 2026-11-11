@@ -376,11 +376,14 @@ export async function readBookletDocumentV2(
       state: row.checkpoint,
     };
   } else if (request.kind === "production") {
-    if (request.id !== productionId) throw bookletMissing();
-    const row = await repo.getProduction(productionId);
+    const current = await repo.getProduction(productionId);
+    if (request.id !== productionId && request.id !== current.sourceProductionId) throw bookletMissing();
+    const row = request.id === productionId ? current : await repo.getProduction(request.id);
+    if (row.bookletId !== current.bookletId) throw bookletMissing();
     document = {
       productionId: row._id,
       bookletId: row.bookletId,
+      sourceProductionId: row.sourceProductionId,
       version: row.version,
       state: row.lifecycleState,
       brief: row.brief,

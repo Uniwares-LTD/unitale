@@ -339,6 +339,17 @@ the existing carrier. Creative text/images retain their producer/evidence, lock 
 funding guards. Manifest assembly/selection does not consume another story allocation
 when finalizing page revisions, and does not mark the production complete.
 
+New paid v2 versions can read `sourceProductionId` in their production document, then
+read that direct owned v2 predecessor and its selected revisions. Use matching stable
+subject/artifact IDs and `save_revision` with `revalidatedFrom`, omitted content,
+empty evidence, exact old assets and locally copied replacement dependencies. This
+unpaid copy creates an unaccepted candidate only in an empty matching responsibility.
+Original byte storage is shared through verified attachments; page canvas/format must
+match the new package. Compatible inherited body review names the revision actually
+reviewed and does not claim inspection of new context. Manager chooses fresh review
+and acceptance; the new manifest requires its own whole-book coverage. This does not
+migrate v1 content; existing v1 readers/reuse remain separate and unchanged.
+
 `request_human` accepts current immutable source tuples in `targets` (or an empty
 list for a brief question), `{mode:"raw-v1"}` in `responseContract`, and
 `presentation:{version:1,cards:[...]}` using at most 19 existing typed cards. It adds

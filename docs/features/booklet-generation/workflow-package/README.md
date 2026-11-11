@@ -100,8 +100,8 @@ before 348 individually inventoried source/generated/test files were removed.
 
 ## Current integration slice
 
-Tasks 09.1?09.5 are locally Verified; 09.6 connected journeys is In progress and
-09.7 final review/handoff is Pending. The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
+Tasks 09.1-09.6 are locally Verified; 09.7 final review/handoff is In progress.
+The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
 owns exit conditions and application evidence. This summary supersedes earlier slice
 counts and pending claims; historical reviews below apply only to their recorded state.
 
@@ -122,7 +122,7 @@ Creator questions remain separate. Unknown outcomes and unisolatable paid failur
 stop deterministically for reconciliation; successful siblings are preserved.
 
 Current checks: **46 compatibility tests** (11 preserved v1 and 35 native), **31 MCP**
-and **32 repository tests** pass, plus production build, post-build typecheck,
+and **33 repository tests** pass, plus production build, post-build typecheck,
 scoped ESLint, model generation, docs/i18n/skills checks and hash/disabled-gate audit.
 A separate same-agent read-only slice review found no blocking issue. Checkpoint-wide
 reviews remain pending in 09.7. The preceding lifecycle/media slice passed 17 tests.
@@ -139,7 +139,11 @@ that journey. The older structural fixture still stages page metadata. Purchased
 revision now also passes through quote/consent, a new logical Run, scoped composition/
 generation/review and completion. It records one five-credit fixture revision charge,
 preserves the other pages and keeps the previous manifest/original immutable.
-Predecessor reuse and the complete 09.6 exit audit remain pending.
+Predecessor reuse now passes the connected local journey through exact revalidation,
+original storage attachments, inherited compatible body-review provenance and fresh
+whole-book coverage. Imported-image context revalidation preserves exact pixels
+without inventing producer work. Negative source/asset/canvas checks and the 09.6
+local exit audit pass. Checkpoint-wide review follows in 09.7.
 Safe technical failure evidence is explicit in fixtures, not inferred from a provider
 error. Hidden SDK attempts/costs and unproved target failure classification remain
 accepted limitations; no provider controls or telemetry framework is added. Revised
@@ -151,10 +155,10 @@ only after both web and AI worker use the matching v2 domain registration and th
 separately authorized target checks pass. No deployment or paid call is claimed.
 
 Current implementation SHA-256:
-`23c074c85e8f7e023c03762abae050ca7eefbc615ac20215db7af87f2acca0ce`.
+`87e7875505486d6e6edc7992720f19501043ae8f7d1878bfeb93a2a37da41911`.
 The existing 13-path algorithm described below covers native YAML, five fixtures and
 the compatibility test; application code and documentation are outside that digest.
-Seven YAML files total 249,500 bytes.
+Seven YAML files total 250,152 bytes.
 
 ## Checkpoint evidence
 

@@ -4,6 +4,7 @@
     "notes": [
       "collections groups independent documents; only subjects and artifact entries are embedded in Production.",
       "V2 revisions may additionally carry revalidatedFrom, identifying the prior immutable revision whose content/assets are preserved under replacement sources. Existing examples omit this optional field.",
+      "For a new v2 production, revalidatedFrom may identify a selected direct owned v2 predecessor revision in the same booklet. Exact content/assets copy into an empty matching responsibility as an unaccepted candidate; original storage gains an attachment without duplicate bytes. Replacement dependencies stay local and current-manifest review is not inherited.",
       "This is a draft production. No human approval, image generation, charge or completion is implied. Accepted pointers stay null.",
       "Prices and package quantities are synthetic fixtures. The authoritative order remains in Unibase.",
       "Database Date values are represented as ISO strings. Revision hashes follow hashVersion 1.",

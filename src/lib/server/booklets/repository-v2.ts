@@ -408,6 +408,18 @@ export function bookletRepositoryV2(
   async function owned(productionId: string, session: ClientSession) {
     return context.owned(id.parse(productionId), session, 2);
   }
+  async function readRevision(p: ProductionV2, revisionId: string, session: ClientSession) {
+    const row = await revisions.findOne({ _id: id.parse(revisionId), ownerId: actor.uid,
+      productionId: { $in: [p._id, ...(p.sourceProductionId ? [p.sourceProductionId] : [])] } }, { session });
+    if (!row) throw bookletMissing();
+    const source = row.productionId === p._id ? p : await owned(row.productionId, session);
+    const artifact = source.subjects.find((s) => s.id === row.subjectId)?.artifacts.find((a) => a.id === row.artifactId && a.kind === row.kind);
+    if (source.bookletId !== p.bookletId || !artifact) throw bookletMissing();
+    if (source._id !== p._id && artifact.acceptedRevisionId !== row._id &&
+      !await revisions.findOne({ ownerId: actor.uid, productionId: p._id, revalidatedFrom: row._id }, { session }))
+      throw bookletConflict("Predecessor revision is not selected for reuse.");
+    return revisionV2Schema.parse(row);
+  }
   function mutable(
     p: ProductionV2,
     expectedVersion: number,
@@ -1408,25 +1420,7 @@ export function bookletRepositoryV2(
     getRevision(productionId: string, revisionId: string) {
       return context.transaction(async (session) => {
         const p = await owned(productionId, session);
-        const row = await revisions.findOne(
-          {
-            _id: id.parse(revisionId),
-            ownerId: actor.uid,
-            productionId: p._id,
-          },
-          { session },
-        );
-        if (!row) throw bookletMissing();
-        const subject = p.subjects.find((s) => s.id === row.subjectId);
-        if (
-          !subject?.artifacts.some(
-            (a) => a.id === row.artifactId && a.kind === row.kind,
-          )
-        )
-          throw bookletConflict(
-            "Revision identity differs from embedded index.",
-          );
-        return revisionV2Schema.parse(row);
+        return readRevision(p, revisionId, session);
       });
     },
     indexEntries(
@@ -1543,6 +1537,8 @@ export function bookletRepositoryV2(
             throw bookletConflict("Revision kind mismatch.");
           let content = value.content;
           let sources = value.sources;
+          let reused: RevisionV2 | null = null;
+          let preservedRevision: RevisionV2 | null = null;
           const image = content.kind === "reference" || content.kind === "page-image";
           const manifest = content.kind === "book-manifest";
           if (content.kind === "book-manifest" && p.lifecycleState === "in-progress") {
@@ -1572,24 +1568,35 @@ export function bookletRepositoryV2(
           if (value.revalidatedFrom) {
             await activeManager(p, value.provenance.runId, value.holderId, session);
             if (!manifest) await guardCreativeTargets(p, [artifact.id], session);
-            const previous = await revisions.findOne({ _id: value.revalidatedFrom, ownerId: actor.uid,
-              productionId: p._id, artifactId: artifact.id }, { session });
-            if (!previous || fingerprint(previous.content) !== fingerprint(content) ||
+            const previous = await readRevision(p, value.revalidatedFrom, session);
+            preservedRevision = previous;
+            if (previous.artifactId !== artifact.id || previous.subjectId !== subject.id || previous.kind !== artifact.kind || fingerprint(previous.content) !== fingerprint(content) ||
               fingerprint(previous.assets) !== fingerprint(value.assets) ||
               value.sources.some((source) => source.artifactId === artifact.id))
               throw bookletConflict("Revalidation must preserve exact content/assets and select replacement dependency sources.");
+            if (previous.productionId !== p._id) {
+              const prior = await revisions.findOne({ ownerId: actor.uid, productionId: p._id, artifactId: artifact.id,
+                revalidatedFrom: previous._id, sources: value.sources }, { session });
+              if (prior) return { revisionId: prior._id, ordinal: prior.ordinal };
+              if (artifact.currentRevisionId) throw bookletConflict("Predecessor reuse requires an empty responsibility.");
+              reused = previous;
+            }
             const expectedSources = [{ artifactId: previous.artifactId, revisionId: previous._id, contentHash: previous.contentHash }, ...value.sources];
             const retainedProducer = value.provenance.operationId === previous.provenance.operationId &&
               value.provenance.evidenceIds.every((evidence) => previous.provenance.evidenceIds.includes(evidence));
+            const origin = retainedProducer && previous.provenance.operationId.startsWith("reuse:")
+              ? await readRevision(p, previous.provenance.operationId.slice(6), session) : null;
+            const retainedReuse = origin && origin.productionId !== p._id && origin.contentHash === previous.contentHash &&
+              fingerprint(origin.assets) === fingerprint(previous.assets);
             const assessed = manifest ? null : await assessments.findOne({ ownerId: actor.uid, productionId: p._id,
               callId: value.provenance.operationId, complete: true, "assessment.targetHash": previous.contentHash,
               evidenceIds: { $all: value.provenance.evidenceIds },
             }, { session });
-            if (!manifest && (!value.provenance.evidenceIds.length || (!retainedProducer && (!assessed ||
+            if (!reused && !manifest && ((!value.provenance.evidenceIds.length && !retainedReuse) || (!retainedProducer && (!assessed ||
               fingerprint(assessed.assessment.sources) !== fingerprint(expectedSources) ||
               !assessed.assessment.coverage.targetIds.some((target) => target === artifact.id || target === subject.id)))))
               throw bookletConflict("Revalidation requires retained producer evidence or recorded review of the exact replacement context.");
-            if (!retainedProducer && image && (!['image', 'correction'].includes(assessed!.assessment.mode) || previous.assets.some((asset) =>
+            if (!reused && !retainedProducer && image && (!['image', 'correction'].includes(assessed!.assessment.mode) || previous.assets.some((asset) =>
               !(assessed!.assessment.coverage.assetIds ?? []).includes(asset.assetId))))
               throw bookletConflict("Image revalidation requires inspection of its retained original pixels.");
             const prior = await revisions.findOne({ ownerId: actor.uid, productionId: p._id, artifactId: artifact.id,
@@ -1688,35 +1695,6 @@ export function bookletRepositoryV2(
               throw bookletConflict(
                 "Revision content differs from the observed proposal.",
               );
-            if (
-              content.kind === "page-spec" &&
-              content.panels.length > p.creativeConfigSnapshot.maxPanelsPerPage
-            )
-              throw bookletConflict(
-                "Page exceeds its purchased panel capacity.",
-              );
-            if (content.kind === "book-layout") {
-              const config = p.creativeConfigSnapshot;
-              if (
-                content.pages.length !==
-                  config.storyPages + Number(config.includeCover) ||
-                content.canvas.width !== config.canvas.width ||
-                content.canvas.height !== config.canvas.height ||
-                content.pages.some(
-                  (page) =>
-                    page.panels.length > config.maxPanelsPerPage ||
-                    !p.subjects.some(
-                      (s) =>
-                        s.id === page.id &&
-                        s.kind === "page" &&
-                        s.pageRole === page.role,
-                    ),
-                )
-              )
-                throw bookletConflict(
-                  "Layout differs from purchased pages, canvas or panel capacity.",
-                );
-            }
             const rosterKind =
               // Planner outputs are roster deltas; book storage keeps both kinds.
               observed.operation === "cast"
@@ -1833,6 +1811,20 @@ export function bookletRepositoryV2(
               };
             }
           }
+          if (p.lifecycleState !== "draft" && content.kind === "page-spec" && content.panels.length > p.creativeConfigSnapshot.maxPanelsPerPage)
+            throw bookletConflict("Page exceeds its purchased panel capacity.");
+          if (p.lifecycleState !== "draft" && content.kind === "roster" && content.subjectIds.some((id) =>
+            !p.subjects.some((s) => s.id === id && ["character", "location"].includes(s.kind))))
+            throw bookletConflict("Roster has unregistered or wrong-kind subjects.");
+          if (content.kind === "book-layout" && p.lifecycleState !== "draft") {
+            const config = p.creativeConfigSnapshot;
+            if (content.pages.length !== config.storyPages + Number(config.includeCover) ||
+              content.canvas.width !== config.canvas.width || content.canvas.height !== config.canvas.height ||
+              content.direction !== p.brief.language.direction || content.pages.some((page) =>
+                page.panels.length > config.maxPanelsPerPage || !p.subjects.some((s) =>
+                  s.id === page.id && s.kind === "page" && s.pageRole === page.role)))
+              throw bookletConflict("Layout differs from purchased pages, canvas, direction or panel capacity.");
+          }
           if (
             new Set(value.sources.map((s) => s.artifactId)).size !==
               value.sources.length ||
@@ -1863,15 +1855,18 @@ export function bookletRepositoryV2(
                 {
                   _id: asset.assetId,
                   ownerId: actor.uid,
-                  productionId: p._id,
                   sha256: asset.sha256,
                   state: "ready",
                   originalAssetId: null,
+                  ...(preservedRevision ? { attachments: preservedRevision._id } : { productionId: p._id }),
                 },
                 { session },
               );
             if (!row)
               throw bookletConflict("Original asset identity mismatch.");
+            if (reused && content.kind === "page-image" && (row.width !== p.creativeConfigSnapshot.canvas.width ||
+              row.height !== p.creativeConfigSnapshot.canvas.height || row.mime !== p.creativeConfigSnapshot.canvas.mime))
+              throw bookletConflict("Reused page original differs from the purchased canvas or format.");
           }
           if (
             value.content.kind === "reference" ||
@@ -1930,7 +1925,7 @@ export function bookletRepositoryV2(
             await db
               .collection<BookletAsset>("bookletAssets")
               .updateOne(
-                { _id: asset.assetId, ownerId: actor.uid, productionId: p._id },
+                { _id: asset.assetId, ownerId: actor.uid, sha256: asset.sha256 },
                 { $addToSet: { attachments: row._id } },
                 { session },
               );

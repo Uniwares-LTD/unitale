@@ -80,6 +80,21 @@ including original pixels for images. MCP may omit content when this reference
 is supplied, allowing server-side reuse of large retained text. This path is verified
 locally; it is not a completed checkpoint claim.
 
+For a new v2 production, this same lineage may identify a selected revision in its
+direct owned v2 `sourceProductionId`, within the same booklet and matching stable
+subject/artifact responsibility. Exact content/originals copy only into an empty
+responsibility, initially unaccepted; replacement dependencies are local. Existing
+original storage gains an attachment to the new revision, with no duplicate bytes
+or invented provider work. Page originals must match the new purchased canvas/format.
+Compatible body-review lineage remains labelled with the revision actually reviewed;
+Manager decides whether new context needs another review. Current-manifest whole-book
+coverage is never inherited. Legacy v1 contracts and reuse services remain unchanged.
+Subsequent unchanged revalidation of an imported candidate verifies its owned original
+reuse provenance and exact body/assets; it does not invent producer work or force a
+new body review solely because the byte store belongs to the predecessor.
+The JSON notes describe this use; both Mermaid relationships already represent these
+source-production/lineage/attachment links, so their structure is unchanged.
+
 Request-backed corrections now bind confirmed findings to exact selected baseline
 revision identities and reviewed targets. Correction review preserves the original
 finding body and before/after source identities. These guards reuse existing work,

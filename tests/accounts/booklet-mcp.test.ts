@@ -3262,7 +3262,8 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         await t.test("a fresh prepaid production creates and completes a booklet through native role and real MCP boundaries", async () => {
           const legacyBefore = await p();
           const actor = { uid: "owner", authTime: 1 };
-          const productionId = "connected-production", orderId = "connected-order";
+          let productionId = "connected-production";
+          const orderId = "connected-order";
           let token = "c".repeat(43), nativeRunId = "connected-native";
           const base = bookletRepository(db, actor), repo = bookletRepositoryV2(db, actor);
           const lifecycle = bookletLifecycleV2(db, actor);
@@ -3599,6 +3600,90 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(await db.collection("consumptionAllocations").countDocuments({ orderId, category: "page" }), 1);
           for (const pageId of pageIds.slice(1)) assert.deepEqual(afterRevision.subjects.find((s) => s.id === pageId),
             beforeRevision.subjects.find((s) => s.id === pageId));
+          // A separately paid version selects exact predecessor candidates through
+          // existing revalidation. It does not regenerate text or original pixels.
+          const sourceProductionId = productionId, reuseOrderId = "connected-reuse-order";
+          productionId = "connected-reuse-production";
+          const sourceOrder = (await db.collection("consumptionOrders").findOne({ _id: orderId as never }))!;
+          await db.collection("consumptionOrders").insertOne({ ...sourceOrder, _id: reuseOrderId as never, activeWorkflow: null,
+            value: { ...sourceOrder.value, id: reuseOrderId, targetId: productionId, idempotencyKey: reuseOrderId, state: "queued",
+              chargedCredits: 0, refundedCredits: 0, chargeLedgerId: null, startedAt: null, expiresAt: null } });
+          await repo.createProduction({ id: productionId, bookletId: "connected-book", orderId: reuseOrderId, key: "connected-reuse-create", sourceProductionId,
+            brief: afterRevision.brief, capacity: { id: fields.executionProfileId, revision: fields.executionProfileRevision, maxStoryPages: pageIds.length,
+              coverSupported: false, maxCharacters: 0, maxLocations: 0, maxPanelsPerPage: 1, maxStyleSamples: 1, canvases: [canvas], languages: [language] } });
+          const reuseFlow = await lifecycle.start(productionId);
+          const priorMode = process.env.DIFY_MODE;
+          process.env.DIFY_MODE = "fake";
+          try { admitted = await enqueueBookletRun(db, actor, productionId, { key: "connected-reuse-run", workflowId: reuseFlow.workflowId,
+            orchestratorId: definition.id, configurationRevision: 1, inputs: {} }); }
+          finally { if (priorMode === undefined) delete process.env.DIFY_MODE; else process.env.DIFY_MODE = priorMode; }
+          token = "f".repeat(43); nativeRunId = "connected-native-reuse";
+          await db.collection("aiJobs").updateOne({ _id: admitted.attemptId as never }, { $set: { status: "running", runId: nativeRunId,
+            execution: { status: "running", workflowId: configured.workflowId }, lease: "connected-worker", leaseUntil: new Date(Date.now() + 180000) } });
+          await db.collection("runCapabilities").insertOne({ _id: sha(token) as never, uid: actor.uid, jobId: admitted.attemptId,
+            clientId: "fixture", operations: bookletMcpToolsV2.map((tool) => tool.name), expiresAt: new Date(Date.now() + 600000) });
+          const priorProduction = await ok("read_document", { kind: "production", id: sourceProductionId });
+          assert.equal(priorProduction.value.productionId, sourceProductionId);
+          assert.equal((await invoke("read_document", { kind: "production", id: "production-v2" }, token)).isError, true);
+          await ok("index", { subjects: afterRevision.subjects.map(({ id, kind, label, pageRole }) => ({ id, kind, label, pageRole })),
+            artifacts: afterRevision.subjects.flatMap((s) => s.artifacts.map((a) => ({ subjectId: s.id, artifactId: a.id, kind: a.kind }))),
+            fence: (await ok("context", {})).fence });
+          const copies = new Map<string, Source>();
+          const orderedArtifacts = ["connected-concept", "connected-outline", "connected-manuscript", "connected-style", "connected-sample-spec",
+            "connected-sample-original", "connected-book-layout", ...pageIds.flatMap((id) => [pageArtifact(id, "spec"), pageArtifact(id, "original")]), manifest.artifactId];
+          for (const artifactId of orderedArtifacts) {
+            const selected = afterRevision.subjects.flatMap((s) => s.artifacts).find((a) => a.id === artifactId)!;
+            const original = await repo.getRevision(sourceProductionId, selected.acceptedRevisionId!);
+            await ok("read_document", { kind: "revision", id: original._id });
+            const dependencies = original.sources.filter((s) => s.artifactId !== artifactId).map((s) => {
+              const local = copies.get(s.artifactId); assert.ok(local, "Copy dependencies first: " + s.artifactId); return tuple(local);
+            });
+            const request = { artifactId, revalidatedFrom: original._id, sources: dependencies, assets: original.assets,
+              evidence: [], mutationKey: "reuse-" + artifactId, fence: (await ok("context", {})).fence };
+            if (artifactId === "connected-manuscript") assert.equal((await invoke("save_revision", { ...request,
+              content: { kind: "manuscript", units: [] } }, token)).isError, true);
+            if (original.assets.length) assert.equal((await invoke("save_revision", { ...request, assets: [] }, token)).isError, true);
+            if (artifactId === pageArtifact(pageIds[0], "original") || artifactId === "connected-book-layout") {
+              // Simulate a different purchased canvas at the trusted snapshot
+              // boundary; the failed write must not copy or mutate its original.
+              await db.collection("bookletProductions").updateOne({ _id: productionId as never }, { $set: { "creativeConfigSnapshot.canvas.width": 2048 } });
+              try { assert.equal((await invoke("save_revision", request, token)).isError, true); }
+              finally { await db.collection("bookletProductions").updateOne({ _id: productionId as never }, { $set: { "creativeConfigSnapshot.canvas.width": canvas.width } }); }
+            }
+            const saved = await ok("save_revision", request);
+            assert.deepEqual(await ok("save_revision", request), saved);
+            const copied = await repo.getRevision(productionId, saved.revisionId);
+            assert.deepEqual(copied.content, original.content);
+            assert.deepEqual(copied.assets, original.assets);
+            assert.equal(copied.revalidatedFrom, original._id);
+            assert.equal((await repo.getProduction(productionId)).subjects.flatMap((s) => s.artifacts).find((a) => a.id === artifactId)!.acceptedRevisionId, null);
+            const row = { ...saved, artifactId, content: copied.content, assets: copied.assets } as Source;
+            copies.set(artifactId, row);
+            if (artifactId !== manifest.artifactId) await accept(row); // Native guard uses labelled compatible body-review lineage.
+          }
+          const importedImage = copies.get("connected-sample-original")!;
+          const refreshed = await ok("save_revision", { artifactId: importedImage.artifactId, revalidatedFrom: importedImage.revisionId,
+            sources: [copies.get("connected-sample-spec")!, copies.get("connected-style")!, copies.get("connected-concept")!].map(tuple),
+            assets: importedImage.assets, evidence: [], mutationKey: "revalidate-imported-image", fence: (await ok("context", {})).fence });
+          assert.deepEqual((await repo.getRevision(productionId, refreshed.revisionId)).assets, importedImage.assets);
+          await accept({ ...importedImage, ...refreshed }); // Context changed, pixels and compatible body review remain unchanged.
+          const reusedManifest = copies.get(manifest.artifactId)!, reusedPages = pageIds.map((id) => copies.get(pageArtifact(id, "original"))!);
+          await review(reusedManifest, "whole_book", [reusedManifest, ...reusedPages.slice(0, 4)]);
+          await review(reusedManifest, "whole_book", [reusedManifest, reusedPages[4]]);
+          await accept(reusedManifest);
+          const reuseContext = await ok("context", {});
+          const reusePlan = runNativeCode("manager", "guard", { context: JSON.stringify(reuseContext), decision: { action: "complete",
+            request_json: JSON.stringify({ manifestRevisionId: reusedManifest.revisionId, fence: reuseContext.fence }), reason: "Complete selected reused candidates" } });
+          const reuseIntent = await ok("checkpoint", JSON.parse(reusePlan.checkpoint));
+          const reuseReady = JSON.parse(runNativeCode("manager", "saved", { raw: { result: reuseIntent }, context: JSON.stringify(reuseContext),
+            request: reusePlan.request, dispatch: reusePlan.dispatch, action: "complete" }).request);
+          await ok("complete", reuseReady);
+          assert.equal((await repo.getProduction(productionId)).lifecycleState, "completed");
+          assert.deepEqual(await repo.getProduction(sourceProductionId), afterRevision);
+          assert.equal(await db.collection("bookletAssets").countDocuments({ productionId }), 0);
+          assert.equal(await db.collection("bookletWork").countDocuments({ productionId }), 2); // Only fresh whole-book reviews.
+          assert.equal(await db.collection("consumptionCharges").countDocuments({ orderId: reuseOrderId }), 1);
+          assert.equal(await db.collection("consumptionCharges").countDocuments({ orderId }), 2);
         });
         for (const change of [
           { cancelRequested: true },

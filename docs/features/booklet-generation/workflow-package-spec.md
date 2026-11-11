@@ -309,6 +309,16 @@ decision source. It cannot answer `human`, grant retries, dispatch a child or cr
 a successor. Preserve the registered call during wait/continuation rather than
 polling with reasoning, acquiring a long lease or replaying the workflow.
 
+For a new paid v2 production, `read_document` exposes its direct owned v2 predecessor
+production and selected revisions in the same booklet. Reuse uses the existing
+`save_revision.revalidatedFrom`: matching stable subject/artifact, empty responsibility,
+exact body/assets, local replacement dependencies and no current producer evidence.
+It creates an unaccepted candidate and adds original attachments without copying bytes.
+Compatible body reviews may be inherited with their actual reviewed revision identity;
+Manager decides whether new context needs fresh review. Whole-book coverage remains
+specific to the current manifest. Existing v1 services are unchanged; no legacy-to-v2
+content migration is implicit.
+
 Follow the [accepted retry/reconciliation policy](implementation-plan.md#action-retries-and-automatic-reconciliation):
 production-snapshotted paid LLM/image retries 2/0, retriable non-paid retries 3, no
 automatic retry for non-retriable errors. Preserve action/correction counts separately;

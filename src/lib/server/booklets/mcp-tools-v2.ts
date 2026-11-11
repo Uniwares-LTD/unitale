@@ -1,4 +1,5 @@
 import "server-only";
+import { AppError } from "../../auth-policy";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { Db } from "mongodb";
@@ -407,7 +408,7 @@ export function createBookletMcpToolsV2(
             visited.add(candidate._id);
             const source = { artifactId: candidate.artifactId, revisionId: candidate._id, contentHash: candidate.contentHash };
             for await (const row of s.db.collection<AssessmentV2>("bookletAssessments").find({
-              ...owned, complete: true, policyBinding: binding.policyBinding, reviewerBinding: binding.reviewerBinding,
+              ...owned, productionId: candidate.productionId, complete: true, policyBinding: binding.policyBinding, reviewerBinding: binding.reviewerBinding,
               "assessment.disposition": "pass", "assessment.mode": { $in: modes as AssessmentV2["assessment"]["mode"][] },
               "assessment.sources": { $elemMatch: source },
             }).batchSize(1)) {
@@ -427,10 +428,12 @@ export function createBookletMcpToolsV2(
               break;
             }
             if (acceptanceReview || !candidate.revalidatedFrom) break;
-            candidate = await s.db.collection<RevisionV2>("bookletRevisions").findOne({ ...owned,
-              _id: candidate.revalidatedFrom, artifactId: selectedRevision.artifactId, kind: selectedRevision.kind,
+            candidate = await repo.getRevision(s.production._id, candidate.revalidatedFrom).catch((error) => {
+              if (error instanceof AppError && ["BOOKLET_NOT_FOUND", "BOOKLET_CONFLICT"].includes(error.code)) return null;
+              throw error;
             });
-            if (candidate && (candidate.contentHash !== selectedRevision.contentHash ||
+            if (candidate && (candidate.artifactId !== selectedRevision.artifactId || candidate.kind !== selectedRevision.kind ||
+              candidate.contentHash !== selectedRevision.contentHash ||
               fingerprint(candidate.assets) !== fingerprint(selectedRevision.assets))) candidate = null;
           }
         }
@@ -697,17 +700,25 @@ export function createBookletMcpToolsV2(
             fence: count,
           })
           .parse(raw);
+        const previous = request.revalidatedFrom ? await bookletRepositoryV2(s.db, s.actor)
+          .getRevision(s.production._id, request.revalidatedFrom) : null;
+        const origin = previous?.productionId === s.production._id && !request.evidence.length && previous.provenance.operationId.startsWith("reuse:")
+          ? await bookletRepositoryV2(s.db, s.actor).getRevision(s.production._id, previous.provenance.operationId.slice(6)) : null;
+        const reuse = previous && (previous.productionId !== s.production._id || origin && origin.productionId !== s.production._id &&
+          origin.contentHash === previous.contentHash && fingerprint(origin.assets) === fingerprint(previous.assets));
         let resolved = request.content;
         if (resolved === undefined) {
           if (!request.revalidatedFrom) throw bookletConflict("Content or a revalidatedFrom revision is required.");
-          resolved = (await bookletRepositoryV2(s.db, s.actor).getRevision(s.production._id, request.revalidatedFrom)).content;
+          resolved = previous!.content;
         } else if (!("kind" in resolved) && "transferId" in resolved) {
           resolved = bookletContentV2Schema.parse(JSON.parse((await bookletTransfers(s.db, s.actor, s.production._id, 2)
             .read(resolved.transferId, "revision", s.signal)).toString("utf8")));
         }
         const manifest = "kind" in resolved && resolved.kind === "book-manifest";
-        if (!manifest && !request.evidence.length) throw bookletConflict("Retained producer evidence is required.");
-        const producers = manifest ? [] : await s.db
+        if (reuse && !("kind" in resolved)) throw bookletConflict("Predecessor reuse requires its exact content body.");
+        if (reuse && request.evidence.length) throw bookletConflict("Predecessor reuse does not claim current producer evidence.");
+        if (!reuse && !manifest && !request.evidence.length) throw bookletConflict("Retained producer evidence is required.");
+        const producers = manifest || reuse ? [] : await s.db
           .collection<WorkV2>("bookletWork")
           .find({
             ownerId: s.actor.uid,
@@ -717,7 +728,7 @@ export function createBookletMcpToolsV2(
           })
           .limit(2)
           .toArray();
-        if (!manifest && producers.length !== 1)
+        if (!manifest && !reuse && producers.length !== 1)
           throw bookletConflict(
             "An unambiguous retained producer is required.",
           );
@@ -766,7 +777,7 @@ export function createBookletMcpToolsV2(
           ...(request.revalidatedFrom ? { revalidatedFrom: request.revalidatedFrom } : {}),
           provenance: {
             runId: s.job._id,
-            operationId: manifest ? "manifest:" + fingerprint([request.artifactId, content, request.sources, request.assets]) : producers[0].callId,
+            operationId: reuse ? "reuse:" + (origin?._id ?? previous!._id) : manifest ? "manifest:" + fingerprint([request.artifactId, content, request.sources, request.assets]) : producers[0].callId,
             evidenceIds: request.evidence,
           },
         });
