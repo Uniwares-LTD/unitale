@@ -152,22 +152,26 @@ Manager/Manuscript Code nodes, guarded dispatch, native worker retention and exa
 revision publication. The package execution switch remains disabled; this is local
 boundary verification, not target Dify or provider execution.
 
-Unpaid image preparation now uses durable registered work and native result retention.
-Preflight can review that exact retained preparation; fabricated replacement hashes
-fail. Prepare/Generate have distinct call IDs. Original-byte bridging, paid generation
-and the remaining 09.3 image safeguards are still pending.
+Image preparation, preflight and generation now use durable registered work and native
+result retention. Generate consumes the exact retained preparation under a distinct
+call ID. The original-retention gateway matches observed files, downloads through the
+existing restricted helper and preserves independently keyed original bytes. Fixtures
+prove partial output, byte/canvas/format checks, cancellation and storage replay without
+regeneration. Specialist original-input delivery, visual reviews, image publication and
+the remaining 09.3 safeguards are still pending.
 
 Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
-tests), plus 20 MCP tests; the previous repository slice passed 30 tests. Build, typecheck, scoped test lint, docs/i18n/skills checks and an
+tests), plus 20 MCP and 17 lifecycle/media tests; the previous repository slice passed
+30 tests. Build, typecheck, scoped lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
 found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
 remains imported. Task 09.2 is locally Verified; 09.3 is In progress.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`f12d7ef758238375ec0bf9c4cefb53961b8792a8cff175faec105e1862f27e7e`.
+`e0f4759df2c5c1175cccb0365198a1740ccd5f74702841ba866ec8956fd330fc`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-242,200 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+242,343 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

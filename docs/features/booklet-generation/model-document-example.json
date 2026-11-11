@@ -8,7 +8,8 @@
       "Database Date values are represented as ISO strings. Revision hashes follow hashVersion 1.",
       "Only a repository receipt excerpt is shown; earlier create/index/lease receipts are omitted.",
       "Provenance IDs are external service references, not proof of execution or approval.",
-      "serviceRecordExamples illustrate persisted fields at later stages independently from the draft collections; they do not claim this draft has executed or passed review."
+      "serviceRecordExamples illustrate persisted fields at later stages independently from the draft collections; they do not claim this draft has executed or passed review.",
+      "The unchanged bookletAssets format also stores v2 originals: operationId is the observed Generate work callId, outputKey identifies each returned original, and sourceRevisions.sha256 carries its source contentHash. The illustrated v1 receipt remains independent."
     ]
   },
   "externalReferences": [

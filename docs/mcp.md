@@ -397,17 +397,26 @@ an explicit `result` object. They require an owned native v2 Manager Run and its
 prepaid workflow/job binding, use atomic version/fence checks and leave no lease across
 calls. Exact retries replay existing receipts. Initial atomic checkpoints accept fence
 zero. The core catalog version is unchanged; these project-extension contracts are
-versioned in their names. Dispatch accepts registered creative text, text/specification/
-image-request review or unpaid preparation without image references. Paid work checks
+versioned in their names. Dispatch accepts registered creative text, image generation,
+text/specification/image-request review or unpaid preparation without image references. Paid work checks
 configured suite, ownership, funding, locks, attempts, reported cost and native execution
 bounds; unpaid preparation uses the same durable dispatch and native-result retention.
 Image-request review must match an exact retained preparation, including target, source
-tuples and ordered original identities. Other visual review modes and paid image dispatch
-remain pending 09.3 safeguards. The candidate execution switch stays disabled.
+tuples and ordered original identities; image generation uses that same retained
+preparation guard. Context separates text (`canDispatch`) and image (`canDispatchImage`)
+call eligibility. Other visual review modes remain pending 09.3 safeguards. The candidate
+execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable `{sources,references:[]}` text tuples;
 foreign/changed revisions and nonempty image-reference lists fail explicitly until
 the original-image bridge is completed. It never silently drops requested references.
+`booklet_retain_original_v2` accepts `{callId,outputKey,nativeFile,fence}` and returns
+`{asset:{id,sha256,bytes,mime,width,height,...},fence}`. It matches the exact observed
+Generate output, refreshes the mutation fence with a replay receipt, and uses the existing
+restricted first-party downloader (8 MiB) and verified original-media store. Stored
+receipt replays perform no download. Canvas/format changes, forged files and unobserved
+outputs fail. It makes no generation call. Expired native URLs remain an explicit
+unresolved retention gap; no redispatch or provider renewal machinery is added.
 `booklet_record_assessment_v2` accepts `{assessment,executionLocator:{runId,nodeId:"child-quality-reviewer",executionId},fence}`.
 It derives policy/Reviewer identities from the originating Run's server configuration,
 matches an exact retained native proposal, and returns `{assessmentId,complete,fence}`

@@ -38,5 +38,6 @@ flowchart TB
   Review_request -->|"productionId"| Production
   Review_request -->|"targets[] exact revisions"| Artifact_revision
   Original_asset_receipt -->|"attachments[]"| Artifact_revision
+  Original_asset_receipt -->|"v2 operationId = observed Generate callId; one receipt per outputKey"| Work_attempt
   Original_asset_receipt -->|"originalAssetId for derivatives"| Original_asset_receipt
 ```

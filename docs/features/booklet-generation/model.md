@@ -28,6 +28,21 @@ funding. Stage locks and purchased page/canvas/panel limits remain server enforc
 The same producer/artifact publishes once, including across continuation. Image writes
 and acceptance/revalidation wiring remain checkpoint 09 work.
 
+V2 image registration/dispatch now consumes the exact retained preparation, preserving
+its call ID/hash, target and source identities. Image eligibility uses its own configured
+call ceiling; Manager retains preflight policy ownership. Partial native image results
+are retained as work before media storage. The existing media service accepts an internal
+v2 ownership option and checks each observed outputKey, original canvas and format.
+It preserves complete bytes and supports several independently keyed originals from one
+Generate, including retention after cancellation; it does not authorize redispatch or
+revision publication. The asset format stays at version 1: operationId is the v2 work
+callId and sourceRevisions.sha256 stores each source contentHash. No collection, index or
+field is added. The JSON example records this interpretation and both diagrams show
+the v2 work relationship. The MCP retention gateway matches the exact observed native
+file and uses the existing restricted downloader; fixture HTTP responses are synthetic.
+MCP image delivery to specialist inputs and image publication remain 09.3 work;
+this is local service verification, not provider execution.
+
 Planner cast/location roster proposals are deltas for their respective subject kinds.
 The revision writer preserves the other kind's current IDs and records the preceding
 roster revision as a source when merging. Unregistered or wrong-kind subjects and a

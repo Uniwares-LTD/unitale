@@ -616,6 +616,7 @@ export const relationships = [
   ["Reuse acceptance", "Production", "paid destination productionId"],
   ["Service write receipt", "Production", "productionId"],
   ["Original asset receipt", "Artifact revision", "attachments[]"],
+  ["Original asset receipt", "Work attempt", "v2 operationId = observed Generate callId; one receipt per outputKey"],
   [
     "Original asset receipt",
     "Original asset receipt",

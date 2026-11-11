@@ -425,7 +425,8 @@ workflow:
                     if c.get("cancelled") or c.get("leaseHeld"):
                         raise ValueError("Child dispatch currently blocked")
                     if paid:
-                        if not c["usage"].get("canDispatch"):
+                        allowed = c["usage"].get("canDispatchImage", c["usage"].get("canDispatch")) if action == "image-executor" else c["usage"].get("canDispatch")
+                        if not allowed:
                             raise ValueError("Paid dispatch currently blocked")
                         correction = work.get("correction")
                         if correction:

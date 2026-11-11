@@ -87,7 +87,7 @@ returns a deterministic prepared object/requestHash; Generate receives that unch
 object under `input.prepared`. Prepare and Generate have distinct call IDs;
 `prepared.callId` identifies the preparation and stays covered by `prepared.requestHash`.
 Never replace it with the generation call ID. The application must match the prepared
-object to retained preparation before paid dispatch (09.3 integration remains pending).
+object to retained preparation before paid dispatch (locally implemented in 09.3).
 No hidden paid preparation call. One provider call may yield several separately keyed originals.
 
 Reviewer input includes `targetIds`, `targetHash`, `referencePositions` and required
@@ -154,7 +154,7 @@ reuse that artifact ID. A rejected batch rolls back its entries and fence togeth
 | index | subjects,artifacts,fence -> stable ID map | existing embedded production index |
 | begin_work | register: childRequest,requestHash,targets,retryOf?,correction?,fence; dispatch: callId,requestHash,fence -> callId,requestHash,status,fence | derive identity/category/sources from the complete validated child request; durable correction/usage checks |
 | transfer | action,key and bounded parts -> verified transfer receipt | existing transfer storage/integrity/capacity |
-| retain_original | callId,outputKey,nativeFile,fence -> verified asset receipt | existing restricted Dify downloader and original-media service; per-output identity |
+| retain_original | callId,outputKey,nativeFile,fence -> {asset:{id,sha256,bytes,mime,width,height,...},fence} | existing restricted Dify downloader and original-media service; per-output identity |
 | save_revision | artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom? -> immutable revision | existing revision writer; complete metadata transfer and new content kinds |
 | request_human | question,targets,responseContract,presentation,fence -> requestId,presentationHash,formContent | existing review forms/Run cards; optional Manager policy |
 | record_evidence | key,content -> diagnostic evidence reference | existing redacted evidence; no measurement authority |
@@ -233,13 +233,28 @@ capability and owned prepaid workflow/job binding. Checkpoints accept the initia
 zero; subsequent atomic writes return the advanced fence. Exact retries reuse existing
 receipts, including after later mutations. Dispatch's configured suite must match the
 accepted Manager publication. It accepts registered creative text, text/specification/
-image-request review and unpaid image preparation, with no image references yet.
+image-request review, image generation and unpaid image preparation, with no image references yet.
 Preparation uses the existing work category `nonPaid`; native observations retain its
 exact result before Manager clears pending intent. Preflight registration requires that
 exact retained prepared object and its original target/source/reference identities.
-Paid image dispatch, visual review modes and runtime recovery remain pending.
+Generation consumes that same retained preparation and uses `paidImage` accounting;
+context's `canDispatchImage` reports its separate configured call eligibility, while
+`canDispatch` remains the text/reasoning eligibility. Manager owns exact preflight policy.
+Visual review modes and runtime recovery remain pending.
 `sources` verifies exact owned immutable source tuples and rejects nonempty reference
 lists until the image bridge exists. No workflow is activated by these handlers.
+
+`retain_original` matches the exact native file/outputKey in retained Generate work,
+then reuses the existing restricted Dify downloader and byte store. Its 8 MiB download
+is bounded and rejects foreign URLs/redirects through the existing downloader. The
+media service verifies the prepared canvas/format without normalization and retains
+each observed output independently. Replays reuse the stored asset without downloading
+again; save/attachment retries never generate. Internal retention remains possible
+after cancellation, while the MCP gateway still requires a current admitted Manager.
+The local fixture uses synthetic signed files and an injected fake HTTP response;
+actual target file download and MCP image conversion remain checkpoint 12 evidence.
+An expired observed URL is an unresolved retention outcome. Renewal would require
+broader provider work and remains an accepted gap; never regenerate to recover it.
 
 This storage slice is not proof of real provider execution, effective retries or
 application-connected recovery. The candidate still has retries/activation disabled.
@@ -326,7 +341,7 @@ known work `correctionRootId` and returns its current owned durable allowance fa
 
 Context supplies `checkpointVersion`, `checkpoint` (opaque saved intent/result), current
 `fence`, `sources` (available immutable artifactId/revisionId/contentHash identities),
-`work`, `assessments`, `corrections`, `usage:{canDispatch,...}`, `policyBinding`,
+`work`, `assessments`, `corrections`, `usage:{canDispatch,canDispatchImage,...}`, `policyBinding`,
 `reviewerBinding`, cancellation and product/lock/allowance facts. Supply bounded summaries
 and cursors rather than complete history. Model/transport capacity is distinct from
 product capacity; use bounded reads, never truncation or invented success.

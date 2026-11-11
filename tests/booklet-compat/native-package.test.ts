@@ -949,6 +949,11 @@ test("Manager requires exact preflight and whole-book actual-pixel coverage", ()
     ],
     continuityPairs: [["p1", "p2"]],
   };
+  c.usage.canDispatchImage = false;
+  assert.throws(() => guard(r.service, r, c), /dispatch currently blocked/);
+  c.usage.canDispatchImage = true;
+  c.usage.canDispatch = false;
+  assert.equal(guard(r.service, r, c).paid, "yes");
   assert.throws(
     () => guard("complete", { manifest }, c),
     /coverage incomplete/,

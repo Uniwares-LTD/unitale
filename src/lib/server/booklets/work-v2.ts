@@ -16,8 +16,13 @@ import {
 import { bookletConflict } from "./context";
 import { id, mutationSchema, type Mutation } from "./documents";
 
-// Creative responsibilities; Reviewer operations use explicit immutable scopes
-// below. Image generation registration is not yet enabled.
+const imageTargets = {
+  "style-sample": ["reference"],
+  character: ["reference"],
+  location: ["reference"],
+  page: ["page-image"],
+} as const;
+// Creative responsibilities; Reviewer operations use explicit immutable scopes below.
 const operations = {
   "story-planner": {
     concept: { book: ["concept"] },
@@ -41,12 +46,8 @@ const operations = {
     compose: { page: ["page-spec"] },
   },
   "image-executor": {
-    prepare: {
-      "style-sample": ["reference"],
-      character: ["reference"],
-      location: ["reference"],
-      page: ["page-image"],
-    },
+    prepare: imageTargets,
+    generate: imageTargets,
   },
 } as const;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -141,6 +142,7 @@ export async function registerBookletWorkV2(
     throw bookletConflict("Child request exceeds its accepted capacity.");
   const review = request.service === "quality-reviewer";
   const prepare = request.service === "image-executor" && request.operation === "prepare";
+  const generate = request.service === "image-executor" && request.operation === "generate";
   const supported = (
     review ? {} : operations[request.service as keyof typeof operations]
   ) as Record<string, Readonly<Record<string, readonly string[]>>>;
@@ -217,6 +219,31 @@ export async function registerBookletWorkV2(
   const p = await repo.getProduction(productionId);
   if (p.lifecycleState !== "in-progress")
     throw bookletConflict("Child work requires an admitted production.");
+  async function requirePreparation(raw: unknown, targets: string[]) {
+    const prepared = z.object({ callId: id, requestHash: hash }).catchall(z.json()).parse(raw);
+    const { requestHash, ...body } = prepared;
+    const preparation = await db.collection<WorkV2>("bookletWork").findOne({
+      ownerId: actor.uid, productionId: p._id, callId: prepared.callId,
+      service: "image-executor", operation: "prepare", category: "nonPaid", status: "succeeded",
+    });
+    const retained = z.object({ items: z.array(z.object({ prepared: z.json() })).length(1) })
+      .safeParse(preparation?.resultPayload);
+    if (fingerprint(body) !== requestHash || !preparation?.resultObservation || !retained.success ||
+      fingerprint(retained.data.items[0].prepared) !== fingerprint(prepared) ||
+      fingerprint([...preparation.targetIds].sort()) !== fingerprint([...targets].sort()) ||
+      fingerprint(prepared.sources) !== fingerprint(request.sources.map(({ artifactId, revisionId, contentHash }) =>
+        ({ artifactId, revisionId, contentHash }))) ||
+      fingerprint(prepared.references) !== fingerprint(meaningful.references))
+      throw bookletConflict("Use the exact retained preparation, target, sources and ordered originals.");
+    return prepared;
+  }
+  if (generate) {
+    if (request.items.length !== 1 || value.targets.length !== 1 || request.references.length)
+      throw bookletConflict("Generate requires one image target; original references are not yet available.");
+    const prepared = await requirePreparation(request.items[0].input.prepared, value.targets);
+    if (prepared.callId === request.callId)
+      throw bookletConflict("Generate requires a distinct call identity from Prepare.");
+  }
   const targetSubjects = new Set<string>();
   let allowLocalSubjects = false;
   const reviewScopes = review
@@ -258,29 +285,9 @@ export async function registerBookletWorkV2(
           "Actual original pixels are required for this review.",
         );
       if (request.operation === "image_request") {
-        const prepared = z
-          .object({ callId: id, requestHash: hash })
-          .catchall(z.json())
-          .parse(scope.prepared);
-        const { requestHash, ...body } = prepared;
-        if (
-          requestHash !== scope.targetHash ||
-          fingerprint(body) !== requestHash
-        )
+        const prepared = await requirePreparation(scope.prepared, scope.targetIds);
+        if (prepared.requestHash !== scope.targetHash)
           throw bookletConflict("Review requires the exact prepared request.");
-        const preparation = await db.collection<WorkV2>("bookletWork").findOne({
-          ownerId: actor.uid, productionId: p._id, callId: prepared.callId,
-          service: "image-executor", operation: "prepare", category: "nonPaid", status: "succeeded",
-        });
-        const retained = z.object({ items: z.array(z.object({ prepared: z.json() })).length(1) })
-          .safeParse(preparation?.resultPayload);
-        if (!preparation?.resultObservation || !retained.success ||
-          fingerprint(retained.data.items[0].prepared) !== fingerprint(prepared) ||
-          fingerprint([...preparation.targetIds].sort()) !== fingerprint([...scope.targetIds].sort()) ||
-          fingerprint(prepared.sources) !== fingerprint(request.sources.map(({ artifactId, revisionId, contentHash }) =>
-            ({ artifactId, revisionId, contentHash }))) ||
-          fingerprint(prepared.references) !== fingerprint(meaningful.references))
-          throw bookletConflict("Preflight must use the exact retained preparation, target, sources and ordered originals.");
       } else if (request.operation === "whole_book") {
         const manifest = await db.collection("bookletRevisions").findOne({
           ownerId: actor.uid,
@@ -460,7 +467,7 @@ export async function registerBookletWorkV2(
     requestHash: value.requestHash,
     requestPayload: meaningful,
     actionKey,
-    category: prepare ? "nonPaid" : "paidLlm",
+    category: prepare ? "nonPaid" : generate ? "paidImage" : "paidLlm",
     targetIds: value.targets,
     sources: request.sources.map(({ artifactId, revisionId, contentHash }) => ({
       artifactId,

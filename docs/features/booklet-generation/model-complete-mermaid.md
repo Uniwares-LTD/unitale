@@ -107,6 +107,7 @@ flowchart TB
   Reuse_acceptance -->|"paid destination productionId"| Production
   Service_write_receipt -->|"productionId"| Production
   Original_asset_receipt -->|"attachments[]"| Artifact_revision
+  Original_asset_receipt -->|"v2 operationId = observed Generate callId; one receipt per outputKey"| Work_attempt
   Original_asset_receipt -->|"originalAssetId for derivatives"| Original_asset_receipt
   Local_asset_part -->|"assetId"| Original_asset_receipt
   Operation -->|"operationId and runId"| Execution_measurement

@@ -747,6 +747,29 @@ Build, post-build typecheck, scoped lint, model/docs/i18n/skills/environment che
 independent 13-path hash audit pass. A separate same-agent read-only review (cold-review
 fallback) found no blocking issue in this slice; final checkpoint review pairs remain 09.7.
 
+09.3 generation/original slice: Generate reuses the retained-preparation guard and
+registers as `paidImage`; actual Manager/Executor fixtures dispatch the reviewed request
+and retain two originals from a partial three-image result without redispatch.
+The demonstrated separate call ceilings require one context fact, `canDispatchImage`;
+text/reasoning retains `canDispatch`. The existing media service now selects v2 ownership
+internally, requires an observed outputKey, and verifies exact canvas/format/bytes.
+The new `retain_original` gateway matches the observed native file and reuses the existing
+restricted downloader, mutation receipt and byte store. Replays do not download again.
+Retention can finish after cancellation without granting publication or dispatch.
+No new collection, persisted field, provider change or dependency; model guide/example and both
+diagrams explain the v2 work relationship using the existing asset format.
+Expired observed URLs remain an accepted unresolved-retention gap; do not regenerate
+or expand provider support. Specialist original-input delivery, visual reviews,
+correction-finding lineage, image publication and revalidation remain 09.3 work.
+Slice evidence: 20 MCP, 17 lifecycle/media and 42 compatibility tests pass. The extended
+native fixture covers partial Generate, exact file download through fake HTTP, one
+download across replay, multiple originals, cancellation, foreign access and canvas/
+format rejection. Build, post-build typecheck, scoped lint, model/docs/i18n/skills/env
+checks and the independent 13-path hash audit pass. A separate same-agent read-only
+slice review (cold-review fallback) found no blocking issue; checkpoint-wide review
+pairs remain 09.7. The lifecycle fixture needed forced Mongo shutdown; the subsequent
+process inventory found no remaining mongod process.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

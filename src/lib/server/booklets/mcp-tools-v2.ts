@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { Db } from "mongodb";
 import type { AiJob } from "../ai/jobs";
@@ -20,6 +21,9 @@ import {
 import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
 import { bookletTransfers, transferSchema } from "./mcp-transfers";
+import { bookletMedia } from "./media";
+import { downloadProviderImage } from "../runs/provider-images";
+import { parseDifyConfig } from "../../config/dify";
 import { reconcileBookletWorkV2 } from "./reconcile-v2";
 import { readBookletSuiteV2 } from "./suite-v2";
 import { bookletNativeCostsV2, bookletWorkUsageV2, bookletRunBoundsV2 } from "./usage-v2";
@@ -338,6 +342,8 @@ export function createBookletMcpToolsV2(
         const execution = await bookletRunBoundsV2(s.db, s.production);
         const textLimit = s.production.creativeConfigSnapshot.execution.maxTextCalls;
         const canDispatch = workAttempts.paidLlm < textLimit && !costs.overCeiling && !execution.overLimit;
+        const canDispatchImage = workAttempts.paidImage < s.production.creativeConfigSnapshot.execution.maxImageCalls &&
+          !costs.overCeiling && !execution.overLimit;
         const facts = {
           productionId: s.production._id,
           version: s.production.version,
@@ -373,6 +379,7 @@ export function createBookletMcpToolsV2(
             correctionFacts.length === correctionRoots.length,
           usage: {
             canDispatch,
+            canDispatchImage,
             reason: canDispatch ? null : "production_usage_bound_reached",
             workAttempts,
             costs,
@@ -446,6 +453,46 @@ export function createBookletMcpToolsV2(
         }, { projection: { complete: 1 } });
         if (!recorded) throw bookletMissing();
         return { assessmentId: receipt.assessmentId, complete: recorded.complete, fence: receipt.fence };
+      },
+    ),
+    tool(
+      "retain_original",
+      "Retain one exact observed native image output using the restricted Dify downloader and existing original-byte store. Storage retries never regenerate.",
+      async (raw, s) => {
+        const request = z.strictObject({ callId: id, outputKey: id, nativeFile: z.json(), fence: count }).parse(raw);
+        const repo = bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true });
+        const work = await repo.getWork(s.production._id, request.callId);
+        const result = z.object({ items: z.array(z.object({ outputs: z.array(z.object({
+          outputKey: id, nativeFile: z.json(),
+        })) })).length(1) }).safeParse(work.resultPayload);
+        const selected = result.success ? result.data.items[0].outputs.filter((output) => output.outputKey === request.outputKey) : [];
+        if (work.service !== "image-executor" || work.operation !== "generate" || work.category !== "paidImage" ||
+          !["succeeded", "partial"].includes(work.status) || !work.resultObservation || selected.length !== 1 ||
+          fingerprint(selected[0].nativeFile) !== fingerprint(request.nativeFile))
+          throw bookletConflict("Retain only the exact observed native image output.");
+        const m = await mutation(s, "refreshFence", request, request.fence);
+        const receipt = await repo.refreshFence(s.production._id, m);
+        const media = bookletMedia(s.db, s.actor, { documentVersion: 2, maxBytes: 8 * 1024 * 1024 });
+        const assetId = fingerprint([s.actor.uid, s.production._id, request.callId, request.outputKey, null]);
+        const prior = await s.db.collection("bookletAssets").findOne({
+          _id: assetId as never, ownerId: s.actor.uid, productionId: s.production._id, state: "ready", originalAssetId: null,
+        });
+        if (prior) return { asset: (await media.read(s.production._id, assetId)).asset, fence: receipt.fence };
+        const file = z.object({ type: z.literal("image"), transfer_method: z.literal("tool_file"),
+          related_id: z.string().uuid(), url: z.string().max(2048),
+        }).parse(request.nativeFile);
+        const config = parseDifyConfig(process.env);
+        if (config.mode !== "live") throw bookletConflict("Native original download configuration is unavailable.");
+        const bytes = await downloadProviderImage(file, config.baseUrl, 8 * 1024 * 1024);
+        s.signal.throwIfAborted();
+        const payload = z.object({ items: z.array(z.object({ input: z.object({ prepared: z.object({
+          settings: z.object({ format: z.enum(["png", "jpeg", "webp"]) }),
+        }) }) })).length(1) }).parse(work.requestPayload);
+        const asset = await media.retainOriginal(s.production._id, { operationId: work.callId,
+          outputKey: request.outputKey, mime: `image/${payload.items[0].input.prepared.settings.format}`,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        }, bytes);
+        return { asset, fence: receipt.fence };
       },
     ),
     tool(
@@ -696,7 +743,7 @@ export function createBookletMcpToolsV2(
     ),
     tool(
       "begin_work",
-      "Register child intent or atomically authorize configured text work or unpaid image preparation. Paid image dispatch remains unavailable.",
+      "Register child intent or atomically authorize configured text/image work or unpaid preparation, checking ownership, funding, locks and usage.",
       async (raw, s) => {
         const request = z
           .discriminatedUnion("action", [z.strictObject({
@@ -718,9 +765,10 @@ export function createBookletMcpToolsV2(
           const work = await repo.getWork(s.production._id, request.callId);
           const payload = z.object({ references: z.array(z.json()).max(0) }).safeParse(work.requestPayload);
           const prepare = work.service === "image-executor" && work.operation === "prepare" && work.category === "nonPaid";
-          if ((!prepare && work.category !== "paidLlm") || work.service === "manager" || (work.service === "image-executor" && !prepare) ||
+          const generate = work.service === "image-executor" && work.operation === "generate" && work.category === "paidImage";
+          if ((!prepare && !generate && work.category !== "paidLlm") || work.service === "manager" || (work.service === "image-executor" && !prepare && !generate) ||
             (work.service === "quality-reviewer" && !["text", "specification", "image_request"].includes(work.operation)) || !payload.success)
-            throw bookletConflict("Only registered text work or unpaid preparation without image references is available for dispatch.");
+            throw bookletConflict("Only registered text/image work or unpaid preparation without image references is available for dispatch.");
           const m = await mutation(s, "dispatchWork", request, request.fence);
           const receipt = await repo.dispatchWork(s.production._id, {
             ...m, callId: request.callId, requestHash: request.requestHash,

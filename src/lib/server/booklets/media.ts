@@ -15,6 +15,7 @@ import {
 import { bookletContext, bookletConflict, bookletMissing } from "./context";
 import { id } from "./documents";
 import type { Generation } from "./lifecycle";
+import type { WorkV2 } from "./documents-v2";
 import { resolveReusedSource } from "./guards";
 
 const digest = (bytes: Buffer) =>
@@ -87,9 +88,12 @@ export function bookletMedia(
     store?: PrivateObjectStore | null;
     maxBytes?: number;
     maxPixels?: number;
+    documentVersion?: 1 | 2;
   } = {},
 ) {
   const c = bookletContext(db, actor);
+  const ownedProduction = (productionId: string, session?: ClientSession) =>
+    options.documentVersion === 2 ? c.owned(productionId, session, 2) : c.owned(productionId, session);
   const records = db.collection<BookletAsset>("bookletAssets");
   const chunks = db.collection<Chunk>("bookletAssetBytes");
   const maxBytes = options.maxBytes ?? 64 * 1024 * 1024;
@@ -110,7 +114,7 @@ export function bookletMedia(
     assetId: string,
     s?: ClientSession,
   ) {
-    await c.owned(productionId, s);
+    await ownedProduction(productionId, s);
     const row = await records.findOne(
       { _id: assetId, ownerId: actor.uid, state: "ready" },
       { session: s },
@@ -257,7 +261,7 @@ export function bookletMedia(
     });
     const backend = store();
     const receipt = await c.transaction(async (s) => {
-      const p = await c.owned(productionId, s);
+      const p = await ownedProduction(productionId, s);
       const prior = await records.findOne({ _id: assetId }, { session: s });
       if (prior) {
         if (prior.inputHash !== inputHash)
@@ -266,20 +270,48 @@ export function bookletMedia(
           );
         return prior;
       }
-      if (!originalAssetId) await c.entitled(p, s);
-      const operation = await db
-        .collection<Generation>("bookletGenerations")
-        .findOne(
-          { _id: input.operationId, productionId, ownerId: actor.uid },
-          { session: s },
-        );
+      let operation: Pick<Generation, "_id" | "sources">;
+      if (options.documentVersion === 2) {
+        const work = await db.collection<WorkV2>("bookletWork").findOne({
+          ownerId: actor.uid, productionId, callId: input.operationId, service: "image-executor",
+          operation: "generate", category: "paidImage", status: { $in: ["succeeded", "partial"] },
+        }, { session: s });
+        const result = z.object({ items: z.array(z.object({ outputs: z.array(z.object({ outputKey: id })) })).length(1) })
+          .safeParse(work?.resultPayload);
+        const request = z.object({ items: z.array(z.object({ input: z.object({ prepared: z.object({
+          settings: z.object({ count: z.number().int().min(1).max(10), format: z.enum(["png", "jpeg", "webp"]),
+            canvas: z.object({ width: z.number().int().positive(), height: z.number().int().positive() }),
+          }),
+        }) }) })).length(1) }).safeParse(work?.requestPayload);
+        if (!work?.resultObservation || !result.success || !request.success ||
+          result.data.items[0].outputs.length > request.data.items[0].input.prepared.settings.count ||
+          (!originalAssetId && result.data.items[0].outputs.filter((output) => output.outputKey === input.outputKey).length !== 1))
+          throw bookletConflict("An observed image output is required for original retention.");
+        const canvas = request.data.items[0].input.prepared.settings.canvas;
+        if (!originalAssetId && (meta.width !== canvas.width || meta.height !== canvas.height))
+          throw bookletConflict("Original dimensions differ from the exact prepared request; do not resize.");
+        if (!originalAssetId && input.mime !== `image/${request.data.items[0].input.prepared.settings.format}`)
+          throw bookletConflict("Original format differs from the exact prepared request.");
+        operation = { _id: work.callId, sources: work.sources.map(({ artifactId, revisionId, contentHash }) =>
+          ({ artifactId, revisionId, sha256: contentHash })) };
+      } else {
+        if (!originalAssetId) await c.entitled(p, s);
+        const generation = await db
+          .collection<Generation>("bookletGenerations")
+          .findOne(
+            { _id: input.operationId, productionId, ownerId: actor.uid },
+            { session: s },
+          );
+        if (
+          !generation ||
+          (!originalAssetId &&
+            !["authorized", "unknown"].includes(generation.state))
+        )
+          throw bookletConflict("An authorized generation receipt is required.");
+        operation = generation;
+      }
       if (
-        !operation ||
-        (!originalAssetId &&
-          !["authorized", "unknown"].includes(operation.state))
-      )
-        throw bookletConflict("An authorized generation receipt is required.");
-      if (
+        options.documentVersion !== 2 &&
         !originalAssetId &&
         (await records.findOne(
           {
@@ -366,7 +398,7 @@ export function bookletMedia(
       }
     }
     await c.transaction(async (s) => {
-      await c.owned(productionId, s);
+      await ownedProduction(productionId, s);
       await records.updateOne(
         { _id: assetId, inputHash },
         { $set: { state: "ready" }, $inc: { fence: 1 } },

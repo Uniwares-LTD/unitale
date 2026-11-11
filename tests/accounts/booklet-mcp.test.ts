@@ -53,6 +53,7 @@ import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
 import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
+import { bookletMedia } from "../../src/lib/server/booklets/media";
 import { persistAiEvent, type AiJob } from "../../src/lib/server/ai/jobs";
 import { createDifyWorkflow } from "../../src/lib/server/ai/dify";
 import { parseDifyConfig } from "../../src/lib/config/dify";
@@ -2004,7 +2005,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             service: "image-executor", operation: "prepare", intent: "create",
             items: [{ itemId: "prepare-item", targetId: "sample-prepare", input: {
               imageKind: "style-sample", specification: contents[0], style: contents[1],
-              settings: { mode: "generate", model: "gpt-image-2.5-sunburst", count: 2,
+              settings: { mode: "generate", model: "gpt-image-2.5-sunburst", count: 3,
                 canvas: { width: 1024, height: 1024 }, quality: "high", background: "opaque", format: "png" },
             } }], sources: sources.map(({ source }) => source), references: [], constraints: {},
           };
@@ -2088,6 +2089,109 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const accepted = await db.collection("bookletAssessments").findOne({ _id: assessment.assessmentId as never });
           assert.equal(accepted!.assessment.targetHash, prepared.requestHash);
           assert.equal(accepted!.assessment.requestHash, prepared.requestHash);
+          const generation = { ...child, invocationId: "generate-invocation", callId: "generate-action",
+            operation: "generate", items: [{ itemId: "generate-item", targetId: "sample-prepare", input: { prepared } }] };
+          const generationRequest = { action: "register", childRequest: generation, requestHash: fingerprint(generation),
+            targets: ["sample-output"], fence: assessment.fence };
+          const forgedGeneration = { ...generation, items: [{ ...generation.items[0], input: { prepared: {
+            ...forgedPrepared, requestHash: forgedHash } } }] };
+          assert.equal((await invoke("begin_work", { ...generationRequest, childRequest: forgedGeneration,
+            requestHash: fingerprint(forgedGeneration) })).isError, true);
+          const imageRegistered = await successful("begin_work", generationRequest);
+          const imageContext = await successful("context", {});
+          assert.equal(imageContext.usage.canDispatchImage, true);
+          const imagePlan = runNativeCode("manager", "guard", { context: JSON.stringify(imageContext), decision: {
+            action: generation.service, request_json: JSON.stringify(generation), reason: "Generate the reviewed exact request" } });
+          assert.equal(imagePlan.paid, "yes");
+          assert.equal(JSON.parse(imagePlan.dispatch).requestHash, generationRequest.requestHash);
+          assert.equal(runNativeCode("image-executor", "validate", { request: JSON.stringify(generation), execution_ready: "true" }).count, 3);
+          const imageIntent = await successful("checkpoint", JSON.parse(imagePlan.checkpoint));
+          const imageReady = runNativeCode("manager", "saved", { raw: { result: imageIntent }, context: JSON.stringify(imageContext),
+            request: imagePlan.request, dispatch: imagePlan.dispatch, action: generation.service });
+          const imageDispatch = await successful("begin_work", JSON.parse(imageReady.dispatch));
+          assert.deepEqual(await successful("begin_work", JSON.parse(imageReady.dispatch)), imageDispatch);
+          assert.ok(imageDispatch.fence > imageRegistered.fence);
+          const nativeFiles = ["original-one", "original-two"].map((id) => {
+            const related_id = randomUUID();
+            return { id, type: "image", transfer_method: "tool_file", related_id,
+              url: `https://offline.invalid/files/tools/${related_id}.png?timestamp=1&nonce=fixture&sign=fixture` };
+          });
+          const imageResult = JSON.parse(runNativeCode("image-executor", "generate-result", {
+            request: imageReady.request, files: nativeFiles,
+          }).result);
+          assert.equal(imageResult.status, "partial");
+          const imageSession = db.client.startSession();
+          try { await imageSession.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: parent!.runId!, id: "generate-execution", nodeId: "child-image-executor", nodeType: "tool",
+            status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+            outputs: { json: [{ result: JSON.stringify(imageResult) }] }, outputsTruncated: false, error: null, executionMetadata: null,
+          }, imageSession)); } finally { await imageSession.endSession(); }
+          const imageFacts = await successful("context", {});
+          assert.equal(imageFacts.usage.workAttempts.paidImage, imageContext.usage.workAttempts.paidImage + 1);
+          const imageConsumed = runNativeCode("manager", "consume", { raw: { result: imageResult }, action: generation.service,
+            request: imageReady.request, context: { result: imageFacts }, version: imageIntent.checkpointVersion });
+          assert.equal(JSON.parse(imageConsumed.checkpoint).state.lastResult.status, "partial");
+          await successful("checkpoint", JSON.parse(imageConsumed.checkpoint));
+          const imageWork = await db.collection("bookletWork").findOne({ productionId: production._id, callId: generation.callId });
+          assert.equal(imageWork!.category, "paidImage");
+          assert.deepEqual(imageWork!.resultPayload, imageResult);
+          assert.equal((await invoke("begin_work", { action: "dispatch", callId: generation.callId,
+            requestHash: fingerprint(generation), fence: (await successful("context", {})).fence })).isError, true);
+          const media = bookletMedia(db, { uid: "owner", authTime: 1 }, { documentVersion: 2, store: null });
+          const bytes = await sharp({ create: { width: 1024, height: 1024, channels: 3, background: "red" } }).png().toBuffer();
+          const input = { operationId: generation.callId, outputKey: generation.callId + ":0", sha256: sha(bytes), mime: "image/png" };
+          const originalRequest = { callId: generation.callId, outputKey: input.outputKey, nativeFile: nativeFiles[0],
+            fence: (await successful("context", {})).fence };
+          assert.equal((await invoke("retain_original", { ...originalRequest, nativeFile: { ...nativeFiles[0], url: "https://foreign.invalid/image.png" } })).isError, true);
+          const previousFetch = globalThis.fetch;
+          const previousMode = process.env.DIFY_MODE, previousBase = process.env.DIFY_BASE_URL;
+          let downloads = 0;
+          globalThis.fetch = async (url, options) => {
+            assert.equal(String(url), nativeFiles[0].url);
+            assert.equal(options?.redirect, "error");
+            downloads++;
+            return new Response(new Uint8Array(bytes), { headers: { "content-type": "image/png" } });
+          };
+          process.env.DIFY_MODE = "live";
+          process.env.DIFY_BASE_URL = "https://offline.invalid/v1";
+          try {
+            const original = await successful("retain_original", originalRequest);
+            assert.equal(original.asset.sha256, sha(bytes));
+            assert.deepEqual(await successful("retain_original", originalRequest), original);
+            assert.equal(downloads, 1);
+          } finally {
+            globalThis.fetch = previousFetch;
+            if (previousMode === undefined) delete process.env.DIFY_MODE; else process.env.DIFY_MODE = previousMode;
+            if (previousBase === undefined) delete process.env.DIFY_BASE_URL; else process.env.DIFY_BASE_URL = previousBase;
+          }
+          await assert.rejects(media.retainOriginal(production._id, { ...input, outputKey: "invented" }, bytes), /observed image output/);
+          const smaller = await sharp(bytes).resize(512, 512).png().toBuffer();
+          await assert.rejects(media.retainOriginal(production._id, { ...input, outputKey: generation.callId + ":1",
+            sha256: sha(smaller) }, smaller), /dimensions differ/);
+          const jpeg = await sharp(bytes).jpeg().toBuffer();
+          await assert.rejects(media.retainOriginal(production._id, { ...input, outputKey: generation.callId + ":1",
+            sha256: sha(jpeg), mime: "image/jpeg" }, jpeg), /format differs/);
+          // Storage must finish after cancellation without creating dispatch or publication authority.
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { cancelRequested: true } });
+          let first;
+          try {
+            first = await media.retainOriginal(production._id, input, bytes);
+            assert.deepEqual(await media.retainOriginal(production._id, input, bytes), first);
+            assert.deepEqual((await media.read(production._id, first.id)).bytes, bytes);
+            const secondBytes = await sharp(bytes).tint("blue").png().toBuffer();
+            const second = await media.retainOriginal(production._id, { ...input, outputKey: generation.callId + ":1",
+              sha256: sha(secondBytes) }, secondBytes);
+            assert.notEqual(second.id, first.id);
+            assert.equal(second.originalAssetId, null);
+            assert.deepEqual((await media.read(production._id, second.id)).bytes, secondBytes);
+            await assert.rejects(media.retainOriginal(production._id, input, secondBytes), /correct hash/);
+            await assert.rejects(bookletMedia(db, { uid: "foreign", authTime: 1 }, { documentVersion: 2, store: null })
+              .read(production._id, first.id));
+            assert.equal(await db.collection("bookletAssets").countDocuments({ productionId: production._id,
+              operationId: generation.callId, originalAssetId: null }), 2);
+          } finally {
+            await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { cancelRequested: false } });
+          }
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
