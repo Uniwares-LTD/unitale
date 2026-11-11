@@ -121,7 +121,7 @@ without a creator question, paid polling, another scheduler or an automatic succ
 Creator questions remain separate. Unknown outcomes and unisolatable paid failures
 stop deterministically for reconciliation; successful siblings are preserved.
 
-Current checks: **46 compatibility tests** (11 preserved v1 and 35 native), **30 MCP**
+Current checks: **46 compatibility tests** (11 preserved v1 and 35 native), **31 MCP**
 and **32 repository tests** pass, plus production build, post-build typecheck,
 scoped ESLint, model generation, docs/i18n/skills checks and hash/disabled-gate audit.
 A separate same-agent read-only slice review found no blocking issue. Checkpoint-wide
@@ -130,8 +130,13 @@ reviews remain pending in 09.7. The preceding lifecycle/media slice passed 17 te
 These are local handler/worker and isolated YAML Code boundaries with fake providers,
 not execution of a Dify graph. The connected Page Composer fixture now publishes
 pagination and composition from the retained large Unicode manuscript, and completion
-uses that published layout. Page-image metadata in the completion fixture is still
-staged; complete creation/revision/correction/continuation journeys remain 09.6 work.
+uses that published layout. A separate five-page journey now creates all artifacts
+through handlers, including style sample and page originals, then completes across
+two whole-book review windows. Its actual prepaid continuation preserves completed
+work and adds no charge. Checkout, native start/termination, specialist replies and
+pixels are synthetic; no artifact/assessment/acceptance/completion state is staged in
+that journey. The older structural fixture still stages page metadata. Purchased
+revision, predecessor reuse and the complete 09.6 exit audit remain pending.
 Safe technical failure evidence is explicit in fixtures, not inferred from a provider
 error. Hidden SDK attempts/costs and unproved target failure classification remain
 accepted limitations; no provider controls or telemetry framework is added. Revised

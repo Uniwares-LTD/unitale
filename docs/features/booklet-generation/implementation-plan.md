@@ -1214,6 +1214,31 @@ either of the two final checkpoint-wide reviews reserved for 09.7. Remaining 09.
 work is composed page-image creation, revision/continuation, predecessor reuse and
 multi-window review, followed by the complete journey exit audit.
 
+09.6 creation/continuation evidence: 31 MCP tests now pass, including a separate
+five-page production with a supported 1024-square canvas and zero optional characters/
+locations. Actual book/production creation, prepaid start/admission, all seven roles,
+style sample, pagination/composition, page preparation/preflight, original retention,
+independent review, Manager acceptance and manifest completion run through the existing
+services/MCP/native Code/observation boundaries. All 18 revisions are published through
+handlers; no artifact, assessment, acceptance or completion state is staged. Checkout,
+native start/termination identity, specialist responses and image pixels are synthetic;
+this is not Dify graph execution or image-quality evidence.
+
+After two pages, a confirmed terminal fixture permits actual lifecycle/admission
+continuation. The successor preserves checkpoint, retry policy and existing revisions,
+uses a fresh capability, rejects the predecessor capability and completes without a
+second package charge or Run reservation. Two whole-book windows cover four pages,
+then the fifth; native completion rejects the partial coverage. Native acceptance
+guards bind independently reviewed, explicitly read revisions. Earlier large-text,
+tiny-canvas, partial-result and correction fixtures remain separate regressions.
+Typecheck, scoped ESLint and docs/i18n/skills checks pass. No production code, model
+relationship, package YAML or hashed artifact changes in this slice. Remaining 09.6:
+composed purchased revision, predecessor reuse and the full journey exit audit.
+A separate same-agent read-only slice review found no blocking issue. It verified
+the synthetic/real boundary, original-byte handling, partial/full window coverage,
+current Run/capability replacement, unchanged v1 record and one-charge/no-reservation
+assertions. Final checkpoint-wide review pairs remain reserved for 09.7.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

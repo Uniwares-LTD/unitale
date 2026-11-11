@@ -55,6 +55,11 @@ import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
 import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
 import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
+import { bookletRepository } from "../../src/lib/server/booklets/repository";
+import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
+import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
+import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
+import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import { resumeBookletRetryV2 } from "../../src/lib/server/booklets/retry-v2";
 import { bookletDomainV2 } from "../../src/project/booklets/domain";
 import { bookletMedia, type BookletAsset } from "../../src/lib/server/booklets/media";
@@ -3253,6 +3258,281 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal((await invoke("index", { subjects: [], artifacts: [], fence: completed.fence })).isError, true);
           assert.equal((await db.collection("bookletProductions").findOne({ _id: production._id as never }))!.currentManifestRevisionId, final.revisionId);
           await db.collection("bookletAssessments").deleteMany({ _id: { $in: newer.map((row) => row._id) } });
+        });
+        await t.test("a fresh prepaid production creates and completes a booklet through native role and real MCP boundaries", async () => {
+          const legacyBefore = await p();
+          const actor = { uid: "owner", authTime: 1 };
+          const productionId = "connected-production", orderId = "connected-order";
+          let token = "c".repeat(43), nativeRunId = "connected-native";
+          const base = bookletRepository(db, actor), repo = bookletRepositoryV2(db, actor);
+          const lifecycle = bookletLifecycleV2(db, actor);
+          await createConsumptionIndexes(db);
+          await grantCredits(db, actor.uid, "connected-fixture", { amount: 500, source: "purchase", reference: "offline-fixture" });
+          await base.createBook({ id: "connected-book", title: "A small light", key: "connected-book" });
+          const language = { tag: "ar", direction: "rtl" as const }, canvas = { width: 1024, height: 1024, mime: "image/png" as const };
+          const pageIds = ["connected-page", ...[2, 3, 4, 5].map((i) => "connected-page-" + i)];
+          const pageArtifact = (pageId: string, suffix: string) => pageId + "-" + suffix;
+          const fields = { executionProfileId: cfg.executionProfileId, executionProfileRevision: cfg.executionProfileRevision,
+            storyPages: pageIds.length, includeCover: false, maxCharacters: 0, maxLocations: 0, maxPanelsPerPage: 1, styleSamples: 1,
+            canvas, languages: [language], repairLimitPerOutput: 1,
+            execution: { maxTextCalls: 100, maxImageCalls: 10, maxWorkflowSteps: 200, maxElapsedSeconds: 3600,
+              spendingCeiling: { amountMinor: 100, currency: "USD" } } };
+          // Frozen checkout is synthetic. Creation, charging, Run admission and all
+          // artifact/work/assessment writes below use production services.
+          await db.collection("consumptionOrders").insertOne({ _id: orderId as never, fields, locks: [], activeWorkflow: null,
+            value: { ...order!.value, id: orderId, targetId: productionId, state: "queued", idempotencyKey: orderId,
+              chargedCredits: 0, refundedCredits: 0, chargeLedgerId: null, startedAt: null, expiresAt: null,
+              terms: { ...order!.value.terms, allowances: ["story", "style", "reference", "page"].map((category) => ({
+                category, unit: category === "story" ? "request" : "subject", included: 1, extraCredits: 5 })), entitlementDays: null } } });
+          await repo.createProduction({ id: productionId, bookletId: "connected-book", orderId, key: "connected-create",
+            brief: { idea: "A light appears.", audience: "Children", language, characters: [], locations: [], visualPreferences: "Warm watercolor" },
+            capacity: { id: fields.executionProfileId, revision: fields.executionProfileRevision, maxStoryPages: pageIds.length,
+              coverSupported: false, maxCharacters: 0, maxLocations: 0, maxPanelsPerPage: 1, maxStyleSamples: 1, canvases: [canvas], languages: [language] } });
+          const paid = await lifecycle.start(productionId);
+          assert.equal((await lifecycle.start(productionId)).workflowId, paid.workflowId);
+          const definition = orchestratorSchema.parse({ id: "booklet-v2", name: "Offline booklet", description: "Fixture", order: 0,
+            keyEnv: "DIFY_KEY_FIXTURE", workflowId: configured.workflowId, enabled: true, domainAdapter: { id: "booklet", version: "2" },
+            responseMode: "raw-v1", legacyInputs: [], inputs: [], pricing: null, recovery: null });
+          await db.collection("orchestrators").insertOne({ _id: definition.id as never, revision: 1, definition, validated: true, updatedAt: new Date() });
+          const oldMode = process.env.DIFY_MODE;
+          process.env.DIFY_MODE = "fake";
+          await db.collection("baseSettings").updateOne({ _id: "base" as never }, { $set: { "settings.runs.enabled": true } });
+          let admitted: Awaited<ReturnType<typeof enqueueBookletRun>>;
+          try { admitted = await enqueueBookletRun(db, actor, productionId, { key: "connected-run", workflowId: paid.workflowId,
+            orchestratorId: definition.id, configurationRevision: 1, inputs: {} }); }
+          finally { if (oldMode === undefined) delete process.env.DIFY_MODE; else process.env.DIFY_MODE = oldMode; }
+          // Synthetic native start identity, as supplied by the worker/provider.
+          // No Dify graph or paid model is executed by this fixture.
+          await db.collection("aiJobs").updateOne({ _id: admitted.attemptId as never }, { $set: {
+            status: "running", runId: nativeRunId, execution: { status: "running", workflowId: configured.workflowId },
+            lease: "connected-worker", leaseUntil: new Date(Date.now() + 180000) } });
+          await db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId: admitted.attemptId } });
+          await db.collection("runCapabilities").insertOne({ _id: sha(token) as never, uid: actor.uid, jobId: admitted.attemptId,
+            clientId: "fixture", operations: bookletMcpToolsV2.map((tool) => tool.name), expiresAt: new Date(Date.now() + 600000) });
+          const ok = async (name: string, request: unknown) => {
+            const response = await invoke(name, request, token);
+            assert.notEqual(response.isError, true, name + ": " + JSON.stringify(response));
+            return response.structuredContent.result;
+          };
+          const indexed = await ok("index", { subjects: [
+            { id: "connected-book-subject", kind: "book", label: "Book", pageRole: null },
+            { id: "connected-sample", kind: "style-sample", label: "Sample", pageRole: null },
+            ...pageIds.map((id) => ({ id, kind: "page", label: id, pageRole: "story" })) ], artifacts: [
+            ...["concept", "outline", "manuscript", "style", "book-layout", "book-manifest"].map((kind) => ({
+              subjectId: "connected-book-subject", artifactId: "connected-" + kind, kind })),
+            { subjectId: "connected-sample", artifactId: "connected-sample-spec", kind: "image-spec" },
+            { subjectId: "connected-sample", artifactId: "connected-sample-original", kind: "reference" },
+            ...pageIds.flatMap((subjectId) => [
+              { subjectId, artifactId: pageArtifact(subjectId, "spec"), kind: "page-spec" },
+              { subjectId, artifactId: pageArtifact(subjectId, "original"), kind: "page-image" } ]) ], fence: 0 });
+          assert.ok(indexed.fence > 0);
+          let sequence = 0;
+          type Source = { artifactId: string; revisionId: string; contentHash: string; content: Record<string, unknown>; assets: { assetId: string; sha256: string }[] };
+          const source = (row: Source) => ({ artifactId: row.artifactId, revisionId: row.revisionId, contentHash: row.contentHash, content: row.content });
+          const tuple = (row: Source) => ({ artifactId: row.artifactId, revisionId: row.revisionId, contentHash: row.contentHash });
+          // Explicit native child boundary: registration, checkpoint, dispatch,
+          // deterministic response, trusted observation and compact checkpoint.
+          const child = async (service: string, operation: string, target: string | string[], subject: string,
+            input: Record<string, unknown>, sources: Source[], response: unknown, references: unknown[] = [], constraints: Record<string, unknown> = {}) => {
+            const callId = "connected-call-" + ++sequence;
+            const request = { contractVersion: 2, invocationId: callId, callId, service, operation, intent: "create",
+              items: [{ itemId: callId + "-item", targetId: subject, input }], sources: sources.map(source), references, constraints };
+            await ok("begin_work", { action: "register", childRequest: request, requestHash: fingerprint(request), targets: Array.isArray(target) ? target : [target],
+              fence: (await ok("context", {})).fence });
+            const current = await ok("context", {});
+            const planned = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: {
+              action: service, request_json: JSON.stringify(request), reason: operation } });
+            const intent = await ok("checkpoint", JSON.parse(planned.checkpoint));
+            const ready = runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(current),
+              request: planned.request, dispatch: planned.dispatch, action: service });
+            const delivered = await invoke("sources", JSON.parse(planned.sources), token);
+            assert.notEqual(delivered.isError, true);
+            const files = references.map((_, i) => ({ related_id: "fixture-" + i }));
+            const bound = runNativeCode("manager", "bind-originals", { raw: delivered.structuredContent, request: ready.request, files });
+            await ok("begin_work", JSON.parse(ready.dispatch));
+            let result;
+            if (service === "image-executor") {
+              const validation = runNativeCode(service, "validate", { request: bound.request, references: files, execution_ready: "true" });
+              result = operation === "prepare" ? JSON.parse(validation.result) : JSON.parse(runNativeCode(service, "generate-result", {
+                request: bound.request, files: response }).result);
+            } else {
+              runNativeCode(service, "validate", { request: bound.request, references: files, execution_ready: "true" });
+              result = JSON.parse(runNativeCode(service, "pack", { request: bound.request, response: { items: [{
+                itemId: request.items[0].itemId, status: "succeeded", proposals: [{ kind: service === "quality-reviewer" ? "assessment" : (response as { kind: string }).kind,
+                  subjectId: subject, content: response }] }] } }).result);
+            }
+            const parent = (await db.collection<AiJob>("aiJobs").findOne({ _id: admitted.attemptId }))!;
+            await persistAiEvent(db, parent, { type: "node-observation", node: { runId: parent.runId!, id: callId + "-execution",
+              nodeId: "child-" + service, nodeType: "tool", status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+              outputs: { json: [{ result: JSON.stringify(result) }] }, outputsTruncated: false, error: null, executionMetadata: null } },
+            new Date(), (job, node, session) => observeBookletNodeV2(db, job, node, session));
+            const consumed = runNativeCode("manager", "consume", { raw: { result }, action: service, request: ready.request,
+              context: await ok("context", {}), version: intent.checkpointVersion });
+            await ok("checkpoint", JSON.parse(consumed.checkpoint));
+            return { request, result, work: await repo.getWork(productionId, callId) };
+          };
+          const publish = async (service: string, operation: string, artifactId: string, subject: string, content: Record<string, unknown>,
+            sources: Source[], input: Record<string, unknown> = {}, constraints: Record<string, unknown> = {}) => {
+            const created = await child(service, operation, artifactId, subject, input, sources, content, [], constraints);
+            const saved = await ok("save_revision", { artifactId, content: { callId: created.work.callId,
+              itemId: created.request.items[0].itemId, proposalIndex: 0 }, sources: sources.map(tuple), assets: [],
+              evidence: created.work.evidenceIds, mutationKey: "publish-" + created.work.callId, fence: (await ok("context", {})).fence });
+            return { ...saved, artifactId, content, assets: [] } as Source;
+          };
+          const review = async (row: Source, mode: string, sources: Source[] = [row], prepared?: Record<string, unknown>) => {
+            const selectedAssets = mode === "whole_book" ? sources.filter((s) => s.content.kind === "page-image").flatMap((s) => s.assets) : row.assets;
+            const originals = await db.collection<BookletAsset>("bookletAssets").find({ _id: { $in: selectedAssets.map((a) => a.assetId) } }).toArray();
+            const refs = originals.map((a) => ({ assetId: a._id, sha256: a.sha256, bytes: a.bytes }));
+            const windowPages = mode === "whole_book" ? (row.content.pages as { pageId: string; assetId: string }[])
+              .filter((page) => selectedAssets.some((asset) => asset.assetId === page.assetId)).map((page) => page.pageId) : [];
+            const scope = { targetIds: mode === "whole_book" ? windowPages : [row.artifactId], targetHash: prepared?.requestHash ?? row.contentHash,
+              referencePositions: refs.map((_, i) => i), ...(prepared ? { prepared } : {}),
+              ...(mode === "whole_book" ? { pageIds: windowPages, continuityPairs: [] } : {}) };
+            const checked = await child("quality-reviewer", mode, scope.targetIds, scope.targetIds[0], scope, sources,
+              { coverage: { targetIds: scope.targetIds, referencePositions: scope.referencePositions, ...(mode === "whole_book" ? { continuityPairs: [] } : {}) },
+                disposition: "pass", findings: [], limitations: [] }, refs);
+            return ok("record_assessment", { assessment: checked.result.items[0].proposals[0].content,
+              executionLocator: { runId: nativeRunId, nodeId: "child-quality-reviewer", executionId: checked.work.callId + "-execution" },
+              fence: (await ok("context", {})).fence });
+          };
+          const accept = async (row: Source) => {
+            let current = await ok("context", {});
+            const selection = { kind: "revision", id: row.revisionId };
+            const document = await ok("read_document", selection);
+            const consumed = runNativeCode("manager", "consume", { raw: { result: document }, action: "read_document",
+              request: JSON.stringify(selection), context: current, version: current.checkpointVersion });
+            await ok("checkpoint", JSON.parse(consumed.checkpoint));
+            current = await ok("context", {});
+            const request = { revisionId: row.revisionId, contentHash: row.contentHash, targetIds: [row.artifactId],
+              assetIds: row.assets.map((a) => a.assetId), sources: (await repo.getRevision(productionId, row.revisionId)).sources,
+              evidence: [], fence: current.fence };
+            const planned = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: {
+              action: "record_acceptance", request_json: JSON.stringify(request), reason: "Select the independently reviewed revision" } });
+            const intent = await ok("checkpoint", JSON.parse(planned.checkpoint));
+            const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(current),
+              request: planned.request, dispatch: planned.dispatch, action: "record_acceptance" }).request);
+            return ok("record_acceptance", ready);
+          };
+          const bookSubject = "connected-book-subject";
+          const concept = await publish("story-planner", "concept", "connected-concept", bookSubject,
+            { kind: "concept", title: "A small light", premise: "A light appears", audience: "Children", tone: "Warm", constraints: [] }, []);
+          await review(concept, "text"); await accept(concept);
+          const outline = await publish("story-planner", "outline", "connected-outline", bookSubject,
+            { kind: "outline", summary: "A light appears", beats: [] }, [concept]);
+          await review(outline, "text"); await accept(outline);
+          const visible = "مَرْحَبًا e\u0301 😀\n";
+          const manuscript = await publish("manuscript", "write", "connected-manuscript", bookSubject,
+            { kind: "manuscript", units: [{ id: "connected-unit", action: "Light appears", subjects: [],
+              texts: [{ id: "connected-text", kind: "narration", text: visible }] }] }, [outline]);
+          await review(manuscript, "text"); await accept(manuscript);
+          const style = await publish("art-director", "style", "connected-style", bookSubject,
+            { kind: "style", direction: "Warm watercolor", letteringDirection: "rtl", exclusions: [] }, [concept]);
+          await review(style, "specification"); await accept(style);
+          const spec = await publish("art-director", "sample_spec", "connected-sample-spec", "connected-sample",
+            { kind: "image-spec", purpose: "Style sample", requiredFeatures: [], style: style.content }, [style]);
+          await review(spec, "specification"); await accept(spec);
+          const generate = async (artifactId: string, subject: string, kind: "reference" | "page-image", spec: Source, sources: Source[]) => {
+            const exact = kind === "page-image" ? (spec.content.panels as { lettering: unknown[] }[]).flatMap((p) => p.lettering) : [];
+            const prepared = await child("image-executor", "prepare", artifactId, subject, { imageKind: kind === "page-image" ? "page" : "style-sample",
+              specification: spec.content, style: style.content, lettering: exact, settings: { mode: "generate", model: "gpt-image-2.5-sunburst",
+                count: 1, canvas: { width: canvas.width, height: canvas.height }, quality: "high", background: "opaque", format: "png" } }, sources, null);
+            const preparation = prepared.result.items[0].prepared;
+            await review({ artifactId, revisionId: spec.revisionId, contentHash: preparation.requestHash, content: {}, assets: [] }, "image_request", sources, preparation);
+            const related_id = randomUUID();
+            const file = { type: "image", transfer_method: "tool_file", related_id,
+              url: `https://offline.invalid/files/tools/${related_id}.png?timestamp=1&nonce=fixture&sign=fixture` };
+            const generated = await child("image-executor", "generate", artifactId, subject, { prepared: preparation }, sources, [file]);
+            const bytes = await sharp({ create: { width: canvas.width, height: canvas.height, channels: 3, background: "yellow" } }).png().toBuffer();
+            const previousFetch = globalThis.fetch, previousMode = process.env.DIFY_MODE, previousBase = process.env.DIFY_BASE_URL;
+            let original;
+            globalThis.fetch = async (url) => { assert.equal(String(url), file.url); return new Response(new Uint8Array(bytes), { headers: { "content-type": "image/png" } }); };
+            process.env.DIFY_MODE = "live"; process.env.DIFY_BASE_URL = "https://offline.invalid/v1";
+            try { original = await ok("retain_original", { callId: generated.work.callId, outputKey: generated.work.callId + ":0",
+              nativeFile: file, fence: (await ok("context", {})).fence }); }
+            finally { globalThis.fetch = previousFetch; if (previousMode === undefined) delete process.env.DIFY_MODE; else process.env.DIFY_MODE = previousMode;
+              if (previousBase === undefined) delete process.env.DIFY_BASE_URL; else process.env.DIFY_BASE_URL = previousBase; }
+            const assets = [{ assetId: original.asset.id, sha256: original.asset.sha256 }], content = { kind, asset: assets[0] };
+            const saved = await ok("save_revision", { artifactId, content, sources: sources.map(tuple), assets, evidence: generated.work.evidenceIds,
+              mutationKey: "publish-" + generated.work.callId, fence: (await ok("context", {})).fence });
+            const row = { ...saved, artifactId, content, assets } as Source;
+            await review(row, "image"); await accept(row);
+            assert.deepEqual((await bookletMedia(db, actor, { documentVersion: 2 }).read(productionId, assets[0].assetId)).bytes, bytes);
+            return row;
+          };
+          await generate("connected-sample-original", "connected-sample", "reference", spec, [spec, style]);
+          const lettering = [{ textId: "connected-text", kind: "narration", text: visible, start: 0, end: [...visible].length }];
+          const panels = pageIds.map((pageId, i) => ({ id: pageId + "-panel", noText: i !== 0, lettering: i === 0 ? lettering : [] }));
+          const layout = await publish("page-composer", "paginate", "connected-book-layout", bookSubject,
+            { kind: "book-layout", canvas: { width: canvas.width, height: canvas.height }, direction: "rtl",
+              pages: pageIds.map((id, i) => ({ id, role: "story", panels: [panels[i]] })) }, [manuscript], {},
+            { storyPages: pageIds.length, includeCover: false, maxPanelsPerPage: 1, canvas: { width: canvas.width, height: canvas.height }, direction: "rtl" });
+          await review(layout, "specification"); await accept(layout);
+          const pages: Source[] = [];
+          for (const [i, pageId] of pageIds.entries()) {
+            if (i === 2) {
+              const retained = await repo.getProduction(productionId);
+              const savedCount = await db.collection("bookletRevisions").countDocuments({ productionId });
+              const predecessor = admitted.attemptId, oldToken = token;
+              // A synthetic confirmed terminal native window. Continue itself
+              // must use the actual lifecycle/admission services and saved state.
+              await db.collection("aiJobs").updateOne({ _id: predecessor as never }, { $set: {
+                status: "failed", terminationEvidence: "provider-failed", "execution.status": "failed" } });
+              const workflowId = await lifecycle.continue(productionId, "connected-next-window");
+              assert.equal(await lifecycle.continue(productionId, "connected-next-window"), workflowId);
+              const previousMode = process.env.DIFY_MODE;
+              process.env.DIFY_MODE = "fake";
+              try { admitted = await enqueueBookletRun(db, actor, productionId, { key: "connected-successor", workflowId,
+                predecessorId: predecessor, orchestratorId: definition.id, configurationRevision: 1, inputs: {} }); }
+              finally { if (previousMode === undefined) delete process.env.DIFY_MODE; else process.env.DIFY_MODE = previousMode; }
+              nativeRunId = "connected-native-successor";
+              token = "d".repeat(43);
+              await db.collection("aiJobs").updateOne({ _id: admitted.attemptId as never }, { $set: { status: "running", runId: nativeRunId,
+                execution: { status: "running", workflowId: configured.workflowId }, lease: "connected-worker",
+                leaseUntil: new Date(Date.now() + 180000) } });
+              await db.collection("consumptionWorkflows").updateOne({ _id: workflowId as never }, { $set: { jobId: admitted.attemptId } });
+              await db.collection("runCapabilities").insertOne({ _id: sha(token) as never, uid: actor.uid, jobId: admitted.attemptId,
+                clientId: "fixture", operations: bookletMcpToolsV2.map((tool) => tool.name), expiresAt: new Date(Date.now() + 600000) });
+              assert.equal((await invoke("context", {}, oldToken)).isError, true);
+              assert.deepEqual((await repo.getProduction(productionId)).checkpoint, retained.checkpoint);
+              assert.deepEqual((await repo.getProduction(productionId)).retryPolicy, retained.retryPolicy);
+              assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId }), savedCount);
+              assert.equal(await db.collection("consumptionCharges").countDocuments({ orderId }), 1);
+              assert.equal((await db.collection<AiJob>("aiJobs").findOne({ _id: admitted.attemptId }))!.run!.attempt, 2);
+            }
+            const pageSpec = await publish("page-composer", "compose", pageArtifact(pageId, "spec"), pageId,
+              { kind: "page-spec", pageId, panels: [{ ...panels[i], composition: "A light in the dark" }] }, [layout], { pageIds: [pageId] });
+            await review(pageSpec, "specification"); await accept(pageSpec);
+            pages.push(await generate(pageArtifact(pageId, "original"), pageId, "page-image", pageSpec, [pageSpec, layout, style]));
+          }
+          const assets = pages.flatMap((page) => page.assets);
+          const manifestContent = { kind: "book-manifest", pages: pages.map((page, i) => ({ pageId: pageIds[i], assetId: page.assets[0].assetId })), continuityPairs: [] };
+          const saved = await ok("save_revision", { artifactId: "connected-book-manifest", content: manifestContent, sources: [...pages, layout].map(tuple),
+            assets, evidence: [], mutationKey: "connected-manifest", fence: (await ok("context", {})).fence });
+          const manifest = { ...saved, artifactId: "connected-book-manifest", content: manifestContent, assets } as Source;
+          await review(manifest, "whole_book", [manifest, ...pages.slice(0, 4)]);
+          const partial = await ok("context", {});
+          assert.equal(partial.manifestReview.covered.pages, 4);
+          assert.equal(partial.manifestReview.required.pages, 5);
+          assert.throws(() => runNativeCode("manager", "guard", { context: JSON.stringify(partial), decision: { action: "complete",
+            request_json: JSON.stringify({ manifestRevisionId: manifest.revisionId, fence: partial.fence }), reason: "Insufficient coverage" } }), /coverage incomplete/);
+          await review(manifest, "whole_book", [manifest, pages[4]]);
+          await accept(manifest);
+          const current = await ok("context", {});
+          const plan = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: { action: "complete",
+            request_json: JSON.stringify({ manifestRevisionId: manifest.revisionId, fence: current.fence }), reason: "Complete the selected booklet" } });
+          const intent = await ok("checkpoint", JSON.parse(plan.checkpoint));
+          const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(current),
+            request: plan.request, dispatch: plan.dispatch, action: "complete" }).request);
+          const completed = await ok("complete", ready);
+          assert.deepEqual(await ok("complete", ready), completed);
+          assert.equal((await repo.getProduction(productionId)).lifecycleState, "completed");
+          assert.equal((await repo.getProduction(productionId)).currentManifestRevisionId, manifest.revisionId);
+          assert.equal(await db.collection("consumptionCharges").countDocuments({ orderId }), 1);
+          assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId }), 18);
+          assert.deepEqual(await p(), legacyBefore);
+          const paidJob = (await db.collection<AiJob>("aiJobs").findOne({ _id: admitted.attemptId }))!;
+          assert.equal(paidJob.credits, 0);
+          assert.equal(paidJob.reservationId, null);
         });
         for (const change of [
           { cancelRequested: true },
