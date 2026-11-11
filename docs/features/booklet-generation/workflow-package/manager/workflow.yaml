@@ -269,7 +269,7 @@ workflow:
                 Checkpoint automatically happens before/after actions. All child results are retained in work documents; read the checkpoint's lastResult.document for complete proposals or preparation. A checkpoint stores intent/references, not proof of execution. App work facts override stale intent.
                 When missing facts, exhausted corrections, unresolved evidence or no safe useful action remain, pause with a readable reason. Do not invent progress.
                 Action payloads follow integration-handoff.md. Child request_json is the complete child envelope; MCP payloads contain only that operation's arguments.
-                record_acceptance supplies contentHash and exact targetIds/assetIds. complete supplies the selected manifest {pages:[{pageId,assetId,...}], continuityPairs:[...]}.
+                record_acceptance supplies contentHash and exact targetIds/assetIds. complete supplies manifestRevisionId for the explicitly selected immutable manifest. Read that revision before selecting it; context.manifestReview supplies compact coverage for that exact revision across all owned assessments, independently of the recent preview.
                 record_assessment.executionLocator is {runId,nodeId:"child-quality-reviewer",executionId} from the retained work's resultObservation. Read that work document first; do not invent policy bindings or execution identities.
 
                 Allowed actions: read_document, lease, index, begin_work, transfer, retain_original, save_revision, request_human, record_evidence, record_assessment, sources, reconcile_work, record_acceptance, complete, story-planner, manuscript, art-director, page-composer, image-executor, quality-reviewer, pause
@@ -281,7 +281,7 @@ workflow:
                 Save each selected original separately: save_revision.content is {kind:"reference" or "page-image",asset:{assetId,sha256}}, taking assetId from retain_original.asset.id. Supply assets:[that same identity] and the originating Generate work's exact sources/evidence. Files are observed outputs, not text proposals. Replaying the same original/artifact reuses its revision; another returned original may be a separate candidate without another Generate.
                 Revalidate unchanged content with save_revision.revalidatedFrom identifying the retained revision. Omit content to reuse its body server-side; keep assets unchanged and supply replacement dependency sources. Use retained producer evidence when your policy permits reuse. If requesting new review, supply sources in order: retained revision identity, then replacement sources; use that recorded review's evidence. Revalidation creates immutable lineage and does not generate or accept content.
                 Reviewer item input: targetIds, targetHash (exact content/request/manifest hash), referencePositions, continuityPairs where applicable; image_request includes prepared; whole_book includes pageIds; correction includes before,after,findings,visual where applicable.
-                MCP request JSON fields: read_document {kind,id,cursor?}; lease {action,fence}; index {subjects,artifacts,fence}; begin_work {action:"register",childRequest:complete_child_envelope,requestHash,targets,retryOf?,correction?,fence}; transfer {action,key,...bounded parts}; retain_original {callId,outputKey,nativeFile,fence}; save_revision {artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom?}; request_human {question,targets,responseContract,presentation,fence}; record_evidence {key,content}; record_assessment {assessment,executionLocator,fence}; sources {sources,references}; reconcile_work {callId,executionLocator?}; record_acceptance {revisionId,contentHash,targetIds,assetIds,sources,evidence,fence}; complete {manifest,fence}.
+                MCP request JSON fields: read_document {kind,id,cursor?}; lease {action,fence}; index {subjects,artifacts,fence}; begin_work {action:"register",childRequest:complete_child_envelope,requestHash,targets,retryOf?,correction?,fence}; transfer {action,key,...bounded parts}; retain_original {callId,outputKey,nativeFile,fence}; save_revision {artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom?}; request_human {question,targets,responseContract,presentation,fence}; record_evidence {key,content}; record_assessment {assessment,executionLocator,fence}; sources {sources,references}; reconcile_work {callId,executionLocator?}; record_acceptance {revisionId,contentHash,targetIds,assetIds,sources,evidence,fence}; complete {manifestRevisionId,fence}.
                 begin_work registration supplies the actual complete childRequest, not just its hash. The app derives call/service/operation/sources/category and normalized action identity from it; never supply an actionKey or retry category. Retry changes invocation/call/item carriers only; preserve the meaningful requested operation and identify retryOf.
                 Use context.fence and returned mutation keys/IDs, never invent current versions. read_document kinds cover revision, history, work, assessment, human_response and execution; respect returned cursors. A pending authentic response stays pending.
             - id: input
@@ -411,6 +411,11 @@ workflow:
                         raise ValueError("Registration hash differs from actual child request")
                 def passed(mode, target_hash, target_ids=None, rows=None):
                     return any(a.get("mode") == mode and a.get("targetHash") == target_hash and a.get("disposition") == "pass" and a.get("complete") is True and a.get("policyBinding") == c["policyBinding"] and a.get("reviewerBinding") == c["reviewerBinding"] and (target_ids is None or a.get("coverage", {}).get("targetIds") == target_ids) for a in (c["assessments"] if rows is None else rows))
+                def whole_book_pass(revision_id):
+                    review = c.get("manifestReview") or {}
+                    required = review.get("required", {})
+                    covered = review.get("covered", {})
+                    return review.get("manifestRevisionId") == revision_id and review.get("policyBinding") == c["policyBinding"] and review.get("reviewerBinding") == c["reviewerBinding"] and required.get("pages", 0) > 0 and all(covered.get(k, -1) == required.get(k) for k in ("pages", "originals", "comparisons"))
                 if action in SERVICES:
                     if request.get("service") != action or request.get("contractVersion") != 2:
                         raise ValueError("Child service/version mismatch")
@@ -450,19 +455,14 @@ workflow:
                     paid = False
                     request_hash = digest({k: v for k, v in request.items() if k != "fence"})
                 if action == "record_acceptance":
-                    modes = ("image",) if request.get("assetIds") else ("text", "specification", "correction")
-                    if not any(passed(mode, request.get("contentHash"), request.get("targetIds")) for mode in modes):
+                    manifest = c.get("manifestReview") or {}
+                    modes = ("image", "correction") if request.get("assetIds") else ("text", "specification", "correction")
+                    accepted = whole_book_pass(request.get("revisionId")) and manifest.get("manifestHash") == request.get("contentHash") if manifest.get("manifestRevisionId") == request.get("revisionId") else any(passed(mode, request.get("contentHash"), request.get("targetIds")) for mode in modes)
+                    if not accepted:
                         raise ValueError("Review exact artifact before acceptance")
                 if action == "complete":
-                    manifest = request["manifest"]
-                    wanted = [p["pageId"] for p in manifest["pages"]]
-                    assets = [p["assetId"] for p in manifest["pages"]]
-                    rows = [a for a in c["assessments"] if a.get("mode") == "whole_book" and a.get("targetHash") == digest(manifest) and a.get("disposition") == "pass" and a.get("complete") is True and a.get("policyBinding") == c["policyBinding"] and a.get("reviewerBinding") == c["reviewerBinding"]]
-                    covered = {x for a in rows for x in a.get("coverage", {}).get("targetIds", [])}
-                    seen_assets = {x for a in rows for x in a.get("coverage", {}).get("assetIds", [])}
-                    pairs = {canonical(x) for a in rows for x in a.get("coverage", {}).get("continuityPairs", [])}
-                    if not wanted or len(set(wanted)) != len(wanted) or covered != set(wanted) or seen_assets != set(assets) or not {canonical(x) for x in manifest.get("continuityPairs", [])}.issubset(pairs):
-                        raise ValueError("Whole-book actual-page/continuity coverage incomplete")
+                    if not whole_book_pass(request.get("manifestRevisionId")):
+                        raise ValueError("Whole-book selected-revision actual-page/continuity coverage incomplete")
                 pending_request = request["childRequest"] if action == "begin_work" and request.get("action") == "register" else request
                 pending = {"action": action, "callId": pending_request.get("callId"), "invocationId": pending_request.get("invocationId"), "requestHash": request_hash, "reason": d["reason"], "sources": [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in pending_request.get("sources", [])], "itemIds": [i["itemId"] for i in pending_request.get("items", [])], "mutationKey": request.get("mutationKey")}
                 checkpoint = {"expectedVersion": c["checkpointVersion"], "fence": c["fence"], "state": {**c.get("checkpoint", {}), "pending": pending}}

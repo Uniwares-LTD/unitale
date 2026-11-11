@@ -51,7 +51,17 @@ a specialist execution or create a work attempt. Unchanged manifests can retain
 `revalidatedFrom` with replacement dependency sources. These use existing content,
 source, asset and provenance fields, so the JSON example and both diagrams remain
 structurally unchanged. Draft publication and Manager selection do not complete a
-production or change its final manifest pointer. Structural completion remains 09.4 work.
+production or change its final manifest pointer.
+
+V2 structural completion is now locally implemented. An explicit selected manifest
+revision binds the owned accepted dependency graph and purchased layout/page structure;
+full original-byte verification happens before the short atomic metadata write.
+The existing production fields become `lifecycleState:completed` and
+`currentManifestRevisionId:<selected revision>`. The receipt reuses its existing
+`revisionId` field, and exact replay precedes byte I/O. Manager owns whole-book quality
+policy using exact-revision full-history coverage facts; no human/quality prerequisite
+is added to the application lifecycle. Native Run termination is separate. This adds
+behavior over existing fields, so JSON and both diagrams remain structurally applicable.
 
 V2 image registration/dispatch now consumes the exact retained preparation, preserving
 its call ID/hash, target and source identities. Image eligibility uses its own configured

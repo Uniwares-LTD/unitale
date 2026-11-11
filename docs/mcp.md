@@ -418,8 +418,12 @@ original attempt, native node and exact presentation. Unknown/mismatched answers
 stay pending; changed targets are stale. Existing Run submission provides first-wins.
 Manager manifest publication/revalidation now binds immutable page-image sources
 and exact original attachments, without a provider call or automatic completion.
-Creative text/images retain their producer and financial guards. Completion, remaining
-histories and native acceptance/completion proof beyond the recent preview are still 09.4 work.
+Creative text/images retain their producer and financial guards. `booklet_complete_v2`
+accepts `{manifestRevisionId,fence}` and validates the selected immutable manifest,
+accepted dependencies, purchased structure and original bytes without an app quality
+gate. Context exposes exact-revision full-history `manifestReview` coverage counts
+for Manager's whole-book acceptance/completion policy. Native Run termination remains
+separate. Remaining histories and non-manifest acceptance preview handling are still 09.4 work.
 The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original

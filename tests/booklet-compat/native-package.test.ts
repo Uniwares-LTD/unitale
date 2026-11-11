@@ -949,38 +949,23 @@ test("Manager requires exact preflight and whole-book actual-pixel coverage", ()
   c.work[0].preflight = { ...c.work[0].preflight, policyBinding: "wrong-policy" };
   assert.throws(() => guard(r.service, r, c), /preflight/);
   c.work[0].preflight.policyBinding = c.policyBinding;
-  const manifest = {
-    pages: [
-      { pageId: "p1", assetId: "a1" },
-      { pageId: "p2", assetId: "a2" },
-    ],
-    continuityPairs: [["p1", "p2"]],
-  };
   c.usage.canDispatchImage = false;
   assert.throws(() => guard(r.service, r, c), /dispatch currently blocked/);
   c.usage.canDispatchImage = true;
   c.usage.canDispatch = false;
   assert.equal(guard(r.service, r, c).paid, "yes");
   assert.throws(
-    () => guard("complete", { manifest }, c),
+    () => guard("complete", { manifestRevisionId: "selected-manifest" }, c),
     /coverage incomplete/,
   );
-  c.assessments = [
-    {
-      mode: "whole_book",
-      targetHash: hash(manifest),
-      disposition: "pass",
-      complete: true,
-      policyBinding: c.policyBinding,
-      reviewerBinding: c.reviewerBinding,
-      coverage: {
-        targetIds: ["p1", "p2"],
-        assetIds: ["a1", "a2"],
-        continuityPairs: [["p1", "p2"]],
-      },
-    },
-  ];
-  assert.equal(guard("complete", { manifest }, c).action, "complete");
+  c.manifestReview = { manifestRevisionId: "selected-manifest", manifestHash: "exact-hash",
+    policyBinding: c.policyBinding, reviewerBinding: c.reviewerBinding,
+    required: { pages: 2, originals: 2, comparisons: 1 }, covered: { pages: 2, originals: 2, comparisons: 0 } };
+  assert.throws(() => guard("complete", { manifestRevisionId: "selected-manifest" }, c), /coverage incomplete/);
+  c.manifestReview.covered.comparisons = 1;
+  c.assessments = [];
+  assert.equal(guard("complete", { manifestRevisionId: "selected-manifest" }, c).action, "complete");
+  assert.throws(() => guard("complete", { manifestRevisionId: "another-same-hash-revision" }, c), /coverage incomplete/);
 });
 
 test("durable checkpoint confirmation is required; version races and fabricated completion fail", () => {

@@ -168,13 +168,13 @@ Specification and whole-book fixtures now verify actual registration, native
 retention and exact assessment recording. Whole-book inputs bind the selected
 immutable manifest, page-image sources and inspected originals. Manifest publication
 and revalidation now use actual handlers; page metadata remains staged, so this is
-not yet a complete page-creation/completion journey. Actual Dify
+not yet a complete page-creation journey. Actual Dify
 image-block conversion remains unverified. Registered Generate work now carries
 its exact preflight fact outside the recent assessment preview. Correction finding
 lineage is verified at registration, so older findings need not remain in that preview.
 
 Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
-tests), plus 26 MCP and 30 repository tests (the previous media slice passed 17).
+tests), plus 27 MCP and 30 repository tests (the previous media slice passed 17).
 Build, typecheck, scoped lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
 found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
@@ -183,15 +183,18 @@ Its acceptance gateway/owned reader and human request/response correlation are
 locally implemented. Existing Run submission provides authenticated first-wins
 answers; uncertain submissions stay pending until trusted confirmation. Human forms
 checkpoint compact references. Manager manifest publication/revalidation is locally
-verified without a provider call or automatic completion. Structural completion,
-remaining history reads and native acceptance/completion proof beyond the recent
-assessment preview remain pending; actual Dify form rendering/readback is unverified.
+verified without a provider call or automatic completion. Explicit selected-manifest
+completion is now locally wired through native guard/checkpoint and real handlers,
+including byte verification, dependency/layout checks and full-history coverage beyond
+the preview. Page/layout metadata in that fixture is staged; full creation/revision
+journeys, non-manifest acceptance preview handling and remaining history reads are
+pending. Actual Dify form rendering/readback remains unverified.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`09d66bac7a99df7bebd8840d41431cc2f9a424d6a81c85f82e83077784c01f1a`.
+`a30759cdd56b4834da0153cfec167c20cbc374db0d848e80f8364c6584b21be5`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-243,837 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+243,923 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

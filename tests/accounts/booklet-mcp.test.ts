@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import { validateBookletSuiteV2 } from "../../src/lib/server/booklets/suite-v2";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { Binary } from "mongodb";
 import sharp from "sharp";
 
 function suiteFixture() {
@@ -2722,9 +2723,12 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const recorded = await successful("record_assessment", request);
           assert.equal(recorded.complete, true);
           assert.deepEqual(await successful("record_assessment", request), recorded);
-          const accepted = await successful("record_acceptance", { revisionId: selectedManifest!._id,
+          const acceptance = { revisionId: selectedManifest!._id,
             contentHash: selectedManifest!.contentHash, targetIds: ["whole-manifest"], assetIds: [pageContent.asset.assetId],
-            sources: selectedManifest!.sources, evidence: [recorded.assessmentId], fence: recorded.fence });
+            sources: selectedManifest!.sources, evidence: [recorded.assessmentId], fence: recorded.fence };
+          assert.equal(runNativeCode("manager", "guard", { context: JSON.stringify(await successful("context", {})), decision: {
+            action: "record_acceptance", request_json: JSON.stringify(acceptance), reason: "Select the fully reviewed manifest" } }).action, "record_acceptance");
+          const accepted = await successful("record_acceptance", acceptance);
           assert.ok(accepted.acceptanceId);
           const after = await db.collection("bookletProductions").findOne({ _id: production._id as never });
           assert.equal(after!.lifecycleState, "in-progress");
@@ -2758,6 +2762,133 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const largeRead = await successful("read_document", { kind: "checkpoint", id: production._id });
           assert.equal(largeRead.complete, false);
           assert.ok(largeRead.sections.some((section: { key: string; cursor?: string }) => section.key === "state" && section.cursor));
+        });
+        await t.test("explicit selected-manifest completion verifies structure, original bytes and full review history", async () => {
+          // Staged page/layout metadata isolates completion; 09.6 proves their creation journey.
+          let facts = await successful("context", {});
+          const indexed = await successful("index", { subjects: [], artifacts: [
+            { subjectId: "book-subject", artifactId: "completion-layout", kind: "book-layout" },
+          ], fence: facts.fence });
+          const bytes = await sharp({ create: { width: 8, height: 8, channels: 3, background: "green" } }).png().toBuffer();
+          const oldAsset = await db.collection<BookletAsset>("bookletAssets").findOne({ productionId: production._id, originalAssetId: null, state: "ready" });
+          const asset = { ...oldAsset!, _id: "completion-original", operationId: "completion-fixture", outputKey: "completion-original",
+            inputHash: sha(bytes), sha256: sha(bytes), bytes: bytes.length, width: 8, height: 8, attachments: [] };
+          await db.collection<BookletAsset>("bookletAssets").insertOne(asset);
+          await db.collection("bookletAssetBytes").insertOne({ _id: fingerprint([asset._id, 0]) as never,
+            assetId: asset._id, index: 0, sha256: asset.sha256, bytes: new Binary(bytes) });
+          const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const page = revisionV2Schema.parse({ ...revision, _id: "completion-page", artifactId: "whole-page-image", subjectId: "page-v2",
+            kind: "page-image", ordinal: 2, content: { kind: "page-image", asset: { assetId: asset._id, sha256: asset.sha256 } }, sources: [],
+            assets: [{ assetId: asset._id, sha256: asset.sha256 }], contentHash: fingerprint({ kind: "page-image", asset: { assetId: asset._id, sha256: asset.sha256 } }) });
+          const layoutContent = { kind: "book-layout", canvas: { width: 8, height: 8 }, direction: p!.brief.language.direction,
+            pages: [{ id: "page-v2", role: "story", panels: [{ id: "completion-panel", noText: true, lettering: [] }] }] };
+          const layout = revisionV2Schema.parse({ ...revision, _id: "completion-layout-row", artifactId: "completion-layout", subjectId: "book-subject",
+            kind: "book-layout", ordinal: 1, content: layoutContent, sources: [], assets: [], contentHash: fingerprint(layoutContent) });
+          await db.collection("bookletRevisions").insertMany([page, layout] as never);
+          let fence = indexed.fence;
+          for (const row of [page, layout]) {
+            const result = await successful("record_acceptance", { revisionId: row._id, contentHash: row.contentHash,
+              targetIds: [row.artifactId], assetIds: row.assets.map((asset) => asset.assetId), sources: [], evidence: [], fence });
+            fence = result.fence;
+          }
+          const source = (row: typeof page) => ({ artifactId: row.artifactId, revisionId: row._id, contentHash: row.contentHash });
+          const manifest = { kind: "book-manifest", pages: [{ pageId: "page-v2", assetId: asset._id }], continuityPairs: [] };
+          const saved = await successful("save_revision", { artifactId: "whole-manifest", content: manifest, sources: [source(page)],
+            assets: page.assets, evidence: [], mutationKey: "completion-initial-manifest", fence });
+          const acceptManifest = async (revisionId: string) => {
+            const row = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions").findOne({ _id: revisionId });
+            return successful("record_acceptance", { revisionId, contentHash: row!.contentHash, targetIds: ["whole-manifest"],
+              assetIds: row!.assets.map((asset) => asset.assetId), sources: row!.sources, evidence: [], fence: (await successful("context", {})).fence });
+          };
+          await acceptManifest(saved.revisionId);
+          assert.equal((await invoke("complete", { manifestRevisionId: saved.revisionId, fence: (await successful("context", {})).fence })).isError, true); // No layout.
+          const review = async (manifestRevisionId: string, callId: string) => {
+            const selected = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions").findOne({ _id: manifestRevisionId });
+            const child = { contractVersion: 2, invocationId: callId, callId, service: "quality-reviewer", operation: "whole_book", intent: "create",
+              items: [{ itemId: "completion-review-item", input: { targetIds: ["page-v2"], pageIds: ["page-v2"], targetHash: selected!.contentHash,
+                referencePositions: [0], continuityPairs: [] } }], sources: [page, selected!].map((row) => ({ ...source(row), content: row.content })),
+              references: [{ assetId: asset._id, sha256: asset.sha256, bytes: asset.bytes }], constraints: {} };
+            const registered = await successful("begin_work", { action: "register", childRequest: child, requestHash: fingerprint(child),
+              targets: ["page-v2"], fence: (await successful("context", {})).fence });
+            const dispatched = await successful("begin_work", { action: "dispatch", callId, requestHash: fingerprint(child), fence: registered.fence });
+            const result = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(child), response: {
+              items: [{ itemId: "completion-review-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "page-v2", content: {
+                coverage: { targetIds: ["page-v2"], referencePositions: [0], continuityPairs: [] }, disposition: "pass", findings: [], limitations: [],
+              } }] }],
+            } }).result);
+            const parent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+            const session = db.client.startSession();
+            try { await session.withTransaction(async () => observeBookletNodeV2(db, parent, {
+              runId: parent.runId!, id: callId + "-execution", nodeId: "child-quality-reviewer", nodeType: "tool", status: "succeeded",
+              retryIndex: null, iterationId: null, loopId: null, outputs: { json: [{ result: JSON.stringify(result) }] }, outputsTruncated: false,
+              error: null, executionMetadata: null,
+            }, session)); } finally { await session.endSession(); }
+            return successful("record_assessment", { assessment: result.items[0].proposals[0].content,
+              executionLocator: { runId: parent.runId!, nodeId: "child-quality-reviewer", executionId: callId + "-execution" }, fence: dispatched.fence });
+          };
+          await review(saved.revisionId, "completion-old-review");
+          const finalSources = [source(page), source(layout), { artifactId: "whole-manifest", revisionId: saved.revisionId, contentHash: saved.contentHash }];
+          const final = await successful("save_revision", { artifactId: "whole-manifest", content: manifest,
+            sources: finalSources, assets: page.assets, evidence: [], mutationKey: "completion-final-manifest",
+            fence: (await successful("context", {})).fence });
+          await acceptManifest(final.revisionId);
+          facts = await successful("context", {});
+          assert.equal(final.contentHash, saved.contentHash);
+          assert.equal(facts.manifestReview.manifestRevisionId, final.revisionId);
+          assert.equal(facts.manifestReview.covered.pages, 0); // Equal content under another source identity is insufficient.
+          const guard = () => runNativeCode("manager", "guard", { context: JSON.stringify(facts), decision: {
+            action: "complete", request_json: JSON.stringify({ manifestRevisionId: final.revisionId, fence: facts.fence }), reason: "Finish the selected book" } });
+          assert.throws(guard, /coverage incomplete/);
+          const assessed = await review(final.revisionId, "completion-final-review");
+          const recorded = await db.collection("bookletAssessments").findOne({ _id: assessed.assessmentId as never });
+          const newer = Array.from({ length: 9 }, (_, i) => ({ ...recorded!, _id: "completion-preview-" + i as never,
+            callId: "completion-preview-" + i, assessment: { ...recorded!.assessment, mode: "text" }, createdAt: new Date(Date.now() + 1000 + i) }));
+          await db.collection("bookletAssessments").insertMany(newer);
+          facts = await successful("context", {});
+          assert.equal(facts.assessments.some((row: { assessmentId: string }) => row.assessmentId === assessed.assessmentId), false);
+          assert.deepEqual(facts.manifestReview.covered, facts.manifestReview.required);
+          const extra = await db.collection("bookletRevisions").findOne({ _id: "prepare-source-0" as never });
+          const unselected = await successful("save_revision", { artifactId: "whole-manifest", content: manifest,
+            sources: [...finalSources, { artifactId: extra!.artifactId, revisionId: extra!._id, contentHash: extra!.contentHash }],
+            assets: page.assets, evidence: [], mutationKey: "newer-unselected-manifest", fence: facts.fence });
+          assert.notEqual(unselected.revisionId, final.revisionId);
+          facts = await successful("context", {});
+          assert.equal(facts.manifestReview.manifestRevisionId, final.revisionId); // Accepted candidate, not latest draft.
+          guard();
+          assert.equal((await invoke("complete", { manifestRevisionId: saved.revisionId, fence: facts.fence })).isError, true);
+          const chunkId = fingerprint([asset._id, 0]);
+          await db.collection("bookletAssetBytes").updateOne({ _id: chunkId as never }, { $set: { bytes: new Binary(Buffer.from("corrupt")) } });
+          assert.equal((await invoke("complete", { manifestRevisionId: final.revisionId, fence: facts.fence })).isError, true);
+          await db.collection("bookletAssetBytes").updateOne({ _id: chunkId as never }, { $set: { bytes: new Binary(bytes) } });
+          const originalWork = await db.collection("bookletWork").findOne({ productionId: production._id, callId: "call-v2" });
+          const uncertain = { ...originalWork!, _id: fingerprint("completion-uncertain") as never, callId: "completion-uncertain",
+            status: "unknown", actionKey: fingerprint("completion-uncertain-action") };
+          await db.collection("bookletWork").insertOne(uncertain);
+          assert.equal((await invoke("complete", { manifestRevisionId: final.revisionId, fence: facts.fence })).isError, true);
+          await db.collection("bookletWork").deleteOne({ _id: uncertain._id }); // Only this synthetic uncertainty fixture.
+          assert.equal((await db.collection("bookletProductions").findOne({ _id: production._id as never }))!.version, facts.version);
+          const planned = guard();
+          const intent = await successful("checkpoint", JSON.parse(planned.checkpoint));
+          const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(facts),
+            request: planned.request, dispatch: planned.dispatch, action: "complete" }).request);
+          const completed = await successful("complete", ready);
+          assert.deepEqual(await successful("complete", ready), completed);
+          const current = await successful("context", {});
+          assert.equal(current.state, "completed");
+          assert.equal(current.usage.canDispatch, false);
+          assert.equal(current.usage.canDispatchImage, false);
+          assert.equal(runNativeCode("manager", "facts", { raw: { result: current }, execution_ready: "true" }).route, "pause");
+          const consumed = runNativeCode("manager", "consume", { raw: { result: completed }, action: "complete", request: JSON.stringify(ready),
+            context: current, version: intent.checkpointVersion });
+          assert.equal(consumed.done, true);
+          await successful("checkpoint", JSON.parse(consumed.checkpoint));
+          assert.deepEqual(await successful("complete", ready), completed);
+          await db.collection("bookletAssets").updateOne({ _id: asset._id as never }, { $set: { state: "staging" } });
+          assert.deepEqual(await successful("complete", ready), completed); // Committed replay needs no byte re-read.
+          await db.collection("bookletAssets").updateOne({ _id: asset._id as never }, { $set: { state: "ready" } });
+          assert.equal((await invoke("index", { subjects: [], artifacts: [], fence: completed.fence })).isError, true);
+          assert.equal((await db.collection("bookletProductions").findOne({ _id: production._id as never }))!.currentManifestRevisionId, final.revisionId);
+          await db.collection("bookletAssessments").deleteMany({ _id: { $in: newer.map((row) => row._id) } });
         });
         for (const change of [
           { cancelRequested: true },

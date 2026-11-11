@@ -40,7 +40,7 @@ import {
   humanRequestInputV2Schema,
   humanRequestV2Schema,
 } from "./documents-v2";
-import type { BookletAsset } from "./media";
+import { bookletMedia, type BookletAsset } from "./media";
 import type { AiJob } from "../ai/jobs";
 import { bookletWorkUsageV2, bookletNativeCostsV2, bookletRunBoundsV2 } from "./usage-v2";
 import { requireCorrectionFindingV2 } from "./guards";
@@ -1260,6 +1260,84 @@ export function bookletRepositoryV2(
           return { acceptanceId: row._id };
         },
       );
+    },
+    async complete(productionId: string, input: Mutation & { runId: string; manifestRevisionId: string }) {
+      const value = mutationInput.extend({ runId: id, manifestRevisionId: id }).parse(input);
+      // Replay precedes byte I/O; an already committed result needs no storage retry.
+      const snapshot = await context.transaction(async (session) => {
+        const p = await owned(productionId, session);
+        const prior = await receipts.findOne({ _id: fingerprint([actor.uid, "production-v2", p._id, value.key]) }, { session });
+        if (prior) {
+          if (prior.inputHash !== fingerprint({ method: "complete", input: value })) throw bookletConflict("Changed idempotency payload.");
+          return { replay: prior.result };
+        }
+        const draft = await revisions.findOne({ ownerId: actor.uid, productionId: p._id, _id: value.manifestRevisionId }, { session });
+        const artifact = p.subjects.flatMap((subject) => subject.artifacts).find((artifact) => artifact.id === draft?.artifactId);
+        if (p.lifecycleState !== "in-progress" || draft?.content.kind !== "book-manifest" || artifact?.acceptedRevisionId !== draft._id)
+          throw bookletConflict("Completion requires the Manager-selected immutable manifest.");
+        if (draft.content.pages.length !== p.creativeConfigSnapshot.storyPages + Number(p.creativeConfigSnapshot.includeCover))
+          throw bookletConflict("Manifest does not contain the purchased pages.");
+        return { draft, config: p.creativeConfigSnapshot };
+      });
+      if ("replay" in snapshot) return snapshot.replay!;
+      const { draft, config } = snapshot;
+      if (draft.content.kind !== "book-manifest") throw bookletConflict("Invalid manifest.");
+      // Verify unchanged original bytes outside the short metadata transaction.
+      for (const page of draft.content.pages) {
+        const original = (await bookletMedia(db, actor, { documentVersion: 2 }).read(productionId, page.assetId)).asset;
+        if (original.originalAssetId || !draft.assets.some((asset) => asset.assetId === page.assetId && asset.sha256 === original.sha256) ||
+          original.width !== config.canvas.width || original.height !== config.canvas.height || original.mime !== config.canvas.mime)
+          throw bookletConflict("Manifest requires exact original bytes with the purchased canvas and format.");
+      }
+      return mutate(productionId, value, "complete", value, async (p, session) => {
+        await activeManager(p, value.runId, value.holderId, session);
+        const entries = new Map(p.subjects.flatMap((subject) => subject.artifacts.map((artifact) => [artifact.id, { subject, artifact }] as const)));
+        if (entries.get(draft.artifactId)?.artifact.acceptedRevisionId !== draft._id)
+          throw bookletConflict("Selected manifest changed before completion.");
+        const selected = new Map<string, RevisionV2>();
+        const pending = draft.sources.filter((source) => source.artifactId !== draft.artifactId);
+        while (pending.length) {
+          const source = pending.pop()!;
+          const entry = entries.get(source.artifactId);
+          if (entry?.artifact.acceptedRevisionId !== source.revisionId)
+            throw bookletConflict("Manifest dependencies must identify exact Manager-selected revisions.");
+          const row = selected.get(source.revisionId) ?? await revisions.findOne({ ownerId: actor.uid, productionId: p._id,
+            _id: source.revisionId, artifactId: source.artifactId, contentHash: source.contentHash,
+          }, { session });
+          if (!row || row.contentHash !== source.contentHash || row.artifactId !== source.artifactId ||
+            row.kind !== entry.artifact.kind || row.subjectId !== entry.subject.id)
+            throw bookletConflict("Manifest dependency identity differs from its owned revision.");
+          if (selected.has(row._id)) continue;
+          selected.set(row._id, row);
+          // Same-artifact predecessor sources are historical lineage, not current dependencies.
+          pending.push(...row.sources.filter((dependency) => dependency.artifactId !== row.artifactId));
+        }
+        const layout = [...selected.values()].find((row) => row.content.kind === "book-layout");
+        const manifest = draft.content;
+        if (manifest.kind !== "book-manifest" || layout?.content.kind !== "book-layout" ||
+          layout.content.canvas.width !== config.canvas.width || layout.content.canvas.height !== config.canvas.height ||
+          layout.content.direction !== p.brief.language.direction ||
+          fingerprint(layout.content.pages.map((page) => page.id)) !== fingerprint(manifest.pages.map((page) => page.pageId)) ||
+          layout.content.pages.filter((page) => page.role === "story").length !== config.storyPages ||
+          layout.content.pages.filter((page) => page.role === "cover").length !== Number(config.includeCover) ||
+          layout.content.pages.some((page) => page.panels.length > config.maxPanelsPerPage ||
+            !p.subjects.some((subject) => subject.id === page.id && subject.kind === "page" && subject.pageRole === page.role)))
+          throw bookletConflict("Manifest order, layout, roles, canvas or panel capacity differs from the purchased structure.");
+        for (const page of manifest.pages) {
+          const image = [...selected.values()].find((row) => row.subjectId === page.pageId && row.content.kind === "page-image");
+          if (image?.content.kind !== "page-image") throw bookletConflict("Manifest page has no selected original revision.");
+          const original = image.content.asset;
+          if (original.assetId !== page.assetId ||
+            !draft.assets.some((asset) => asset.assetId === page.assetId && asset.sha256 === original.sha256))
+            throw bookletConflict("Manifest page differs from its selected original revision.");
+        }
+        if (await work.findOne({ ownerId: actor.uid, productionId: p._id, category: { $in: ["paidLlm", "paidImage"] },
+          status: { $in: ["dispatching", "unknown"] } }, { session, projection: { _id: 1 } }))
+          throw bookletConflict("Reconcile unresolved paid work before completion.");
+        p.lifecycleState = "completed";
+        p.currentManifestRevisionId = draft._id;
+        return { revisionId: draft._id };
+      });
     },
     getRevision(productionId: string, revisionId: string) {
       return context.transaction(async (session) => {

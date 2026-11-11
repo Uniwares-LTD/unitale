@@ -164,7 +164,7 @@ reuse that artifact ID. A rejected batch rolls back its entries and fence togeth
 | reconcile_work | callId,executionLocator? -> trusted per-item state/effective usage | existing terminal recovery and measurements; never paid replay |
 | record_acceptance | revisionId,contentHash,targetIds,assetIds,sources,evidence,fence -> Manager selection | separate Manager selection from authenticated human apply_decision |
 | checkpoint | expectedVersion,fence,state -> checkpointVersion,fence | small opaque CAS record on owned production; return authoritative post-write fence; no scheduling |
-| complete | manifest,fence -> status complete only after structural/product checks | existing completion, removing app quality/human-policy gates for v2 |
+| complete | manifestRevisionId,fence -> status complete,manifestRevisionId,version,fence after structural/product checks | owned immutable selection and original bytes; no app quality/human-policy gate |
 
 The local assessment gateway accepts `executionLocator:{runId,nodeId:"child-quality-reviewer",executionId}`
 from retained work's `resultObservation`. It resolves one owned native Reviewer call,
@@ -273,8 +273,30 @@ It records a Manager selection without imposing application quality/human policy
 `read_document {kind:"acceptance",id}` returns its owned bounded DTO. Sources stay
 on the selected immutable revision rather than being copied into another record.
 Exact receipt replay remains stable after later writes or stage locks. Structural
-completion and native acceptance/completion proof beyond the recent preview remain
-09.4 work.
+completion is now locally implemented as described below; remaining history and
+non-manifest acceptance preview handling are still 09.4 work.
+
+`complete` takes an explicit immutable `manifestRevisionId`, avoiding ambiguous
+same-hash snapshots and another copy of the body through the model. It verifies the
+Manager selection, owned accepted dependency graph, exact purchased layout/page order,
+roles, canvas/format and panel capacity, and rejects unresolved paid work. Original
+bytes are verified outside the short fenced metadata transaction. The transaction
+selects that manifest and marks the production completed; it neither terminates the
+native Run nor makes a provider call. Exact receipt replay precedes byte I/O, including
+after the terminal checkpoint. Creative mutations remain blocked after completion.
+Latest draft pointers may differ from Manager-selected candidates; completion follows
+the exact accepted revisions, preserving candidate history.
+
+Context's `manifestReview` is a compact fact for the selected immutable manifest:
+`manifestRevisionId,manifestHash,policyBinding,reviewerBinding,required,covered`.
+The last saved/read revision or recorded/read assessment can focus the selection;
+the accepted/current manifest is the fallback. Owned lookup validates that selection.
+Each count group has `pages,originals,comparisons`. Coverage aggregates complete
+passing whole-book assessments under the configured policy/publication whose source
+tuple identifies that exact manifest revision, across all history. Additional inspected
+reference originals do not invalidate required page coverage. Manager's native guard
+checks those facts before manifest acceptance/completion; the app completion service
+does not make quality disposition or human approval a lifecycle prerequisite.
 
 Manager manifest publication uses `save_revision` with book-manifest content, one
 owned page-image source per selected page, and the exact original attachments.

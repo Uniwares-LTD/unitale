@@ -369,12 +369,56 @@ export function createBookletMcpToolsV2(
           ),
           16,
         );
+        // Whole-book evidence is an exact immutable selection, not the recent preview.
+        const manifestEntry = s.production.subjects.find((subject) => subject.kind === "book")?.artifacts
+          .find((artifact) => artifact.kind === "book-manifest");
+        const state = z.object({ lastResult: z.object({ kind: z.string().optional(), id: id.optional(),
+          revisionId: id.optional(), assessmentId: id.optional() }).optional() }).safeParse(s.production.checkpoint);
+        const last = state.success ? state.data.lastResult : undefined;
+        let focused = last?.revisionId ?? (last?.kind === "revision" ? last.id : undefined);
+        const assessmentId = last?.assessmentId ?? (last?.kind === "assessment" ? last.id : undefined);
+        if (!focused && assessmentId && manifestEntry) {
+          const row = await s.db.collection<AssessmentV2>("bookletAssessments").findOne({ ...owned, _id: assessmentId });
+          focused = row?.assessment.sources.find((source) => source.artifactId === manifestEntry.id)?.revisionId;
+        }
+        const manifestFilter = { ...owned, artifactId: manifestEntry?.id, kind: "book-manifest" as const };
+        let selectedManifest = manifestEntry && focused
+          ? await s.db.collection<RevisionV2>("bookletRevisions").findOne({ ...manifestFilter, _id: focused }) : null;
+        const defaultManifest = manifestEntry?.acceptedRevisionId ?? manifestEntry?.currentRevisionId;
+        if (!selectedManifest && defaultManifest)
+          selectedManifest = await s.db.collection<RevisionV2>("bookletRevisions").findOne({ ...manifestFilter, _id: defaultManifest });
+        let manifestReview = null;
+        if (selectedManifest?.content.kind === "book-manifest") {
+          const required = {
+            pages: new Set(selectedManifest.content.pages.map((page) => page.pageId)),
+            originals: new Set(selectedManifest.content.pages.map((page) => page.assetId)),
+            comparisons: new Set(selectedManifest.content.continuityPairs.map((pair) => fingerprint(pair))),
+          };
+          const covered = { pages: new Set<string>(), originals: new Set<string>(), comparisons: new Set<string>() };
+          for await (const row of s.db.collection<AssessmentV2>("bookletAssessments").find({
+            ...owned, complete: true, policyBinding: binding.policyBinding, reviewerBinding: binding.reviewerBinding,
+            "assessment.mode": "whole_book", "assessment.disposition": "pass", "assessment.targetHash": selectedManifest.contentHash,
+            "assessment.sources": { $elemMatch: { artifactId: selectedManifest.artifactId,
+              revisionId: selectedManifest._id, contentHash: selectedManifest.contentHash } },
+          }, { projection: { "assessment.coverage": 1 } }).batchSize(20)) {
+            for (const page of row.assessment.coverage.targetIds) if (required.pages.has(page)) covered.pages.add(page);
+            for (const asset of row.assessment.coverage.assetIds ?? []) if (required.originals.has(asset)) covered.originals.add(asset);
+            for (const pair of row.assessment.coverage.continuityPairs ?? []) {
+              const hash = fingerprint(pair);
+              if (required.comparisons.has(hash)) covered.comparisons.add(hash);
+            }
+          }
+          manifestReview = { manifestRevisionId: selectedManifest._id, manifestHash: selectedManifest.contentHash,
+            policyBinding: binding.policyBinding, reviewerBinding: binding.reviewerBinding,
+            required: { pages: required.pages.size, originals: required.originals.size, comparisons: required.comparisons.size },
+            covered: { pages: covered.pages.size, originals: covered.originals.size, comparisons: covered.comparisons.size } };
+        }
         const workAttempts = await bookletWorkUsageV2(s.db, s.production);
         const costs = await bookletNativeCostsV2(s.db, s.production);
         const execution = await bookletRunBoundsV2(s.db, s.production);
         const textLimit = s.production.creativeConfigSnapshot.execution.maxTextCalls;
-        const canDispatch = workAttempts.paidLlm < textLimit && !costs.overCeiling && !execution.overLimit;
-        const canDispatchImage = workAttempts.paidImage < s.production.creativeConfigSnapshot.execution.maxImageCalls &&
+        const canDispatch = s.production.lifecycleState === "in-progress" && workAttempts.paidLlm < textLimit && !costs.overCeiling && !execution.overLimit;
+        const canDispatchImage = s.production.lifecycleState === "in-progress" && workAttempts.paidImage < s.production.creativeConfigSnapshot.execution.maxImageCalls &&
           !costs.overCeiling && !execution.overLimit;
         const facts = {
           productionId: s.production._id,
@@ -405,6 +449,7 @@ export function createBookletMcpToolsV2(
           workComplete: workFacts.length === work.length,
           assessments: assessmentFacts,
           assessmentsComplete: assessmentFacts.length === assessments.length,
+          manifestReview,
           corrections: correctionFacts,
           correctionsComplete:
             workFacts.length === work.length &&
@@ -485,6 +530,17 @@ export function createBookletMcpToolsV2(
         }, { projection: { complete: 1 } });
         if (!recorded) throw bookletMissing();
         return { assessmentId: receipt.assessmentId, complete: recorded.complete, fence: receipt.fence };
+      },
+    ),
+    tool(
+      "complete",
+      "Complete the explicitly selected immutable manifest after owned structural/product/original checks. Manager owns quality and human policy; this does not terminate or replay its native Run.",
+      async (raw, s) => {
+        const request = z.strictObject({ manifestRevisionId: id, fence: count }).parse(raw);
+        const m = await mutation(s, "complete", request, request.fence);
+        const receipt = await bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true })
+          .complete(s.production._id, { ...m, runId: s.job._id, manifestRevisionId: request.manifestRevisionId });
+        return { status: "complete", manifestRevisionId: receipt.revisionId, version: receipt.version, fence: receipt.fence };
       },
     ),
     tool(

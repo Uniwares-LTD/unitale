@@ -978,6 +978,44 @@ now demonstrates. Bind an explicit immutable selection and aggregate review evid
 for that exact manifest revision, rather than its content hash or recent preview
 alone. Keep quality policy in Manager and structural/financial checks in the app.
 
+09.4 completion amendment and implementation: `complete` now accepts
+`{manifestRevisionId,fence}` instead of copying a manifest body. The verified
+equal-content/different-source snapshots demonstrate why hash/body alone is ambiguous.
+This is the smallest explicit selection boundary; no new persisted field is needed.
+The app validates Manager acceptance and the owned accepted dependency graph (allowing
+older selected candidates), purchased layout/order/roles/canvas/format/panel capacity,
+complete original bytes and unresolved paid work. Byte I/O stays outside the short
+fenced transaction; exact committed replay skips it. Completion preserves native Run
+termination/settlement as separate facts and permits its final checkpoint, while
+rejecting further creative writes.
+
+Context now resolves one owned manifest selection from the last saved/read revision
+or recorded/read assessment, falling back to the accepted/current manifest. Its compact
+`manifestReview` counts aggregate all matching complete passing assessments under the
+configured policy/publication and the exact manifest source tuple. Required pages,
+originals and continuity comparisons are intersected with observed coverage; extra
+reference originals are not missing/extra pages. The native Manager guard checks
+these facts before whole-book selection/completion, independently of the recent
+eight-row preview. The app stores/derives facts without adding a quality/human gate.
+Non-manifest acceptance preview handling and remaining backend histories are still
+09.4 work; multi-window and complete creation/revision journeys remain 09.6 evidence.
+
+Completion slice checks: 27 MCP, 30 repository and 42 native/v1 compatibility tests
+pass, plus production build, post-build typecheck, scoped lint, docs/i18n/skills and
+independent 13-path hash/disabled-gate audit. The actual gateway/native Code fixture
+rejects a missing layout, corrupt bytes, wrong immutable selection and unresolved
+paid work without partial finalization. It proves same-hash/different-source review
+invalidation, valid coverage outside nine newer assessments, selection of an older
+candidate despite a newer draft, final checkpoint/replay and replay without byte I/O.
+Page/layout/original setup is explicitly staged; this is not full provider creation
+or multi-window execution evidence. A separate same-agent read-only slice review
+fixed historical same-artifact lineage handling and terminal paid-eligibility facts;
+its follow-up found no further blocking issue in this slice. Native reasoning/image
+eligibility is false after completion. Deterministic resume after a committed completion
+remains a 09.5 recovery case; no new paid reasoning may be used to rediscover completion.
+Checkpoint-wide final review pairs are still 09.7 work. Next within 09.4: non-manifest
+acceptance evidence beyond previews and remaining owned backend histories.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,
