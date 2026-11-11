@@ -17,8 +17,9 @@ import { bookletContext } from "../../src/lib/server/booklets/context";
 import { registerBookletCreativeWorkV2 } from "../../src/lib/server/booklets/work-v2";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
 import type { AiJob } from "../../src/lib/server/ai/jobs";
-import type { ProviderNodeObservation } from "../../src/lib/server/ai/types";
+import type { ProviderExecution, ProviderNodeObservation } from "../../src/lib/server/ai/types";
 import { readBookletDocumentV2 } from "../../src/lib/server/booklets/read-v2";
+import { reconcileBookletWorkV2 } from "../../src/lib/server/booklets/reconcile-v2";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import {
   bookletRepositoryV2,
@@ -514,7 +515,31 @@ test("booklet repositories preserve embedded identities and transactional bounda
         await assert.rejects(observe(node, job, true), /fixture rollback/);
         assert.equal((await repo.getWork(p._id, "call-2")).resultPayload, undefined);
         assert.equal(await f.db.collection("executionEvidence").countDocuments({ runId: nextJobId }), 0);
-        await observe(node);
+        const execution: ProviderExecution = { runId: nativeId, workflowId, status: "stopped", outputs: null,
+          usage: { scope: "execution", id: nativeId, inputTokens: null, outputTokens: null,
+            totalTokens: null, cost: null, elapsedMs: null } };
+        let reads = 0, traces = 0;
+        const reconcile = (executionRead: NonNullable<Parameters<typeof reconcileBookletWorkV2>[5]>["execution"], nodes: ProviderNodeObservation[] = []) =>
+          reconcileBookletWorkV2(f.db, actor, p._id, retry.callId, AbortSignal.timeout(5000), {
+            execution: async (accepted, signal) => { reads++; assert.equal(accepted._id, nextJobId); assert.equal(accepted.runId, nativeId);
+              return executionRead!(accepted, signal); },
+            trace: async () => { traces++; return nodes.map(node => ({ type: "node-observation" as const, node })); },
+          });
+        const unconfirmed = await reconcile(async () => ({ kind: "unknown", failure: "timeout" }));
+        assert.equal(unconfirmed.status, "dispatching");
+        assert.equal(unconfirmed.retryable, false);
+        assert.equal(unconfirmed.reconciliation, "execution_unconfirmed");
+        const mismatched = await reconcile(async () => ({ kind: "ok", value: { ...execution, workflowId: crypto.randomUUID() } }));
+        assert.equal(mismatched.reconciliation, "execution_identity_mismatch");
+        assert.equal(traces, 0);
+        const missing = await reconcile(async () => ({ kind: "ok", value: execution }));
+        assert.equal(missing.reconciliation, "child_result_pending");
+        const recovered = await reconcile(async () => ({ kind: "ok", value: execution }), [node]);
+        assert.equal(recovered.resultAvailable, true);
+        assert.equal(recovered.status, "succeeded");
+        assert.equal(reads, 4);
+        await reconcile(async () => { throw Error("Known result must not read or restart a provider"); });
+        assert.equal(reads, 4);
         const retained = await bookletRepositoryV2(f.db, actor).getWork(p._id, "call-2");
         assert.deepEqual(retained.resultPayload, result);
         type Page = { complete: boolean; sections: { key: string; complete: boolean; cursor?: string }[]; cursor: string | null };

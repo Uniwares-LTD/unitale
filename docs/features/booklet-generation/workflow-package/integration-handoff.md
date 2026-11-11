@@ -244,7 +244,14 @@ Native result retention checks the accepted Manager workflow ID and reported nat
 run plus registered child call/invocation/item identities. If the native execution
 has not supplied its workflow identity yet, the observation remains untrusted until
 readback establishes it. Readback/reconciliation and full provider-accounting proof
-remain pending; this local hook does not prove a connected Dify journey.
+remain incomplete; this local hook does not prove a connected Dify journey.
+The current `reconcile_work` implementation uses the existing accepted parent provider
+retrieve/tracing APIs, checks the reported workflow identity, then retains matching
+child results transactionally. Its optional locator is a stored parent native `runId`
+with optional child `nodeId`/`executionId` filters. It cannot redirect to a supplied
+app/provider or grant retry authority. Known results return their work-document locator
+without another read; timeout/missing evidence remains unresolved. Automatic polling,
+backoff, failure classification and effective-usage settlement are still pending.
 
 Correction summaries contain rootId,family,used,limit,targetIds. App keys durable chains
 by actual task/target/funding, preventing new invocation/candidate/root IDs from resetting

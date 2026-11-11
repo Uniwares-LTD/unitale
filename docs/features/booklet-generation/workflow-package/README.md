@@ -106,7 +106,7 @@ unknown/partial outcomes stay partial. Pre-action checkpoint receipts supply the
 confirmed fence to action/dispatch arguments, and registration supplies the complete
 hash-bound child envelope. Provider bindings and execution switches remain disabled.
 
-Local v2 checkpoint, index, transfer, document/history reads and creative-text registration
+Local v2 checkpoint, index, transfer, native reconciliation, document/history reads and creative-text registration
 handlers now exist. Registration binds actual artifact responsibilities while native
 child selectors retain subject IDs and grouped revisions. Paid dispatch, image/review
 registration, remaining capabilities, complete provider observation and recovery integration remain

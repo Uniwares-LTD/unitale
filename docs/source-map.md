@@ -90,6 +90,8 @@ and the adapter; the table does not require unrelated suites for every task.
   `observations-v2.ts` retains matching child envelopes through the existing native
   worker hook; raw creative bodies stay separate from redacted diagnostic traces.
   V2 transfer reuses `mcp-transfers.ts` with server-selected versioned ownership.
+  `reconcile-v2.ts` performs non-paid accepted-parent readback through existing provider
+  retrieval/tracing, without rewriting worker leases or granting dispatch authority.
   Regenerate the simple/complete Mermaid versions with `npm run docs:booklet-model` whenever model relationships change.
   The [offline Dify harness](features/booklet-generation/dify-compatibility.md) owns
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;

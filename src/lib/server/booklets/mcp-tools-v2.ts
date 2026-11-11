@@ -17,6 +17,7 @@ import {
 import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
 import { bookletTransfers, transferSchema } from "./mcp-transfers";
+import { reconcileBookletWorkV2 } from "./reconcile-v2";
 
 const count = z.number().int().nonnegative().safe();
 const input = z.strictObject({
@@ -150,6 +151,32 @@ export function createBookletMcpToolsV2(
     };
   }
   return [
+    tool(
+      "reconcile_work",
+      "Read an existing work item's native execution and retain matching results. Never starts a provider or infers safe replay from missing evidence.",
+      async (raw, s) => {
+        const request = z
+          .strictObject({
+            callId: id,
+            executionLocator: z
+              .strictObject({
+                runId: id,
+                nodeId: id.optional(),
+                executionId: id.optional(),
+              })
+              .optional(),
+          })
+          .parse(raw);
+        return reconcileBookletWorkV2(
+          s.db,
+          s.actor,
+          s.production._id,
+          request.callId,
+          s.signal,
+          { executionLocator: request.executionLocator },
+        );
+      },
+    ),
     tool(
       "transfer",
       "Stage a complete bounded payload with immutable metadata and replayable chunks; this does not publish content or authorize dispatch.",

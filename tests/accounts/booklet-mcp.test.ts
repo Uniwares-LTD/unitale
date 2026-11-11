@@ -1134,6 +1134,11 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         assert.equal(work.value.callId, "call-v2");
         assert.deepEqual(work.value.requestPayload, childRequest);
         assert.equal(work.value.ownerId, undefined);
+        const pendingWork = await successful("reconcile_work", { callId: "call-v2" });
+        assert.equal(pendingWork.status, "registered");
+        assert.equal(pendingWork.resultAvailable, false);
+        assert.equal(pendingWork.retryable, false);
+        assert.equal((await invoke("reconcile_work", { callId: "call-v2", executionLocator: { runId: "forged" } })).isError, true);
         await t.test("v2 transfer resumes immutable chunks without altering the production fence", async () => {
           const content = Buffer.from(JSON.stringify({ text: "exact e\u0301 \ud83d\ude00\n".repeat(1600) }));
           const metadata = { action: "open", key: "large-v2-revision", kind: "revision",

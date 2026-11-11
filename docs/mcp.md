@@ -414,6 +414,16 @@ spanning adjacent chunks are rejected. This stores bytes only; it does not publi
 revision, authorize generation or alter the production fence. Existing v1 callers
 retain strict v1 ownership. Work reads also expose retained meaningful request and
 observed result bodies through the existing typed paging protocol.
+`booklet_reconcile_work_v2` accepts `{callId,executionLocator?}`. An optional locator
+contains the stored parent Manager's native `runId`, plus optional `nodeId` and
+`executionId` to constrain its child-node tracing. It cannot select a provider/app;
+changed run/node identities fail. The app derives the authoritative parent from work,
+retrieves that execution and verifies its accepted workflow before retaining matching
+child observations. Known results and undispatched registrations need no provider call.
+Replies expose status, result availability and a typed work-document locator; they
+do not copy large bodies into the Manager checkpoint. Missing/uncertain evidence never
+grants safe replay. This is non-paid readback, not automatic worker recovery or cost
+settlement. The native transport is locally tested with deterministic readback only.
 `booklet_index_v2` atomically registers subject/artifact entries, returns stable ID maps
 and an advanced fence, and reuses matching entries without changing their revision
 pointers. Purchased capacity and one responsibility per subject are enforced. Changed

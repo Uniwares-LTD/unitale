@@ -540,13 +540,19 @@ seams are complete locally. Current 09 implementation provides:
   duplicate observations, unrelated/truncated output rejection and retention after
   parent cancellation/revocation are covered locally. Retention alone does not verify
   Reviewer scope, settle costs, classify technical retries or publish a revision.
+- Native reconciliation reads the work's stored parent Run through existing provider
+  retrieval and bounded tracing. It verifies native run/workflow identities before
+  transactional retention, without rewriting the AI worker lease/status. Optional
+  locators only constrain readback; they cannot select another provider or app.
+  Missing identity, timeout or missing child output leaves work unresolved and grants
+  no retry. Automatic worker polling/backoff and measurement settlement remain pending.
 - Native Manager result/fence integration and Story Planner description-only revision
   fixes. Seven role identities, provider bindings and disabled execution gates remain.
 
-The exposed v2 tools are checkpoint, index, transfer, creative-text work registration
-and the partial document reader. Registration does not authorize paid dispatch. Native
-readback/reconciliation, active revision publication, images/reviews, human decisions, accounting
-and automatic recovery remain incomplete. There is no complete application-connected
+The exposed v2 tools are checkpoint, index, transfer, creative-text work registration,
+native work reconciliation and the partial document reader. Registration does not
+authorize paid dispatch. Automatic recovery, active revision publication, images/reviews,
+human decisions and accounting remain incomplete. There is no complete application-connected
 journey. The latest YAML identity and verification are maintained in the
 [candidate README](workflow-package/README.md#current-integration-slice).
 
@@ -558,6 +564,10 @@ skills checks pass. A separate same-agent read-only slice review found no blocki
 issue. No Dify, provider, deployment or checkpoint 10 UI implementation occurred. Historical
 slice results remain in Git; they are not acceptance of unimplemented paths. Checkpoint
 09 requires two clean read-only reviews after its complete behavior is implemented.
+The native-readback addition passes 37 repository/MCP tests and 16 existing native
+adapter/tracing tests, production build, sequential typecheck, scoped lint and docs.
+A separate same-agent read-only slice review found no blocking issue. It changes no
+stored fields or native YAML, so model diagrams and package hashes remain applicable.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,
