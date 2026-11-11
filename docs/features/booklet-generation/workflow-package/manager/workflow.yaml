@@ -269,6 +269,7 @@ workflow:
                 When missing facts, exhausted corrections, unresolved evidence or no safe useful action remain, pause with a readable reason. Do not invent progress.
                 Action payloads follow integration-handoff.md. Child request_json is the complete child envelope; MCP payloads contain only that operation's arguments.
                 record_acceptance supplies contentHash and exact targetIds/assetIds. complete supplies the selected manifest {pages:[{pageId,assetId,...}], continuityPairs:[...]}.
+                record_assessment.executionLocator is {runId,nodeId:"child-quality-reviewer",executionId} from the retained work's resultObservation. Read that work document first; do not invent policy bindings or execution identities.
 
                 Allowed actions: read_document, lease, index, begin_work, transfer, retain_original, save_revision, request_human, record_evidence, record_assessment, sources, reconcile_work, record_acceptance, complete, story-planner, manuscript, art-director, page-composer, image-executor, quality-reviewer, pause
                 Child JSON: {contractVersion:2, invocationId, callId, service, operation, intent:"create"|"revise", items:[{itemId,input,targetId?,targetIds?,baseline?,feedback?}], sources:[{artifactId,revisionId,contentHash,content}], references:[{assetId,sha256,bytes,nativeFileId}], constraints:{...}}.

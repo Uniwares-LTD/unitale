@@ -15,6 +15,7 @@ import {
   type ProductionV2,
   type WorkV2,
   type RevisionV2,
+  type AssessmentV2,
 } from "./documents-v2";
 import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
@@ -25,6 +26,7 @@ import { bookletNativeCostsV2, bookletWorkUsageV2, bookletRunBoundsV2 } from "./
 import {
   bookletContentV2Schema,
   bookletSourceV2Schema,
+  bookletAssessmentV2Schema,
 } from "../../../project/booklets/contracts-v2";
 import { assetIdentitySchema } from "../../../project/booklets/contracts";
 
@@ -400,6 +402,50 @@ export function createBookletMcpToolsV2(
           atomicMutations: true,
         }).refreshFence(s.production._id, m);
         return { ...receipt, leaseHeld: false };
+      },
+    ),
+    tool(
+      "record_assessment",
+      "Record an exact retained Reviewer proposal with server-derived policy identity. Model claims cannot create execution, coverage or Reviewer authority.",
+      async (raw, s) => {
+        const request = z.strictObject({
+          assessment: bookletAssessmentV2Schema,
+          executionLocator: z.strictObject({
+            runId: id,
+            nodeId: z.literal("child-quality-reviewer"),
+            executionId: id,
+          }),
+          fence: count,
+        }).parse(raw);
+        const candidates = await s.db.collection<WorkV2>("bookletWork").find({
+          ownerId: s.actor.uid, productionId: s.production._id,
+          service: "quality-reviewer", status: { $in: ["succeeded", "partial"] },
+          "resultObservation.runId": request.executionLocator.runId,
+          "resultObservation.nodeId": request.executionLocator.nodeId,
+          "resultObservation.executionId": request.executionLocator.executionId,
+        }).limit(2).toArray();
+        if (candidates.length !== 1 || candidates[0].requestPayload === undefined)
+          throw bookletConflict("An unambiguous retained Reviewer execution is required.");
+        const work = candidates[0];
+        const parent = await s.db.collection<AiJob>("aiJobs").findOne({
+          _id: work.runId, uid: s.actor.uid, runId: request.executionLocator.runId,
+          "run.target.adapter": "booklet", "run.target.version": "2", "run.target.id": s.production._id,
+        });
+        if (!parent) throw bookletMissing();
+        // Retain the originating Run's immutable configured policy across continuation.
+        const binding = await readBookletSuiteV2(s.db, s.production, parent);
+        const m = await mutation(s, "recordAssessment", request, request.fence);
+        const receipt = await bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true })
+          .recordAssessment(s.production._id, {
+            ...m, callId: work.callId,
+            policyBinding: binding.policyBinding, reviewerBinding: binding.reviewerBinding,
+            assessment: request.assessment, evidenceIds: work.evidenceIds,
+          });
+        const recorded = await s.db.collection<AssessmentV2>("bookletAssessments").findOne({
+          _id: receipt.assessmentId!, ownerId: s.actor.uid, productionId: s.production._id,
+        }, { projection: { complete: 1 } });
+        if (!recorded) throw bookletMissing();
+        return { assessmentId: receipt.assessmentId, complete: recorded.complete, fence: receipt.fence };
       },
     ),
     tool(

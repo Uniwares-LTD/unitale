@@ -522,7 +522,7 @@ no code if all seams suffice. Do not claim an external required reviewer can be 
 The accepted remaining-work sequence is 09.1–09.7 below. Baseline: `d294935`.
 Reuse the delivered foundation described below; passing foundation tests do not
 establish a complete application-connected journey. Track tasks as Pending,
-In progress or Verified, with one task active at a time. Report task ID, intended
+In progress or Verified, with one task active at a time. Report task ID (out of seven), intended
 outcome, changes/checks and remaining work at each implementation point. Do not
 use estimated completion percentages as acceptance evidence.
 
@@ -712,6 +712,22 @@ Manager prompt inputs are not exposed by the existing private hook; elapsed cove
 is a reported lower bound; current remote bindings/file conversion and live execution
 remain unverified. Preserve these labels and safe unresolved-work handling. They do
 not trigger broader provider implementation or block the remaining local tasks.
+
+09.3 assessment slice: `record_assessment` resolves exact retained native Reviewer
+work by its existing run/node/execution locator, derives the originating configured
+policy server-side, and reuses repository content/coverage guards and replay receipts.
+The native prompt names that locator; no workflow graph, execution switch, interface
+field, stored schema or provider control was added. Model JSON/diagrams remain valid.
+The large-text review fixture demonstrated that the default 64 KiB request limit
+cannot carry an accepted child envelope. The fixture and handoff now configure the
+existing `requestBytes` allowance to 2 MiB for JSON/RPC escaping; shared defaults and
+live configuration are unchanged. The 19-test MCP suite passes exact review output,
+wrong identity/content/coverage/policy claims and replay cases. Image/preflight,
+correction-finding lineage and revalidation remain 09.3 work.
+This slice also passes 41 compatibility tests, build, post-build typecheck, scoped lint,
+docs/i18n/skills/environment checks and an independent 13-path hash audit. A separate
+same-agent read-only review (cold-review fallback) found no blocking issue in this
+addition; checkpoint-wide final review pairs remain 09.7 work.
 Build, post-build typecheck, scoped lint, environment and docs/i18n/skills checks pass.
 A separate same-agent read-only slice review (cold-review fallback) found no blocking
 issue; checkpoint-wide final reviews remain 09.7 work.

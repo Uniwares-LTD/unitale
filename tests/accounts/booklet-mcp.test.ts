@@ -83,6 +83,20 @@ const serviceToken = "s".repeat(43),
   runToken = "r".repeat(43);
 const sha = (b: Buffer | string) =>
   createHash("sha256").update(b).digest("hex");
+// Isolated actual Code functions, not a Dify execution engine.
+function runNativeCode(role: string, id: string, args: Record<string, unknown>) {
+  const python = process.env.BOOKLET_PYTHON ?? (existsSync("output/tooling/python312/python.exe")
+    ? resolve("output/tooling/python312/python.exe") : "python3");
+  const graph = parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/" + role + "/workflow.yaml", "utf8")).workflow.graph;
+  const executed = spawnSync(python, ["-c",
+    "import json,sys; v=json.load(sys.stdin); s={}; exec(v['code'],s); print(json.dumps(s['main'](**v['args']),ensure_ascii=False))"], {
+    input: JSON.stringify({ code: graph.nodes.find((node: { id: string; data: Record<string, unknown> }) => node.id === id)!.data.code, args }),
+    encoding: "utf8", timeout: 5000, env: { ...process.env, PYTHONUTF8: "1" },
+  });
+  assert.equal(executed.status, 0, executed.stderr || String(executed.error));
+  return JSON.parse(executed.stdout);
+}
+
 test("booklet MCP uses real transport, capabilities and repository transactions", async (t) => {
   const mongo = await MongoMemoryReplSet.create({
     binary: { downloadDir: ".cache/mongodb-binaries" },
@@ -1066,7 +1080,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
               request:
                 typeof request === "string" ? request : JSON.stringify(request),
             },
-          }, serviceToken, mcpLimitsSchema.parse({ toolResultBytes: 256 * 1024, responseBytes: 1024 * 1024 }));
+          }, serviceToken, mcpLimitsSchema.parse({ requestBytes: 2 * 1024 * 1024, toolResultBytes: 256 * 1024, responseBytes: 1024 * 1024 }));
           assert.equal(response.status, 200);
           return (await response.json()).result;
         };
@@ -1808,19 +1822,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         );
         await t.test("retained large proposals publish through the v2 transfer and revision tools exactly once", async () => {
           const workflowId = configured.workflowId;
-          // Exercise actual Code functions against real tool replies, not a Dify interpreter.
-          const runCode = (id: string, args: Record<string, unknown>, role = "manager") => {
-            const python = process.env.BOOKLET_PYTHON ?? (existsSync("output/tooling/python312/python.exe")
-              ? resolve("output/tooling/python312/python.exe") : "python3");
-            const graph = role === "manager" ? configured.graph : parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/" + role + "/workflow.yaml", "utf8")).workflow.graph;
-            const executed = spawnSync(python, ["-c",
-              "import json,sys; v=json.load(sys.stdin); s={}; exec(v['code'],s); print(json.dumps(s['main'](**v['args']),ensure_ascii=False))"], {
-              input: JSON.stringify({ code: graph.nodes.find((node: { id: string; data: Record<string, unknown> }) => node.id === id)!.data.code, args }),
-              encoding: "utf8", timeout: 5000, env: { ...process.env, PYTHONUTF8: "1" },
-            });
-            assert.equal(executed.status, 0, executed.stderr || String(executed.error));
-            return JSON.parse(executed.stdout);
-          };
+          const runCode = (id: string, args: Record<string, unknown>, role = "manager") => runNativeCode(role, id, args);
 
           const initial = await successful("context", {});
           const initialFacts = runCode("facts", { raw: { result: initial }, execution_ready: "true" });
@@ -1933,6 +1935,48 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.ok(second.fence > confirmed.fence);
           assert.deepEqual((await db.collection("bookletWork").findOne({ productionId: production._id, callId: childRequest.callId }))!.resultPayload, result);
           assert.equal(dispatches, 1);
+        });
+        await t.test("assessment gateway retains exact native Reviewer output with originating policy and replay receipts", async () => {
+          const current = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const artifact = current!.subjects.find((subject: { id: string }) => subject.id === "book-subject").artifacts.find((item: { id: string }) => item.id === "story-v2");
+          const selected = await db.collection("bookletRevisions").findOne({ _id: artifact.currentRevisionId });
+          const source = { artifactId: "story-v2", revisionId: selected!._id, contentHash: selected!.contentHash };
+          const child = { contractVersion: 2, invocationId: "review-gateway", callId: "review-gateway", service: "quality-reviewer",
+            operation: "text", intent: "create", items: [{ itemId: "review-item", input: {
+              targetIds: ["story-v2"], targetHash: source.contentHash, referencePositions: [],
+            } }], sources: [{ ...source, content: selected!.content }], references: [], constraints: {} };
+          const requestHash = fingerprint(child);
+          const registered = await successful("begin_work", { action: "register", childRequest: child,
+            requestHash, targets: ["story-v2"], fence: current!.fenceCounter });
+          const dispatched = await successful("begin_work", { action: "dispatch", callId: child.callId, requestHash, fence: registered.fence });
+          const result = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(child), response: {
+            items: [{ itemId: "review-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "story-v2", content: {
+              coverage: { targetIds: ["story-v2"], referencePositions: [] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
+          const locator = { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "review-gateway-execution" };
+          const request = { assessment: result.items[0].proposals[0].content, executionLocator: locator, fence: dispatched.fence };
+          assert.equal((await invoke("record_assessment", request)).isError, true);
+          const session = db.client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: locator.runId, id: locator.executionId, nodeId: locator.nodeId, nodeType: "tool", status: "succeeded",
+            retryIndex: null, iterationId: null, loopId: null, outputs: { json: [{ result: JSON.stringify(result) }] },
+            outputsTruncated: false, error: null, executionMetadata: null,
+          }, session)); } finally { await session.endSession(); }
+          assert.equal((await invoke("record_assessment", { ...request, policyBinding: "invented" })).isError, true);
+          assert.equal((await invoke("record_assessment", { ...request, assessment: { ...request.assessment, disposition: "inconclusive" } })).isError, true);
+          assert.equal((await invoke("record_assessment", { ...request, assessment: { ...request.assessment,
+            coverage: { ...request.assessment.coverage, targetIds: ["foreign"] } } })).isError, true);
+          assert.equal((await invoke("record_assessment", { ...request, executionLocator: { ...locator, executionId: "foreign" } })).isError, true);
+          const saved = await successful("record_assessment", request);
+          assert.equal(saved.complete, true);
+          assert.deepEqual(await successful("record_assessment", request), saved);
+          const stored = await db.collection("bookletAssessments").findOne({ _id: saved.assessmentId as never });
+          assert.deepEqual(stored!.assessment, request.assessment);
+          assert.equal(stored!.policyBinding, fingerprint(bindingRow.reviewer));
+          assert.equal(stored!.reviewerBinding, bindingRow.reviewer.publicationId);
+          assert.equal(await db.collection("bookletAssessments").countDocuments({ productionId: production._id, callId: child.callId }), 1);
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });

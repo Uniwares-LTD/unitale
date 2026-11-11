@@ -162,6 +162,14 @@ reuse that artifact ID. A rejected batch rolls back its entries and fence togeth
 | checkpoint | expectedVersion,fence,state -> checkpointVersion,fence | small opaque CAS record on owned production; return authoritative post-write fence; no scheduling |
 | complete | manifest,fence -> status complete only after structural/product checks | existing completion, removing app quality/human-policy gates for v2 |
 
+The local assessment gateway accepts `executionLocator:{runId,nodeId:"child-quality-reviewer",executionId}`
+from retained work's `resultObservation`. It resolves one owned native Reviewer call,
+uses the originating Run's configured suite/policy, and records only its exact retained
+proposal and coverage. Caller-supplied policy identities are rejected. The response is
+`{assessmentId,complete,fence}`; exact lost-reply retries reuse the receipt. This does
+not prove mutable remote workflow-tool publication resolution; that provider limit is
+accepted and remains labelled for target-environment verification.
+
 For the local v2 atomic gateway, lease actions `acquire`, `renew` and `release` each
 check and advance the current fence in one transaction, with an exact replay receipt.
 They leave `leaseHeld:false`; subsequent writes validate and advance their own fence.
@@ -289,9 +297,11 @@ work roots. Context carries the complete checkpoint and has a 128 KiB UTF-8 enve
 cap, separate from the unchanged 64 KiB stored checkpoint cap. This accommodates the
 checkpoint plus bounded facts without a merge/partial-state protocol. Complete
 document reads remain available through `checkpointDocument`.
-Configure the existing MCP limits for this integration with `toolResultBytes` at least
-262144 and `responseBytes` at least 1048576, allowing the wrapped context response.
-The shared defaults remain unchanged. The local v2 transport fixture uses these
+Configure the existing MCP limits for this integration with `requestBytes` at least
+2097152, `toolResultBytes` at least 262144 and `responseBytes` at least 1048576.
+The request allowance carries the accepted 256 KiB child envelope through JSON-string
+and RPC escaping; the response allowances carry wrapped context. The large-text
+Reviewer fixture verifies this request path. Shared defaults remain unchanged. The local v2 transport fixture uses these
 explicit settings; the default-sized v1 transport tests remain separate.
 At checkpoint 12, verify that the target Dify Code/Loop string and tool-response
 limits support the 128 KiB context envelope. Configure existing supported limits

@@ -404,6 +404,10 @@ No Dify binding, credential, shared provider or live configuration changes are i
 `booklet_sources_v2` verifies owned immutable `{sources,references:[]}` text tuples;
 foreign/changed revisions and nonempty image-reference lists fail explicitly until
 the original-image bridge is completed. It never silently drops requested references.
+`booklet_record_assessment_v2` accepts `{assessment,executionLocator:{runId,nodeId:"child-quality-reviewer",executionId},fence}`.
+It derives policy/Reviewer identities from the originating Run's server configuration,
+matches an exact retained native proposal, and returns `{assessmentId,complete,fence}`
+through the existing atomic receipt path. It cannot fabricate execution or coverage.
 `booklet_read_document_v2` additionally exposes owned production/checkpoint/revision/work/assessment DTOs
 under `extension:booklets:read`. Its existing `{kind,id,cursor?}` request returns whole
 small JSON values or bounded typed sections, array pages and decoded text fragments.
