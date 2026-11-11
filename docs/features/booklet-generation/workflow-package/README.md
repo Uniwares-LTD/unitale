@@ -128,13 +128,20 @@ capacity, duplicate and revision-scope checks remain. The regression failed agai
 the prior exported pack node, then passed with the focused fix. No target-environment
 import or execution of this revised candidate is claimed.
 
-Current slice: 38/38 compatibility tests pass (11 preserved v1 and 27 native-package
+Manager now uses the existing Run runtime's required private Start `context` text
+input, bound directly to MCP `runContext` arguments. The public request limit matches
+Run metadata (4,000 characters); authoritative brief/configuration stay in app context.
+The regression failed on the prior export and passes through the actual capability
+inspector with the supported Start metadata. This isolated binding check does not
+prove full registration while the remaining v2 tools and Human Input wiring are pending.
+
+Current slice: 39/39 compatibility tests pass (11 preserved v1 and 28 native-package
 tests). Typecheck, scoped test lint, docs/i18n/skills checks and an independent hash audit
 pass. A separate same-agent read-only slice review found no blocking issue. Current
 implementation SHA-256:
-`40e52a70fb2c02cb4d873c6832871b43f9ae10ab933c7ee86d38e4d2d6e9810b`.
+`ab90d4c562352f257c02a8860e7a1dc018d74444d2488e84bb254eacebeef708`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-240,453 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+240,388 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

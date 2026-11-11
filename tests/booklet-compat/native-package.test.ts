@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { parse } from "yaml";
 import { parseResult } from "../../src/lib/contracts/runs";
+import { inspectDifyWorkflow } from "../../src/lib/server/runs/dify-capabilities";
 
 // Inspect actual DSL and execute isolated pure Code functions. This is not a Dify engine.
 const root = resolve("docs/features/booklet-generation/workflow-package");
@@ -207,6 +208,18 @@ test("Manager action branches use the fence confirmed by the pre-action checkpoi
   assert.deepEqual(nodes.find((node: any) => node.id === "dispatch").data.tool_parameters.request.value, ["saved", "dispatch"]);
   assert.deepEqual(nodes.find((node: any) => node.id === "before").data.tool_parameters.request.value, ["guard", "checkpoint"]);
 });
+test("Manager private Start is recognized by existing Run capability inspection", () => {
+  const nodes = apps.manager.workflow.graph.nodes;
+  // Isolate actual exported nodes: other planned tools are not registered yet.
+  // This proves private-input compatibility, not full candidate registration.
+  const graph = { nodes: ["start", "app-save_revision", "end"].map(id => nodes.find((node: any) => node.id === id)) };
+  const inspected = inspectDifyWorkflow(graph, "raw-v1");
+  assert.equal(inspected.contextInputName, "context");
+  assert.equal(inspected.contextInput, true);
+  assert.deepEqual(inspected.inputs.map(field => field.name), ["request"]);
+  assert.deepEqual(inspected.privateTools, ["booklet_save_revision_v2"]);
+});
+
 test("seven readable native candidates preserve private bindings and disable node retries", () => {
   assert.equal(
     readdirSync(root).filter((x) =>
@@ -275,13 +288,13 @@ test("seven readable native candidates preserve private bindings and disable nod
           /\b(import (?:os|sys|socket|requests)|require\(|fetch\(|open\()/,
         );
         for (const v of node.data.variables)
-          assert.notDeepEqual(v.value_selector, ["start", "runContext"]);
+          assert.notDeepEqual(v.value_selector, ["start", "context"]);
       }
       if (node.data.provider_type === "mcp") {
         assert.equal(role, "manager");
         assert.deepEqual(node.data.tool_parameters.runContext, {
           type: "variable",
-          value: ["start", "runContext"],
+          value: ["start", "context"],
         });
       }
       if (role !== "manager")

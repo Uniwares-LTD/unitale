@@ -40,8 +40,13 @@ existing unrelated apps. This repository update does not apply live names or tag
 ## Workflow boundary
 
 Manager Start inputs: public `request` JSON (create/continue/revise/recover intent and
-owned production/user scope) and private `runContext`. Bind the capability directly
-from Start to every managed MCP node. Never pass it through Code, model prompts,
+owned production/user scope) and private Start `context`. Bind it directly to each
+private MCP tool's `runContext` argument. The required private control is `text-input`
+with capacity for the opaque 43-character capability, matching existing Run discovery
+and injection; it is excluded from public inputs. Public `request` uses the existing
+4,000-character Run input limit for intent/identifiers. The authoritative brief and
+configuration remain owned application context, not a large public input payload.
+Never pass the private capability through Code, model prompts,
 children, output JSON, logs or durable checkpoints. Unitale invokes only Manager.
 Children have no app provider, private context, peer dispatch or callback.
 

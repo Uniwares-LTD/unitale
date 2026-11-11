@@ -554,6 +554,11 @@ seams are complete locally. Current 09 implementation provides:
   publishes each artifact once across continuation. Roster deltas preserve the other
   narrative group and record their preceding roster source; raw child output is retained.
   Proposal references avoid copying large exact text through the model.
+- Manager's private Start now uses the existing Run `context` text-input convention,
+  bound directly to MCP `runContext`. The actual capability inspector regression
+  fails on the prior export and passes on the corrected isolated Start/tool boundary.
+  No Unibase extension was needed. Full registration still requires the remaining
+  tools and Human Input integration; revised candidate import/execution remains pending.
 
 The exposed v2 tools are checkpoint, index, transfer, creative-text work registration,
 native work reconciliation, creative-text publication and the partial document reader.
@@ -565,7 +570,8 @@ journey. The latest YAML identity and verification are maintained in the
 Current application verification: 56 affected repository, lifecycle/media and MCP
 tests pass, including native retention/readback, continuation publication, roster
 lineage, product-capacity rejection and large exact-text reference/transfer publication.
-The unchanged native package retains its 38-test compatibility evidence.
+The revised native package passes 39 compatibility tests, including private Start
+inspection against existing application code. Its hashes/digest are refreshed.
 Production build, sequential typecheck, scoped lint, environment and model/docs/i18n/
 skills checks pass. A separate same-agent read-only slice review found no blocking
 issue. No Dify, provider, deployment or checkpoint 10 UI implementation occurred. Historical
