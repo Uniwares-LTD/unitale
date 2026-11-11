@@ -86,10 +86,130 @@ export async function observeBookletNodeV2(
     target.version !== "2" ||
     !job.run?.orchestrator.workflowId ||
     node.runId !== job.runId ||
-    job.execution?.workflowId !== job.run.orchestrator.workflowId ||
-    node.nodeType !== "tool"
+    job.execution?.workflowId !== job.run.orchestrator.workflowId
   )
     return;
+  if (node.nodeType === "llm" && node.nodeId === "decide") {
+    if (!["succeeded", "failed", "exception"].includes(node.status)) return;
+    const identity = {
+      runId: node.runId,
+      nodeId: node.nodeId,
+      executionId: node.id,
+      retryIndex: node.retryIndex,
+      iterationId: node.iterationId,
+      loopId: node.loopId,
+    };
+    const callId = fingerprint([
+      job._id,
+      "manager-reason",
+      node.runId,
+      node.id,
+      node.retryIndex ?? 0,
+    ]);
+    const records = db.collection<WorkV2>("bookletWork");
+    const existing = await records.findOne(
+      { ownerId: job.uid, productionId: target.id, callId },
+      { session },
+    );
+    if (
+      existing &&
+      (node.status !== "succeeded" ||
+        !(
+          existing.status === "unknown" ||
+          (existing.status === "succeeded" &&
+            existing.resultPayload === undefined)
+        ))
+    )
+      return;
+    let evidenceId = fingerprint([
+      job._id,
+      callId,
+      "native-trace",
+      node.status,
+    ]);
+    const settings = await db
+      .collection<{ _id: string; settings: unknown }>("baseSettings")
+      .findOne({ _id: "base" }, { session });
+    const retentionDays = baseSettingsSchema.parse(
+      settings?.settings ?? bootstrapSettings(),
+    ).execution.rawLogRetentionDays;
+    let outputsRetained =
+      node.outputsTruncated === false &&
+      node.outputs !== null &&
+      Buffer.byteLength(JSON.stringify(node.outputs)) <= 1024 * 1024;
+    const timestamp = new Date();
+    const row = workV2Schema.parse({
+      _id: fingerprint([job.uid, target.id, callId]),
+      documentVersion: 2,
+      ownerId: job.uid,
+      productionId: target.id,
+      callId,
+      runId: job._id,
+      actionKey:
+        existing?.actionKey ??
+        fingerprint([target.id, "observed-manager-reason", identity]),
+      // No prompt input is available on this observation boundary. This hash
+      // identifies metadata-only work and must not be reported as a prompt hash.
+      requestHash: existing?.requestHash ?? fingerprint(identity),
+      service: "manager",
+      operation: "reason",
+      category: "paidLlm",
+      targetIds: [],
+      sources: [],
+      retryOf: null,
+      reviewScope: null,
+      correction: null,
+      correctionRootId: fingerprint([target.id, "manager-reason", job._id]),
+      retryOrdinal: 0,
+      retryable: false,
+      status: node.status === "succeeded" ? "succeeded" : "unknown",
+      resultObservation: identity,
+      ...(outputsRetained ? { resultPayload: node.outputs } : {}),
+      evidenceIds: [...new Set([...(existing?.evidenceIds ?? []), evidenceId])],
+      createdAt: existing?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+    });
+    if (BSON.calculateObjectSize(row) > 4 * 1024 * 1024) {
+      delete row.resultPayload;
+      outputsRetained = false;
+    }
+    if (existing?.status === "succeeded" && !outputsRetained) return;
+    evidenceId = fingerprint([
+      job._id,
+      callId,
+      "native-trace",
+      node.status,
+      outputsRetained,
+    ]);
+    row.evidenceIds = [
+      ...new Set([...(existing?.evidenceIds ?? []), evidenceId]),
+    ];
+    await retainEvidence(
+      db,
+      job.uid,
+      {
+        id: evidenceId,
+        runId: job._id,
+        operationId: callId,
+        kind: "trace",
+        retentionDays,
+        payload: {
+          ...identity,
+          status: node.status,
+          error: node.error,
+          executionMetadata: node.executionMetadata,
+          outputsRetained,
+          requestObserved: false,
+        },
+      },
+      session,
+    );
+    await records.replaceOne({ _id: row._id }, row, { session, upsert: true });
+    // Observations must not move production fences/versions and race with a
+    // Manager checkpoint. History cursors bind the inventory count separately.
+    return;
+  }
+  if (node.nodeType !== "tool") return;
   const service = services.find(
     (service) => node.nodeId === `child-${service}`,
   );

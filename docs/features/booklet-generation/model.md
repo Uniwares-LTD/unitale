@@ -61,6 +61,13 @@ assessment writes match the selected item's scope and exact retained native prop
 Legacy metadata-only server records retain their existing behavior. No persisted fields
 changed, so the JSON example and both diagrams remain structurally unchanged. Image
 registration, the assessment MCP gateway and complete runtime wiring remain 09 work.
+Native Manager `decide` observations also use the existing work fields for durable
+paid LLM attempt facts. Their request body is unobserved; the metadata hash is not a
+prompt hash. Successful complete bounded outputs may be retained; failed reasoning
+stays unknown until trusted success updates the same attempt. Retention remains valid
+after cancellation and changes no production fence/version. These are new uses of
+existing fields, so the JSON example and both diagrams remain structurally unchanged.
+
 The native v2 observer now retains matching complete child envelopes in optional
 `resultPayload` (at most 1 MiB), with `resultObservation` carrying native execution,
 node, retry and loop identities. These fields share the work record and its 4 MiB

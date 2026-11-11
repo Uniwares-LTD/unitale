@@ -50,11 +50,18 @@ export async function readBookletDocumentV2(
   ) {
     if (request.id !== productionId) throw bookletMissing();
     const production = await repo.getProduction(productionId);
+    const work = request.kind === "work_history";
+    const collection = db.collection(
+      work ? "bookletWork" : "bookletAssessments",
+    );
+    const filter = { ownerId: actor.uid, productionId, documentVersion: 2 };
+    const inventoryCount = await collection.countDocuments(filter);
     const scope = fingerprint([
       actor.uid,
       productionId,
       request.kind,
       production.version,
+      inventoryCount,
     ]);
     const position = request.cursor
       ? z
@@ -72,14 +79,10 @@ export async function readBookletDocumentV2(
       throw bookletConflict(
         "History changed or cursor belongs to another query; restart the read.",
       );
-    const work = request.kind === "work_history";
-    const rows = await db
-      .collection(work ? "bookletWork" : "bookletAssessments")
+    const rows = await collection
       .find(
         {
-          ownerId: actor.uid,
-          productionId,
-          documentVersion: 2,
+          ...filter,
           _id: { $gt: position.after as never },
         },
         {

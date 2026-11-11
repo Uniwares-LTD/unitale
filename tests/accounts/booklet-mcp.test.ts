@@ -1250,6 +1250,10 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(correction.value.rootId, original!.correctionRootId);
           assert.equal((await invoke("read_document", { kind: "work_history", id: "foreign-production" })).isError, true);
           assert.equal((await invoke("read_document", { kind: "assessment_history", id: production._id, cursor: first.cursor })).isError, true);
+          const late = { ...rows[0], _id: fingerprint("late-reason-observation") as never, callId: "late-history", actionKey: fingerprint("late-reason-action") };
+          await db.collection("bookletWork").insertOne(late);
+          assert.equal((await invoke("read_document", { ...context.workHistoryDocument, cursor: first.cursor })).isError, true);
+          await db.collection("bookletWork").deleteOne({ _id: late._id });
           await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $inc: { version: 1 } });
           assert.equal((await invoke("read_document", { ...context.workHistoryDocument, cursor: first.cursor })).isError, true);
           const largeCheckpoint = { keep: "x".repeat(64000) };

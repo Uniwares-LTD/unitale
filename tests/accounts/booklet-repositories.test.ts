@@ -14,7 +14,7 @@ import { createCreditIndexes, grantCredits } from "../../src/lib/server/store/cr
 import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { bookletContext } from "../../src/lib/server/booklets/context";
-import { registerBookletWorkV2 } from "../../src/lib/server/booklets/work-v2";
+import { registerBookletWorkV2, bookletWorkUsageV2 } from "../../src/lib/server/booklets/work-v2";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
 import type { AiJob } from "../../src/lib/server/ai/jobs";
 import type { ProviderExecution, ProviderNodeObservation } from "../../src/lib/server/ai/types";
@@ -666,6 +666,51 @@ test("booklet repositories preserve embedded identities and transactional bounda
         assert.equal(await f.db.collection("executionEvidence").countDocuments({ runId: nextJobId }), 1);
         assert.equal(await f.db.collection("bookletRevisions").countDocuments({ productionId: p._id }), 1);
         assert.equal((await repo.getProduction(p._id)).lifecycleState, "in-progress");
+        await t.test("Manager reasoning is counted once with fenced retention and unknown failures", async () => {
+          const reason: ProviderNodeObservation = { ...node, id: "manager-reason", nodeId: "decide", nodeType: "llm",
+            outputs: { structured_output: { action: "read_document" } }, executionMetadata: { total_tokens: 17 } };
+          const before = await repo.getProduction(p._id);
+          const counts = await bookletWorkUsageV2(f.db, before);
+          await observe({ ...reason, nodeId: "untrusted-reason" });
+          await assert.rejects(observe(reason, job, true), /fixture rollback/);
+          assert.equal((await repo.getProduction(p._id)).version, before.version);
+          await observe(reason);
+          await observe(reason);
+          await observe({ ...reason, retryIndex: null });
+          const after = await repo.getProduction(p._id);
+          assert.equal(after.version, before.version);
+          const measured = await bookletWorkUsageV2(f.db, after);
+          assert.equal(measured.paidLlm, counts.paidLlm + 1);
+          assert.equal(after.fenceCounter, before.fenceCounter);
+          const stored = await f.db.collection("bookletWork").findOne({ ownerId: actor.uid, productionId: p._id, service: "manager" });
+          assert.deepEqual(stored!.resultPayload, reason.outputs);
+          assert.equal(stored!.requestPayload, undefined);
+          assert.equal(stored!.category, "paidLlm");
+          await observe({ ...reason, id: "manager-failed", status: "failed", outputs: null });
+          const failed = await f.db.collection("bookletWork").findOne({ ownerId: actor.uid, productionId: p._id, service: "manager", status: "unknown" });
+          assert.equal(failed!.retryable, false);
+          assert.equal((await bookletWorkUsageV2(f.db, await repo.getProduction(p._id))).unresolved, measured.unresolved + 1);
+          const recovered = await reconcileBookletWorkV2(f.db, actor, p._id, failed!.callId, AbortSignal.timeout(5000), {
+            execution: async () => ({ kind: "ok", value: execution }),
+            trace: async () => [{ type: "node-observation", node: { ...reason, id: "manager-failed", status: "succeeded" } }],
+          });
+          assert.equal(recovered.status, "succeeded");
+          const reconciled = await bookletWorkUsageV2(f.db, await repo.getProduction(p._id));
+          assert.equal(reconciled.unresolved, measured.unresolved);
+          assert.equal(reconciled.paidLlm, measured.paidLlm + 1);
+          await observe({ ...reason, id: "manager-large", outputs: { values: Array(400000).fill(0) } });
+          const oversized = await f.db.collection("bookletWork").findOne({ ownerId: actor.uid, productionId: p._id, "resultObservation.executionId": "manager-large" });
+          assert.equal(oversized!.resultPayload, undefined);
+          assert.ok(BSON.calculateObjectSize(oversized!) < 4 * 1024 * 1024);
+          assert.equal((await bookletWorkUsageV2(f.db, await repo.getProduction(p._id))).paidLlm, reconciled.paidLlm + 1);
+          await observe({ ...reason, id: "manager-truncated", outputsTruncated: true });
+          const partial = await f.db.collection("bookletWork").findOne({ ownerId: actor.uid, productionId: p._id, "resultObservation.executionId": "manager-truncated" });
+          assert.equal(partial!.resultPayload, undefined);
+          await observe({ ...reason, id: "manager-truncated" });
+          const hydrated = await f.db.collection("bookletWork").findOne({ _id: partial!._id });
+          assert.deepEqual(hydrated!.resultPayload, reason.outputs);
+          assert.equal(hydrated!.evidenceIds.length, 2);
+        });
         await t.test("a continuing Manager publishes the retained proposal without replaying its child", async () => {
           const publicationId = "publisher-manager", publicationFlow = "publisher-flow";
           let current = await repo.getProduction(p._id);

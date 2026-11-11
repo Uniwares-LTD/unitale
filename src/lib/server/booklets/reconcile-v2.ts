@@ -30,6 +30,9 @@ export async function reconcileBookletWorkV2(
 ) {
   const repository = bookletRepositoryV2(db, actor);
   const before = await repository.getWork(productionId, callId);
+  const reasoning =
+    before.service === "manager" && before.operation === "reason";
+  const nodeId = reasoning ? "decide" : `child-${before.service}`;
   const summary = (row: typeof before, reason?: string) => ({
     callId: row.callId,
     requestHash: row.requestHash,
@@ -57,7 +60,7 @@ export async function reconcileBookletWorkV2(
   if (
     locator &&
     (locator.runId !== parent.runId ||
-      (locator.nodeId && locator.nodeId !== `child-${before.service}`))
+      (locator.nodeId && locator.nodeId !== nodeId))
   )
     throw bookletConflict(
       "Locator differs from the registered native execution.",
@@ -91,7 +94,11 @@ export async function reconcileBookletWorkV2(
   const nodes = events.filter(
     (event) =>
       event.type === "node-observation" &&
-      event.node.nodeId === `child-${before.service}` &&
+      event.node.nodeId === nodeId &&
+      (!reasoning ||
+        (event.node.id === before.resultObservation?.executionId &&
+          (event.node.retryIndex ?? 0) ===
+            (before.resultObservation?.retryIndex ?? 0))) &&
       (!locator?.executionId || event.node.id === locator.executionId),
   );
   if (!nodes.length) return summary(before, "child_result_pending");

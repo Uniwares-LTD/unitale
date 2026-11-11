@@ -183,7 +183,7 @@ export function createBookletMcpToolsV2(
             .limit(17)
             .toArray(),
           s.db
-            .collection<WorkV2>("bookletWork")
+            .collection<WorkV2 & { resultAvailable: boolean }>("bookletWork")
             .find(owned, {
               projection: {
                 _id: 0,
@@ -197,6 +197,9 @@ export function createBookletMcpToolsV2(
                 correction: 1,
                 correctionRootId: 1,
                 resultObservation: 1,
+                resultAvailable: {
+                  $ne: [{ $type: "$resultPayload" }, "missing"],
+                },
               },
             })
             .sort({ createdAt: -1, _id: -1 })
@@ -245,7 +248,7 @@ export function createBookletMcpToolsV2(
             retryable: row.retryable,
             correction: row.correction,
             correctionRootId: row.correctionRootId,
-            resultAvailable: !!row.resultObservation,
+            resultAvailable: row.resultAvailable,
             document: { kind: "work", id: row.callId },
           })),
           16,
@@ -295,7 +298,7 @@ export function createBookletMcpToolsV2(
             retryable: retained.retryable,
             correction: retained.correction,
             correctionRootId: retained.correctionRootId,
-            resultAvailable: !!retained.resultObservation,
+            resultAvailable: retained.resultPayload !== undefined,
             document: { kind: "work", id: retained.callId },
           };
           workFacts.unshift(focused);

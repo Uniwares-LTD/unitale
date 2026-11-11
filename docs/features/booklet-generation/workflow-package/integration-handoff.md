@@ -281,7 +281,7 @@ selects registered checkpoint-pending work outside its recent window. Follow
 `workHistoryDocument` and `assessmentHistoryDocument` through `read_document` using
 `kind:work_history` or `assessment_history` and the production ID. Each page returns
 at most 20 metadata/document references and a continuation cursor. Cursors bind owner,
-production, kind and production version; a changed version requires restarting the
+production, kind, production version and inventory count; changes require restarting the
 read. Work statuses remain current observations, not an immutable historical snapshot.
 Follow individual document references for complete bodies. `kind:correction` takes a
 known work `correctionRootId` and returns its current owned durable allowance facts.

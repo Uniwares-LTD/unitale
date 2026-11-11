@@ -609,8 +609,27 @@ integrated Dify execution. Checkpoint-wide review pair remains 09.7 work.
 by paid LLM/image/non-paid category, with active and unresolved totals. Registered
 intents are excluded and aggregation covers all owned work, not its recent preview.
 These are application-attempt facts, not provider-internal counts or complete native
-usage. Native reasoning/cost integration, dispatch safeguards and the complete text
-journey remain pending; `usage.canDispatch` stays false.
+usage. Terminal native Manager `decide` observations now create metadata-only work facts with
+native identity, bounded exact outputs when available and separate redacted trace.
+Duplicate/normalized retry observations count once; failed reasoning remains unknown
+until trusted success, and late success/readback updates that same attempt. Complete
+late output can hydrate a previously truncated observation without another attempt;
+unavailable/oversized output is explicitly omitted while retaining attempt accounting.
+Observation never
+advances production versions/fences. History cursors also bind inventory counts to
+notice newly observed work without forcing checkpoint races. No prompt inputs are
+available on this hook: its request hash identifies native metadata, not an observed
+prompt, and trace explicitly records `requestObserved:false`. Complete prompt/cost
+integration, dispatch safeguards and the text journey remain pending;
+`usage.canDispatch` stays false. Existing work fields suffice; model JSON and diagrams
+are structurally unaffected.
+
+The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
+normalized duplicate observations, exact native readback, late output hydration,
+unknown failure and BSON-capacity fallback without losing attempt counts. Build,
+post-build typecheck, scoped lint, environment and model/docs checks pass. A separate
+same-agent read-only slice review fixed the observation/checkpoint race and found no
+further blocking issue in this addition. This does not complete 09.2.
 
 In progress; not ready for activation. Checkpoint 07 storage and checkpoint 08 shared
 seams are complete locally. Current 09 implementation provides:
