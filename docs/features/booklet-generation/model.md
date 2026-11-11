@@ -29,7 +29,15 @@ The same text producer/artifact publishes once, including across continuation.
 Image writes now match a selected original from observed Generate work, using its
 exact sources, funding and evidence. Each original/artifact publishes once; several
 returned originals may have distinct candidate revisions without another generation.
-Acceptance/revalidation wiring remains checkpoint 09 work.
+Acceptance wiring remains checkpoint 09 work; revalidation is locally verified below.
+
+V2 revisions gain optional `revalidatedFrom`
+lineage to an owned revision of the same artifact. The write preserves exact
+content/assets and records replacement sources. Manager may reuse retained producer
+evidence; when new review evidence is supplied, it must identify that exact context,
+including original pixels for images. MCP may omit content when this reference
+is supplied, allowing server-side reuse of large retained text. This path is verified
+locally; it is not a completed checkpoint claim.
 
 Request-backed corrections now bind confirmed findings to exact selected baseline
 revision identities and reviewed targets. Correction review preserves the original

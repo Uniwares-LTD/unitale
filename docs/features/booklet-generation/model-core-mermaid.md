@@ -30,6 +30,7 @@ flowchart TB
   Production -->|"subjects[].artifacts[] current and accepted revision IDs"| Artifact_revision
   Artifact_revision -->|"productionId plus embedded artifactId and subjectId"| Production
   Artifact_revision -->|"sources[] exact immutable dependencies"| Artifact_revision
+  Artifact_revision -->|"v2 revalidatedFrom; unchanged content/assets with replacement sources"| Artifact_revision
   Production -->|"productionId on each operation"| Operation
   Operation -->|"revisionId"| Artifact_revision
   Quality_review -->|"targetRevisionId and source identities"| Artifact_revision

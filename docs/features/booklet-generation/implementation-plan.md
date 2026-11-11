@@ -818,6 +818,21 @@ Build and post-build typecheck now pass. A separate read-only follow-up of the a
 native correction-review fixture found no blocking issue. These slice checks do not
 complete task 09.3; checkpoint-wide review pairs remain 09.7 work.
 
+09.3 revalidation slice is locally verified. The repository and existing save gateway now
+accept `revalidatedFrom`; omitting content copies the retained body server-side.
+The write preserves exact content/assets. Manager may reuse retained producer evidence;
+new review evidence must match the baseline plus ordered replacement sources, with
+original-pixel coverage for images. A new revision records lineage; old history and pointers are
+not rewritten by receipt replay. The first real MCP fixture passes source rebinding
+and replay. The 22-test MCP suite now also rejects changed content/assets and a
+mismatched replacement-source review. Typecheck, scoped lint and model/docs checks
+pass, as do 30 repository regression tests, 42 compatibility tests, build, post-build
+typecheck and the independent 13-path hash audit. The read-only review removed an
+unnecessary mandatory-review gate to preserve Manager policy ownership; the follow-up
+found no blocking issue. The Manager prompt/handoff and model guide/example/diagrams
+track the optional lineage field. Task 09.3 remains In progress pending whole-book
+integration and the corrective-generation journey; final review pairs remain 09.7 work.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

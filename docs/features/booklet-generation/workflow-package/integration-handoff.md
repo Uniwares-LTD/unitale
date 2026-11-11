@@ -155,7 +155,7 @@ reuse that artifact ID. A rejected batch rolls back its entries and fence togeth
 | begin_work | register: childRequest,requestHash,targets,retryOf?,correction?,fence; dispatch: callId,requestHash,fence -> callId,requestHash,status,fence | derive identity/category/sources from the complete validated child request; durable correction/usage checks |
 | transfer | action,key and bounded parts -> verified transfer receipt | existing transfer storage/integrity/capacity |
 | retain_original | callId,outputKey,nativeFile,fence -> {asset:{id,sha256,bytes,mime,width,height,...},fence} | existing restricted Dify downloader and original-media service; per-output identity |
-| save_revision | artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom? -> immutable revision | existing revision writer; complete metadata transfer and new content kinds |
+| save_revision | artifactId,content?,sources,assets,evidence,mutationKey,fence,revalidatedFrom? -> immutable revision | content required unless revalidatedFrom supplies the retained body; existing revision writer |
 | request_human | question,targets,responseContract,presentation,fence -> requestId,presentationHash,formContent | existing review forms/Run cards; optional Manager policy |
 | record_evidence | key,content -> diagnostic evidence reference | existing redacted evidence; no measurement authority |
 | record_assessment | assessment,executionLocator,fence -> immutable assessment | existing trusted reviewer binding; all six modes and repeatable assessments |
@@ -278,7 +278,13 @@ identity]` and the originating Generate work's exact sources/evidence. The repos
 matches its observed output and ready original receipt. Each original/artifact saves
 once; different returned originals may have separate candidate revisions from the same
 Generate. Replays do not change the selected pointer or regenerate. Changed-source
-revalidation remains pending.
+revalidation is locally implemented through `revalidatedFrom`. Supply that revision ID,
+unchanged assets and replacement dependency sources; omit content to copy the retained
+body server-side. Manager chooses whether review is needed. Retained producer evidence
+supports unchanged reuse; supplied new review evidence must bind the old revision
+identity followed by the exact replacement sources, including original pixels for
+images. A linked immutable revision is written; earlier history is preserved. This
+does not grant acceptance or start a provider call.
 
 For corrective registration, include the explicitly selected baseline revision among
 the child sources. A confirmed finding ID authorizes only the exact reviewed baseline

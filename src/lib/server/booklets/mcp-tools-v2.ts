@@ -506,7 +506,8 @@ export function createBookletMcpToolsV2(
               bookletContentV2Schema,
               z.strictObject({ transferId: id }),
               z.strictObject({ callId: id, itemId: id, proposalIndex: count }),
-            ]),
+            ]).optional(),
+            revalidatedFrom: id.optional(),
             sources: z.array(bookletSourceV2Schema),
             assets: z.array(assetIdentitySchema),
             evidence: z.array(id).min(1),
@@ -529,7 +530,11 @@ export function createBookletMcpToolsV2(
             "An unambiguous retained producer is required.",
           );
         let content: z.infer<typeof bookletContentV2Schema>;
-        if ("kind" in request.content) content = request.content;
+        if (request.content === undefined) {
+          if (!request.revalidatedFrom) throw bookletConflict("Content or a revalidatedFrom revision is required.");
+          content = (await bookletRepositoryV2(s.db, s.actor).getRevision(s.production._id, request.revalidatedFrom)).content;
+        }
+        else if ("kind" in request.content) content = request.content;
         else if ("callId" in request.content) {
           const reference = request.content;
           if (reference.callId !== producers[0].callId)
@@ -581,6 +586,7 @@ export function createBookletMcpToolsV2(
           content,
           sources: request.sources,
           assets: request.assets,
+          ...(request.revalidatedFrom ? { revalidatedFrom: request.revalidatedFrom } : {}),
           provenance: {
             runId: s.job._id,
             operationId: producers[0].callId,

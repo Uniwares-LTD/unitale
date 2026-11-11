@@ -82,6 +82,7 @@ export const documents = [
       "sources[] {artifactId, revisionId, sha256}",
       "assets[] {assetId, sha256}",
       "provenance {operationId, runId, evidenceIds[]}",
+      "v2 only: revalidatedFrom? (same-artifact immutable revision lineage)",
     ],
   },
   {
@@ -550,6 +551,7 @@ export const relationships = [
     "Artifact revision",
     "sources[] exact immutable dependencies",
   ],
+  ["Artifact revision", "Artifact revision", "v2 revalidatedFrom; unchanged content/assets with replacement sources"],
   ["Production", "Operation", "productionId on each operation"],
   ["Operation", "Artifact revision", "revisionId"],
   [

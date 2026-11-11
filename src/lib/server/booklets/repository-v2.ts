@@ -1318,6 +1318,7 @@ export function bookletRepositoryV2(
         sources: z.input<typeof bookletSourceV2Schema>[];
         assets: z.input<typeof assetIdentitySchema>[];
         provenance: z.input<typeof revisionDocumentSchema.shape.provenance>;
+        revalidatedFrom?: string;
       },
     ) {
       const value = mutationInput
@@ -1327,6 +1328,7 @@ export function bookletRepositoryV2(
           sources: z.array(bookletSourceV2Schema),
           assets: z.array(assetIdentitySchema),
           provenance: revisionDocumentSchema.shape.provenance,
+          revalidatedFrom: id.optional(),
         })
         .parse(input);
       return mutate(
@@ -1347,7 +1349,33 @@ export function bookletRepositoryV2(
           let content = value.content;
           let sources = value.sources;
           const image = content.kind === "reference" || content.kind === "page-image";
-          if (p.lifecycleState !== "draft") {
+          if (value.revalidatedFrom) {
+            await activeManager(p, value.provenance.runId, value.holderId, session);
+            await guardCreativeTargets(p, [artifact.id], session);
+            const previous = await revisions.findOne({ _id: value.revalidatedFrom, ownerId: actor.uid,
+              productionId: p._id, artifactId: artifact.id }, { session });
+            if (!previous || fingerprint(previous.content) !== fingerprint(content) ||
+              fingerprint(previous.assets) !== fingerprint(value.assets) ||
+              value.sources.some((source) => source.artifactId === artifact.id))
+              throw bookletConflict("Revalidation must preserve exact content/assets and select replacement dependency sources.");
+            const expectedSources = [{ artifactId: previous.artifactId, revisionId: previous._id, contentHash: previous.contentHash }, ...value.sources];
+            const retainedProducer = value.provenance.operationId === previous.provenance.operationId &&
+              value.provenance.evidenceIds.every((evidence) => previous.provenance.evidenceIds.includes(evidence));
+            const assessed = await assessments.findOne({ ownerId: actor.uid, productionId: p._id,
+              callId: value.provenance.operationId, complete: true, "assessment.targetHash": previous.contentHash,
+              evidenceIds: { $all: value.provenance.evidenceIds },
+            }, { session });
+            if (!value.provenance.evidenceIds.length || (!retainedProducer && (!assessed ||
+              fingerprint(assessed.assessment.sources) !== fingerprint(expectedSources) ||
+              !assessed.assessment.coverage.targetIds.some((target) => target === artifact.id || target === subject.id))))
+              throw bookletConflict("Revalidation requires retained producer evidence or recorded review of the exact replacement context.");
+            if (!retainedProducer && image && (!['image', 'correction'].includes(assessed!.assessment.mode) || previous.assets.some((asset) =>
+              !(assessed!.assessment.coverage.assetIds ?? []).includes(asset.assetId))))
+              throw bookletConflict("Image revalidation requires inspection of its retained original pixels.");
+            const prior = await revisions.findOne({ ownerId: actor.uid, productionId: p._id, artifactId: artifact.id,
+              revalidatedFrom: previous._id, sources: value.sources }, { session });
+            if (prior) return { revisionId: prior._id, ordinal: prior.ordinal };
+          } else if (p.lifecycleState !== "draft") {
             await activeManager(
               p,
               value.provenance.runId,
@@ -1671,6 +1699,7 @@ export function bookletRepositoryV2(
             sources,
             assets: value.assets,
             provenance: value.provenance,
+            ...(value.revalidatedFrom ? { revalidatedFrom: value.revalidatedFrom } : {}),
             contentHash: fingerprint(content),
             createdAt: now(),
           });

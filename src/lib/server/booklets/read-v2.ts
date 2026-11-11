@@ -264,6 +264,7 @@ export async function readBookletDocumentV2(
       sources: row.sources,
       assets: row.assets,
       contentHash: row.contentHash,
+      ...(row.revalidatedFrom ? { revalidatedFrom: row.revalidatedFrom } : {}),
     };
   } else if (request.kind === "work") {
     const row = await repo.getWork(productionId, request.id);

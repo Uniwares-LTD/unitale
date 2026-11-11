@@ -405,7 +405,7 @@ Image-request review must match an exact retained preparation, including target,
 tuples and ordered original identities; image generation uses that same retained
 preparation guard. Context separates text (`canDispatch`) and image (`canDispatchImage`)
 call eligibility. Visual image review/publication is locally verified; whole-book,
-correction lineage and revalidation integration remain 09.3 work. The candidate execution switch stays disabled.
+corrective-generation integration remain 09.3 work. The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original
 identities, returning `{references:[{assetId,sha256,bytes}]}` plus ordered native MCP
@@ -469,8 +469,11 @@ structurally while preserving the other kind and their previous-roster source li
 For images supply `content:{kind:"reference"|"page-image",asset:{assetId,sha256}}`
 and exactly that single identity in `assets`, using the originating Generate evidence
 and sources. Each original/artifact publishes once; other returned originals can have
-separate candidate revisions without another generation. Changed-source revalidation
-and final acceptance are not enabled by this path.
+separate candidate revisions without another generation. Revalidation accepts
+`revalidatedFrom` with unchanged assets, replacement sources and retained producer
+or exact-context review evidence; content can be omitted for server-side reuse.
+It writes immutable lineage and grants no acceptance or new provider dispatch.
+Final acceptance remains pending.
 
 The `booklets` server extension registers these private v1 tools on the existing
 `/api/mcp`. One service credential with `extension:booklets:read` and

@@ -62,6 +62,7 @@ export const revisionV2Schema = revisionDocumentSchema
     kind: artifactKindV2Schema,
     content: bookletContentV2Schema,
     sources: z.array(bookletSourceV2Schema),
+    revalidatedFrom: id.optional(),
   })
   .refine(
     (value) => value.kind === value.content.kind,

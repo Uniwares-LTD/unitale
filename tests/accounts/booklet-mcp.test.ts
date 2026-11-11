@@ -2276,12 +2276,15 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const selected = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions")
             .findOne({ _id: second.revisionId });
           assert.deepEqual(selected!.content, other.content);
+          const replacement = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions")
+            .findOne({ _id: "prepare-source-1" });
           const references = [assets[1], assets[0]].map((asset) => ({ assetId: asset._id, sha256: asset.sha256, bytes: asset.bytes }));
           const child = { contractVersion: 2, invocationId: "visual-review", callId: "visual-review", service: "quality-reviewer",
             operation: "image", intent: "create", items: [{ itemId: "visual-item", input: {
               targetIds: ["sample-output"], targetHash: selected!.contentHash, referencePositions: [0],
             } }], sources: [{ artifactId: selected!.artifactId, revisionId: selected!._id,
-              contentHash: selected!.contentHash, content: selected!.content }], references, constraints: {} };
+              contentHash: selected!.contentHash, content: selected!.content }, { artifactId: replacement!.artifactId,
+              revisionId: replacement!._id, contentHash: replacement!.contentHash, content: replacement!.content }], references, constraints: {} };
           const review = { action: "register", childRequest: child, requestHash: fingerprint(child), targets: ["sample-output"],
             fence: (await successful("context", {})).fence };
           const omitted = { ...child, items: [{ ...child.items[0], input: { ...child.items[0].input, referencePositions: [1] } }] };
@@ -2315,6 +2318,27 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(assessment.complete, true);
           const saved = await db.collection("bookletAssessments").findOne({ _id: assessment.assessmentId as never });
           assert.deepEqual(saved!.assessment.coverage.assetIds, [assets[1]._id]);
+          const reviewWork = await db.collection("bookletWork").findOne({ productionId: production._id, callId: child.callId });
+          const revalidation = { artifactId: "sample-output", revalidatedFrom: selected!._id, assets: selected!.assets,
+            sources: [{ artifactId: replacement!.artifactId, revisionId: replacement!._id, contentHash: replacement!.contentHash }],
+            evidence: reviewWork!.evidenceIds, mutationKey: "revalidate-image", fence: assessment.fence };
+          assert.equal((await invoke("save_revision", { ...revalidation, sources: [] })).isError, true);
+          assert.equal((await invoke("save_revision", { ...revalidation, content: { kind: "reference",
+            asset: { assetId: assets[0]._id, sha256: assets[0].sha256 } }, assets: [{ assetId: assets[0]._id, sha256: assets[0].sha256 }] })).isError, true);
+          const revalidated = await successful("save_revision", revalidation);
+          assert.deepEqual(await successful("save_revision", revalidation), revalidated);
+          const rebound = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions")
+            .findOne({ _id: revalidated.revisionId });
+          assert.equal(rebound!.revalidatedFrom, selected!._id);
+          assert.deepEqual(rebound!.content, selected!.content);
+          assert.deepEqual(rebound!.assets, selected!.assets);
+          assert.deepEqual(rebound!.sources, revalidation.sources);
+          const reuse = await successful("save_revision", { ...revalidation, sources: [selected!.sources[0]],
+            evidence: producer!.evidenceIds, mutationKey: "manager-policy-reuse", fence: revalidated.fence });
+          const reused = await db.collection("bookletRevisions").findOne({ _id: reuse.revisionId as never });
+          assert.equal(reused!.revalidatedFrom, selected!._id);
+          assert.deepEqual(reused!.content, selected!.content);
+          assert.deepEqual((await db.collection("bookletRevisions").findOne({ _id: selected!._id as never }))!.sources, selected!.sources);
           const after = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions")
             .findOne({ _id: first.revisionId });
           const correction = { ...child, invocationId: "visual-correction-review", callId: "visual-correction-review", operation: "correction",
@@ -2324,7 +2348,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
               contentHash: source.contentHash, content: source.content })),
           };
           const correctionRequest = { action: "register", childRequest: correction, requestHash: fingerprint(correction),
-            targets: ["sample-output"], fence: assessment.fence };
+            targets: ["sample-output"], fence: (await successful("context", {})).fence };
           const forged = { ...correction, items: [{ ...correction.items[0], input: { ...correction.items[0].input,
             findings: [{ ...finding, observed: "Invented defect" }] } }] };
           assert.equal((await invoke("begin_work", { ...correctionRequest, childRequest: forged, requestHash: fingerprint(forged) })).isError, true);
