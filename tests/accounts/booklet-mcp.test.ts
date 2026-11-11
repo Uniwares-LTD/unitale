@@ -3014,7 +3014,15 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(current.state, "completed");
           assert.equal(current.usage.canDispatch, false);
           assert.equal(current.usage.canDispatchImage, false);
-          assert.equal(runNativeCode("manager", "facts", { raw: { result: current }, execution_ready: "true" }).route, "pause");
+          const workCount = await db.collection("bookletWork").countDocuments({ productionId: production._id });
+          const resumed = runNativeCode("manager", "facts", { raw: { result: current }, execution_ready: "true" });
+          assert.equal(resumed.route, "pause");
+          const gate = runNativeCode("manager", "gated", { reason: resumed.result });
+          const terminal = runNativeCode("manager", "finish", { result: gate.result, done: gate.done });
+          assert.equal(JSON.parse(terminal.result).outcome, "success");
+          assert.equal(JSON.parse(terminal.booklet_result).status, "complete");
+          assert.equal((await successful("context", {})).checkpointVersion, intent.checkpointVersion);
+          assert.equal(await db.collection("bookletWork").countDocuments({ productionId: production._id }), workCount);
           const consumed = runNativeCode("manager", "consume", { raw: { result: completed }, action: "complete", request: JSON.stringify(ready),
             context: current, version: intent.checkpointVersion });
           assert.equal(consumed.done, true);

@@ -163,7 +163,13 @@ workflow:
                 if len(json.dumps(c, ensure_ascii=False).encode("utf-8")) > 131072:
                     raise ValueError("Context capacity exceeded; use bounded reads")
                 route = "reason" if execution_ready == "true" and c["usage"].get("canDispatch") and not c.get("cancelled") and not c.get("leaseHeld") else "pause"
-                return {"context": json.dumps(c, ensure_ascii=False), "route": route, "result": json.dumps({"status": "partial", "reason": "activation_or_usage_or_cancellation_gate", "checkpointVersion": c["checkpointVersion"]})}
+                # A committed application completion survives a lost reply/checkpoint.
+                # Report it directly; never pay for reasoning to rediscover it.
+                completed = c.get("state") == "completed"
+                if completed:
+                    route = "pause"
+                result = {"status": "complete", "lastAction": "complete", "checkpointVersion": c["checkpointVersion"]} if completed else {"status": "partial", "reason": "activation_or_usage_or_cancellation_gate", "checkpointVersion": c["checkpointVersion"]}
+                return {"context": json.dumps(c, ensure_ascii=False), "route": route, "result": json.dumps(result)}
           variables:
             - variable: raw
               value_selector:
@@ -2272,7 +2278,10 @@ workflow:
           code: |-
             import json
             def main(reason):
-                return {"done": True, "result": json.dumps({"status": "partial", "reason": reason})}
+                result = json.loads(reason)
+                if not isinstance(result, dict) or result.get("status") not in ("partial", "complete"):
+                    raise ValueError("Authoritative gate outcome missing")
+                return {"done": True, "result": json.dumps(result)}
           variables:
             - variable: reason
               value_selector:

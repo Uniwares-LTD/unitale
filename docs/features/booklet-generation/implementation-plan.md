@@ -1038,6 +1038,22 @@ Task 09.5 now begins with deterministic completion resume, existing-worker recov
 bounded retry eligibility and safe terminal consumption-flow release. Full composed
 creation/revision/multi-window journeys remain 09.6, not inferred from these slices.
 
+09.5 first slice: the native Manager facts/gate path now returns an already committed
+application completion directly, even when its completion reply or result checkpoint
+was lost. It does not invoke reasoning, redispatch, rewrite the checkpoint or repeat
+original-byte I/O. A pending/complete-looking checkpoint is not authority: an
+in-progress production remains partial. This reuses the existing gate/finish nodes
+without adding a graph branch, record or interface. The activation gate remains
+disabled; reporting an owned committed outcome does not enable dispatch.
+Checks: 28 MCP and 43 native/v1 compatibility tests pass, plus scoped test lint and
+the refreshed package identity. A separate same-agent read-only slice review found
+no blocking issue. Existing build/typecheck evidence applies to unchanged application
+runtime code. Model JSON/diagrams are unchanged because no stored shape changed.
+Remaining 09.5 work: automatic bounded readback on the existing extension-worker seam,
+trusted failure classification/backoff and failed-action retry authorization, safe
+terminal-flow release before continuation/revision, and composed exhaustion/late-result/
+repeated-click/cancellation checks. Do not mark 09.5 Verified from this first slice.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

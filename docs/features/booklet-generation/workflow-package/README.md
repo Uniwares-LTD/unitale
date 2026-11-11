@@ -191,12 +191,16 @@ journeys remain pending. Non-manifest acceptance now uses exact full-history rev
 facts, including grouped targets and unchanged revalidation lineage. Owned acceptance,
 human, execution and version-labelled production histories use bounded metadata pages
 and private-field-safe document reads. Actual Dify form rendering/readback remains unverified.
+The first 09.5 slice reports a committed application completion through the existing
+native facts/gate/finish path without reasoning or repeating completion. A checkpoint
+that merely claims completion is insufficient. It passes 28 MCP and 43 compatibility
+tests; remaining automatic retry/reconciliation wiring is still in progress.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`85293a2f485ef36a5eedf53ada5b950127266716b5e4098fc0405260e7ff1d9d`.
+`7a07fdcaad468d2e0535fdad2f5a0dacff1769c9fe9eea5bb5d13189ddbf5a6b`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-244,754 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+245,379 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

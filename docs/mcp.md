@@ -427,7 +427,9 @@ separate. For a selected non-manifest revision, context exposes `acceptanceRevie
 from exact individual or grouped owned passing evidence outside the recent preview.
 Unchanged revalidation may retain an older body's review: `reviewedRevisionId`
 identifies that body, while Manager decides whether replacement context needs review.
-Identical content alone cannot borrow another revision's assessment.
+Identical content alone cannot borrow another revision's assessment. When context
+reports an already completed production, native Manager facts/gate/finish return its
+committed outcome without another reasoning call; checkpoint intent alone cannot do so.
 The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original

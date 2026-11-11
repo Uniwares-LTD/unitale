@@ -191,6 +191,22 @@ test("Manager terminal view uses the Run contract without exposing domain eviden
     ],
   );
 });
+test("Manager resumes committed completion without reasoning or trusting stale checkpoint intent", () => {
+  const c = context();
+  c.checkpoint = { pending: { action: "complete" }, lastResult: { status: "complete" } };
+  c.usage.canDispatch = false;
+  const gate = (state: string, enabled: string) => {
+    const facts = run("manager", "facts", { raw: { result: { ...c, state } }, execution_ready: enabled });
+    assert.equal(facts.route, "pause");
+    const gated = run("manager", "gated", { reason: facts.result });
+    return parseResult(run("manager", "finish", { result: gated.result, done: gated.done }));
+  };
+  assert.equal(gate("in-progress", "true").outcome, "partial");
+  assert.equal(gate("completed", "true").outcome, "success");
+  assert.equal(gate("completed", "false").outcome, "success");
+  assert.throws(() => run("manager", "gated", { reason: '{"status":"invented"}' }), /gate outcome/);
+});
+
 test("Manager registers the complete hash-bound child payload rather than a claimed identity", () => {
   const childRequest = request();
   const registration = { action: "register", childRequest, requestHash: hash(childRequest), targets: ["target-1"], fence: 7 };
