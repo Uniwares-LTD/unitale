@@ -2377,6 +2377,103 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             fence: correctionDispatch.fence });
           assert.equal(recorded.complete, true);
           assert.deepEqual(checked.items[0].proposals[0].content.coverage.assetIds, references.map((ref) => ref.assetId));
+          // Exercise the paid-action boundary with synthetic native results only.
+          const dispatchChild = async (request: Record<string, unknown>, correctionMetadata?: unknown) => {
+            const registration = await successful("begin_work", { action: "register", childRequest: request,
+              requestHash: fingerprint(request), targets: ["sample-output"], correction: correctionMetadata,
+              fence: (await successful("context", {})).fence });
+            if (request.service === "image-executor" && request.operation === "generate")
+              assert.equal(runNativeCode("manager", "guard", { context: JSON.stringify(await successful("context", {})), decision: {
+                action: "image-executor", request_json: JSON.stringify(request), reason: "Correct the confirmed scoped finding" } }).paid, "yes");
+            return successful("begin_work", { action: "dispatch", callId: request.callId,
+              requestHash: fingerprint(request), fence: registration.fence });
+          };
+          const observe = async (result: unknown, nodeId: string, executionId: string) => {
+            const session = db.client.startSession();
+            try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+              runId: parent!.runId!, id: executionId, nodeId, nodeType: "tool", status: "succeeded",
+              retryIndex: null, iterationId: null, loopId: null, outputs: { json: [{ result: JSON.stringify(result) }] },
+              outputsTruncated: false, error: null, executionMetadata: null,
+            }, session)); } finally { await session.endSession(); }
+          };
+          const spec = await db.collection("bookletRevisions").findOne({ _id: "prepare-source-0" as never });
+          const prepare = { contractVersion: 2, invocationId: "repair-prepare", callId: "repair-prepare", service: "image-executor",
+            operation: "prepare", intent: "revise", items: [{ itemId: "repair-item", targetId: "sample-prepare",
+              baseline: selected!.content, feedback: finding, input: { imageKind: "style-sample", specification: spec!.content,
+                style: replacement!.content, settings: { mode: "generate", model: "gpt-image-2.5-sunburst", count: 1,
+                  canvas: { width: 1024, height: 1024 }, quality: "high", background: "opaque", format: "png" } } }],
+            sources: [selected!, spec!, replacement!].map((source) => ({ artifactId: source.artifactId, revisionId: source._id,
+              contentHash: source.contentHash, content: source.content })), references: [], constraints: {} };
+          await dispatchChild(prepare);
+          const preparedResult = JSON.parse(runNativeCode("image-executor", "validate", { request: JSON.stringify(prepare) }).result);
+          await observe(preparedResult, "child-image-executor", "repair-prepare-execution");
+          const prepared = preparedResult.items[0].prepared;
+          const preflight = { ...prepare, invocationId: "repair-preflight", callId: "repair-preflight", service: "quality-reviewer",
+            operation: "image_request", intent: "create", items: [{ itemId: "preflight-item", input: {
+              targetIds: ["sample-output"], targetHash: prepared.requestHash, prepared, referencePositions: [],
+            } }] };
+          const preflightDispatch = await dispatchChild(preflight);
+          const preflightResult = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(preflight), response: {
+            items: [{ itemId: "preflight-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "sample-output", content: {
+              coverage: { targetIds: ["sample-output"], referencePositions: [] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          await observe(preflightResult, "child-quality-reviewer", "repair-preflight-execution");
+          await successful("record_assessment", { assessment: preflightResult.items[0].proposals[0].content,
+            executionLocator: { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "repair-preflight-execution" },
+            fence: preflightDispatch.fence });
+          const generation = { ...prepare, invocationId: "repair-generate", callId: "repair-generate", operation: "generate",
+            items: [{ ...prepare.items[0], input: { prepared } }] };
+          const correctionMetadata = { rootId: producer!.correctionRootId, family: "image", findingIds: [finding.id] };
+          const generated = await dispatchChild(generation, correctionMetadata);
+          assert.equal(generated.status, "dispatching");
+          runNativeCode("image-executor", "validate", { request: JSON.stringify(generation), execution_ready: "true" });
+          const imageResult = JSON.parse(runNativeCode("image-executor", "generate-result", { request: JSON.stringify(generation),
+            files: [{ id: "synthetic-repaired-original" }] }).result);
+          await observe(imageResult, "child-image-executor", "repair-generate-execution");
+          const repairedBytes = await sharp({ create: { width: 1024, height: 1024, channels: 3, background: "green" } }).png().toBuffer();
+          const repaired = await bookletMedia(db, { uid: "owner", authTime: 1 }, { documentVersion: 2, store: null })
+            .retainOriginal(production._id, { operationId: generation.callId, outputKey: generation.callId + ":0",
+              sha256: sha(repairedBytes), mime: "image/png" }, repairedBytes);
+          const repairedWork = await db.collection("bookletWork").findOne({ productionId: production._id, callId: generation.callId });
+          const published = await successful("save_revision", { artifactId: "sample-output", content: { kind: "reference",
+            asset: { assetId: repaired.id, sha256: repaired.sha256 } }, assets: [{ assetId: repaired.id, sha256: repaired.sha256 }],
+            sources: repairedWork!.sources, evidence: repairedWork!.evidenceIds, mutationKey: "publish-repaired-original",
+            fence: (await successful("context", {})).fence });
+          assert.ok(published.revisionId);
+          const allowance = await successful("read_document", { kind: "correction", id: correctionMetadata.rootId });
+          assert.equal(allowance.value.used, 1);
+          const exhausted = { ...generation, invocationId: "repair-again", callId: "repair-again", constraints: { variant: "another" } };
+          const exhaustedIntent = await successful("begin_work", { action: "register", childRequest: exhausted, requestHash: fingerprint(exhausted),
+            targets: ["sample-output"], correction: correctionMetadata, fence: published.fence });
+          assert.equal((await invoke("begin_work", { action: "dispatch", callId: exhausted.callId, requestHash: fingerprint(exhausted),
+            fence: exhaustedIntent.fence })).isError, true);
+          const repairedRevision = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions")
+            .findOne({ _id: published.revisionId });
+          const finalReview = { ...correction, invocationId: "repaired-review", callId: "repaired-review",
+            items: [{ itemId: "repaired-review-item", input: { ...correction.items[0].input,
+              after: repairedRevision!.content, targetHash: repairedRevision!.contentHash } }],
+            sources: [selected!, repairedRevision!].map((source) => ({ artifactId: source.artifactId, revisionId: source._id,
+              contentHash: source.contentHash, content: source.content })),
+            references: [references[0], { assetId: repaired.id, sha256: repaired.sha256, bytes: repaired.bytes }],
+          };
+          const finalPixels = await invoke("sources", { sources: finalReview.sources.map(({ artifactId, revisionId, contentHash }) =>
+            ({ artifactId, revisionId, contentHash })), references: finalReview.references });
+          assert.notEqual(finalPixels.isError, true);
+          const finalFiles = finalReview.references.map(() => ({ related_id: randomUUID() }));
+          const finalInput = JSON.parse(runNativeCode("manager", "bind-originals", { raw: finalPixels.structuredContent,
+            request: JSON.stringify(finalReview), files: finalFiles }).request);
+          const finalDispatch = await dispatchChild(finalReview);
+          const finalResult = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(finalInput), response: {
+            items: [{ itemId: "repaired-review-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "sample-output", content: {
+              coverage: { targetIds: ["sample-output"], referencePositions: [0, 1] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          await observe(finalResult, "child-quality-reviewer", "repaired-review-execution");
+          assert.equal((await successful("record_assessment", { assessment: finalResult.items[0].proposals[0].content,
+            executionLocator: { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "repaired-review-execution" },
+            fence: finalDispatch.fence })).complete, true);
+          assert.equal((await successful("read_document", { kind: "correction", id: correctionMetadata.rootId })).value.used, 1);
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });

@@ -162,7 +162,9 @@ native Manager/Reviewer fixture verifies a saved image's exact original coverage
 Image publication saves each selected original once, allowing separate returned
 candidates without another generation. Revalidation writes linked immutable revisions
 with unchanged content/assets and replacement sources, preserving Manager review policy.
-Whole-book integration and the corrective-generation journey remain 09.3 work;
+The local corrective-generation fixture also proves preflight, bounded dispatch,
+retention/publication and final review without resetting the image allowance.
+Whole-book integration remains 09.3 work;
 actual Dify image-block conversion remains unverified.
 
 Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package

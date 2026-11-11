@@ -833,6 +833,18 @@ found no blocking issue. The Manager prompt/handoff and model guide/example/diag
 track the optional lineage field. Task 09.3 remains In progress pending whole-book
 integration and the corrective-generation journey; final review pairs remain 09.7 work.
 
+09.3 corrective-generation evidence: the existing real MCP fixture now chains unpaid
+Prepare, exact preflight, native Manager guard, bounded image-correction dispatch,
+native observation, original retention, image publication and before/after review of
+the newly published original. A second corrective intent may register, but dispatch
+is denied after the image allowance is consumed. Review does not consume another
+image correction. Synthetic provider results/pixels and native file handles are
+explicit fixtures; no provider or paid call occurs. The 22-test MCP suite, typecheck
+and scoped lint pass. A separate same-agent read-only review found no blocking issue.
+No runtime/schema/DSL change was needed, so prior build and package hash evidence
+remain applicable. Whole-book integration remains the outstanding 09.3 exit evidence;
+checkpoint-wide final review pairs remain 09.7 work.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,
