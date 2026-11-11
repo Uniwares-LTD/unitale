@@ -1190,6 +1190,30 @@ Record precisely which fixture state is synthetic and which production entrypoin
 are exercised; stage neither page/layout content nor completion authority as proof of
 the creation journey. Fix only demonstrated behavior gaps before the 09.6 exit audit.
 
+09.6 composition amendment: the connected fixture proves pagination can publish the
+exact large manuscript as a layout, but composition incorrectly requires another copy
+of that manuscript even though its code uses only the selected layout. The isolated
+layout-only regression fails with `One selected manuscript required`. Require the
+manuscript only for pagination; composition retains its exact layout source and
+unchanged panel/lettering checks. This removes duplicate carrier data without a new
+contract, abstraction or dependency. Feed the actual published layout into structural
+completion instead of staging it. Page-image metadata in that fixture remains
+synthetic until its creation path is composed; do not mark 09.6 Verified yet.
+
+The first connected 09.6 slice passes 30 MCP and 46 compatibility tests, post-change
+typecheck and scoped lint. It executes actual Manager checkpoint/dispatch/consume,
+Page Composer validation/packing, native observation and replayable publication for
+pagination and composition of the retained large Unicode manuscript. Completion now
+uses that published layout. The regression fails against the preceding composition
+Code node and passes after the operation-specific requirement fix. Page images remain
+synthetic in the completion fixture; no complete creation or Dify journey is claimed.
+No persistence/schema/model relationship changes are made by this slice.
+Docs/i18n/skills and the refreshed 13-path hash/disabled-gate audit also pass. A
+separate same-agent read-only slice review found no blocking issue; this is not
+either of the two final checkpoint-wide reviews reserved for 09.7. Remaining 09.6
+work is composed page-image creation, revision/continuation, predecessor reuse and
+multi-window review, followed by the complete journey exit audit.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

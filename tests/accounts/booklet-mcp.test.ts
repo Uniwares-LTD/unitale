@@ -2922,6 +2922,76 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(recorded.complete, true);
           assert.deepEqual(await successful("record_assessment", request), recorded);
         });
+        await t.test("Page Composer publishes exact pagination and composition from the retained manuscript through native boundaries", async () => {
+          const before = await successful("context", {});
+          const indexed = await successful("index", { subjects: [], artifacts: [
+            { subjectId: "book-subject", artifactId: "completion-layout", kind: "book-layout" },
+          ], fence: before.fence });
+          assert.ok(indexed.fence > before.fence);
+          const manuscript = (await db.collection("bookletRevisions").findOne({ productionId: production._id,
+            artifactId: "story-v2", "provenance.operationId": "call-v2" }))!;
+          const selected = await successful("read_document", { kind: "revision", id: manuscript._id });
+          assert.equal(selected.value?.contentHash ?? selected.sections.find((section: { key: string }) => section.key === "contentHash").value,
+            manuscript.contentHash);
+          const p = (await db.collection("bookletProductions").findOne({ _id: production._id as never }))!;
+          const config = p.creativeConfigSnapshot;
+          const lettering = manuscript.content.units.flatMap((unit: { texts: { id: string; kind: string; text: string; speaker?: string }[] }) =>
+            unit.texts.map(({ id, ...text }) => ({ ...text, textId: id, start: 0, end: [...text.text].length })));
+          const panel = { id: "journey-panel", noText: lettering.length === 0, lettering };
+          const layout = { kind: "book-layout", canvas: { width: config.canvas.width, height: config.canvas.height },
+            direction: p.brief.language.direction, pages: [{ id: "page-v2", role: "story", panels: [panel] }] };
+          const source = (row: typeof manuscript) => ({ artifactId: row.artifactId, revisionId: row._id,
+            contentHash: row.contentHash, content: row.content });
+          // Two explicit boundary journeys, not a graph runner or a model simulator.
+          const publish = async (operation: string, artifactId: string, subjectId: string,
+            sources: ReturnType<typeof source>[], content: unknown) => {
+            const callId = "journey-" + operation;
+            const child = { contractVersion: 2, invocationId: callId, callId, service: "page-composer", operation,
+              intent: "create", items: [{ itemId: callId + "-item", targetId: subjectId, input: operation === "compose" ? { pageIds: ["page-v2"] } : {} }],
+              sources, references: [], constraints: { storyPages: config.storyPages, includeCover: config.includeCover,
+                canvas: layout.canvas, direction: layout.direction, maxPanelsPerPage: config.maxPanelsPerPage } };
+            await successful("begin_work", { action: "register", childRequest: child, requestHash: fingerprint(child),
+              targets: [artifactId], fence: (await successful("context", {})).fence });
+            const current = await successful("context", {});
+            const plan = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: {
+              action: "page-composer", request_json: JSON.stringify(child), reason: "Produce the selected " + operation } });
+            const intent = await successful("checkpoint", JSON.parse(plan.checkpoint));
+            const ready = runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(current),
+              request: plan.request, dispatch: plan.dispatch, action: "page-composer" });
+            await successful("sources", JSON.parse(plan.sources));
+            await successful("begin_work", JSON.parse(ready.dispatch));
+            runNativeCode("page-composer", "validate", { request: ready.request, references: [], execution_ready: "true" });
+            const result = JSON.parse(runNativeCode("page-composer", "pack", { request: ready.request, response: {
+              items: [{ itemId: child.items[0].itemId, status: "succeeded", proposals: [{ kind: operation === "paginate" ? "book-layout" : "page-spec",
+                subjectId, content }] }],
+            } }).result);
+            const parent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+            await persistAiEvent(db, parent, { type: "node-observation", node: { runId: parent.runId!, id: callId + "-execution",
+              nodeId: "child-page-composer", nodeType: "tool", status: "succeeded", retryIndex: null, iterationId: null,
+              loopId: null, outputs: { json: [{ result: JSON.stringify(result) }] }, outputsTruncated: false, error: null,
+              executionMetadata: null } }, new Date(), (job, node, session) => observeBookletNodeV2(db, job, node, session));
+            const consumed = runNativeCode("manager", "consume", { raw: { result }, action: "page-composer", request: ready.request,
+              context: await successful("context", {}), version: intent.checkpointVersion });
+            await successful("checkpoint", JSON.parse(consumed.checkpoint));
+            const work = (await db.collection("bookletWork").findOne({ productionId: production._id, callId }))!;
+            const request = { artifactId, content: { callId, itemId: child.items[0].itemId, proposalIndex: 0 },
+              sources: sources.map(({ artifactId, revisionId, contentHash }) => ({ artifactId, revisionId, contentHash })), assets: [],
+              evidence: work.evidenceIds, mutationKey: callId + "-publish", fence: (await successful("context", {})).fence };
+            const saved = await successful("save_revision", request);
+            assert.deepEqual(await successful("save_revision", request), saved);
+            const revision = (await db.collection("bookletRevisions").findOne({ _id: saved.revisionId as never }))!;
+            assert.deepEqual(revision.content, content);
+            assert.equal(revision.provenance.operationId, callId);
+            return revision;
+          };
+          const publishedLayout = await publish("paginate", "completion-layout", "book-subject", [source(manuscript)], layout);
+          // Composition needs the immutable selected layout; repeating its entire
+          // manuscript would duplicate exact lettering and waste the bounded carrier.
+          const page = await publish("compose", "page-spec-v2", "page-v2", [source(publishedLayout)],
+            { kind: "page-spec", pageId: "page-v2", panels: [{ ...panel, composition: "One continuous scene" }] });
+          assert.deepEqual(page.content.panels[0].lettering, lettering);
+          assert.equal(page.sources[0].revisionId, publishedLayout._id);
+        });
         await t.test("whole-book review binds manifest, immutable page sources and inspected originals", async () => {
           const current = await successful("context", {});
           const indexed = await successful("index", { subjects: [], artifacts: [
@@ -3052,7 +3122,8 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.ok(largeRead.sections.some((section: { key: string; cursor?: string }) => section.key === "state" && section.cursor));
         });
         await t.test("explicit selected-manifest completion verifies structure, original bytes and full review history", async () => {
-          // Staged page/layout metadata isolates completion; 09.6 proves their creation journey.
+          // Page metadata still isolates completion; layout is now the actual
+          // Page Composer publication from the retained-manuscript journey above.
           let facts = await successful("context", {});
           const indexed = await successful("index", { subjects: [], artifacts: [
             { subjectId: "book-subject", artifactId: "completion-layout", kind: "book-layout" },
@@ -3064,19 +3135,16 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           await db.collection<BookletAsset>("bookletAssets").insertOne(asset);
           await db.collection("bookletAssetBytes").insertOne({ _id: fingerprint([asset._id, 0]) as never,
             assetId: asset._id, index: 0, sha256: asset.sha256, bytes: new Binary(bytes) });
-          const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
           const page = revisionV2Schema.parse({ ...revision, _id: "completion-page", artifactId: "whole-page-image", subjectId: "page-v2",
             kind: "page-image", ordinal: 2, content: { kind: "page-image", asset: { assetId: asset._id, sha256: asset.sha256 } }, sources: [],
             assets: [{ assetId: asset._id, sha256: asset.sha256 }], contentHash: fingerprint({ kind: "page-image", asset: { assetId: asset._id, sha256: asset.sha256 } }) });
-          const layoutContent = { kind: "book-layout", canvas: { width: 8, height: 8 }, direction: p!.brief.language.direction,
-            pages: [{ id: "page-v2", role: "story", panels: [{ id: "completion-panel", noText: true, lettering: [] }] }] };
-          const layout = revisionV2Schema.parse({ ...revision, _id: "completion-layout-row", artifactId: "completion-layout", subjectId: "book-subject",
-            kind: "book-layout", ordinal: 1, content: layoutContent, sources: [], assets: [], contentHash: fingerprint(layoutContent) });
-          await db.collection("bookletRevisions").insertMany([page, layout] as never);
+          const layout = revisionV2Schema.parse(await db.collection("bookletRevisions").findOne({ productionId: production._id,
+            artifactId: "completion-layout", "provenance.operationId": "journey-paginate" }));
+          await db.collection("bookletRevisions").insertOne(page as never);
           let fence = indexed.fence;
           for (const row of [page, layout]) {
             const result = await successful("record_acceptance", { revisionId: row._id, contentHash: row.contentHash,
-              targetIds: [row.artifactId], assetIds: row.assets.map((asset) => asset.assetId), sources: [], evidence: [], fence });
+              targetIds: [row.artifactId], assetIds: row.assets.map((asset) => asset.assetId), sources: row.sources, evidence: [], fence });
             fence = result.fence;
           }
           const source = (row: typeof page) => ({ artifactId: row.artifactId, revisionId: row._id, contentHash: row.contentHash });

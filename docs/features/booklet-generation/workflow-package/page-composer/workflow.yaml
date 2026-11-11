@@ -269,11 +269,11 @@ workflow:
                         if r["intent"] == "revise" and p["subjectId"] not in expected[i["itemId"]].get("targetIds", [expected[i["itemId"]].get("targetId")]):
                             raise ValueError("Revision escaped target")
                         p["sources"] = [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in r.get("sources", [])]
-                manuscript = [s["content"] for s in r.get("sources", []) if s["content"].get("kind") == "manuscript"]
-                if len(manuscript) != 1:
-                    raise ValueError("One selected manuscript required")
-                texts = {t["id"]: t for u in manuscript[0]["units"] for t in u["texts"]}
                 if r["operation"] == "paginate":
+                    manuscript = [s["content"] for s in r.get("sources", []) if s["content"].get("kind") == "manuscript"]
+                    if len(manuscript) != 1:
+                        raise ValueError("One selected manuscript required")
+                    texts = {t["id"]: t for u in manuscript[0]["units"] for t in u["texts"]}
                     for i in items:
                         if i["status"] != "succeeded":
                             continue

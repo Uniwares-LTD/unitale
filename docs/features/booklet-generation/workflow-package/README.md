@@ -121,15 +121,17 @@ without a creator question, paid polling, another scheduler or an automatic succ
 Creator questions remain separate. Unknown outcomes and unisolatable paid failures
 stop deterministically for reconciliation; successful siblings are preserved.
 
-Current checks: **45 compatibility tests** (11 preserved v1 and 34 native), **29 MCP**
+Current checks: **46 compatibility tests** (11 preserved v1 and 35 native), **30 MCP**
 and **32 repository tests** pass, plus production build, post-build typecheck,
 scoped ESLint, model generation, docs/i18n/skills checks and hash/disabled-gate audit.
 A separate same-agent read-only slice review found no blocking issue. Checkpoint-wide
 reviews remain pending in 09.7. The preceding lifecycle/media slice passed 17 tests.
 
 These are local handler/worker and isolated YAML Code boundaries with fake providers,
-not execution of a Dify graph. Page/layout metadata in the completion fixture is
-staged; composed creation/revision/correction/continuation journeys remain 09.6 work.
+not execution of a Dify graph. The connected Page Composer fixture now publishes
+pagination and composition from the retained large Unicode manuscript, and completion
+uses that published layout. Page-image metadata in the completion fixture is still
+staged; complete creation/revision/correction/continuation journeys remain 09.6 work.
 Safe technical failure evidence is explicit in fixtures, not inferred from a provider
 error. Hidden SDK attempts/costs and unproved target failure classification remain
 accepted limitations; no provider controls or telemetry framework is added. Revised
@@ -141,10 +143,10 @@ only after both web and AI worker use the matching v2 domain registration and th
 separately authorized target checks pass. No deployment or paid call is claimed.
 
 Current implementation SHA-256:
-`d6080a52fa77a260e5e26556fa33fadbe5b97e45f7fb494c29f58bd8fd3f7900`.
+`23c074c85e8f7e023c03762abae050ca7eefbc615ac20215db7af87f2acca0ce`.
 The existing 13-path algorithm described below covers native YAML, five fixtures and
 the compatibility test; application code and documentation are outside that digest.
-Seven YAML files total 249,484 bytes.
+Seven YAML files total 249,500 bytes.
 
 ## Checkpoint evidence
 

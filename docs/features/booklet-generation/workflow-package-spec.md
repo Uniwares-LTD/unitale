@@ -48,6 +48,9 @@ reference's callbacks, patched plugins and fixed persona counts are not target r
 | Manager | create, continue, revise, recover | Serial coordination, app communication and checkpointed intent |
 
 Every creative operation supports scoped revise with explicit baseline and feedback.
+Pagination uses the selected manuscript. Composition uses the selected immutable
+layout, which already carries exact routed lettering; it need not duplicate the
+manuscript. Its panel order, lettering and no-text checks remain mandatory.
 Existing IDs remain stable. New subjects use local keys until Manager registers IDs.
 Do not copy missing facts into invented established constraints. Useful creative detail
 is retained where downstream generation, review or revisions consume it.

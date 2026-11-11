@@ -563,6 +563,24 @@ test("strict model content carrier decodes before existing content validation", 
   assert.throws(() => run("story-planner", "pack", { request: JSON.stringify(r), response }), /Typed identified content/);
 });
 
+test("composition uses its selected layout without duplicating manuscript text and rejects lettering changes", () => {
+  const r = request("page-composer", "compose");
+  r.items[0].input = { pageIds: ["page-1"] };
+  const panel = { id: "panel-1", noText: false, lettering: [{ textId: "text-1", kind: "narration",
+    start: 0, end: [...fixture.exactText].length, text: fixture.exactText }] };
+  const layout = { kind: "book-layout", canvas: { width: 1024, height: 1536 }, direction: "rtl",
+    pages: [{ id: "page-1", role: "story", panels: [panel] }] };
+  r.sources = [{ artifactId: "layout", revisionId: "layout-1", contentHash: hash(layout), content: layout }];
+  const response = { items: [{ itemId: "item-1", status: "succeeded", proposals: [{ kind: "page-spec", subjectId: "page-1",
+    content: { kind: "page-spec", pageId: "page-1", panels: [structuredClone(panel)] } }] }] };
+  const result = JSON.parse(run("page-composer", "pack", { request: JSON.stringify(r), response }).result);
+  assert.deepEqual(result.items[0].proposals[0].content.panels[0].lettering, panel.lettering);
+  response.items[0].proposals[0].content.panels[0].lettering[0].text = "changed";
+  assert.throws(() => run("page-composer", "pack", { request: JSON.stringify(r), response }), /immutable text/);
+  r.sources = [];
+  assert.throws(() => run("page-composer", "pack", { request: JSON.stringify(r), response }), /selected layout/);
+});
+
 test("pagination preserves exact Unicode/code-point spans and rejects omissions and duplication", () => {
   const r = request("page-composer", "paginate");
   r.sources = [

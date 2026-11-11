@@ -60,8 +60,8 @@
     {
       "service": "page-composer",
       "path": "page-composer/workflow.yaml",
-      "sha256": "13e579f3f1c4f1d02aa155b685c532dbc92e28f7c799646b1644baff74c533ef",
-      "bytes": 24228,
+      "sha256": "b2acafcb789a05ed8f9b93efdcceb8479dbbb4d1dc1707b019639896d5215dfb",
+      "bytes": 24244,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -126,7 +126,7 @@
   ],
   "review": {
     "mode": "09.1-09.5 verified locally; 09.6 in progress; checkpoint-wide reviews pending; 01-06 reviews historical",
-    "implementationSha256": "d6080a52fa77a260e5e26556fa33fadbe5b97e45f7fb494c29f58bd8fd3f7900",
+    "implementationSha256": "23c074c85e8f7e023c03762abae050ca7eefbc615ac20215db7af87f2acca0ce",
     "independentAgentReview": false
   }
 }
