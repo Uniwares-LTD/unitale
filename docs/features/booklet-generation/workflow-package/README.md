@@ -106,7 +106,8 @@ unknown/partial outcomes stay partial. Pre-action checkpoint receipts supply the
 confirmed fence to action/dispatch arguments, and registration supplies the complete
 hash-bound child envelope. Provider bindings and execution switches remain disabled.
 
-Local v2 checkpoint, index, transfer, native reconciliation, document/history reads and creative-text registration
+Local v2 checkpoint, index, transfer, native reconciliation, creative-text publication,
+document/history reads and creative-text registration
 handlers now exist. Registration binds actual artifact responsibilities while native
 child selectors retain subject IDs and grouped revisions. Paid dispatch, image/review
 registration, remaining capabilities, complete provider observation and recovery integration remain
@@ -116,6 +117,10 @@ YAML, fixtures and their focused compatibility test.
 Registered work now retains exact meaningful request bodies and matching native child
 results for bounded owned readback after restart. The existing worker transaction
 fences retention; it does not authorize publication, retries or another paid call.
+The separate publication guard now saves retained creative proposals by reference,
+avoiding exact-text copying. Current Manager/funding, scope, sources, locks and product
+limits are checked. Images, changed-source revalidation and final acceptance remain
+pending, along with native large-body hydration and the remaining runtime integration.
 
 Story Planner now permits a character/location description-only revision without an
 unrequested roster proposal. Initial creation still requires its roster; product

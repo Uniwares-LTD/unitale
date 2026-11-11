@@ -1163,12 +1163,6 @@ export function bookletRepositoryV2(
         "appendRevision",
         value,
         async (p, session) => {
-          // Active paid writes need the v2 work/entitlement guard added in 09.
-          // Keep this repository-construction slice closed to admitted productions.
-          if (p.lifecycleState !== "draft")
-            throw bookletConflict(
-              "Active v2 writes require workflow admission.",
-            );
           const subject = p.subjects.find((s) =>
             s.artifacts.some((a) => a.id === value.artifactId),
           );
@@ -1178,6 +1172,278 @@ export function bookletRepositoryV2(
           if (!subject || !artifact) throw bookletMissing();
           if (artifact.kind !== value.content.kind)
             throw bookletConflict("Revision kind mismatch.");
+          let content = value.content;
+          let sources = value.sources;
+          if (p.lifecycleState !== "draft") {
+            await activeManager(
+              p,
+              value.provenance.runId,
+              value.holderId,
+              session,
+            );
+            const raw = await work.findOne(
+              {
+                ownerId: actor.uid,
+                productionId: p._id,
+                callId: value.provenance.operationId,
+                status: { $in: ["succeeded", "partial"] },
+              },
+              { session },
+            );
+            const observed = raw ? workV2Schema.parse(raw) : null;
+            if (
+              !observed?.resultObservation ||
+              observed.category !== "paidLlm" ||
+              ![
+                "story-planner",
+                "manuscript",
+                "art-director",
+                "page-composer",
+              ].includes(observed.service) ||
+              observed.correctionRootId !==
+                correctionRoot(p, observed, p.revisionChargeId ?? "platform") ||
+              !value.provenance.evidenceIds.length ||
+              value.provenance.evidenceIds.some(
+                (id) => !observed.evidenceIds.includes(id),
+              ) ||
+              fingerprint(value.sources) !== fingerprint(observed.sources) ||
+              value.assets.length
+            )
+              throw bookletConflict(
+                "Revision requires matching retained creative work and funding.",
+              );
+            const envelope = z
+              .object({
+                items: z.array(
+                  z.object({
+                    status: z.string(),
+                    proposals: z
+                      .array(
+                        z.object({
+                          subjectId: id,
+                          kind: artifactKindV2Schema,
+                          content: bookletContentV2Schema,
+                        }),
+                      )
+                      .default([]),
+                  }),
+                ),
+              })
+              .parse(observed.resultPayload);
+            const proposals = envelope.items
+              .filter((item) => item.status === "succeeded")
+              .flatMap((item) => item.proposals);
+            const matching = proposals.filter(
+              (proposal) =>
+                proposal.subjectId === subject.id &&
+                proposal.kind === artifact.kind,
+            );
+            if (
+              matching.length !== 1 ||
+              fingerprint(matching[0].content) !== fingerprint(content)
+            )
+              throw bookletConflict(
+                "Revision content differs from the observed proposal.",
+              );
+            if (
+              content.kind === "page-spec" &&
+              content.panels.length > p.creativeConfigSnapshot.maxPanelsPerPage
+            )
+              throw bookletConflict(
+                "Page exceeds its purchased panel capacity.",
+              );
+            if (content.kind === "book-layout") {
+              const config = p.creativeConfigSnapshot;
+              if (
+                content.pages.length !==
+                  config.storyPages + Number(config.includeCover) ||
+                content.canvas.width !== config.canvas.width ||
+                content.canvas.height !== config.canvas.height ||
+                content.pages.some(
+                  (page) =>
+                    page.panels.length > config.maxPanelsPerPage ||
+                    !p.subjects.some(
+                      (s) =>
+                        s.id === page.id &&
+                        s.kind === "page" &&
+                        s.pageRole === page.role,
+                    ),
+                )
+              )
+                throw bookletConflict(
+                  "Layout differs from purchased pages, canvas or panel capacity.",
+                );
+            }
+            const rosterKind =
+              // Planner outputs are roster deltas; book storage keeps both kinds.
+              observed.operation === "cast"
+                ? "character"
+                : observed.operation === "locations"
+                  ? "location"
+                  : null;
+            const initialRoster =
+              observed.service === "story-planner" &&
+              rosterKind &&
+              z.object({ intent: z.string() }).parse(observed.requestPayload)
+                .intent === "create";
+            const rosterTarget =
+              initialRoster &&
+              observed.targetIds.some((target) =>
+                p.subjects.some(
+                  (parent) =>
+                    parent.kind === "book" &&
+                    parent.artifacts.some(
+                      (a) => a.id === target && a.kind === "roster",
+                    ),
+                ),
+              );
+            if (
+              !observed.targetIds.includes(artifact.id) &&
+              !(
+                rosterTarget &&
+                subject.kind === rosterKind &&
+                artifact.kind === "description" &&
+                proposals.some(
+                  (proposal) =>
+                    proposal.content.kind === "roster" &&
+                    proposal.content.subjectIds.includes(subject.id),
+                )
+              )
+            )
+              throw bookletConflict(
+                "Revision escaped the registered artifact scope.",
+              );
+            const story = [
+              "concept",
+              "outline",
+              "manuscript",
+              "roster",
+              "description",
+            ].includes(artifact.kind);
+            const style =
+              artifact.kind === "style" || subject.kind === "style-sample";
+            const reference =
+              ["character", "location"].includes(subject.kind) &&
+              artifact.kind === "image-spec";
+            if (
+              (story && p.stageLocks.story) ||
+              (style && p.stageLocks.style) ||
+              (reference && p.stageLocks.references)
+            )
+              throw bookletConflict("This revision stage is locked.");
+            if (p.revisionChargeId) {
+              const category = style
+                ? "style"
+                : reference
+                  ? "reference"
+                  : subject.kind === "page"
+                    ? "page"
+                    : "story";
+              const allocated = await db
+                .collection("consumptionAllocations")
+                .find(
+                  {
+                    orderId: p.orderId,
+                    ownerId: actor.uid,
+                    chargeId: p.revisionChargeId,
+                    category,
+                    revoked: false,
+                  },
+                  { session },
+                )
+                .toArray();
+              if (
+                !allocated.some(
+                  (allocation) =>
+                    category === "story" ||
+                    allocation.subjectId === subject.id ||
+                    (artifact.kind === "style" &&
+                      p.subjects
+                        .filter((s) => s.kind === "style-sample")
+                        .every((s) =>
+                          allocated.some((a) => a.subjectId === s.id),
+                        )),
+                )
+              )
+                throw bookletConflict(
+                  "Revision is outside the current financial consent.",
+                );
+            }
+            const priorWrite = await revisions.findOne(
+              {
+                ownerId: actor.uid,
+                productionId: p._id,
+                artifactId: artifact.id,
+                "provenance.operationId": observed.callId,
+              },
+              { session },
+            );
+            if (priorWrite)
+              return {
+                revisionId: priorWrite._id,
+                ordinal: priorWrite.ordinal,
+              };
+            if (content.kind === "roster") {
+              if (
+                !rosterKind ||
+                observed.service !== "story-planner" ||
+                content.subjectIds.some(
+                  (subjectId) =>
+                    !p.subjects.some(
+                      (s) => s.id === subjectId && s.kind === rosterKind,
+                    ),
+                )
+              )
+                throw bookletConflict(
+                  "Roster delta has unregistered or wrong-kind subjects.",
+                );
+              const previous = artifact.currentRevisionId
+                ? await revisions.findOne(
+                    {
+                      _id: artifact.currentRevisionId,
+                      ownerId: actor.uid,
+                      productionId: p._id,
+                      artifactId: artifact.id,
+                    },
+                    { session },
+                  )
+                : null;
+              const retained =
+                previous?.content.kind === "roster"
+                  ? previous.content.subjectIds.filter((subjectId) =>
+                      p.subjects.some(
+                        (s) => s.id === subjectId && s.kind !== rosterKind,
+                      ),
+                    )
+                  : [];
+              if (previous) {
+                const selected = sources.find(
+                  (source) => source.artifactId === artifact.id,
+                );
+                if (
+                  selected &&
+                  (selected.revisionId !== previous._id ||
+                    selected.contentHash !== previous.contentHash)
+                )
+                  throw bookletConflict(
+                    "Roster source changed before applying its delta.",
+                  );
+                if (!selected)
+                  sources = [
+                    ...sources,
+                    {
+                      artifactId: artifact.id,
+                      revisionId: previous._id,
+                      contentHash: previous.contentHash,
+                    },
+                  ];
+              }
+              content = {
+                ...content,
+                subjectIds: [...retained, ...content.subjectIds],
+              };
+            }
+          }
           if (
             new Set(value.sources.map((s) => s.artifactId)).size !==
               value.sources.length ||
@@ -1185,7 +1451,7 @@ export function bookletRepositoryV2(
               value.assets.length
           )
             throw bookletConflict("Duplicate source or asset identity.");
-          for (const source of value.sources) {
+          for (const source of sources) {
             const row = await revisions.findOne(
               {
                 _id: source.revisionId,
@@ -1260,11 +1526,11 @@ export function bookletRepositoryV2(
             subjectId: subject.id,
             kind: artifact.kind,
             ordinal: (prior?.ordinal ?? 0) + 1,
-            content: value.content,
-            sources: value.sources,
+            content,
+            sources,
             assets: value.assets,
             provenance: value.provenance,
-            contentHash: fingerprint(value.content),
+            contentHash: fingerprint(content),
             createdAt: now(),
           });
           if (BSON.calculateObjectSize(row) > 4 * 1024 * 1024)

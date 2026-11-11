@@ -22,7 +22,20 @@ v1 sources retain sha256. Assessment parsers support six modes without granting
 quality or execution authority. Draft v2 revisions now write atomically with their production index pointer, preserve
 exact text and verify local immutable source/owned original identities. Their contentHash
 is SHA-256 of canonical content, matching the Manager source contract; v1 keeps its
-hashVersion-1 wrapper. Active paid v2 writes remain blocked until the 09 admission guard.
+hashVersion-1 wrapper. Active creative-text writes now require a current owned prepaid
+Manager and a unique retained native proposal, exact evidence/sources and matching
+funding. Stage locks and purchased page/canvas/panel limits remain server enforced.
+The same producer/artifact publishes once, including across continuation. Image writes
+and acceptance/revalidation wiring remain checkpoint 09 work.
+
+Planner cast/location roster proposals are deltas for their respective subject kinds.
+The revision writer preserves the other kind's current IDs and records the preceding
+roster revision as a source when merging. Unregistered or wrong-kind subjects and a
+stale explicitly selected roster source fail. The raw child delta remains unchanged in
+work retention; the saved revision/hash describe the combined roster. Initial roster
+work may publish its observed descriptions after their stable subjects are indexed.
+These are guarded writes using existing fields; the JSON example and both diagrams
+remain structurally unchanged.
 V2 work, assessment and Manager acceptance storage is implemented alongside v1.
 Work uses registered/dispatching/succeeded/partial/failed/unknown states; only confirmed
 retryable failure permits a new attempt, bounded by the production snapshot. Unknown

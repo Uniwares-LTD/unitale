@@ -211,6 +211,18 @@ disabled and remains unchanged until the separately checked 09 integration slice
 
 ### Context and transition facts
 
+The creative-text `save_revision` implementation accepts an exact retained proposal
+reference in `content:{callId,itemId,proposalIndex}`. This small boundary refinement
+avoids model copying of large exact text already retained by the server. Existing
+typed-content and complete-transfer inputs remain available. The app checks the
+selected producer, sources, current Manager/funding and locks, not creative merit.
+Roster deltas combine only structural subject IDs; their previous roster is retained
+as a source. The original child envelope is unchanged. No new fields, collection,
+framework or provider call. Native Manager checkpoint/source hydration still needs
+integration so large bodies are referenced throughout the journey; this API alone
+does not prove that complete path. Image and changed-source revalidation paths remain
+pending until their own trusted guards are implemented.
+
 Context supplies `checkpointVersion`, `checkpoint` (opaque saved intent/result), current
 `fence`, `sources` (available immutable artifactId/revisionId/contentHash identities),
 `work`, `assessments`, `corrections`, `usage:{canDispatch,...}`, `policyBinding`,

@@ -20,6 +20,7 @@ import type { AiJob } from "../../src/lib/server/ai/jobs";
 import type { ProviderExecution, ProviderNodeObservation } from "../../src/lib/server/ai/types";
 import { readBookletDocumentV2 } from "../../src/lib/server/booklets/read-v2";
 import { reconcileBookletWorkV2 } from "../../src/lib/server/booklets/reconcile-v2";
+import { bookletContentV2Schema } from "../../src/project/booklets/contracts-v2";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import {
   bookletRepositoryV2,
@@ -482,7 +483,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
         expectedVersion: p.version, callId: "call-2", requestHash: second.requestHash });
       assert.equal((await repo.getWork(p._id, "call-2")).runId, nextJobId);
       assert.equal((await repo.getWork(p._id, "call-2")).status, "dispatching");
-      await t.test("native child retention survives terminal parents and rolls back with its worker transaction", async () => {
+      await t.test("native child retention survives terminal parents and rolls back with its worker transaction", async (t) => {
         const nativeId = crypto.randomUUID();
         const workflowId = crypto.randomUUID();
         const parent = await f.db.collection("aiJobs").findOne({ _id: nextJobId as never });
@@ -556,6 +557,98 @@ test("booklet repositories preserve embedded identities and transactional bounda
         assert.equal(await f.db.collection("executionEvidence").countDocuments({ runId: nextJobId }), 1);
         assert.equal(await f.db.collection("bookletRevisions").countDocuments({ productionId: p._id }), 1);
         assert.equal((await repo.getProduction(p._id)).lifecycleState, "in-progress");
+        await t.test("a continuing Manager publishes the retained proposal without replaying its child", async () => {
+          const publicationId = "publisher-manager", publicationFlow = "publisher-flow";
+          let current = await repo.getProduction(p._id);
+          const proposal = bookletContentV2Schema.parse(result.items[0].proposals[0].content);
+          const save = (key: string, overrides: object = {}) => repo.appendRevision(p._id, {
+            key, holderId: publicationId, fence: current.fenceCounter, expectedVersion: current.version,
+            artifactId: "story-v2", content: proposal, sources: [f.source], assets: [],
+            provenance: { runId: publicationId, operationId: retry.callId, evidenceIds: retained.evidenceIds }, ...overrides,
+          });
+          await assert.rejects(save("not-admitted"), /entitlement/);
+          const publicationRun = crypto.randomUUID();
+          await f.db.collection("aiJobs").insertOne({ ...job, _id: publicationId as never, status: "running",
+            cancelRequested: false, runId: publicationRun, execution: { ...execution, runId: publicationRun, status: "running" },
+            consumption: { orderId: "order-v2", workflowId: publicationFlow } });
+          await f.db.collection("consumptionWorkflows").insertOne({ ...oldFlow!, _id: publicationFlow as never, jobId: publicationId });
+          await f.db.collection("consumptionOrders").updateOne({ _id: "order-v2" as never }, { $set: { activeWorkflow: publicationFlow, "value.state": "started" } });
+          await assert.rejects(save("changed-body", { content: { ...proposal, units: [] } }), /observed proposal/);
+          await assert.rejects(save("changed-evidence", { provenance: { runId: publicationId, operationId: retry.callId, evidenceIds: ["invented-evidence"] } }), /retained creative work/);
+          await assert.rejects(save("changed-source", { sources: [] }), /retained creative work/);
+          await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: { "stageLocks.story": { operationId: "locked", lockedAt: new Date(), sourceRevisionIds: [f.source.revisionId] } } });
+          await assert.rejects(save("locked-story"), /stage is locked/);
+          await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: { "stageLocks.story": null } });
+          const originalVersion = current;
+          const saved = await save("publish-retained");
+          assert.deepEqual((await repo.getRevision(p._id, saved.revisionId!)).content, proposal);
+          assert.deepEqual(await save("publish-retained"), saved);
+          current = await repo.getProduction(p._id);
+          assert.equal(current.version, originalVersion.version + 1);
+          assert.equal((await save("same-work-new-reply-key")).revisionId, saved.revisionId);
+          assert.equal(await f.db.collection("bookletRevisions").countDocuments({ productionId: p._id, "provenance.operationId": retry.callId }), 1);
+          assert.equal((await repo.getWork(p._id, retry.callId)).runId, nextJobId);
+          let rosterSource: typeof f.source | undefined;
+          for (const operation of ["cast", "locations"] as const) {
+            const callId = "scoped-story-planner-" + operation + "-book-roster";
+            const planned = await repo.getWork(p._id, callId);
+            current = await repo.getProduction(p._id);
+            await repo.dispatchWork(p._id, { key: "dispatch-" + operation, holderId: publicationId,
+              fence: current.fenceCounter, expectedVersion: current.version, callId, requestHash: planned.requestHash });
+            const roster = { kind: "roster" as const, subjectIds: [operation === "cast" ? "character-v2" : "location-v2"] };
+            const description = { kind: "description" as const, name: "Mira", subjectKind: "character" as const,
+              description: "Exact original description.", establishedFacts: [], continuityConstraints: [] };
+            const proposals = [{ kind: "roster", subjectId: "book-subject", content: roster },
+              ...(operation === "cast" ? [{ kind: "description", subjectId: "character-v2", content: description }] : [])];
+            const childResult = { contractVersion: 2, invocationId: request.invocationId, callId, service: "story-planner",
+              operation, status: "succeeded", items: [{ itemId: "item-1", status: "succeeded", proposals }] };
+            const publisher = await f.db.collection<AiJob>("aiJobs").findOne({ _id: publicationId });
+            const session = client.startSession();
+            try { await session.withTransaction(async () => observeBookletNodeV2(f.db, publisher!, {
+              ...node, runId: publicationRun, nodeId: "child-story-planner", id: "roster-" + operation,
+              outputs: { json: [{ result: JSON.stringify(childResult) }] },
+            }, session)); } finally { await session.endSession(); }
+            const captured = await repo.getWork(p._id, callId);
+            current = await repo.getProduction(p._id);
+            const rosterSaved = await repo.appendRevision(p._id, { key: "roster-" + operation, holderId: publicationId,
+              fence: current.fenceCounter, expectedVersion: current.version, artifactId: "book-roster", content: roster,
+              sources: [f.source], assets: [], provenance: { runId: publicationId, operationId: callId, evidenceIds: captured.evidenceIds } });
+            const rosterRevision = await repo.getRevision(p._id, rosterSaved.revisionId!);
+            assert.deepEqual(rosterRevision.content,
+              { kind: "roster", subjectIds: operation === "cast" ? ["character-v2"] : ["character-v2", "location-v2"] });
+            if (rosterSource) assert.ok(rosterRevision.sources.some(source => fingerprint(source) === fingerprint(rosterSource)));
+            rosterSource = { artifactId: "book-roster", revisionId: rosterRevision._id, contentHash: rosterRevision.contentHash };
+            assert.deepEqual((captured.resultPayload as typeof childResult).items[0].proposals[0].content, roster);
+            if (operation === "cast") {
+              current = await repo.getProduction(p._id);
+              const savedDescription = await repo.appendRevision(p._id, { key: "cast-description", holderId: publicationId,
+                fence: current.fenceCounter, expectedVersion: current.version, artifactId: "character-description", content: description,
+                sources: [f.source], assets: [], provenance: { runId: publicationId, operationId: callId, evidenceIds: captured.evidenceIds } });
+              assert.deepEqual((await repo.getRevision(p._id, savedDescription.revisionId!)).content, description);
+            }
+          }
+          const pageCall = "scoped-page-composer-compose-page-spec";
+          const pageWork = await repo.getWork(p._id, pageCall);
+          current = await repo.getProduction(p._id);
+          await repo.dispatchWork(p._id, { key: "dispatch-page-capacity", holderId: publicationId,
+            fence: current.fenceCounter, expectedVersion: current.version, callId: pageCall, requestHash: pageWork.requestHash });
+          const overCapacityPage = { kind: "page-spec" as const, pageId: "page-v2",
+            panels: Array.from({ length: p.creativeConfigSnapshot.maxPanelsPerPage + 1 }, (_, i) => ({ id: "panel-" + i, noText: true, lettering: [] })) };
+          const publisher = await f.db.collection<AiJob>("aiJobs").findOne({ _id: publicationId });
+          const session = client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(f.db, publisher!, {
+            ...node, runId: publicationRun, nodeId: "child-page-composer", id: "page-capacity-result",
+            outputs: { json: [{ result: JSON.stringify({ contractVersion: 2, invocationId: request.invocationId, callId: pageCall,
+              service: "page-composer", operation: "compose", status: "succeeded", items: [{ itemId: "item-1", status: "succeeded",
+                proposals: [{ kind: "page-spec", subjectId: "page-v2", content: overCapacityPage }] }] }) }] },
+          }, session)); } finally { await session.endSession(); }
+          current = await repo.getProduction(p._id);
+          const pageOutcome = await repo.getWork(p._id, pageCall);
+          await assert.rejects(repo.appendRevision(p._id, { key: "over-capacity-page", holderId: publicationId,
+            fence: current.fenceCounter, expectedVersion: current.version, artifactId: "page-spec", content: overCapacityPage,
+            sources: [f.source], assets: [], provenance: { runId: publicationId, operationId: pageCall, evidenceIds: pageOutcome.evidenceIds } }), /purchased panel capacity/);
+          assert.equal(await f.db.collection("bookletRevisions").countDocuments({ productionId: p._id, "provenance.operationId": pageCall }), 0);
+        });
       });
     });
     await t.test(

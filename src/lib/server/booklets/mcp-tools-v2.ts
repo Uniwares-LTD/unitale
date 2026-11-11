@@ -13,11 +13,17 @@ import {
   workRegistrationV2Schema,
   artifactKindV2Schema,
   type ProductionV2,
+  type WorkV2,
 } from "./documents-v2";
 import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
 import { bookletTransfers, transferSchema } from "./mcp-transfers";
 import { reconcileBookletWorkV2 } from "./reconcile-v2";
+import {
+  bookletContentV2Schema,
+  bookletSourceV2Schema,
+} from "../../../project/booklets/contracts-v2";
+import { assetIdentitySchema } from "../../../project/booklets/contracts";
 
 const count = z.number().int().nonnegative().safe();
 const input = z.strictObject({
@@ -151,6 +157,111 @@ export function createBookletMcpToolsV2(
     };
   }
   return [
+    tool(
+      "save_revision",
+      "Publish an exact retained creative proposal with trusted producer evidence, current funding and locks. Prefer content {callId,itemId,proposalIndex} to avoid copying model text; typed JSON and complete {transferId} payloads are also supported.",
+      async (raw, s) => {
+        const request = z
+          .strictObject({
+            artifactId: id,
+            content: z.union([
+              bookletContentV2Schema,
+              z.strictObject({ transferId: id }),
+              z.strictObject({ callId: id, itemId: id, proposalIndex: count }),
+            ]),
+            sources: z.array(bookletSourceV2Schema),
+            assets: z.array(assetIdentitySchema),
+            evidence: z.array(id).min(1),
+            mutationKey: id,
+            fence: count,
+          })
+          .parse(raw);
+        const producers = await s.db
+          .collection<WorkV2>("bookletWork")
+          .find({
+            ownerId: s.actor.uid,
+            productionId: s.production._id,
+            status: { $in: ["succeeded", "partial"] },
+            evidenceIds: { $all: request.evidence },
+          })
+          .limit(2)
+          .toArray();
+        if (producers.length !== 1)
+          throw bookletConflict(
+            "An unambiguous retained producer is required.",
+          );
+        let content: z.infer<typeof bookletContentV2Schema>;
+        if ("kind" in request.content) content = request.content;
+        else if ("callId" in request.content) {
+          const reference = request.content;
+          if (reference.callId !== producers[0].callId)
+            throw bookletConflict(
+              "Proposal reference differs from the retained producer.",
+            );
+          const result = z
+            .object({
+              items: z.array(
+                z.object({
+                  itemId: id,
+                  status: z.string(),
+                  proposals: z
+                    .array(z.object({ content: bookletContentV2Schema }))
+                    .default([]),
+                }),
+              ),
+            })
+            .parse(producers[0].resultPayload);
+          const item = result.items.find(
+            (item) => item.itemId === reference.itemId,
+          );
+          const selected =
+            item?.status === "succeeded"
+              ? item.proposals[reference.proposalIndex]
+              : undefined;
+          if (!selected)
+            throw bookletConflict("Retained proposal is unavailable.");
+          content = selected.content;
+        } else
+          content = bookletContentV2Schema.parse(
+            JSON.parse(
+              (
+                await bookletTransfers(s.db, s.actor, s.production._id, 2).read(
+                  request.content.transferId,
+                  "revision",
+                  s.signal,
+                )
+              ).toString("utf8"),
+            ),
+          );
+        const m = await mutation(s, "appendRevision", request, request.fence);
+        const repo = bookletRepositoryV2(s.db, s.actor, undefined, {
+          atomicMutations: true,
+        });
+        const receipt = await repo.appendRevision(s.production._id, {
+          ...m,
+          artifactId: request.artifactId,
+          content,
+          sources: request.sources,
+          assets: request.assets,
+          provenance: {
+            runId: s.job._id,
+            operationId: producers[0].callId,
+            evidenceIds: request.evidence,
+          },
+        });
+        const revision = await repo.getRevision(
+          s.production._id,
+          receipt.revisionId!,
+        );
+        return {
+          revisionId: revision._id,
+          ordinal: revision.ordinal,
+          contentHash: revision.contentHash,
+          fence: receipt.fence,
+          version: receipt.version,
+        };
+      },
+    ),
     tool(
       "reconcile_work",
       "Read an existing work item's native execution and retain matching results. Never starts a provider or infers safe replay from missing evidence.",

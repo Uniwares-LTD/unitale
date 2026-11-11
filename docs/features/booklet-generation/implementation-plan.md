@@ -548,26 +548,33 @@ seams are complete locally. Current 09 implementation provides:
   no retry. Automatic worker polling/backoff and measurement settlement remain pending.
 - Native Manager result/fence integration and Story Planner description-only revision
   fixes. Seven role identities, provider bindings and disabled execution gates remain.
+- Creative-text publication accepts an exact retained proposal reference, typed content
+  or complete transfer. It checks the current prepaid Manager, native producer, target,
+  sources/evidence, funding, stage locks and purchased layout/panel limits. A producer
+  publishes each artifact once across continuation. Roster deltas preserve the other
+  narrative group and record their preceding roster source; raw child output is retained.
+  Proposal references avoid copying large exact text through the model.
 
 The exposed v2 tools are checkpoint, index, transfer, creative-text work registration,
-native work reconciliation and the partial document reader. Registration does not
-authorize paid dispatch. Automatic recovery, active revision publication, images/reviews,
+native work reconciliation, creative-text publication and the partial document reader.
+Registration does not authorize paid dispatch. Automatic recovery, image publication/reviews,
 human decisions and accounting remain incomplete. There is no complete application-connected
 journey. The latest YAML identity and verification are maintained in the
 [candidate README](workflow-package/README.md#current-integration-slice).
 
-Verification of the current retention/staging change: 54 affected repository,
-lifecycle/media and MCP tests and 38 compatibility tests pass. The final capability
-guard has an additional passing MCP run; the final JSON example is schema-checked.
+Current application verification: 56 affected repository, lifecycle/media and MCP
+tests pass, including native retention/readback, continuation publication, roster
+lineage, product-capacity rejection and large exact-text reference/transfer publication.
+The unchanged native package retains its 38-test compatibility evidence.
 Production build, sequential typecheck, scoped lint, environment and model/docs/i18n/
 skills checks pass. A separate same-agent read-only slice review found no blocking
 issue. No Dify, provider, deployment or checkpoint 10 UI implementation occurred. Historical
 slice results remain in Git; they are not acceptance of unimplemented paths. Checkpoint
 09 requires two clean read-only reviews after its complete behavior is implemented.
-The native-readback addition passes 37 repository/MCP tests and 16 existing native
-adapter/tracing tests, production build, sequential typecheck, scoped lint and docs.
-A separate same-agent read-only slice review found no blocking issue. It changes no
-stored fields or native YAML, so model diagrams and package hashes remain applicable.
+The readback addition also passes 16 existing native adapter/tracing tests. Publication
+changes no stored fields or native YAML; model diagrams and package hashes remain
+applicable. Large-body source/checkpoint hydration, images, Reviewer bindings and the
+remaining runtime behavior still need implementation before checkpoint-wide reviews.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,

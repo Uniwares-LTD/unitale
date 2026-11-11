@@ -428,6 +428,16 @@ settlement. The native transport is locally tested with deterministic readback o
 and an advanced fence, and reuses matching entries without changing their revision
 pointers. Purchased capacity and one responsibility per subject are enforced. Changed
 identity metadata/reparenting and invalid batches fail without partial index writes.
+`booklet_save_revision_v2` currently publishes retained creative-text proposals. Its
+arguments are `{artifactId,content,sources,assets,evidence,mutationKey,fence}`. Prefer
+`content:{callId,itemId,proposalIndex}` to select an exact retained successful proposal;
+no creative text is copied through the model. Typed content or `{transferId}` containing
+a complete revision JSON payload is also accepted and must match the retained proposal.
+The server derives producer/Run provenance, checks the current prepaid Manager, funding,
+target scope, evidence, locks and product limits, then atomically advances the pointer.
+Replies contain actual revision/hash/fence identities. Cast/location roster deltas merge
+structurally while preserving the other kind and their previous-roster source lineage.
+Images, changed-source revalidation and final acceptance are not enabled by this path.
 
 The `booklets` server extension registers these private v1 tools on the existing
 `/api/mcp`. One service credential with `extension:booklets:read` and

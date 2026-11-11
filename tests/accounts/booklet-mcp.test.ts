@@ -10,6 +10,8 @@ import { parseMcpConfig } from "../../src/lib/config/mcp";
 import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
 import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
+import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
+import type { AiJob } from "../../src/lib/server/ai/jobs";
 import {
   productionV2Schema,
   revisionV2Schema,
@@ -918,6 +920,8 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           documentVersion: 2,
           orderId: "order-v2",
           lifecycleState: "in-progress",
+          revisionChargeId: null,
+          stageLocks: { story: null, style: null, references: null },
           version: 1,
           fenceCounter: 0,
           mutationLease: null,
@@ -1569,6 +1573,48 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             );
           },
         );
+        await t.test("retained large proposals publish through the v2 transfer and revision tools exactly once", async () => {
+          const workflowId = crypto.randomUUID();
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
+            "run.orchestrator.workflowId": workflowId, "execution.workflowId": workflowId,
+          } });
+          await db.collection("bookletWork").updateOne({ productionId: production._id, callId: "call-v2" }, { $set: { status: "dispatching" } });
+          const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
+          const result = { contractVersion: 2, invocationId: childRequest.invocationId, callId: childRequest.callId,
+            service: "manuscript", operation: "write", status: "succeeded", items: [{ itemId: childRequest.items[0].itemId,
+              status: "succeeded", proposals: [{ kind: "manuscript", subjectId: "book-subject", content }] }] };
+          const session = db.client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: "native-v2", id: "retained-text-node", nodeId: "child-manuscript", nodeType: "tool", status: "succeeded",
+            retryIndex: 0, iterationId: null, loopId: "iteration-v2", outputs: { json: [{ result: JSON.stringify(result) }] },
+            outputsTruncated: false, error: null, executionMetadata: null,
+          }, session)); } finally { await session.endSession(); }
+          const captured = await db.collection("bookletWork").findOne({ productionId: production._id, callId: "call-v2" });
+          const evidence = [captured!.evidenceIds.at(-1)];
+          const bytes = Buffer.from(JSON.stringify(content));
+          const transfer = await successful("transfer", { action: "open", key: "publish-large-manuscript",
+            kind: "revision", bytes: bytes.length, sha256: sha(bytes) });
+          for (let index = 0; index < transfer.parts; index++) await successful("transfer", {
+            action: "part", transferId: transfer.transferId, index,
+            data: bytes.subarray(index * transfer.chunkBytes, (index + 1) * transfer.chunkBytes).toString("base64"),
+          });
+          const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const request = { artifactId: "story-v2", content: { callId: "call-v2", itemId: childRequest.items[0].itemId, proposalIndex: 0 }, sources: [], assets: [],
+            evidence, mutationKey: "save-large-manuscript", fence: before!.fenceCounter };
+          assert.ok(Buffer.byteLength(JSON.stringify(request)) < 1024);
+          assert.equal((await invoke("save_revision", { ...request, content: { kind: "manuscript", units: [] } })).isError, true);
+          assert.equal((await invoke("save_revision", { ...request, content: { ...request.content, proposalIndex: 1 } })).isError, true);
+          const saved = await successful("save_revision", request);
+          assert.deepEqual(await successful("save_revision", request), saved);
+          assert.equal((await successful("save_revision", { ...request, content: { transferId: transfer.transferId },
+            mutationKey: "same-proposal-via-transfer", fence: saved.fence })).revisionId, saved.revisionId);
+          assert.equal(saved.contentHash, fingerprint(content));
+          const stored = await db.collection("bookletRevisions").findOne({ _id: saved.revisionId as never });
+          assert.deepEqual(stored!.content, content);
+          assert.equal(stored!.provenance.operationId, "call-v2");
+          assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId: production._id,
+            artifactId: "story-v2", "provenance.operationId": "call-v2" }), 1);
+        });
         for (const change of [
           { cancelRequested: true },
           { "run.target.version": "1" },
