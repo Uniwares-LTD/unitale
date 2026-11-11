@@ -1,10 +1,16 @@
 import "server-only";
 import { z } from "zod";
-import type { Db } from "mongodb";
+import type { Db, Document } from "mongodb";
+import type { AiJob } from "../ai/jobs";
 import type { CreditActor } from "../store/credit-types";
 import { fingerprint } from "../foundation/canonical";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { acceptanceDocumentV2Schema, assessmentDocumentV2Schema, revisionV2Schema, humanRequestV2Schema } from "./documents-v2";
+import {
+  acceptanceDocumentV2Schema,
+  assessmentDocumentV2Schema,
+  revisionV2Schema,
+  humanRequestV2Schema,
+} from "./documents-v2";
 import { rawResponseTextSchema } from "../../contracts/runs";
 import type { Decision } from "../runs/service";
 import { bookletConflict, bookletMissing } from "./context";
@@ -23,6 +29,11 @@ export const bookletReadV2Schema = z.strictObject({
     "history",
     "work_history",
     "assessment_history",
+    "acceptance_history",
+    "human_history",
+    "execution",
+    "execution_history",
+    "production_history",
   ]),
   id,
   cursor: z.string().max(16384).optional(),
@@ -50,15 +61,98 @@ export async function readBookletDocumentV2(
   const repo = bookletRepositoryV2(db, actor);
   if (
     request.kind === "work_history" ||
-    request.kind === "assessment_history"
+    request.kind === "assessment_history" ||
+    request.kind === "acceptance_history" ||
+    request.kind === "human_history" ||
+    request.kind === "execution_history" ||
+    request.kind === "production_history"
   ) {
-    if (request.id !== productionId) throw bookletMissing();
     const production = await repo.getProduction(productionId);
-    const work = request.kind === "work_history";
-    const collection = db.collection(
-      work ? "bookletWork" : "bookletAssessments",
-    );
-    const filter = { ownerId: actor.uid, productionId, documentVersion: 2 };
+    const productionHistory = request.kind === "production_history";
+    if (
+      request.id !== (productionHistory ? production.bookletId : productionId)
+    )
+      throw bookletMissing();
+    let name: string, filter: Document, projection: Document;
+    switch (request.kind) {
+      case "work_history":
+        name = "bookletWork";
+        projection = { _id: 1, callId: 1, service: 1, operation: 1, status: 1 };
+        break;
+      case "assessment_history":
+        name = "bookletAssessments";
+        projection = {
+          _id: 1,
+          callId: 1,
+          "assessment.mode": 1,
+          "assessment.targetHash": 1,
+          "assessment.disposition": 1,
+          complete: 1,
+        };
+        break;
+      case "acceptance_history":
+        name = "bookletAcceptances";
+        projection = {
+          _id: 1,
+          runId: 1,
+          revisionId: 1,
+          contentHash: 1,
+          createdAt: 1,
+        };
+        break;
+      case "human_history":
+        name = "bookletRepositoryWrites";
+        projection = {
+          _id: 1,
+          "result.humanRequest.requestId": 1,
+          "result.humanRequest.runId": 1,
+          "result.humanRequest.presentationHash": 1,
+          createdAt: 1,
+        };
+        break;
+      case "execution_history":
+        name = "aiJobs";
+        projection = {
+          _id: 1,
+          status: 1,
+          runId: 1,
+          "run.logicalId": 1,
+          createdAt: 1,
+        };
+        break;
+      default:
+        name = "bookletProductions";
+        projection = {
+          _id: 1,
+          documentVersion: 1,
+          version: 1,
+          lifecycleState: 1,
+          sourceProductionId: 1,
+          currentManifestRevisionId: 1,
+          createdAt: 1,
+        };
+    }
+    const collection = db.collection(name);
+    if (request.kind === "execution_history")
+      filter = {
+        uid: actor.uid,
+        "run.target.adapter": "booklet",
+        "run.target.version": "2",
+        "run.target.id": productionId,
+      };
+    else if (request.kind === "human_history")
+      filter = {
+        ownerId: actor.uid,
+        productionId,
+        "result.humanRequest": { $exists: true },
+      };
+    else if (productionHistory)
+      filter = {
+        ownerId: actor.uid,
+        bookletId: production.bookletId,
+        documentVersion: { $in: [1, 2] },
+      };
+    else filter = { ownerId: actor.uid, productionId, documentVersion: 2 };
     const inventoryCount = await collection.countDocuments(filter);
     const scope = fingerprint([
       actor.uid,
@@ -71,7 +165,7 @@ export async function readBookletDocumentV2(
       ? z
           .strictObject({
             scope: z.string(),
-            after: z.string().regex(/^[a-f0-9]{64}$/),
+            after: id,
           })
           .parse(
             JSON.parse(
@@ -89,49 +183,89 @@ export async function readBookletDocumentV2(
           ...filter,
           _id: { $gt: position.after as never },
         },
-        {
-          projection: work
-            ? { _id: 1, callId: 1, service: 1, operation: 1, status: 1 }
-            : {
-                _id: 1,
-                callId: 1,
-                "assessment.mode": 1,
-                "assessment.targetHash": 1,
-                "assessment.disposition": 1,
-                complete: 1,
-              },
-        },
+        { projection },
       )
       .sort({ _id: 1 })
       .limit(21)
       .toArray();
-    const items = rows.slice(0, 20).map((row) =>
-      work
-        ? {
+    const items = rows.slice(0, 20).map((row) => {
+      const createdAt =
+        row.createdAt instanceof Date ? row.createdAt.toISOString() : null;
+      switch (request.kind) {
+        case "work_history":
+          return {
             callId: row.callId,
             service: row.service,
             operation: row.operation,
             status: row.status,
             document: { kind: "work", id: row.callId },
-          }
-        : {
+          };
+        case "assessment_history":
+          return {
             assessmentId: row._id,
             callId: row.callId,
             ...row.assessment,
             complete: row.complete,
             document: { kind: "assessment", id: row._id },
-          },
-    );
+          };
+        case "acceptance_history":
+          return {
+            acceptanceId: row._id,
+            runId: row.runId,
+            revisionId: row.revisionId,
+            contentHash: row.contentHash,
+            createdAt,
+            document: { kind: "acceptance", id: row._id },
+          };
+        case "human_history":
+          return {
+            requestId: row.result.humanRequest.requestId,
+            runId: row.result.humanRequest.runId,
+            presentationHash: row.result.humanRequest.presentationHash,
+            createdAt,
+            document: {
+              kind: "human_response",
+              id: row.result.humanRequest.requestId,
+            },
+          };
+        case "execution_history":
+          return {
+            runId: row._id,
+            logicalId: row.run?.logicalId ?? null,
+            nativeRunId: row.runId ?? null,
+            status: row.status,
+            createdAt,
+            document: { kind: "execution", id: row._id },
+          };
+        default:
+          return {
+            productionId: row._id,
+            documentVersion: row.documentVersion,
+            version: row.version,
+            state: row.lifecycleState,
+            sourceProductionId: row.sourceProductionId,
+            manifestRevisionId: row.currentManifestRevisionId,
+            createdAt,
+          };
+      }
+    });
+    while (
+      items.length &&
+      Buffer.byteLength(JSON.stringify(items)) > replyBytes - 1024
+    )
+      items.pop();
+    if (rows.length && !items.length)
+      throw bookletConflict("History metadata exceeds response capacity.");
     return {
       kind: request.kind,
-      id: productionId,
+      id: request.id,
       items,
       productionVersion: production.version,
-      complete: !request.cursor && rows.length <= 20,
+      complete: !request.cursor && rows.length === items.length,
       cursor:
-        rows.length > 20
+        rows.length > items.length
           ? Buffer.from(
-              JSON.stringify({ scope, after: rows[19]._id }),
+              JSON.stringify({ scope, after: rows[items.length - 1]._id }),
             ).toString("base64url")
           : null,
     };
@@ -300,6 +434,48 @@ export async function readBookletDocumentV2(
         : { resultObservation: row.resultObservation }),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
+    };
+  } else if (request.kind === "execution") {
+    await repo.getProduction(productionId);
+    const row = await db
+      .collection<AiJob>("aiJobs")
+      .findOne({
+        _id: request.id,
+        uid: actor.uid,
+        "run.target.adapter": "booklet",
+        "run.target.version": "2",
+        "run.target.id": productionId,
+      });
+    if (!row) throw bookletMissing();
+    const usage = row.execution?.usage;
+    document = {
+      runId: row._id,
+      logicalId: row.run?.logicalId ?? null,
+      nativeRunId: row.runId,
+      workflowId:
+        row.execution?.workflowId ?? row.run?.orchestrator.workflowId ?? null,
+      status: row.status,
+      nativeStatus: row.execution?.status ?? null,
+      cancelRequested: row.cancelRequested,
+      createdAt: row.createdAt?.toISOString() ?? null,
+      updatedAt: row.updatedAt?.toISOString() ?? null,
+      usage: usage
+        ? {
+            scope: usage.scope,
+            id: usage.id,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
+            elapsedMs: usage.elapsedMs,
+            cost: usage.cost
+              ? {
+                  amount: usage.cost.amount,
+                  currency: usage.cost.currency,
+                  source: usage.cost.source,
+                }
+              : null,
+          }
+        : null,
     };
   } else if (request.kind === "human_response") {
     const production = await repo.getProduction(productionId);

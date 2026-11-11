@@ -178,7 +178,7 @@ tests), plus 27 MCP and 30 repository tests (the previous media slice passed 17)
 Build, typecheck, scoped lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
 found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
-remains imported. Tasks 09.1-09.3 are locally Verified; 09.4 is In progress.
+remains imported. Tasks 09.1-09.4 are locally Verified; 09.5 is In progress.
 Its acceptance gateway/owned reader and human request/response correlation are
 locally implemented. Existing Run submission provides authenticated first-wins
 answers; uncertain submissions stay pending until trusted confirmation. Human forms
@@ -187,14 +187,16 @@ verified without a provider call or automatic completion. Explicit selected-mani
 completion is now locally wired through native guard/checkpoint and real handlers,
 including byte verification, dependency/layout checks and full-history coverage beyond
 the preview. Page/layout metadata in that fixture is staged; full creation/revision
-journeys, non-manifest acceptance preview handling and remaining history reads are
-pending. Actual Dify form rendering/readback remains unverified.
+journeys remain pending. Non-manifest acceptance now uses exact full-history review
+facts, including grouped targets and unchanged revalidation lineage. Owned acceptance,
+human, execution and version-labelled production histories use bounded metadata pages
+and private-field-safe document reads. Actual Dify form rendering/readback remains unverified.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`a30759cdd56b4834da0153cfec167c20cbc374db0d848e80f8364c6584b21be5`.
+`85293a2f485ef36a5eedf53ada5b950127266716b5e4098fc0405260e7ff1d9d`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-243,923 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+244,754 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

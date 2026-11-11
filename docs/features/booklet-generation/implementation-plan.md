@@ -531,8 +531,8 @@ use estimated completion percentages as acceptance evidence.
 | 09.1 Manager context and bindings | Verified | Local configuration/identity, bounded context/navigation, complete checkpoint and atomic fence tests pass. Actual remote/plugin readback remains checkpoint 12 evidence. |
 | 09.2 One complete text action | Verified | Local guarded dispatch, native usage, exact retained text/publication and compact checkpoint journey pass, including lost-reply/replay denial. Provider/target limitations remain accepted and explicitly labelled below. |
 | 09.3 Assessment and image actions | Verified | Local handler/native Code fixtures cover all six modes, correction lineage, exact preparation/preflight, original bytes, publication and revalidation. Exact assessments/coverage cannot be altered; partial results and save/attachment replay preserve originals. Live Dify conversion remains checkpoint 12 evidence. |
-| 09.4 Human decisions and completion | In progress | Connect existing authentic first-wins decisions, Manager acceptance, manifest drafts, structural completion and backend history reads. Correct requests resume; stale responses and invalid purchased structures fail without partial finalization. |
-| 09.5 Bounded recovery | Pending | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
+| 09.4 Human decisions and completion | Verified | Authentic first-wins response correlation, exact Manager acceptance, manifest publication and structural completion pass local handler/native Code fixtures. Owned acceptance/human/execution/production histories page beyond previews and exclude private/foreign records. Actual Dify rendering remains checkpoint 12 evidence. |
+| 09.5 Bounded recovery | In progress | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
 | 09.6 Connected journeys | Pending | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
 | 09.7 Review and handoff | Pending | Fix blockers, apply demonstrated simplifications, run final affected checks and two consecutive clean read-only reviews on the same final state. Consolidate evidence and revise checkpoint 10 around completed interfaces, then stop before its implementation. |
 
@@ -1015,6 +1015,28 @@ eligibility is false after completion. Deterministic resume after a committed co
 remains a 09.5 recovery case; no new paid reasoning may be used to rediscover completion.
 Checkpoint-wide final review pairs are still 09.7 work. Next within 09.4: non-manifest
 acceptance evidence beyond previews and remaining owned backend histories.
+
+09.4 exit evidence: context now resolves selected non-manifest review facts across
+owned individual/grouped passing assessments outside the preview. Exact revision
+identity is required; equal content alone cannot borrow another revision's review.
+Unchanged revalidation identifies its actually reviewed ancestor without claiming
+inspection of replacement context; Manager retains that judgment. Existing bounded
+reads now expose acceptance/human/execution histories and version-labelled same-book
+production metadata. Execution DTOs exclude private inputs, outputs and credentials.
+All histories retain ownership/query-bound cursors, item/byte limits and separate
+body navigation; inventory changes require restart. No stored schema changed, so
+the model JSON and both diagrams remain applicable.
+
+Exit checks: 28 MCP, 30 repository and 42 native/v1 compatibility tests pass, plus
+production build, post-build typecheck, scoped lint, docs/i18n/skills checks and the
+independent 13-path hash/disabled-gate audit. History fixtures cover 25 additional
+records per family, foreign owners, same-owner different productions/books, v1 metadata,
+private-field omission, cross-query cursors and inventory-change rejection. A separate
+same-agent read-only slice review (cold-review fallback) found no blocking issue;
+unrelated formatting was removed. The final checkpoint review pair remains 09.7.
+Task 09.5 now begins with deterministic completion resume, existing-worker recovery,
+bounded retry eligibility and safe terminal consumption-flow release. Full composed
+creation/revision/multi-window journeys remain 09.6, not inferred from these slices.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,

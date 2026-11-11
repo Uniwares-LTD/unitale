@@ -1983,17 +1983,23 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(await db.collection("bookletAssessments").countDocuments({ productionId: production._id, callId: child.callId }), 1);
         });
         await t.test("Manager acceptance binds exact revision identity and sources without creating human or quality authority", async () => {
-          const current = await successful("context", {});
           const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
           const artifact = p!.subjects.flatMap((subject: { artifacts: unknown[] }) => subject.artifacts)
             .find((artifact: { id: string }) => artifact.id === "story-v2");
           const revision = await db.collection("bookletRevisions").findOne({ _id: artifact.currentRevisionId });
           const assessment = await db.collection("bookletAssessments").findOne({ productionId: production._id,
-            "assessment.mode": "text", "assessment.targetHash": revision!.contentHash });
+            callId: "review-gateway", "assessment.mode": "text", "assessment.targetHash": revision!.contentHash });
+          const newer = Array.from({ length: 9 }, (_, i) => ({ ...assessment!, _id: "text-preview-" + i as never,
+            callId: "text-preview-" + i, assessment: { ...assessment!.assessment, targetHash: "0".repeat(64) }, createdAt: new Date(Date.now() + 1000 + i) }));
+          await db.collection("bookletAssessments").insertMany(newer);
+          const current = await successful("context", {});
+          assert.equal(current.assessments.some((row: { assessmentId: unknown }) => row.assessmentId === assessment!._id), false);
+          assert.equal(current.acceptanceReview.assessmentId, assessment!._id);
           const request = { revisionId: revision!._id, contentHash: revision!.contentHash,
             targetIds: ["story-v2"], assetIds: [], sources: revision!.sources, evidence: [assessment!._id], fence: current.fence };
           const planned = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: {
             action: "record_acceptance", request_json: JSON.stringify(request), reason: "Select the reviewed exact text" } });
+          await db.collection("bookletAssessments").deleteMany({ _id: { $in: newer.map((row) => row._id) } });
           const intent = await successful("checkpoint", JSON.parse(planned.checkpoint));
           const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(current),
             request: planned.request, dispatch: planned.dispatch, action: "record_acceptance" }).request);
@@ -2020,6 +2026,61 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const stored = await db.collection("bookletAcceptances").findOne({ _id: accepted.acceptanceId as never });
           await db.collection("bookletAcceptances").insertOne({ ...stored!, _id: "foreign-acceptance" as never, ownerId: "foreign" });
           assert.equal((await invoke("read_document", { kind: "acceptance", id: "foreign-acceptance" })).isError, true);
+          const unreviewed = revisionV2Schema.parse({ ...revision!, _id: "same-text-unreviewed", ordinal: revision!.ordinal + 1 });
+          await db.collection("bookletRevisions").insertOne(unreviewed as never);
+          const focus = async (revisionId: string) => {
+            const c = await successful("context", {});
+            // A checkpoint selector is not authority; context must fetch owned review facts.
+            await successful("checkpoint", { expectedVersion: c.checkpointVersion, fence: c.fence,
+              state: { ...c.checkpoint, lastResult: { kind: "revision", id: revisionId } } });
+            return successful("context", {});
+          };
+          assert.equal((await focus(unreviewed._id)).acceptanceReview, null); // Same hash alone cannot borrow another revision's pass.
+          const indexed = await successful("index", { subjects: [], artifacts: [
+            { subjectId: "book-subject", artifactId: "group-concept", kind: "concept" },
+          ], fence: (await successful("context", {})).fence });
+          const conceptContent = { kind: "concept", title: "Context", premise: "Minor context", audience: "All", tone: "Warm", constraints: [] };
+          const concept = revisionV2Schema.parse({ ...revision!, _id: "group-concept-revision", artifactId: "group-concept", ordinal: 1,
+            kind: "concept", content: conceptContent, contentHash: fingerprint(conceptContent), sources: [], assets: [] });
+          await db.collection("bookletRevisions").insertOne(concept as never);
+          const sources = [unreviewed, concept].map((row) => ({ artifactId: row.artifactId, revisionId: row._id, contentHash: row.contentHash }));
+          const group = { contractVersion: 2, invocationId: "group-acceptance-review", callId: "group-acceptance-review", service: "quality-reviewer",
+            operation: "text", intent: "create", items: [{ itemId: "group-review-item", input: {
+              targetIds: sources.map((source) => source.artifactId), targetHash: fingerprint(sources), referencePositions: [],
+            } }], sources: [unreviewed, concept].map((row, i) => ({ ...sources[i], content: row.content })), references: [], constraints: {} };
+          const registered = await successful("begin_work", { action: "register", childRequest: group, requestHash: fingerprint(group),
+            targets: sources.map((source) => source.artifactId), fence: indexed.fence });
+          const dispatched = await successful("begin_work", { action: "dispatch", callId: group.callId, requestHash: fingerprint(group), fence: registered.fence });
+          const packed = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(group), response: {
+            items: [{ itemId: "group-review-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "story-v2", content: {
+              coverage: { targetIds: sources.map((source) => source.artifactId), referencePositions: [] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          const parent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          const session = db.client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent, {
+            runId: parent.runId!, id: "group-review-execution", nodeId: "child-quality-reviewer", nodeType: "tool", status: "succeeded",
+            retryIndex: null, iterationId: null, loopId: null, outputs: { json: [{ result: JSON.stringify(packed) }] }, outputsTruncated: false,
+            error: null, executionMetadata: null,
+          }, session)); } finally { await session.endSession(); }
+          const grouped = await successful("record_assessment", { assessment: packed.items[0].proposals[0].content,
+            executionLocator: { runId: parent.runId!, nodeId: "child-quality-reviewer", executionId: "group-review-execution" }, fence: dispatched.fence });
+          const groupFacts = await focus(unreviewed._id);
+          assert.equal(groupFacts.acceptanceReview.assessmentId, grouped.assessmentId);
+          assert.notEqual(packed.items[0].proposals[0].content.targetHash, unreviewed.contentHash);
+          assert.equal(runNativeCode("manager", "guard", { context: JSON.stringify(groupFacts), decision: { action: "record_acceptance",
+            request_json: JSON.stringify({ ...request, revisionId: unreviewed._id, fence: groupFacts.fence }), reason: "Select a reviewed group member" } }).action, "record_acceptance");
+          const count = await db.collection("bookletWork").countDocuments({ productionId: production._id });
+          const linked = await successful("save_revision", { artifactId: "story-v2", revalidatedFrom: revision!._id,
+            sources: [sources[1]], assets: [], evidence: revision!.provenance.evidenceIds, mutationKey: "reuse-reviewed-body",
+            fence: groupFacts.fence });
+          const inherited = await focus(linked.revisionId);
+          assert.equal(inherited.acceptanceReview.reviewedRevisionId, revision!._id);
+          assert.equal(inherited.acceptanceReview.revisionId, linked.revisionId);
+          assert.equal(await db.collection("bookletWork").countDocuments({ productionId: production._id }), count);
+          assert.equal(runNativeCode("manager", "guard", { context: JSON.stringify(inherited), decision: { action: "record_acceptance",
+            request_json: JSON.stringify({ ...request, revisionId: linked.revisionId, sources: [sources[1]], fence: inherited.fence }),
+            reason: "Reuse unchanged content after assessing its replacement context" } }).action, "record_acceptance");
         });
         await t.test("human requests bind native presentation and authenticated first-wins responses", async () => {
           const initial = await successful("context", {});
@@ -2096,6 +2157,82 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { "subjects.0.artifacts.0.currentRevisionId": selected!._id } });
           assert.equal((await read()).value.response, answer.response);
           assert.deepEqual(await successful("request_human", ready), human);
+        });
+        await t.test("owned histories page beyond previews and expose only allowlisted execution metadata", async () => {
+          // Metadata fixtures extend real handler-created records; they never run providers.
+          const accepted = (await db.collection("bookletAcceptances").findOne({ ownerId: "owner", productionId: production._id }))!;
+          const receipt = (await db.collection("bookletRepositoryWrites").findOne({ ownerId: "owner", productionId: production._id,
+            "result.humanRequest": { $exists: true } }))!;
+          const parent = (await db.collection("aiJobs").findOne({ _id: "run-v2" as never }))!;
+          const human = receipt.result.humanRequest;
+          const families = [
+            { kind: "acceptance_history", name: "bookletAcceptances", id: production._id,
+              make: (i: number) => ({ ...accepted, _id: sha("acceptance-history-" + i) as never }) },
+            { kind: "human_history", name: "bookletRepositoryWrites", id: production._id,
+              make: (i: number) => {
+                const requestId = randomUUID(), formContent = human.formContent.replaceAll(human.requestId, requestId);
+                return { ...receipt, _id: sha("human-history-" + i) as never, key: "human-history-" + i,
+                  result: { ...receipt.result, humanRequest: { ...human, requestId, formContent,
+                    presentationHash: fingerprint(formContent + "\n{{#$output.response#}}") } } };
+              } },
+            { kind: "execution_history", name: "aiJobs", id: production._id,
+              make: (i: number) => ({ ...parent, _id: "history-run-" + i as never, runId: "history-native-" + i,
+                inputs: { secret: "PRIVATE-HISTORY-MARKER" }, outputs: { secret: "PRIVATE-HISTORY-MARKER" },
+                capability: "PRIVATE-HISTORY-MARKER" }) },
+            { kind: "production_history", name: "bookletProductions", id: production.bookletId,
+              make: (i: number) => ({ ...production, _id: "history-production-" + i as never, orderId: "history-order-" + i,
+                // Same-book v1 history is metadata, never interpreted as v2 content.
+                documentVersion: i === 0 ? 1 : 2 }) },
+          ];
+          for (const family of families) {
+            const rows = Array.from({ length: 25 }, (_, i) => family.make(i));
+            const foreign = { ...family.make(25), ownerId: "foreign", uid: "foreign" };
+            const misplaced = { ...family.make(26), productionId: "another-production", bookletId: "another-book",
+              ...(family.kind === "execution_history" ? { run: { ...parent.run, target: { ...parent.run.target, id: "another-production" } } } : {}) };
+            await db.collection(family.name).insertMany([...rows, foreign, misplaced]);
+            try {
+              const request = { kind: family.kind, id: family.id };
+              const first = await successful("read_document", request);
+              assert.equal(first.id, family.id);
+              assert.equal(first.complete, false);
+              assert.ok(first.cursor);
+              assert.equal(first.items.length, 20);
+              assert.ok(Buffer.byteLength(JSON.stringify(first)) <= 20 * 1024);
+              assert.equal((await invoke("read_document", { ...request, id: "foreign" })).isError, true);
+              assert.equal((await invoke("read_document", { kind: "work_history", id: production._id, cursor: first.cursor })).isError, true);
+              const all = [...first.items];
+              let cursor = first.cursor;
+              while (cursor) {
+                const next = await successful("read_document", { ...request, cursor });
+                all.push(...next.items); cursor = next.cursor;
+              }
+              assert.ok(all.length >= 25);
+              const serialized = JSON.stringify(all);
+              assert.ok(!serialized.includes("PRIVATE-HISTORY-MARKER"));
+              assert.ok(!serialized.includes(String(foreign._id)));
+              assert.ok(!serialized.includes(String(misplaced._id)));
+              if (family.kind === "production_history") {
+                assert.equal(all.find((item) => item.productionId === rows[0]._id).documentVersion, 1);
+                assert.equal(all.some((item) => item.document !== undefined), false);
+              } else {
+                const detail = await successful("read_document", all.find((item) =>
+                  item.document.id === (family.kind === "acceptance_history" ? rows[0]._id :
+                    family.kind === "human_history" ? (rows[0] as typeof receipt).result.humanRequest.requestId : rows[0]._id)).document);
+                assert.equal(detail.complete, true);
+                assert.ok(!JSON.stringify(detail).includes("PRIVATE-HISTORY-MARKER"));
+                if (family.kind === "execution_history") {
+                  assert.equal(detail.value.runId, rows[0]._id);
+                  assert.equal((await invoke("read_document", { kind: "execution", id: foreign._id })).isError, true);
+                  assert.equal((await invoke("read_document", { kind: "execution", id: misplaced._id })).isError, true);
+                }
+                if (family.kind === "human_history") assert.equal(detail.value.status, "pending");
+              }
+              await db.collection(family.name).deleteOne({ _id: rows[0]._id });
+              assert.equal((await invoke("read_document", { ...request, cursor: first.cursor })).isError, true);
+            } finally {
+              await db.collection(family.name).deleteMany({ _id: { $in: [...rows, foreign, misplaced].map((row) => row._id) } });
+            }
+          }
         });
         await t.test("unpaid preparation uses registered native work and retains the exact prepared identity", async () => {
           const before = await successful("context", {});

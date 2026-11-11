@@ -423,7 +423,11 @@ accepts `{manifestRevisionId,fence}` and validates the selected immutable manife
 accepted dependencies, purchased structure and original bytes without an app quality
 gate. Context exposes exact-revision full-history `manifestReview` coverage counts
 for Manager's whole-book acceptance/completion policy. Native Run termination remains
-separate. Remaining histories and non-manifest acceptance preview handling are still 09.4 work.
+separate. For a selected non-manifest revision, context exposes `acceptanceReview`
+from exact individual or grouped owned passing evidence outside the recent preview.
+Unchanged revalidation may retain an older body's review: `reviewedRevisionId`
+identifies that body, while Manager decides whether replacement context needs review.
+Identical content alone cannot borrow another revision's assessment.
 The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original
@@ -452,8 +456,15 @@ Each response identifies its path, hash and completeness; cursors reject changed
 different documents. Follow child and page cursors without decoding them. No base64
 content reconstruction is required. Artifact history reads return at most 20 metadata
 items with an initial ordinal snapshot; later appends require a fresh read and bodies
-are fetched separately by immutable revision ID. Human-response and execution reads
-remain pending. These reads share the same private native Manager and prepaid binding checks.
+are fetched separately by immutable revision ID. `acceptance_history`, `human_history`
+and `execution_history` use the production ID; `production_history` uses its booklet ID.
+These metadata pages include at most 20 items within the response byte bound. Their
+cursors bind ownership, query, production version and inventory count; changes require
+a fresh read. Follow acceptance/human/execution document references for bounded bodies.
+Execution DTOs expose status, identities, timestamps and reported usage, excluding
+inputs, outputs, credentials and private configuration. Production history includes
+same-book v1/v2 metadata labelled by document version; it grants no cross-production
+body access. These reads share the same private native Manager and prepaid binding checks.
 `booklet_transfer_v2` reuses bounded staging with server-selected v2 ownership. Its
 request is `{action:"open",key,kind,bytes,sha256}` or
 `{action:"part",transferId,index,data}`. Parts use the returned decoded chunk size and

@@ -278,6 +278,13 @@ and add only boundaries needed by actual 09 consumers.
 
 Manager-only managed MCP. Minimum actual operations and fields are in the handoff.
 Reuse bounded reads for history, human responses and observations where possible.
+The implemented v2 reader exposes bounded acceptance/human/execution histories by
+production and version-labelled production history by booklet. Context supplies
+navigation references. Execution bodies allowlist status/identity/usage without private
+Run inputs, outputs or credentials. These reads do not grant access to another
+production's content. Selected non-manifest acceptance uses exact stored review facts
+outside previews, including grouped review and unchanged revalidation lineage; Manager
+retains the decision about whether new context warrants a fresh assessment.
 
 ### A05-A07 - Admission and crash recovery
 

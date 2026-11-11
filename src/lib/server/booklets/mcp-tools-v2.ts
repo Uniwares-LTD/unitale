@@ -377,13 +377,54 @@ export function createBookletMcpToolsV2(
         const last = state.success ? state.data.lastResult : undefined;
         let focused = last?.revisionId ?? (last?.kind === "revision" ? last.id : undefined);
         const assessmentId = last?.assessmentId ?? (last?.kind === "assessment" ? last.id : undefined);
-        if (!focused && assessmentId && manifestEntry) {
+        if (!focused && assessmentId) {
           const row = await s.db.collection<AssessmentV2>("bookletAssessments").findOne({ ...owned, _id: assessmentId });
-          focused = row?.assessment.sources.find((source) => source.artifactId === manifestEntry.id)?.revisionId;
+          const exact = row?.assessment.sources.filter((source) => source.contentHash === row.assessment.targetHash);
+          focused = row?.assessment.sources.find((source) => source.artifactId === manifestEntry?.id)?.revisionId ??
+            (exact?.length === 1 ? exact[0].revisionId : undefined);
+        }
+        const selectedRevision = focused ? await s.db.collection<RevisionV2>("bookletRevisions").findOne({ ...owned, _id: focused }) : null;
+        let acceptanceReview = null;
+        if (selectedRevision && selectedRevision.kind !== "book-manifest") {
+          const subject = s.production.subjects.find((subject) => subject.id === selectedRevision.subjectId &&
+            subject.artifacts.some((artifact) => artifact.id === selectedRevision.artifactId && artifact.kind === selectedRevision.kind));
+          const image = ["reference", "page-image"].includes(selectedRevision.kind);
+          const modes = image ? ["image", "correction"] : ["text", "specification", "correction"];
+          const visited = new Set<string>();
+          let candidate: RevisionV2 | null = subject ? selectedRevision : null;
+          while (candidate && !visited.has(candidate._id) && !acceptanceReview) {
+            visited.add(candidate._id);
+            const source = { artifactId: candidate.artifactId, revisionId: candidate._id, contentHash: candidate.contentHash };
+            for await (const row of s.db.collection<AssessmentV2>("bookletAssessments").find({
+              ...owned, complete: true, policyBinding: binding.policyBinding, reviewerBinding: binding.reviewerBinding,
+              "assessment.disposition": "pass", "assessment.mode": { $in: modes as AssessmentV2["assessment"]["mode"][] },
+              "assessment.sources": { $elemMatch: source },
+            }).batchSize(1)) {
+              const assessment = row.assessment;
+              const aliases = [candidate.artifactId, candidate.subjectId];
+              const targets = assessment.sources.filter((source) => assessment.coverage.targetIds.includes(source.artifactId) ||
+                s.production.subjects.some((subject) => assessment.coverage.targetIds.includes(subject.id) &&
+                  subject.artifacts.some((artifact) => artifact.id === source.artifactId)));
+              if (!aliases.some((alias) => assessment.coverage.targetIds.includes(alias)) ||
+                (assessment.targetHash !== candidate.contentHash && assessment.targetHash !== fingerprint(targets)) ||
+                (image && candidate.assets.some((asset) => !(assessment.coverage.assetIds ?? []).includes(asset.assetId)))) continue;
+              acceptanceReview = { revisionId: selectedRevision._id, contentHash: selectedRevision.contentHash,
+                reviewedRevisionId: candidate._id, assessmentId: row._id, targetIds: aliases,
+                assetIds: selectedRevision.assets.map((asset) => asset.assetId), mode: assessment.mode,
+                disposition: assessment.disposition, complete: row.complete,
+                policyBinding: row.policyBinding, reviewerBinding: row.reviewerBinding };
+              break;
+            }
+            if (acceptanceReview || !candidate.revalidatedFrom) break;
+            candidate = await s.db.collection<RevisionV2>("bookletRevisions").findOne({ ...owned,
+              _id: candidate.revalidatedFrom, artifactId: selectedRevision.artifactId, kind: selectedRevision.kind,
+            });
+            if (candidate && (candidate.contentHash !== selectedRevision.contentHash ||
+              fingerprint(candidate.assets) !== fingerprint(selectedRevision.assets))) candidate = null;
+          }
         }
         const manifestFilter = { ...owned, artifactId: manifestEntry?.id, kind: "book-manifest" as const };
-        let selectedManifest = manifestEntry && focused
-          ? await s.db.collection<RevisionV2>("bookletRevisions").findOne({ ...manifestFilter, _id: focused }) : null;
+        let selectedManifest = selectedRevision?.kind === "book-manifest" && selectedRevision.artifactId === manifestEntry?.id ? selectedRevision : null;
         const defaultManifest = manifestEntry?.acceptedRevisionId ?? manifestEntry?.currentRevisionId;
         if (!selectedManifest && defaultManifest)
           selectedManifest = await s.db.collection<RevisionV2>("bookletRevisions").findOne({ ...manifestFilter, _id: defaultManifest });
@@ -433,6 +474,10 @@ export function createBookletMcpToolsV2(
             kind: "assessment_history",
             id: s.production._id,
           },
+          acceptanceHistoryDocument: { kind: "acceptance_history", id: s.production._id },
+          humanHistoryDocument: { kind: "human_history", id: s.production._id },
+          executionHistoryDocument: { kind: "execution_history", id: s.production._id },
+          productionHistoryDocument: { kind: "production_history", id: s.production.bookletId },
           fence: s.production.fenceCounter,
           leaseHeld:
             !!s.production.mutationLease &&
@@ -450,6 +495,7 @@ export function createBookletMcpToolsV2(
           assessments: assessmentFacts,
           assessmentsComplete: assessmentFacts.length === assessments.length,
           manifestReview,
+          acceptanceReview,
           corrections: correctionFacts,
           correctionsComplete:
             workFacts.length === work.length &&

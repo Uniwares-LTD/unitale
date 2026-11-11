@@ -270,6 +270,7 @@ workflow:
                 When missing facts, exhausted corrections, unresolved evidence or no safe useful action remain, pause with a readable reason. Do not invent progress.
                 Action payloads follow integration-handoff.md. Child request_json is the complete child envelope; MCP payloads contain only that operation's arguments.
                 record_acceptance supplies contentHash and exact targetIds/assetIds. complete supplies manifestRevisionId for the explicitly selected immutable manifest. Read that revision before selecting it; context.manifestReview supplies compact coverage for that exact revision across all owned assessments, independently of the recent preview.
+                Read the exact selected revision before other artifact acceptance. context.acceptanceReview resolves its stored individual/grouped pass outside the preview. reviewedRevisionId identifies what was actually reviewed; an unchanged revalidation may inherit its ancestor's body review. Reuse that review only when your assessment of replacement context requires no fresh review; otherwise review the new revision. Inherited evidence does not claim inspection of new context.
                 record_assessment.executionLocator is {runId,nodeId:"child-quality-reviewer",executionId} from the retained work's resultObservation. Read that work document first; do not invent policy bindings or execution identities.
 
                 Allowed actions: read_document, lease, index, begin_work, transfer, retain_original, save_revision, request_human, record_evidence, record_assessment, sources, reconcile_work, record_acceptance, complete, story-planner, manuscript, art-director, page-composer, image-executor, quality-reviewer, pause
@@ -409,8 +410,10 @@ workflow:
                     meaningful_child["references"] = [{k: v for k, v in ref.items() if k not in ("nativeFileId", "url")} for ref in child.get("references", [])]
                     if digest(meaningful_child) != request.get("requestHash"):
                         raise ValueError("Registration hash differs from actual child request")
-                def passed(mode, target_hash, target_ids=None, rows=None):
-                    return any(a.get("mode") == mode and a.get("targetHash") == target_hash and a.get("disposition") == "pass" and a.get("complete") is True and a.get("policyBinding") == c["policyBinding"] and a.get("reviewerBinding") == c["reviewerBinding"] and (target_ids is None or a.get("coverage", {}).get("targetIds") == target_ids) for a in (c["assessments"] if rows is None else rows))
+                def trusted_pass(row):
+                    return row.get("disposition") == "pass" and row.get("complete") is True and row.get("policyBinding") == c["policyBinding"] and row.get("reviewerBinding") == c["reviewerBinding"]
+                def passed(mode, target_hash, rows):
+                    return any(a.get("mode") == mode and a.get("targetHash") == target_hash and trusted_pass(a) for a in rows)
                 def whole_book_pass(revision_id):
                     review = c.get("manifestReview") or {}
                     required = review.get("required", {})
@@ -457,7 +460,11 @@ workflow:
                 if action == "record_acceptance":
                     manifest = c.get("manifestReview") or {}
                     modes = ("image", "correction") if request.get("assetIds") else ("text", "specification", "correction")
-                    accepted = whole_book_pass(request.get("revisionId")) and manifest.get("manifestHash") == request.get("contentHash") if manifest.get("manifestRevisionId") == request.get("revisionId") else any(passed(mode, request.get("contentHash"), request.get("targetIds")) for mode in modes)
+                    review = c.get("acceptanceReview") or {}
+                    if manifest.get("manifestRevisionId") == request.get("revisionId"):
+                        accepted = whole_book_pass(request.get("revisionId")) and manifest.get("manifestHash") == request.get("contentHash")
+                    else:
+                        accepted = trusted_pass(review) and review.get("mode") in modes and review.get("revisionId") == request.get("revisionId") and review.get("contentHash") == request.get("contentHash") and bool(request.get("targetIds")) and set(request["targetIds"]).issubset(review.get("targetIds", [])) and set(request.get("assetIds", [])) == set(review.get("assetIds", []))
                     if not accepted:
                         raise ValueError("Review exact artifact before acceptance")
                 if action == "complete":
