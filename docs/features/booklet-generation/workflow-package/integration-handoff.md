@@ -242,6 +242,46 @@ integration so large bodies are referenced throughout the journey; this API alon
 does not prove that complete path. Image and changed-source revalidation paths remain
 pending until their own trusted guards are implemented.
 
+The local context handler is partially integrated and keeps `usage.canDispatch:false`
+until dispatch safeguards are complete. It reads exactly one `bookletWorkflowPolicies`
+record using the production's execution profile/revision and accepted Run's orchestrator/
+configuration revision. In addition to the existing `reviewer:{id,revision,publicationId}`,
+the record supplies `suite:{managerWorkflowId,children,providerPackages}` and the accepted `managerGraph`.
+Each of the six role-slug children supplies `{appId,workflowId,providerId,toolName}`.
+Child app/publication identities must be distinct, including from the Manager
+publication. `providerPackages` pins full `author/name:version@sha256` identifiers
+for the accepted text/image provider families; duplicate package names are rejected.
+Provision policy records by insert under a new profile/configuration revision rather
+than changing an accepted revision. The existing unique key enforces one record per
+profile/revision/orchestrator/configuration tuple. No new collection or index is added.
+The validator matches the actual Manager child nodes and Reviewer publication; these
+configured identities do not prove current remote publications or installed plugin versions.
+Operator readback/provisioning stays pending; no model may submit this configuration.
+Context returns at most 16 source/work and 8 assessment summaries, with an 8 KiB budget
+per summary group and explicit completeness flags. Correction facts describe selected
+work roots. Context carries the complete checkpoint and has a 128 KiB UTF-8 envelope
+cap, separate from the unchanged 64 KiB stored checkpoint cap. This accommodates the
+checkpoint plus bounded facts without a merge/partial-state protocol. Complete
+document reads remain available through `checkpointDocument`.
+Configure the existing MCP limits for this integration with `toolResultBytes` at least
+262144 and `responseBytes` at least 1048576, allowing the wrapped context response.
+The shared defaults remain unchanged. The local v2 transport fixture uses these
+explicit settings; the default-sized v1 transport tests remain separate.
+Source previews are navigational facts, not a complete authorization list. The app
+validates owned source tuples at registration, and the native guard matches the full
+meaningful registered request hash before a paid child call while checking exact
+source-content hashes. Review/preflight/whole-book guard integration must likewise
+avoid treating bounded assessment previews as complete history in 09.3/09.6.
+These selections are not complete history or product limits. Context additionally
+selects registered checkpoint-pending work outside its recent window. Follow
+`workHistoryDocument` and `assessmentHistoryDocument` through `read_document` using
+`kind:work_history` or `assessment_history` and the production ID. Each page returns
+at most 20 metadata/document references and a continuation cursor. Cursors bind owner,
+production, kind and production version; a changed version requires restarting the
+read. Work statuses remain current observations, not an immutable historical snapshot.
+Follow individual document references for complete bodies. `kind:correction` takes a
+known work `correctionRootId` and returns its current owned durable allowance facts.
+
 Context supplies `checkpointVersion`, `checkpoint` (opaque saved intent/result), current
 `fence`, `sources` (available immutable artifactId/revisionId/contentHash identities),
 `work`, `assessments`, `corrections`, `usage:{canDispatch,...}`, `policyBinding`,

@@ -19,6 +19,7 @@ import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
 import { bookletTransfers, transferSchema } from "./mcp-transfers";
 import { reconcileBookletWorkV2 } from "./reconcile-v2";
+import { readBookletSuiteV2 } from "./suite-v2";
 import {
   bookletContentV2Schema,
   bookletSourceV2Schema,
@@ -157,6 +158,217 @@ export function createBookletMcpToolsV2(
     };
   }
   return [
+    tool(
+      "context",
+      "Read owned Manager facts and configured suite identity. Follow document references for complete bodies; dispatch remains gated by application safeguards.",
+      async (raw, s) => {
+        z.strictObject({}).parse(raw);
+        const binding = await readBookletSuiteV2(s.db, s.production, s.job);
+        const owned = { ownerId: s.actor.uid, productionId: s.production._id };
+        const currentIds = s.production.subjects.flatMap((subject) =>
+          subject.artifacts.flatMap((artifact) =>
+            artifact.currentRevisionId ? [artifact.currentRevisionId] : [],
+          ),
+        );
+        const [revisions, work, assessments] = await Promise.all([
+          s.db
+            .collection("bookletRevisions")
+            .find(
+              { ...owned, _id: { $in: currentIds as never[] } },
+              {
+                projection: { _id: 1, artifactId: 1, contentHash: 1 },
+              },
+            )
+            .sort({ _id: 1 })
+            .limit(17)
+            .toArray(),
+          s.db
+            .collection<WorkV2>("bookletWork")
+            .find(owned, {
+              projection: {
+                _id: 0,
+                callId: 1,
+                requestHash: 1,
+                service: 1,
+                operation: 1,
+                status: 1,
+                category: 1,
+                retryable: 1,
+                correction: 1,
+                correctionRootId: 1,
+                resultObservation: 1,
+              },
+            })
+            .sort({ createdAt: -1, _id: -1 })
+            .limit(17)
+            .toArray(),
+          s.db
+            .collection("bookletAssessments")
+            .find(owned, {
+              projection: {
+                _id: 1,
+                assessment: 1,
+                complete: 1,
+                policyBinding: 1,
+                reviewerBinding: 1,
+              },
+            })
+            .sort({ createdAt: -1, _id: -1 })
+            .limit(9)
+            .toArray(),
+        ]);
+        function bounded<T>(rows: T[], limit: number) {
+          const selected: T[] = [];
+          for (const row of rows.slice(0, limit)) {
+            if (Buffer.byteLength(JSON.stringify([...selected, row])) > 8192)
+              break;
+            selected.push(row);
+          }
+          return selected;
+        }
+        const sources = bounded(
+          revisions.map((row) => ({
+            artifactId: row.artifactId,
+            revisionId: row._id,
+            contentHash: row.contentHash,
+          })),
+          16,
+        );
+        const workFacts = bounded(
+          work.map((row) => ({
+            callId: row.callId,
+            requestHash: row.requestHash,
+            service: row.service,
+            operation: row.operation,
+            status: row.status,
+            category: row.category,
+            retryable: row.retryable,
+            correction: row.correction,
+            correctionRootId: row.correctionRootId,
+            resultAvailable: !!row.resultObservation,
+            document: { kind: "work", id: row.callId },
+          })),
+          16,
+        );
+        const assessmentFacts = bounded(
+          assessments.map((row) => ({
+            ...row.assessment,
+            assessmentId: row._id,
+            complete: row.complete,
+            policyBinding: row.policyBinding,
+            reviewerBinding: row.reviewerBinding,
+          })),
+          8,
+        );
+        const pending = z
+          .object({
+            pending: z
+              .object({ callId: id.nullable().optional() })
+              .nullable()
+              .optional(),
+          })
+          .safeParse(s.production.checkpoint);
+        const pendingCallId = pending.success
+          ? pending.data.pending?.callId
+          : undefined;
+        if (
+          pendingCallId &&
+          !workFacts.some((row) => row.callId === pendingCallId) &&
+          (await s.db
+            .collection("bookletWork")
+            .findOne(
+              { ...owned, callId: pendingCallId },
+              { projection: { _id: 1 } },
+            ))
+        ) {
+          const retained = await bookletRepositoryV2(s.db, s.actor).getWork(
+            s.production._id,
+            pendingCallId,
+          );
+          const focused = {
+            callId: retained.callId,
+            requestHash: retained.requestHash,
+            service: retained.service,
+            operation: retained.operation,
+            status: retained.status,
+            category: retained.category,
+            retryable: retained.retryable,
+            correction: retained.correction,
+            correctionRootId: retained.correctionRootId,
+            resultAvailable: !!retained.resultObservation,
+            document: { kind: "work", id: retained.callId },
+          };
+          workFacts.unshift(focused);
+          while (
+            Buffer.byteLength(JSON.stringify(workFacts)) > 8192 ||
+            workFacts.length > 16
+          ) {
+            if (workFacts.length === 1)
+              throw bookletConflict(
+                "Pending work summary exceeds context capacity; read its document.",
+              );
+            workFacts.pop();
+          }
+        }
+        const repo = bookletRepositoryV2(s.db, s.actor);
+        const correctionRoots = [
+          ...new Set(
+            workFacts
+              .filter((row) => row.correction)
+              .map((row) => row.correctionRootId as string),
+          ),
+        ];
+        const correctionFacts = bounded(
+          await Promise.all(
+            correctionRoots.map((root) =>
+              repo.getCorrection(s.production._id, root),
+            ),
+          ),
+          16,
+        );
+        const facts = {
+          productionId: s.production._id,
+          version: s.production.version,
+          state: s.production.lifecycleState,
+          checkpointVersion: s.production.checkpointVersion,
+          checkpoint: s.production.checkpoint ?? {},
+          checkpointDocument: { kind: "checkpoint", id: s.production._id },
+          productionDocument: { kind: "production", id: s.production._id },
+          workHistoryDocument: { kind: "work_history", id: s.production._id },
+          assessmentHistoryDocument: {
+            kind: "assessment_history",
+            id: s.production._id,
+          },
+          fence: s.production.fenceCounter,
+          leaseHeld:
+            !!s.production.mutationLease &&
+            s.production.mutationLease.expiresAt > new Date(),
+          cancelled: s.job.cancelRequested,
+          policyBinding: binding.policyBinding,
+          reviewerBinding: binding.reviewerBinding,
+          suiteBinding: fingerprint(binding.suite),
+          retryPolicy: s.production.retryPolicy,
+          stageLocks: s.production.stageLocks,
+          sources,
+          sourcesComplete: sources.length === currentIds.length,
+          work: workFacts,
+          workComplete: workFacts.length === work.length,
+          assessments: assessmentFacts,
+          assessmentsComplete: assessmentFacts.length === assessments.length,
+          corrections: correctionFacts,
+          correctionsComplete:
+            workFacts.length === work.length &&
+            correctionFacts.length === correctionRoots.length,
+          usage: { canDispatch: false, reason: "dispatch_safeguards_pending" },
+        };
+        if (Buffer.byteLength(JSON.stringify(facts)) > 128 * 1024)
+          throw bookletConflict(
+            "Context exceeds capacity; read complete documents separately.",
+          );
+        return facts;
+      },
+      false,
+    ),
     tool(
       "lease",
       "Refresh the Run-owned mutation fence atomically. Acquire, renew and release hold no lease between tool calls; every write checks its fence independently.",

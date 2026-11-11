@@ -160,7 +160,7 @@ workflow:
                 for key in ("checkpointVersion", "fence", "sources", "work", "assessments", "corrections", "usage", "policyBinding", "reviewerBinding"):
                     if key not in c:
                         raise ValueError("Authoritative context incomplete: " + key)
-                if len(json.dumps(c, ensure_ascii=False).encode("utf-8")) > 65536:
+                if len(json.dumps(c, ensure_ascii=False).encode("utf-8")) > 131072:
                     raise ValueError("Context capacity exceeded; use bounded reads")
                 route = "reason" if execution_ready == "true" and c["usage"].get("canDispatch") and not c.get("cancelled") and not c.get("leaseHeld") else "pause"
                 return {"context": json.dumps(c, ensure_ascii=False), "route": route, "result": json.dumps({"status": "partial", "reason": "activation_or_usage_or_cancellation_gate", "checkpointVersion": c["checkpointVersion"]})}
@@ -410,11 +410,9 @@ workflow:
                 if action in SERVICES:
                     if request.get("service") != action or request.get("contractVersion") != 2:
                         raise ValueError("Child service/version mismatch")
-                    source_index = {(s["artifactId"], s["revisionId"], s["contentHash"]): s for s in c["sources"]}
                     for source in request.get("sources", []):
-                        key = tuple(source[k] for k in ("artifactId", "revisionId", "contentHash"))
-                        if key not in source_index or digest(source["content"]) != source["contentHash"]:
-                            raise ValueError("Unselected or modified source")
+                        if digest(source["content"]) != source["contentHash"]:
+                            raise ValueError("Modified source content")
                     paid = not (action == "image-executor" and request.get("operation") == "prepare")
                     # Transient transport handles do not change meaningful request identity.
                     meaningful = dict(request)

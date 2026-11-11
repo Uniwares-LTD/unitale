@@ -59,7 +59,7 @@ The retained upstream patch and isolated-build proposal are optional historical 
 
 Local capacities: child JSON 256 KiB; original 8 MiB; one to sixteen explicit creative
 items per call; one scoped image call with multiple output slots; whole-book windows
-of one to four pages; Manager at most 64 actions; checkpoint/context 64 KiB. These
+of one to four pages; Manager at most 64 actions; checkpoint 64 KiB and context 128 KiB. These
 bounds fail explicitly without truncation. Grouping and capacity are initial workflow
 choices, not permanent product or application schema restrictions.
 
@@ -109,8 +109,9 @@ hash-bound child envelope. Provider bindings and execution switches remain disab
 Local v2 checkpoint, index, transfer, native reconciliation, creative-text publication,
 document/history reads and creative-text registration
 handlers now exist. Registration binds actual artifact responsibilities while native
-child selectors retain subject IDs and grouped revisions. Paid dispatch, image/review
-registration, remaining capabilities, complete provider observation and recovery integration remain
+child selectors retain subject IDs and grouped revisions. Reviewer intent registration
+is now available. Paid dispatch, image registration, remaining capabilities, complete
+provider observation and recovery integration remain
 pending. The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
 owns application checks and progress; the package digest below covers only native
 YAML, fixtures and their focused compatibility test.
@@ -135,13 +136,21 @@ The regression failed on the prior export and passes through the actual capabili
 inspector with the supported Start metadata. This isolated binding check does not
 prove full registration while the remaining v2 tools and Human Input wiring are pending.
 
-Current slice: 39/39 compatibility tests pass (11 preserved v1 and 28 native-package
+Manager context is now bounded at 128 KiB, independently of the unchanged 64 KiB
+checkpoint cap. It preserves the entire checkpoint alongside bounded facts instead
+of introducing partial-state merging. Actual Code-node tests cover preservation and
+oversize rejection; the application transport fixture uses the existing configurable
+MCP limits documented in the handoff. Installed-plugin and remote binding readback
+remain distinct pending evidence.
+
+Current slice: 40/40 compatibility tests pass (11 preserved v1 and 29 native-package
 tests). Typecheck, scoped test lint, docs/i18n/skills checks and an independent hash audit
-pass. A separate same-agent read-only slice review found no blocking issue. Current
+pass. A separate same-agent read-only review of the context amendment found and fixed
+the source-preview limit defect; follow-up found no further blocking issue. Current
 implementation SHA-256:
-`ab90d4c562352f257c02a8860e7a1dc018d74444d2488e84bb254eacebeef708`.
+`555258ca9cd67de2e53d8972845b3e5b188b0803a2c430b133ea330f644c5564`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-240,388 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+240,141 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

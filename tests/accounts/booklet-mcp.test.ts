@@ -1,12 +1,52 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { parse as parseYaml } from "yaml";
+import { validateBookletSuiteV2 } from "../../src/lib/server/booklets/suite-v2";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import sharp from "sharp";
+
+function suiteFixture() {
+  const exported = parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/manager/workflow.yaml", "utf8"));
+  const graph = exported.workflow.graph as { nodes: { id: string; data: Record<string, unknown> }[] };
+  const workflowId = randomUUID();
+  const children = Object.fromEntries(graph.nodes.filter((node) => node.id.startsWith("child-")).map((node) => {
+    node.data.provider_id = "configured-" + node.id;
+    return [node.id.slice(6), { appId: randomUUID(), workflowId: randomUUID(), providerId: node.data.provider_id, toolName: node.data.tool_name }];
+  }));
+  const manifest = JSON.parse(readFileSync("docs/features/booklet-generation/workflow-package/manifest.json", "utf8"));
+  const suite = { managerWorkflowId: workflowId, children,
+    providerPackages: manifest.requiredPlugins.map((plugin: { installedPackageIdentifier: string }) => plugin.installedPackageIdentifier) as string[],
+  };
+  return { suite, workflowId, graph };
+}
+test("suite bindings match the actual Manager child-tool nodes", () => {
+  const { suite, workflowId, graph } = suiteFixture();
+  assert.deepEqual(validateBookletSuiteV2(suite, { workflowId, graph }), suite);
+  assert.throws(() => validateBookletSuiteV2(suite, { workflowId: randomUUID(), graph }), /another Manager/);
+  const foreign = structuredClone(suite);
+  foreign.children["quality-reviewer"].providerId = "foreign-tool";
+  assert.throws(() => validateBookletSuiteV2(foreign, { workflowId, graph }), /workflow-tool binding/);
+  const missing = structuredClone(suite);
+  delete missing.children["image-executor"];
+  assert.throws(() => validateBookletSuiteV2(missing, { workflowId, graph }));
+  const duplicate = structuredClone(graph);
+  duplicate.nodes.push(duplicate.nodes.find((node) => node.id === "child-manuscript")!);
+  assert.throws(() => validateBookletSuiteV2(suite, { workflowId, graph: duplicate }), /workflow-tool binding/);
+  const missingProvider = { ...suite, providerPackages: suite.providerPackages.slice(0, 1) };
+  assert.throws(() => validateBookletSuiteV2(missingProvider, { workflowId, graph }));
+  const ambiguousProvider = { ...suite, providerPackages: [...suite.providerPackages, suite.providerPackages[0]] };
+  assert.throws(() => validateBookletSuiteV2(ambiguousProvider, { workflowId, graph }), /unambiguous/);
+  const collapsed = structuredClone(suite);
+  collapsed.children["quality-reviewer"].workflowId = collapsed.children.manuscript.workflowId;
+  assert.throws(() => validateBookletSuiteV2(collapsed, { workflowId, graph }), /workflow-tool binding/);
+});
 import { database } from "../../src/lib/server/mongo";
 import { adminAuth } from "../../src/lib/server/firebase";
 import { handleMcp } from "../../src/lib/server/mcp/handler";
 import { parseMcpConfig } from "../../src/lib/config/mcp";
+import { mcpLimitsSchema, type McpLimits } from "../../src/lib/contracts/mcp-limits";
 import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
 import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
@@ -88,6 +128,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
     method: string,
     params: unknown,
     credential = serviceToken,
+    limits?: McpLimits,
   ) =>
     handleMcp(
       new Request("http://localhost:3000/api/mcp", {
@@ -99,7 +140,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         },
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
       }),
-      options,
+      { ...options, limits },
     );
   const call = async (
     name: string,
@@ -1021,7 +1062,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
               request:
                 typeof request === "string" ? request : JSON.stringify(request),
             },
-          });
+          }, serviceToken, mcpLimitsSchema.parse({ toolResultBytes: 256 * 1024, responseBytes: 1024 * 1024 }));
           assert.equal(response.status, 200);
           return (await response.json()).result;
         };
@@ -1149,6 +1190,76 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         for (const field of ["ownerId", "orderId", "mutationLease", "checkpoint", "creationHash"])
           assert.equal(productionRead.value[field], undefined);
         assert.equal((await invoke("read_document", { kind: "production", id: "foreign-production" })).isError, true);
+        assert.equal((await invoke("context", {})).isError, true);
+        const configured = suiteFixture();
+        await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
+          "run.orchestrator.workflowId": configured.workflowId,
+        } });
+        const bindingRow = {
+          profileId: production.creativeConfigSnapshot.executionProfileId,
+          profileRevision: production.creativeConfigSnapshot.executionProfileRevision,
+          orchestratorId: "booklet-v2", configurationRevision: 1,
+          suite: configured.suite, managerGraph: configured.graph,
+          reviewer: { id: "review-policy-v2", revision: 1, publicationId: configured.suite.children["quality-reviewer"].workflowId },
+        };
+        await db.collection("bookletWorkflowPolicies").insertOne(bindingRow);
+        const facts = await successful("context", {});
+        assert.equal(facts.productionId, production._id);
+        assert.equal(facts.fence, registered.fence);
+        assert.equal(facts.usage.canDispatch, false);
+        assert.equal(facts.work[0].callId, "call-v2");
+        assert.equal(facts.work[0].resultAvailable, false);
+        assert.equal(facts.reviewerBinding, bindingRow.reviewer.publicationId);
+        for (const key of ["ownerId", "orderId", "secret", "managerGraph", "suite"])
+          assert.equal(facts[key], undefined);
+        await db.collection("bookletWorkflowPolicies").updateOne({ orchestratorId: "booklet-v2" }, { $set: { "reviewer.publicationId": randomUUID() } });
+        assert.equal((await invoke("context", {})).isError, true);
+        await db.collection("bookletWorkflowPolicies").updateOne({ orchestratorId: "booklet-v2" }, { $set: { reviewer: bindingRow.reviewer } });
+        const duplicateBindingId = randomUUID();
+        await assert.rejects(db.collection("bookletWorkflowPolicies").insertOne({ ...bindingRow, _id: duplicateBindingId as never }), /E11000/);
+        await t.test("context keeps old pending work and histories navigate beyond summary limits", async () => {
+          const original = await db.collection("bookletWork").findOne({ ownerId: "owner", productionId: production._id, callId: "call-v2" });
+          const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const rows = Array.from({ length: 25 }, (_, i) => ({ ...original!,
+            _id: fingerprint(["context-history", i]) as never, callId: "history-" + i,
+            actionKey: fingerprint(["context-action", i]), createdAt: new Date(Date.now() + 1000 + i),
+          }));
+          await db.collection("bookletWork").insertMany(rows);
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: {
+            checkpoint: { pending: { callId: "call-v2", action: "manuscript" } },
+          } });
+          const context = await successful("context", {});
+          assert.equal(context.workComplete, false);
+          assert.equal(context.work[0].callId, "call-v2");
+          assert.equal(context.workHistoryDocument.kind, "work_history");
+          assert.ok(Buffer.byteLength(JSON.stringify(context)) < 65536);
+          const first = await successful("read_document", context.workHistoryDocument);
+          assert.equal(first.items.length, 20);
+          assert.equal(first.complete, false);
+          const second = await successful("read_document", { ...context.workHistoryDocument, cursor: first.cursor });
+          assert.equal(second.cursor, null);
+          const calls = [...first.items, ...second.items].map((item: { callId: string }) => item.callId);
+          assert.equal(calls.length, 26);
+          assert.equal(new Set(calls).size, 26);
+          const correction = await successful("read_document", { kind: "correction", id: original!.correctionRootId });
+          assert.equal(correction.complete, true);
+          assert.equal(correction.value.rootId, original!.correctionRootId);
+          assert.equal((await invoke("read_document", { kind: "work_history", id: "foreign-production" })).isError, true);
+          assert.equal((await invoke("read_document", { kind: "assessment_history", id: production._id, cursor: first.cursor })).isError, true);
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $inc: { version: 1 } });
+          assert.equal((await invoke("read_document", { ...context.workHistoryDocument, cursor: first.cursor })).isError, true);
+          const largeCheckpoint = { keep: "x".repeat(64000) };
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { checkpoint: largeCheckpoint } });
+          const largeContext = await successful("context", {});
+          assert.deepEqual(largeContext.checkpoint, largeCheckpoint);
+          assert.ok(Buffer.byteLength(JSON.stringify(largeContext)) > 65536);
+          assert.ok(Buffer.byteLength(JSON.stringify(largeContext)) < 131072);
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { version: before!.version, checkpoint: before!.checkpoint } });
+          await db.collection("bookletWork").deleteMany({ _id: { $in: rows.map((row) => row._id) } });
+          const empty = await successful("read_document", { kind: "assessment_history", id: production._id });
+          assert.equal(empty.complete, true);
+          assert.deepEqual(empty.items, []);
+        });
         const pendingWork = await successful("reconcile_work", { callId: "call-v2" });
         assert.equal(pendingWork.status, "registered");
         assert.equal(pendingWork.resultAvailable, false);

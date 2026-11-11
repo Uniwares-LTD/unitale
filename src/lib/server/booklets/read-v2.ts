@@ -12,10 +12,13 @@ export const bookletReadV2Schema = z.strictObject({
   kind: z.enum([
     "production",
     "checkpoint",
+    "correction",
     "revision",
     "work",
     "assessment",
     "history",
+    "work_history",
+    "assessment_history",
   ]),
   id,
   cursor: z.string().max(16384).optional(),
@@ -41,6 +44,91 @@ export async function readBookletDocumentV2(
 ) {
   const request = bookletReadV2Schema.parse(raw);
   const repo = bookletRepositoryV2(db, actor);
+  if (
+    request.kind === "work_history" ||
+    request.kind === "assessment_history"
+  ) {
+    if (request.id !== productionId) throw bookletMissing();
+    const production = await repo.getProduction(productionId);
+    const scope = fingerprint([
+      actor.uid,
+      productionId,
+      request.kind,
+      production.version,
+    ]);
+    const position = request.cursor
+      ? z
+          .strictObject({
+            scope: z.string(),
+            after: z.string().regex(/^[a-f0-9]{64}$/),
+          })
+          .parse(
+            JSON.parse(
+              Buffer.from(request.cursor, "base64url").toString("utf8"),
+            ),
+          )
+      : { scope, after: "" };
+    if (position.scope !== scope)
+      throw bookletConflict(
+        "History changed or cursor belongs to another query; restart the read.",
+      );
+    const work = request.kind === "work_history";
+    const rows = await db
+      .collection(work ? "bookletWork" : "bookletAssessments")
+      .find(
+        {
+          ownerId: actor.uid,
+          productionId,
+          documentVersion: 2,
+          _id: { $gt: position.after as never },
+        },
+        {
+          projection: work
+            ? { _id: 1, callId: 1, service: 1, operation: 1, status: 1 }
+            : {
+                _id: 1,
+                callId: 1,
+                "assessment.mode": 1,
+                "assessment.targetHash": 1,
+                "assessment.disposition": 1,
+                complete: 1,
+              },
+        },
+      )
+      .sort({ _id: 1 })
+      .limit(21)
+      .toArray();
+    const items = rows.slice(0, 20).map((row) =>
+      work
+        ? {
+            callId: row.callId,
+            service: row.service,
+            operation: row.operation,
+            status: row.status,
+            document: { kind: "work", id: row.callId },
+          }
+        : {
+            assessmentId: row._id,
+            callId: row.callId,
+            ...row.assessment,
+            complete: row.complete,
+            document: { kind: "assessment", id: row._id },
+          },
+    );
+    return {
+      kind: request.kind,
+      id: productionId,
+      items,
+      productionVersion: production.version,
+      complete: !request.cursor && rows.length <= 20,
+      cursor:
+        rows.length > 20
+          ? Buffer.from(
+              JSON.stringify({ scope, after: rows[19]._id }),
+            ).toString("base64url")
+          : null,
+    };
+  }
   if (request.kind === "history") {
     const production = await repo.getProduction(productionId);
     const artifact = production.subjects
@@ -137,7 +225,9 @@ export async function readBookletDocumentV2(
     };
   }
   let document: unknown;
-  if (request.kind === "checkpoint") {
+  if (request.kind === "correction") {
+    document = await repo.getCorrection(productionId, request.id);
+  } else if (request.kind === "checkpoint") {
     if (request.id !== productionId) throw bookletMissing();
     const row = await repo.getProduction(productionId);
     document = {

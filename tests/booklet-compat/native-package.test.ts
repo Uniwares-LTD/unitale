@@ -109,6 +109,18 @@ function register(r: any, c = context(), correction?: any) {
   });
   return c;
 }
+test("Manager context preserves a complete large checkpoint within its separate context budget", () => {
+  const c = context();
+  c.checkpoint = { keep: "x".repeat(64000) };
+  c.work = [{ note: "w".repeat(6000) }];
+  assert.ok(Buffer.byteLength(JSON.stringify(c)) > 65536);
+  const facts = run("manager", "facts", { raw: JSON.stringify({ result: c }), execution_ready: "false" });
+  assert.deepEqual(JSON.parse(facts.context).checkpoint, c.checkpoint);
+  const checkpoint = JSON.parse(guard("read_document", { kind: "work", id: "known-call" }, c).checkpoint);
+  assert.deepEqual(checkpoint.state.keep, c.checkpoint.keep);
+  c.work = [{ note: "w".repeat(131072) }];
+  assert.throws(() => run("manager", "facts", { raw: JSON.stringify({ result: c }), execution_ready: "false" }), /Context capacity/);
+});
 test("Manager terminal view uses the Run contract without exposing domain evidence", () => {
   for (const [status, outcome] of [
     ["complete", "success"],
@@ -807,6 +819,15 @@ test("Manager preserves native original order; transport-handle renewal does not
 });
 
 test("Manager never replays unknown/completed work or dispatches modified source content", () => {
+  const many = request();
+  many.sources = Array.from({ length: 20 }, (_, i) => ({ artifactId: "source-" + i,
+    revisionId: "revision-" + i, contentHash: hash({ title: "owned source" }), content: { title: "owned source" } }));
+  const registered = register(many);
+  registered.sources = [];
+  registered.sourcesComplete = false;
+  assert.equal(guard(many.service, many, registered).paid, "yes");
+  many.sources[0].revisionId = "changed-after-registration";
+  assert.throws(() => guard(many.service, many, registered), /Unregistered\/changed/);
   const r = request();
   const c = register(r);
   assert.equal(guard(r.service, r, c).paid, "yes");
@@ -823,7 +844,7 @@ test("Manager never replays unknown/completed work or dispatches modified source
     },
   ];
   c.sources = r.sources;
-  assert.throws(() => guard(r.service, r, c), /modified source/);
+  assert.throws(() => guard(r.service, r, c), /[Mm]odified source/);
 });
 
 test("Manager enforces durable correction limits and confirmed findings across candidates/continuation", () => {

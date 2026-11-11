@@ -528,8 +528,8 @@ use estimated completion percentages as acceptance evidence.
 
 | Task | State | Required outcome and exit evidence |
 | --- | --- | --- |
-| 09.1 Manager context and bindings | In progress | Reuse server-owned suite/Reviewer configuration, ownership, typed reads and lease primitives. Bounded context/source references exclude private bindings; foreign identities fail and actual configured identities are validated. |
-| 09.2 One complete text action | Pending | Finish register/dispatch safeguards and trusted usage, including Manager reasoning without parent/child double counting. Actual gateway/YAML boundaries complete a deterministic child, retain and publish exact text, and advance a compact checkpoint. Lost replies never repeat execution or publication. |
+| 09.1 Manager context and bindings | Verified | Local configuration/identity, bounded context/navigation, complete checkpoint and atomic fence tests pass. Actual remote/plugin readback remains checkpoint 12 evidence. |
+| 09.2 One complete text action | In progress | Finish register/dispatch safeguards and trusted usage, including Manager reasoning without parent/child double counting. Actual gateway/YAML boundaries complete a deterministic child, retain and publish exact text, and advance a compact checkpoint. Lost replies never repeat execution or publication. |
 | 09.3 Assessment and image actions | Pending | Complete assessment gateway/all six modes, correction-finding lineage, preparation/preflight, verified originals, image publication and revalidation. Exact retained assessments/coverage cannot be altered; partial results survive and attachment/save retries never regenerate. |
 | 09.4 Human decisions and completion | Pending | Connect existing authentic first-wins decisions, Manager acceptance, manifest drafts, structural completion and backend history reads. Correct requests resume; stale responses and invalid purchased structures fail without partial finalization. |
 | 09.5 Bounded recovery | Pending | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
@@ -564,13 +564,46 @@ behind scope C at checkpoint 12; no preliminary tunnel or checkpoint 10 UI work.
 09.1 slice: the v2 lease adapter uses the existing atomic mutation/receipt mechanism
 to refresh a fence and return `leaseHeld:false` for acquire/renew/release. Every later
 write still checks its own fence. Held repository leases block refresh and remain
-unchanged; no lock spans a workflow call. Context and suite binding remain pending,
-so 09.1 is not Verified. This adds no persisted field; model JSON and diagrams remain
+unchanged; no lock spans a workflow call. Context/suite integration is partial,
+and now verifies its local boundary. This adds no production field; model JSON and diagrams remain
 applicable. Focused gateway coverage checks replay, stale fences and the next write.
 The same document reader now exposes owned `{checkpointVersion,state}` via
 `kind:checkpoint`, allowing cursor-based reads of large saved state without a new
 storage field. Thirteen MCP tests pass, including large checkpoint sections and
 foreign-production rejection; scoped lint and documentation checks pass.
+The 09.1 suite validator compares server-owned Manager/child publication and tool
+metadata with the actual exported Manager's six child nodes. A fixture binds those
+nodes in memory and rejects missing children, foreign tools/Manager publications and
+duplicate node IDs. It performs no Dify call and does not prove that remote workflow
+tools still resolve to the recorded child publications. Context now loads one matching
+server-owned policy record, validates its suite/Manager graph and Reviewer publication,
+and exposes only binding identities. Sources, recent work, assessments and correction
+facts are bounded with explicit completeness flags; complete bodies use owned reads.
+Dispatch remains disabled. Context now includes an older checkpoint-pending work item
+outside its recent selection. Owned work/assessment histories expose continuation
+cursors, invalidated by production changes rather than silently omitting new records;
+individual work/assessment/correction bodies use bounded document reads. Local tests
+cover 26 work records, pending selection, cross-query/foreign cursors and changed state.
+The demonstrated large-checkpoint mismatch is resolved with a 128 KiB context envelope,
+keeping the entire checkpoint inline and its storage cap at 64 KiB. Actual Manager
+Code fixtures preserve its state beyond the prior context cap and reject oversize
+context. No checkpoint merge/projection protocol is needed. Registration's owned
+immutable sources and full request hash authorize a paid child's source selection;
+the native guard no longer treats the bounded source preview as a complete allowlist.
+Content hashes and registered paid-call matching remain enforced, including a 20-source
+fixture with an empty preview. Actual remote readback remains checkpoint 12 evidence.
+Provider snapshots pin unique full text/image package identifiers; child app/publication
+identities are distinct and the Reviewer policy matches its child publication. Dispatch binding
+enforcement belongs to 09.2. No suite provisioning or live activation is claimed.
+
+09.1 exit evidence: 60 affected repository/lifecycle/MCP tests passed in the combined
+run; the final changed MCP/suite cases passed again (15 tests). Forty native/v1
+compatibility tests, build, post-build typecheck, scoped lint, docs and independent
+13-path hash audit pass. A separate same-agent read-only review (cold-review fallback)
+found and fixed the source-preview/product-limit defect; its follow-up found no further
+blocking issue. The disposable Mongo fixture needed forced shutdown once; a subsequent
+process inventory found no remaining mongod process. This is local verification, not
+integrated Dify execution. Checkpoint-wide review pair remains 09.7 work.
 
 In progress; not ready for activation. Checkpoint 07 storage and checkpoint 08 shared
 seams are complete locally. Current 09 implementation provides:
@@ -622,21 +655,21 @@ seams are complete locally. Current 09 implementation provides:
   No Unibase extension was needed. Full registration still requires the remaining
   tools and Human Input integration; revised candidate import/execution remains pending.
 
-The exposed v2 tools are lease/fence refresh, checkpoint, index, transfer, creative-text/Reviewer work registration,
+The exposed v2 tools are context, lease/fence refresh, checkpoint, index, transfer, creative-text/Reviewer work registration,
 native work reconciliation, creative-text publication and the partial document reader.
 Registration does not authorize paid dispatch. Automatic recovery, image publication/reviews,
 human decisions and accounting remain incomplete. There is no complete application-connected
 journey. The latest YAML identity and verification are maintained in the
 [candidate README](workflow-package/README.md#current-integration-slice).
 
-Current application verification: 57 affected repository, lifecycle/media and MCP
+Current application verification: 60 affected repository, lifecycle/media and MCP
 tests pass, including native retention/readback, continuation publication, roster
 lineage, product-capacity rejection and large exact-text reference/transfer publication.
 Reviewer tests use the real native observation hook for a partial batch, preserve
 before/after source revisions, save distinct assessments of the same scope and reject
 altered assessment content. Owned production reads exclude order/owner/lease/checkpoint
 fields. These checks do not establish Reviewer publication identity or paid dispatch.
-The revised native package passes 39 compatibility tests, including private Start
+The revised native package passes 40 compatibility tests, including private Start
 inspection against existing application code. Its hashes/digest are refreshed.
 Production build, sequential typecheck, scoped lint, environment and model/docs/i18n/
 skills checks pass. A separate same-agent read-only slice review found no blocking
