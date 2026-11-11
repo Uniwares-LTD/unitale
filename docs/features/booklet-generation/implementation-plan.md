@@ -1239,6 +1239,31 @@ the synthetic/real boundary, original-byte handling, partial/full window coverag
 current Run/capability replacement, unchanged v1 record and one-charge/no-reservation
 assertions. Final checkpoint-wide review pairs remain reserved for 09.7.
 
+09.6 purchased-revision fixture: extend that same completed production with one
+scoped page revision whose frozen terms require five fixture credits. Exercise
+quote/consent mismatch rejection, repeated consent, actual revision admission,
+scoped native composition/image preparation/preflight/publication/review and a new
+selected manifest. Check preservation of the other four pages, immutable previous
+manifest/original, retry policy, one allocation and one revision charge. Only the
+same synthetic provider/native identity boundaries above are used. Do not add a
+revision executor or UI implementation; reuse the existing lifecycle and handlers.
+The connected probe confirms that a succeeded Run cannot use generic successor
+admission. A customer revision therefore starts a new logical Run (no predecessorId)
+under its newly consented revision workflow and the same production/order. Production-
+owned history retains the previous Run and exact content. Unfinished-production
+continuation still uses predecessorId and the existing logical chain. Keep this
+distinction in checkpoint 10; do not change Unibase restart rules to admit revisions.
+
+Purchased-revision evidence: 31 MCP tests, typecheck and scoped ESLint pass. The
+connected fixture completes a five-credit page revision through real quote, consent,
+admission, native composition/image/Reviewer boundaries and structural completion.
+It rejects changed consent, replays the original consent once, preserves all four
+unselected page subjects and previous immutable manifest/original, and records one
+revision allocation/charge. Three new revisions produce the revised specification,
+original and manifest; the retry snapshot is unchanged. No application code or shared
+runtime change was needed. Docs/i18n/skills checks and a separate same-agent read-only
+slice review pass. Predecessor reuse and the full 09.6 exit audit remain pending.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

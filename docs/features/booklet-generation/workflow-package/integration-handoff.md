@@ -197,6 +197,14 @@ Correction roots bind production/task/targets/funding, with distinct corrective
 actions counted once even when technically retried. Assessments and Manager selections
 have separate immutable records; human responses remain in existing Run decision storage.
 
+For unfinished-production continuation, pass the verified terminal predecessor to
+`enqueueBookletRun`; it preserves the logical Run chain and consumes no new package.
+A customer revision uses its quote/consent-created workflow and starts a new logical
+Run on the same production (`predecessorId` omitted). A succeeded Run is not eligible
+for generic successor restart. Production-owned history links those separate Runs;
+keep the successful Run and its immutable content intact. The connected local fixture
+proves a five-credit revision, single consent/allocation and unchanged unselected pages.
+
 The 09 gateway must construct actionKey and category from the selected service and
 trusted task/target/funding context; never accept a model-supplied action key, retry
 category, usage, completeness or provider outcome as authority. Normalize retry

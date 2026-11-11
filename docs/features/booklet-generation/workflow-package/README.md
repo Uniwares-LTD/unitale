@@ -136,7 +136,10 @@ two whole-book review windows. Its actual prepaid continuation preserves complet
 work and adds no charge. Checkout, native start/termination, specialist replies and
 pixels are synthetic; no artifact/assessment/acceptance/completion state is staged in
 that journey. The older structural fixture still stages page metadata. Purchased
-revision, predecessor reuse and the complete 09.6 exit audit remain pending.
+revision now also passes through quote/consent, a new logical Run, scoped composition/
+generation/review and completion. It records one five-credit fixture revision charge,
+preserves the other pages and keeps the previous manifest/original immutable.
+Predecessor reuse and the complete 09.6 exit audit remain pending.
 Safe technical failure evidence is explicit in fixtures, not inferred from a provider
 error. Hidden SDK attempts/costs and unproved target failure classification remain
 accepted limitations; no provider controls or telemetry framework is added. Revised

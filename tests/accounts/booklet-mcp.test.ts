@@ -3283,7 +3283,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             value: { ...order!.value, id: orderId, targetId: productionId, state: "queued", idempotencyKey: orderId,
               chargedCredits: 0, refundedCredits: 0, chargeLedgerId: null, startedAt: null, expiresAt: null,
               terms: { ...order!.value.terms, allowances: ["story", "style", "reference", "page"].map((category) => ({
-                category, unit: category === "story" ? "request" : "subject", included: 1, extraCredits: 5 })), entitlementDays: null } } });
+                category, unit: category === "story" ? "request" : "subject", included: category === "page" ? 0 : 1, extraCredits: 5 })), entitlementDays: null } } });
           await repo.createProduction({ id: productionId, bookletId: "connected-book", orderId, key: "connected-create",
             brief: { idea: "A light appears.", audience: "Children", language, characters: [], locations: [], visualPreferences: "Warm watercolor" },
             capacity: { id: fields.executionProfileId, revision: fields.executionProfileRevision, maxStoryPages: pageIds.length,
@@ -3333,10 +3333,11 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           // Explicit native child boundary: registration, checkpoint, dispatch,
           // deterministic response, trusted observation and compact checkpoint.
           const child = async (service: string, operation: string, target: string | string[], subject: string,
-            input: Record<string, unknown>, sources: Source[], response: unknown, references: unknown[] = [], constraints: Record<string, unknown> = {}) => {
+            input: Record<string, unknown>, sources: Source[], response: unknown, references: unknown[] = [], constraints: Record<string, unknown> = {},
+            revision?: { baseline: Record<string, unknown>; feedback: string }) => {
             const callId = "connected-call-" + ++sequence;
-            const request = { contractVersion: 2, invocationId: callId, callId, service, operation, intent: "create",
-              items: [{ itemId: callId + "-item", targetId: subject, input }], sources: sources.map(source), references, constraints };
+            const request = { contractVersion: 2, invocationId: callId, callId, service, operation, intent: revision ? "revise" : "create",
+              items: [{ itemId: callId + "-item", targetId: subject, input, ...revision }], sources: sources.map(source), references, constraints };
             await ok("begin_work", { action: "register", childRequest: request, requestHash: fingerprint(request), targets: Array.isArray(target) ? target : [target],
               fence: (await ok("context", {})).fence });
             const current = await ok("context", {});
@@ -3372,8 +3373,8 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             return { request, result, work: await repo.getWork(productionId, callId) };
           };
           const publish = async (service: string, operation: string, artifactId: string, subject: string, content: Record<string, unknown>,
-            sources: Source[], input: Record<string, unknown> = {}, constraints: Record<string, unknown> = {}) => {
-            const created = await child(service, operation, artifactId, subject, input, sources, content, [], constraints);
+            sources: Source[], input: Record<string, unknown> = {}, constraints: Record<string, unknown> = {}, revision?: { baseline: Record<string, unknown>; feedback: string }) => {
+            const created = await child(service, operation, artifactId, subject, input, sources, content, [], constraints, revision);
             const saved = await ok("save_revision", { artifactId, content: { callId: created.work.callId,
               itemId: created.request.items[0].itemId, proposalIndex: 0 }, sources: sources.map(tuple), assets: [],
               evidence: created.work.evidenceIds, mutationKey: "publish-" + created.work.callId, fence: (await ok("context", {})).fence });
@@ -3431,17 +3432,18 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const spec = await publish("art-director", "sample_spec", "connected-sample-spec", "connected-sample",
             { kind: "image-spec", purpose: "Style sample", requiredFeatures: [], style: style.content }, [style]);
           await review(spec, "specification"); await accept(spec);
-          const generate = async (artifactId: string, subject: string, kind: "reference" | "page-image", spec: Source, sources: Source[]) => {
+          const generate = async (artifactId: string, subject: string, kind: "reference" | "page-image", spec: Source, sources: Source[], previous?: Source) => {
+            const revision = previous ? { baseline: previous.content, feedback: "Make the light larger" } : undefined;
             const exact = kind === "page-image" ? (spec.content.panels as { lettering: unknown[] }[]).flatMap((p) => p.lettering) : [];
             const prepared = await child("image-executor", "prepare", artifactId, subject, { imageKind: kind === "page-image" ? "page" : "style-sample",
               specification: spec.content, style: style.content, lettering: exact, settings: { mode: "generate", model: "gpt-image-2.5-sunburst",
-                count: 1, canvas: { width: canvas.width, height: canvas.height }, quality: "high", background: "opaque", format: "png" } }, sources, null);
+                count: 1, canvas: { width: canvas.width, height: canvas.height }, quality: "high", background: "opaque", format: "png" } }, sources, null, [], {}, revision);
             const preparation = prepared.result.items[0].prepared;
             await review({ artifactId, revisionId: spec.revisionId, contentHash: preparation.requestHash, content: {}, assets: [] }, "image_request", sources, preparation);
             const related_id = randomUUID();
             const file = { type: "image", transfer_method: "tool_file", related_id,
               url: `https://offline.invalid/files/tools/${related_id}.png?timestamp=1&nonce=fixture&sign=fixture` };
-            const generated = await child("image-executor", "generate", artifactId, subject, { prepared: preparation }, sources, [file]);
+            const generated = await child("image-executor", "generate", artifactId, subject, { prepared: preparation }, sources, [file], [], {}, revision);
             const bytes = await sharp({ create: { width: canvas.width, height: canvas.height, channels: 3, background: "yellow" } }).png().toBuffer();
             const previousFetch = globalThis.fetch, previousMode = process.env.DIFY_MODE, previousBase = process.env.DIFY_BASE_URL;
             let original;
@@ -3533,6 +3535,70 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const paidJob = (await db.collection<AiJob>("aiJobs").findOne({ _id: admitted.attemptId }))!;
           assert.equal(paidJob.credits, 0);
           assert.equal(paidJob.reservationId, null);
+          // A customer-paid page revision reuses the completed production and
+          // changes only its scoped specification/original and selected manifest.
+          const beforeRevision = await repo.getProduction(productionId);
+          const predecessor = admitted.attemptId, predecessorToken = token, previousLogicalId = admitted.id;
+          await db.collection("aiJobs").updateOne({ _id: predecessor as never }, { $set: {
+            status: "succeeded", terminationEvidence: "provider-succeeded", "execution.status": "succeeded" } });
+          const revisionRequest = { requestId: "connected-page-revision", expectedVersion: beforeRevision.version,
+            category: "page" as const, subjects: [pageIds[0]], inputHash: fingerprint("Make the light larger") };
+          const quote = await lifecycle.quoteRevision(productionId, revisionRequest);
+          assert.equal(quote.credits, 5);
+          await assert.rejects(lifecycle.startRevision(productionId, revisionRequest, quote.hash, quote.credits + 1), /quote/);
+          const revisionFlow = await lifecycle.startRevision(productionId, revisionRequest, quote.hash, quote.credits);
+          assert.equal(await lifecycle.startRevision(productionId, revisionRequest, quote.hash, quote.credits), revisionFlow);
+          const previousMode = process.env.DIFY_MODE;
+          process.env.DIFY_MODE = "fake";
+          try { admitted = await enqueueBookletRun(db, actor, productionId, { key: "connected-revision", workflowId: revisionFlow,
+            orchestratorId: definition.id, configurationRevision: 1, inputs: {} }); }
+          finally { if (previousMode === undefined) delete process.env.DIFY_MODE; else process.env.DIFY_MODE = previousMode; }
+          assert.notEqual(admitted.id, previousLogicalId);
+          assert.equal((await db.collection<AiJob>("aiJobs").findOne({ _id: admitted.attemptId }))!.run!.attempt, 1);
+          nativeRunId = "connected-native-revision";
+          token = "e".repeat(43);
+          await db.collection("aiJobs").updateOne({ _id: admitted.attemptId as never }, { $set: { status: "running", runId: nativeRunId,
+            execution: { status: "running", workflowId: configured.workflowId }, lease: "connected-worker", leaseUntil: new Date(Date.now() + 180000) } });
+          await db.collection("consumptionWorkflows").updateOne({ _id: revisionFlow as never }, { $set: { jobId: admitted.attemptId } });
+          await db.collection("runCapabilities").insertOne({ _id: sha(token) as never, uid: actor.uid, jobId: admitted.attemptId,
+            clientId: "fixture", operations: bookletMcpToolsV2.map((tool) => tool.name), expiresAt: new Date(Date.now() + 600000) });
+          assert.equal((await invoke("context", {}, predecessorToken)).isError, true);
+          const priorSpecId = beforeRevision.subjects.find((s) => s.id === pageIds[0])!.artifacts.find((a) => a.kind === "page-spec")!.currentRevisionId!;
+          const priorSpec = await repo.getRevision(productionId, priorSpecId);
+          const revisedSpec = await publish("page-composer", "compose", pageArtifact(pageIds[0], "spec"), pageIds[0],
+            { ...priorSpec.content, panels: [{ ...panels[0], composition: "A larger light in the dark" }] }, [layout], { pageIds: [pageIds[0]] }, {},
+            { baseline: priorSpec.content, feedback: "Make the light larger" });
+          await review(revisedSpec, "specification"); await accept(revisedSpec);
+          const priorPage = pages[0];
+          pages[0] = await generate(pageArtifact(pageIds[0], "original"), pageIds[0], "page-image", revisedSpec, [revisedSpec, layout, style], priorPage);
+          assert.notEqual(pages[0].revisionId, priorPage.revisionId);
+          assert.notEqual(pages[0].assets[0].assetId, priorPage.assets[0].assetId);
+          const revisedContent = { ...manifestContent, pages: pages.map((page, i) => ({ pageId: pageIds[i], assetId: page.assets[0].assetId })) };
+          const revisedAssets = pages.flatMap((page) => page.assets);
+          const revised = await ok("save_revision", { artifactId: manifest.artifactId, content: revisedContent, sources: [...pages, layout].map(tuple),
+            assets: revisedAssets, evidence: [], mutationKey: "connected-revised-manifest", fence: (await ok("context", {})).fence });
+          const revisedManifest = { ...revised, artifactId: manifest.artifactId, content: revisedContent, assets: revisedAssets } as Source;
+          await review(revisedManifest, "whole_book", [revisedManifest, ...pages.slice(0, 4)]);
+          await review(revisedManifest, "whole_book", [revisedManifest, pages[4]]);
+          await accept(revisedManifest);
+          const revisionContext = await ok("context", {});
+          const revisionPlan = runNativeCode("manager", "guard", { context: JSON.stringify(revisionContext), decision: { action: "complete",
+            request_json: JSON.stringify({ manifestRevisionId: revisedManifest.revisionId, fence: revisionContext.fence }), reason: "Complete the scoped revision" } });
+          const revisionIntent = await ok("checkpoint", JSON.parse(revisionPlan.checkpoint));
+          const revisionReady = JSON.parse(runNativeCode("manager", "saved", { raw: { result: revisionIntent }, context: JSON.stringify(revisionContext),
+            request: revisionPlan.request, dispatch: revisionPlan.dispatch, action: "complete" }).request);
+          await ok("complete", revisionReady);
+          const afterRevision = await repo.getProduction(productionId);
+          assert.equal(afterRevision.currentManifestRevisionId, revisedManifest.revisionId);
+          assert.deepEqual(afterRevision.retryPolicy, beforeRevision.retryPolicy);
+          assert.deepEqual((await repo.getRevision(productionId, manifest.revisionId)).content, manifestContent);
+          assert.deepEqual((await repo.getRevision(productionId, priorPage.revisionId)).content, priorPage.content);
+          assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId }), 21);
+          assert.equal(await db.collection("consumptionCharges").countDocuments({ orderId }), 2);
+          assert.equal(await db.collection("consumptionCharges").countDocuments({ orderId, kind: "revision", amount: 5 }), 1);
+          assert.equal(await db.collection("consumptionAllocations").countDocuments({ orderId, category: "page" }), 1);
+          for (const pageId of pageIds.slice(1)) assert.deepEqual(afterRevision.subjects.find((s) => s.id === pageId),
+            beforeRevision.subjects.find((s) => s.id === pageId));
         });
         for (const change of [
           { cancelRequested: true },
