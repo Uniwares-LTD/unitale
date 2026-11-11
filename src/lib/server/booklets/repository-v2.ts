@@ -546,6 +546,11 @@ export function bookletRepositoryV2(
         value,
         async (p, session) => {
           await activeManager(p, value.runId, value.holderId, session);
+          if (
+            value.requestPayload !== undefined &&
+            fingerprint(value.requestPayload) !== value.requestHash
+          )
+            throw bookletConflict("Stored request differs from its hash.");
           const expectedCategory =
             value.service === "image-executor"
               ? value.operation === "prepare"
@@ -570,6 +575,9 @@ export function bookletRepositoryV2(
             runId: value.runId,
             actionKey: value.actionKey,
             requestHash: value.requestHash,
+            ...(value.requestPayload === undefined
+              ? {}
+              : { requestPayload: value.requestPayload }),
             service: value.service,
             operation: value.operation,
             targetIds: value.targetIds,

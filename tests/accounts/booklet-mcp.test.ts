@@ -9,6 +9,7 @@ import { handleMcp } from "../../src/lib/server/mcp/handler";
 import { parseMcpConfig } from "../../src/lib/config/mcp";
 import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
+import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
 import {
   productionV2Schema,
   revisionV2Schema,
@@ -1073,6 +1074,12 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           targets: ["story-v2"],
           requestHash: fingerprint(childRequest),
         };
+        const leakedRequest = { ...childRequest, items: [{ ...childRequest.items[0],
+          input: { instruction: "A literal private capability: " + v2Token } }] };
+        const rejectedSecret = await invoke("begin_work", { ...registration, childRequest: leakedRequest,
+          requestHash: fingerprint(leakedRequest) });
+        assert.equal(rejectedSecret.isError, true);
+        assert.ok(!JSON.stringify(rejectedSecret).includes(v2Token));
         const registered = await successful("begin_work", registration);
         assert.deepEqual(registered, {
           callId: "call-v2",
@@ -1125,7 +1132,36 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         assert.equal(work.type, "value");
         assert.equal(work.complete, true);
         assert.equal(work.value.callId, "call-v2");
+        assert.deepEqual(work.value.requestPayload, childRequest);
         assert.equal(work.value.ownerId, undefined);
+        await t.test("v2 transfer resumes immutable chunks without altering the production fence", async () => {
+          const content = Buffer.from(JSON.stringify({ text: "exact e\u0301 \ud83d\ude00\n".repeat(1600) }));
+          const metadata = { action: "open", key: "large-v2-revision", kind: "revision",
+            bytes: content.length, sha256: sha(content) };
+          const opened = await successful("transfer", metadata);
+          assert.deepEqual(await successful("transfer", metadata), opened);
+          const store = bookletTransfers(db, { uid: "owner", authTime: 1 }, production._id, 2);
+          await assert.rejects(store.read(opened.transferId, "revision", AbortSignal.timeout(5000)), /incomplete/);
+          for (let i = 0; i < opened.parts; i++) {
+            const part = { action: "part", transferId: opened.transferId, index: i,
+              data: content.subarray(i * opened.chunkBytes, (i + 1) * opened.chunkBytes).toString("base64") };
+            const saved = await successful("transfer", part);
+            assert.deepEqual(await successful("transfer", part), saved);
+          }
+          assert.deepEqual(await store.read(opened.transferId, "revision", AbortSignal.timeout(5000)), content);
+          assert.equal((await invoke("transfer", { ...metadata, sha256: "a".repeat(64) })).isError, true);
+          assert.equal((await db.collection("bookletProductions").findOne({ _id: production._id as never }))!.fenceCounter, 2);
+          // Version selection is server-side and v1 remains strict.
+          await assert.rejects(bookletTransfers(db, { uid: "owner", authTime: 1 }, production._id).read(
+            opened.transferId, "revision", AbortSignal.timeout(5000)));
+          const secretBytes = Buffer.from("x".repeat(8175) + v2Token + "tail");
+          const hidden = await successful("transfer", { action: "open", key: "secret-v2-rejected",
+            kind: "revision", bytes: secretBytes.length, sha256: sha(secretBytes) });
+          await successful("transfer", { action: "part", transferId: hidden.transferId, index: 0,
+            data: secretBytes.subarray(0, hidden.chunkBytes).toString("base64") });
+          assert.equal((await invoke("transfer", { action: "part", transferId: hidden.transferId, index: 1,
+            data: secretBytes.subarray(hidden.chunkBytes).toString("base64") })).isError, true);
+        });
         const exactText =
           "\u0645\u0631\u062d\u0628\u0627 e\u0301 \ud83d\ude00\n".repeat(6000);
         const content = {

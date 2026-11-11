@@ -406,6 +406,14 @@ content reconstruction is required. Artifact history reads return at most 20 met
 items with an initial ordinal snapshot; later appends require a fresh read and bodies
 are fetched separately by immutable revision ID. Human-response and execution reads
 remain pending. These reads share the same private native Manager and prepaid binding checks.
+`booklet_transfer_v2` reuses bounded staging with server-selected v2 ownership. Its
+request is `{action:"open",key,kind,bytes,sha256}` or
+`{action:"part",transferId,index,data}`. Parts use the returned decoded chunk size and
+canonical base64. Changed metadata/bytes, incomplete payloads and private context
+spanning adjacent chunks are rejected. This stores bytes only; it does not publish a
+revision, authorize generation or alter the production fence. Existing v1 callers
+retain strict v1 ownership. Work reads also expose retained meaningful request and
+observed result bodies through the existing typed paging protocol.
 `booklet_index_v2` atomically registers subject/artifact entries, returns stable ID maps
 and an advanced fence, and reuses matching entries without changing their revision
 pointers. Purchased capacity and one responsibility per subject are enforced. Changed

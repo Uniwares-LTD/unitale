@@ -234,6 +234,18 @@ content/window/manifest identities. Whole-book windows share the selected manife
 and expose actual page/asset/continuity coverage. Do not let an LLM assert trusted cost,
 provider success or a publication identity through this tool.
 
+The current implementation stores exact meaningful request/result bodies on the
+existing work record, rather than putting creative bodies through the diagnostic
+evidence redactor, which changes bearer-like text and credential-like fields. This
+is a necessary retention refinement: 256 KiB request and 1 MiB result limits, the
+existing 4 MiB work-row bound and typed read cursors apply. Optional fields preserve
+older metadata-only records; missing bodies do not authorize reconstruction/replay.
+Native result retention checks the accepted Manager workflow ID and reported native
+run plus registered child call/invocation/item identities. If the native execution
+has not supplied its workflow identity yet, the observation remains untrusted until
+readback establishes it. Readback/reconciliation and full provider-accounting proof
+remain pending; this local hook does not prove a connected Dify journey.
+
 Correction summaries contain rootId,family,used,limit,targetIds. App keys durable chains
 by actual task/target/funding, preventing new invocation/candidate/root IDs from resetting
 allowances. Manager chooses confirmed scoped repairs; app enforces stored limits.

@@ -151,6 +151,9 @@ export async function readBookletDocumentV2(
       service: row.service,
       operation: row.operation,
       requestHash: row.requestHash,
+      ...(row.requestPayload === undefined
+        ? {}
+        : { requestPayload: row.requestPayload }),
       actionKey: row.actionKey,
       status: row.status,
       category: row.category,
@@ -162,6 +165,12 @@ export async function readBookletDocumentV2(
       correction: row.correction,
       reviewScope: row.reviewScope,
       evidenceIds: row.evidenceIds,
+      ...(row.resultPayload === undefined
+        ? {}
+        : { resultPayload: row.resultPayload }),
+      ...(row.resultObservation === undefined
+        ? {}
+        : { resultObservation: row.resultObservation }),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };

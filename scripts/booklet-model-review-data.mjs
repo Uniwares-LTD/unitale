@@ -91,6 +91,9 @@ export const documents = [
     fields: [
       "_id / documentVersion 2 / ownerId / productionId / callId / runId",
       "actionKey / requestHash / service / operation / category",
+      "requestPayload? {exact meaningful JSON, max 256 KiB}",
+      "resultPayload? {exact observed JSON, max 1 MiB}",
+      "resultObservation? {runId, nodeId, executionId, retryIndex, iterationId, loopId}",
       "targetIds[] / sources[] / retryOf? / retryOrdinal",
       "status / retryable / evidenceIds[] / createdAt / updatedAt",
       "correctionRootId / correction? {rootId, family, findingIds[]}",

@@ -16,7 +16,7 @@ Earlier implementation evidence below retains its historical scope.
 ## Execution prerequisites
 
 **Readiness: candidate checkpoints 01-06, local storage 07 and shared-runtime import 08 are
-implemented and reviewed. Scope B covers 07-11; checkpoint 09 is next. Runtime/live
+implemented and reviewed. Scope B covers 07-11; checkpoint 09 is in progress. Runtime/live
 acceptance and scope C remain separate.** The
 [A01-A22 register](workflow-design.md#implementation-readiness-audit)
 links each resolution to the [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22).
@@ -517,203 +517,47 @@ no code if all seams suffice. Do not claim an external required reviewer can be 
 
 ### 09 - Unitale Gateway & Recovery
 
-In progress: the first bounded slice resolves the demonstrated Manager/Run terminal
-contract mismatch in the existing finish node and End selectors. Domain payload is
-preserved as `booklet_result`; the sanitized `result` view uses the existing Run parser.
-All 35 compatibility tests, typecheck and scoped test lint pass. Prompts, child graphs,
-bindings, contracts and disabled execution switches remain unchanged. Package hashes
-and current evidence are in the [candidate README](workflow-package/README.md#current-integration-slice).
-Checkpoint-wide 09 reviews and application-connected execution remain pending.
-The second bounded slice extends existing prepaid Run admission and ownership to v2,
-with explicit adapter-version matching and the same consumption/job transaction.
-V1 readers remain strict; generic Run admission still rejects booklet targets.
-No fields or migrations change. Repository admission tests cover owned/versioned
-targets, duplicate starts, unknown termination and continuation without another
-package charge. All 46 affected repository/lifecycle/media/MCP tests pass, including
-concurrent starts and a non-empty preserved checkpoint. Production build, typecheck,
-scoped lint, model/docs, environment, i18n and skills checks pass. The Mongo fixture
-used its forced-stop cleanup fallback; the test runner passed. A separate same-agent
-read-only slice review found no blocking issue. No model/example/diagram field or
-relationship changed; regenerated diagram content remains unchanged.
-The third slice adds v2 start/continuation/finish lifecycle calls using existing
-commerce journals, and reuses the schema-checked version-aware save instead of a
-separate admission update. The admission fixture now calls those real services;
-repeated start/continue is idempotent and unknown termination prevents release.
-All 46 affected repository/lifecycle/media/MCP tests pass; a final 22-test repository
-run also verifies a version-changing save is rejected. Build, sequential typecheck,
-scoped lint, generated model/docs, i18n and skills checks pass. A separate same-agent
-read-only slice review found no blocking issue. No fields, migration, dispatch or scheduler.
-The fourth slice adds v2 revision quote/start through existing commerce and the
-unchanged product revision-scope guard shared with v1. It binds expected production
-version, exact quote/amount and durable revision funding origin; stale/widened/locked
-requests cannot admit work. All 39 affected repository/lifecycle tests pass, including
-the actual v2 quote/start path, repeated consent, wrong amounts, stale versions and
-locked stages. Production build, sequential typecheck, scoped lint, model/docs, i18n
-and skills checks pass. The fixture used its forced-stop cleanup fallback; the runner
-passed. A separate same-agent read-only slice review found no blocking issue.
-No new accounting record, field, dependency or app creative policy is introduced.
-Next: Manager MCP context/read/lease,
-reusing the 07 repository and existing commerce; implement each boundary in small
-verified slices. No current slice enables execution or closes checkpoint 09.
+In progress; not ready for activation. Checkpoint 07 storage and checkpoint 08 shared
+seams are complete locally. Current 09 implementation provides:
 
-The fifth slice resolves a verified wire gap: `begin_work` previously supplied only
-a declared hash/service/operation. Manager now supplies the complete `childRequest`
-and binds its meaningful hash before registration. The new creative-text registration
-service validates that payload and exact source content, then derives action identity
-and paid category. Active storage rechecks the bound native Manager Run, current order
-and actual workflow/job binding in the same transaction. Invocation/call/item carriers
-and renewed reference handles cannot reset technical retry identity. All 47 affected
-repository/lifecycle/media/MCP tests and 36 compatibility tests pass. Build, sequential
-typecheck, scoped lint, model/docs, environment, i18n, skills and hash audit pass. The
-Mongo fixture used forced-stop cleanup; the runner passed. A separate same-agent
-read-only slice review found no blocking issue. Current package identity is in its
-README/manifest; actual Dify import/execution of this revision remains pending. This registers
-intent only; image/review registration, MCP exposure, dispatch budgets and observers
-remain pending. No fields, migration or dispatch framework are added.
-Keep large action bodies outside the 64 KiB checkpoint and return
-complete typed read sections/cursors; the current `consume` node's inline `lastResult`
-must not silently truncate or become an accidental product-size limit.
+- V2 prepaid Run admission, start/continuation/revision lifecycle services and quote
+  guards using existing commerce journals; generic Run admission remains blocked.
+- Atomic checkpoint/index writes, stable identities, version/fence checks and exact
+  replay receipts. No lease is held across a provider or Human Input wait.
+- Creative-text registration for the thirteen native operations. Artifact accounting
+  targets and child subject selectors are checked separately. Correction limits remain
+  durable across regrouping, technical retries, continuation and funding scopes.
+- Owned revision/work/assessment reads with typed sections and Unicode text fragments;
+  artifact history uses a stable ordinal snapshot. Complete bodies never truncate.
+- Durable meaningful request bodies in the existing work record (optional for older
+  records, maximum 256 KiB), atomically hash-checked at registration. Renewable reference
+  URLs/native handles are excluded; creative JSON is preserved without diagnostic
+  redaction. The existing owned typed reader exposes the body after restart.
+- V2 transfer reuses the existing bounded chunk store, ownership checks, cumulative
+  budget and secret scanning. It grants no publication/dispatch authority.
+- The native worker hook retains matching complete child results and native execution
+  identity in the existing work record, plus a separate redacted trace. Fenced rollback,
+  duplicate observations, unrelated/truncated output rejection and retention after
+  parent cancellation/revocation are covered locally. Retention alone does not verify
+  Reviewer scope, settle costs, classify technical retries or publish a revision.
+- Native Manager result/fence integration and Story Planner description-only revision
+  fixes. Seven role identities, provider bindings and disabled execution gates remain.
 
-The sixth slice closes the pre-action fence mismatch: `saved` now validates checkpoint
-version and authoritative receipt fence, and binds that fence into the existing action
-and dispatch arguments. All 14 app branches and paid dispatch use the confirmed
-arguments; reads and child content are unchanged. The root MCP concurrency token is
-excluded from pending action identity, so refreshing it does not change the operation.
-All 37 compatibility tests, typecheck, scoped lint, hash audit, model/docs, i18n and
+The exposed v2 tools are checkpoint, index, transfer, creative-text work registration
+and the partial document reader. Registration does not authorize paid dispatch. Native
+readback/reconciliation, active revision publication, images/reviews, human decisions, accounting
+and automatic recovery remain incomplete. There is no complete application-connected
+journey. The latest YAML identity and verification are maintained in the
+[candidate README](workflow-package/README.md#current-integration-slice).
+
+Verification of the current retention/staging change: 54 affected repository,
+lifecycle/media and MCP tests and 38 compatibility tests pass. The final capability
+guard has an additional passing MCP run; the final JSON example is schema-checked.
+Production build, sequential typecheck, scoped lint, environment and model/docs/i18n/
 skills checks pass. A separate same-agent read-only slice review found no blocking
-issue. No build rerun was needed for this YAML/test/docs-only delta. Registration intent also retains nested child call/item
-locators, without copying its large body into the checkpoint. This is a
-DSL wire change, without storage fields, indexes, dependencies or another graph layer.
-
-The seventh slice closes the demonstrated correction-accounting bypass in
-`dispatchWork`: changed work on an already attempted creative task/target requires
-correction metadata, and regrouping targets cannot reset per-target allowances.
-Counters use existing dispatched work and funding roots; technical retries count once,
-independent targets retain their own allowances, and different specialist operations
-remain separate tasks. Every corrective target requires a scoped confirmed finding.
-Historical customer-revision scopes resolve through existing commerce receipts;
-stale registered work cannot dispatch under new funding. No new field, collection,
-index or scheduler. The actual repository regression first failed on omitted correction
-metadata, then passed with the fix. All 47 affected repository/lifecycle/media/MCP tests,
-production build, sequential typecheck, scoped lint, model/docs, environment, i18n and
-skills checks pass. A separate same-agent read-only slice review found no blocking
-issue. Dispatch exposure remains pending with the rest of checkpoint 09;
-checkpoint-wide reviews remain pending.
-The eighth slice retains the final metadata checkpoint after structural completion.
-The repository now permits checkpoint and short-lease acquisition/release metadata on
-`completed` productions, while creative mutations remain closed. Ownership, expiry,
-version/CAS and fence checks remain enforced. Checkpoint receipts expose the confirmed
-fence required by the native `saved` node. The regression first reproduced the blocked
-final checkpoint, then passed. All 48 affected repository/lifecycle/media/MCP tests,
-production build, sequential typecheck, scoped lint, model/docs, i18n and skills checks
-pass. The Mongo fixture used its forced-stop cleanup fallback; the runner exited zero.
-A separate same-agent read-only slice review found no blocking issue. No new fields,
-status, index, delayed completion or finalizer is introduced. The Manager facade and
-checkpoint-wide 09 reviews remain pending.
-
-The ninth slice reuses the active prepaid Manager binding check at dispatch, closing
-the interval between registration and execution. Dispatch rejects replaced workflow/job
-bindings, cancellation and native terminal execution even if the parent job status has
-not caught up. Registered unsubmitted work can bind to the current admitted successor;
-the work record then identifies its actual dispatching parent. This reuses existing
-fields/transactions and does not enable a paid call or bypass unresolved work checks.
-All 48 affected repository/lifecycle/media/MCP tests, production build, sequential
-typecheck, scoped lint, model/docs, i18n and skills checks pass. A separate same-agent
-read-only slice review found no blocking issue. The MCP facade, dispatch usage/lock
-checks, trusted observations and checkpoint-wide 09 reviews remain pending.
-
-The tenth slice implements the gateway's short-lease behavior using the existing
-repository transaction and fence counter. Server-selected atomic mutations check the
-expected version/fence, reject a live lease, advance the fence and leave no lease after
-the local write. Failure rolls back all effects; exact idempotency receipt replay leaves
-the fence unchanged. Creative-text registration now consumes this mode. The explicit
-lease API remains available for its existing callers. No field, scheduler, new receipt
-store or external transaction executor is added. All 49 affected repository/lifecycle/
-media/MCP tests, production build, sequential typecheck, scoped lint, model/docs, i18n
-and skills checks pass. A separate same-agent read-only slice review found no blocking
-issue. Remaining MCP facades, runtime observation/dispatch checks and checkpoint-wide
-09 reviews remain pending.
-
-The eleventh slice registers `booklet_checkpoint_v2` and the creative-text register
-action of `booklet_begin_work_v2` through the existing project MCP registry. Their
-private capability and native parent checks bind the owned v2 production, current
-prepaid workflow/job, cancellation and execution state. Requests use the candidate's
-bounded JSON-string carrier; responses keep its explicit `result` wrapper. The gateway
-derives receipt keys and reconstructs the original CAS version for lost-reply replay.
-The transport test exposed the initial fence-zero mismatch: only atomic v2 mutations
-now accept zero as an expected initial fence; explicit lease/v1 parsers remain strict.
-All 50 affected booklet repository/lifecycle/media/MCP tests and eight shared MCP
-protocol tests pass, along with production build, sequential typecheck, scoped lint,
-model/docs, i18n and skills checks. The Mongo fixture used its forced-stop cleanup
-fallback; the runner exited zero. A separate same-agent read-only slice review found
-no blocking issue. Paid dispatch, the other fourteen v2 capabilities, image/review
-registration, live bindings and checkpoint-wide 09 reviews remain pending.
-
-The twelfth slice adds `booklet_read_document_v2` for owned revision, work and assessment
-DTOs. It preserves the `{kind,id,cursor?}` wire, returns complete small values and bounded
-typed sections/array pages/decoded text fragments for larger values. Scope and document
-hash bind every cursor; changed documents and paths outside the DTO fail. Completeness
-is explicit and Unicode text is exact; the reader neither truncates content nor requires
-base64 reconstruction. The real MCP fixture reads a large Arabic/combining-mark/emoji manuscript
-through the actual transport and rejects cross-document, prototype and stale-work
-cursors. History, human-response/execution reads and the other v2 capabilities remain
-pending. All 50 affected booklet tests and eight MCP protocol tests pass, along with
-production build, sequential typecheck, scoped lint, model/docs, i18n and skills checks.
-A separate same-agent read-only slice review found no blocking issue. No storage
-schema or dependency changes; checkpoint-wide 09 reviews remain pending.
-
-The thirteenth slice adds artifact `history` reads to the same v2 tool. It selects at
-most 20 revision metadata items, pins the latest ordinal on the first page and uses
-the existing revision index; no revision bodies or unbounded history are loaded.
-The real transport fixture verifies two-page ordering, exclusion of later appends,
-fresh-snapshot visibility and cross-kind/artifact cursor rejection. No model field,
-index, collection or dependency changes. All 51 affected booklet tests, production
-build, sequential typecheck, scoped lint, model/docs, i18n and skills checks pass.
-A separate same-agent read-only slice review found no blocking issue. Human-response/
-execution reads, remaining 09 integration and checkpoint-wide reviews remain pending.
-
-The fourteenth slice exposes `booklet_index_v2` using one atomic repository mutation.
-It reuses the existing subject capacity and artifact-responsibility checks for both
-single-entry callers and a batch. Matching entries retain stable IDs/pointers; changing
-existing identity metadata or reparenting artifacts fails. It also restores the already
-documented one-kind-per-subject invariant in v2 insertion, preventing a new candidate
-ID from creating another slot for the same responsibility. The actual MCP fixture
-checks receipt replay, identity reuse, rollback on a later invalid entry, capacity,
-reparenting, duplicate IDs and candidate-slot rejection. All 52 affected booklet tests,
-production build, sequential typecheck, scoped lint, model/docs, i18n and skills checks
-pass. A separate same-agent read-only slice review found no blocking issue. No stored
-field, index, collection, dependency or creative prompt changes. Checkpoint-wide 09
-reviews and application-connected execution remain pending.
-
-The fifteenth slice binds creative-text registration to the actual native operation
-output kinds and subject kinds, extending its existing operation allowlist. Registration
-`targets` are artifact IDs; a subject alias or unrelated responsibility cannot establish
-another accounting scope. Native item `targetId`/`targetIds` remain subject IDs, as the
-pack nodes compare them with proposal `subjectId`; the gateway checks their parents
-against the declared artifact targets. It also accepts native grouped revision selectors
-instead of incorrectly requiring a single `targetId`. The actual owned-Run fixture
-covers all thirteen operations, both roster/description targets, wrong kinds, alias and
-child-scope rejection, unsupported inherited operation names and grouped revision.
-Initial roster creation still permits invocation-local subject keys under its declared
-roster artifact; these keys do not become accounting identities. All 52 affected booklet
-tests, production build, sequential typecheck, scoped lint, model/docs, i18n and skills
-checks pass. A separate same-agent read-only slice review found no blocking issue.
-No new wire field, task registry or
-application creative progression policy. Paid dispatch and trusted per-output retention
-remain pending.
-
-The sixteenth slice fixes the verified native pack mismatch: Story Planner's cast/
-location description-only revisions no longer require an unrelated roster. Its prompt
-and existing inline guard preserve initial creation's roster, product capacity,
-duplicate and explicit revision-target checks. The new regression fails on the prior
-exported pack node, then passes with the fix for both operations. All 38 compatibility
-tests pass. Workflow hashes and the existing 13-path digest are refreshed; the package
-README records the current identity and consolidates its integration status. Typecheck,
-scoped test lint, docs/i18n/skills checks and an independent hash audit pass. A separate
-same-agent read-only slice review found no blocking issue. No application build rerun
-was needed for this YAML/test/docs-only delta. No provider binding, execution gate, machine
-reference, application contract or model field changes. Actual import/execution of
-this candidate and checkpoint-wide 09 reviews remain pending.
+issue. No Dify, provider, deployment or checkpoint 10 UI implementation occurred. Historical
+slice results remain in Git; they are not acceptance of unimplemented paths. Checkpoint
+09 requires two clean read-only reviews after its complete behavior is implemented.
 
 Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
 context, document reads, lease, index, work register/dispatch, transfer, original retention,

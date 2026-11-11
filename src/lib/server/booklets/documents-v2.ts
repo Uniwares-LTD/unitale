@@ -95,6 +95,15 @@ export const workRegistrationV2Schema = z.strictObject({
   // copied from a model's new invocation ID. Exact requestHash remains separate.
   actionKey: hash,
   requestHash: hash,
+  // Exact meaningful request; renewable native file handles/URLs are excluded.
+  // Optional for older records and metadata-only internal operations.
+  requestPayload: z
+    .json()
+    .refine(
+      (value) => Buffer.byteLength(JSON.stringify(value), "utf8") <= 256 * 1024,
+      "Work request exceeds 256 KiB.",
+    )
+    .optional(),
   service: z.enum([
     "manager",
     "story-planner",
@@ -131,6 +140,24 @@ export const workRegistrationV2Schema = z.strictObject({
 });
 export const workV2Schema = workRegistrationV2Schema.extend({
   ...scope,
+  resultPayload: z
+    .json()
+    .refine(
+      (value) =>
+        Buffer.byteLength(JSON.stringify(value), "utf8") <= 1024 * 1024,
+      "Work result exceeds 1 MiB.",
+    )
+    .optional(),
+  resultObservation: z
+    .strictObject({
+      runId: id,
+      nodeId: id,
+      executionId: id,
+      retryIndex: z.number().int().nonnegative().safe().nullable(),
+      iterationId: id.nullable(),
+      loopId: id.nullable(),
+    })
+    .optional(),
   status: z.enum([
     "registered",
     "dispatching",

@@ -236,6 +236,7 @@ export async function registerBookletCreativeWorkV2(
     service: request.service,
     operation: request.operation,
     requestHash: value.requestHash,
+    requestPayload: meaningful,
     actionKey,
     category: "paidLlm",
     targetIds: value.targets,

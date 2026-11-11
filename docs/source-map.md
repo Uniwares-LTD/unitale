@@ -87,6 +87,9 @@ and the adapter; the table does not require unrelated suites for every task.
   MCP and observer wiring remain checkpoint 09 work.
   `src/lib/server/booklets/work-v2.ts` derives creative-text registration identity
   from validated child inputs; it records intent without dispatching providers.
+  `observations-v2.ts` retains matching child envelopes through the existing native
+  worker hook; raw creative bodies stay separate from redacted diagnostic traces.
+  V2 transfer reuses `mcp-transfers.ts` with server-selected versioned ownership.
   Regenerate the simple/complete Mermaid versions with `npm run docs:booklet-model` whenever model relationships change.
   The [offline Dify harness](features/booklet-generation/dify-compatibility.md) owns
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;

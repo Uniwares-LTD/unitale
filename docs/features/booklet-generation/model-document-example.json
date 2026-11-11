@@ -661,7 +661,7 @@
       "callId": "review_v2_example",
       "runId": "run_v2_example",
       "actionKey": "5ae05143cdd87149c4b7086471188a086594739d942a532e8293fcf4ce5eabc7",
-      "requestHash": "03b4fbf8f06fd349363618eeb52266ba56b51e7bff27e0e6f88f62c9db09f92d",
+      "requestHash": "d7c47e951891055ee5818b5b6e52bc4b386e8fd4ebc67c09faca5602f11aeac7",
       "service": "quality-reviewer",
       "operation": "text",
       "targetIds": [
@@ -690,7 +690,108 @@
       "evidenceIds": [
         "observed_review_v2"
       ],
-      "updatedAt": "2026-11-07T09:00:00.000Z"
+      "updatedAt": "2026-11-07T09:00:00.000Z",
+      "requestPayload": {
+        "contractVersion": 2,
+        "invocationId": "invocation_v2_example",
+        "callId": "review_v2_example",
+        "service": "quality-reviewer",
+        "operation": "text",
+        "intent": "create",
+        "items": [
+          {
+            "itemId": "item_v2_example",
+            "input": {
+              "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+              "targetIds": [
+                "manuscript_v2"
+              ],
+              "referencePositions": []
+            }
+          }
+        ],
+        "sources": [
+          {
+            "artifactId": "manuscript_v2",
+            "revisionId": "revision_v2_example",
+            "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+            "content": {
+              "kind": "manuscript",
+              "units": [
+                {
+                  "id": "unit_v2",
+                  "action": "A wave",
+                  "texts": [
+                    {
+                      "id": "text_v2",
+                      "kind": "dialogue",
+                      "text": "  é 😀\n"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "references": [],
+        "constraints": {}
+      },
+      "resultPayload": {
+        "contractVersion": 2,
+        "invocationId": "invocation_v2_example",
+        "callId": "review_v2_example",
+        "service": "quality-reviewer",
+        "operation": "text",
+        "status": "succeeded",
+        "items": [
+          {
+            "itemId": "item_v2_example",
+            "status": "succeeded",
+            "proposals": [
+              {
+                "kind": "assessment",
+                "subjectId": "book_subject_v2",
+                "content": {
+                  "mode": "text",
+                  "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+                  "requestHash": null,
+                  "sources": [
+                    {
+                      "artifactId": "manuscript_v2",
+                      "revisionId": "revision_v2_example",
+                      "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+                    }
+                  ],
+                  "coverage": {
+                    "targetIds": [
+                      "manuscript_v2"
+                    ],
+                    "referencePositions": []
+                  },
+                  "disposition": "pass",
+                  "findings": [],
+                  "limitations": []
+                },
+                "sources": [
+                  {
+                    "artifactId": "manuscript_v2",
+                    "revisionId": "revision_v2_example",
+                    "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "resultObservation": {
+        "runId": "native_manager_v2_example",
+        "nodeId": "child-quality-reviewer",
+        "executionId": "native_child_execution_example",
+        "retryIndex": 0,
+        "iterationId": null,
+        "loopId": "manager_iteration_example"
+      }
     },
     "assessment": {
       "documentVersion": 2,

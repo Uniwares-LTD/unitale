@@ -15,6 +15,10 @@ import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { bookletContext } from "../../src/lib/server/booklets/context";
 import { registerBookletCreativeWorkV2 } from "../../src/lib/server/booklets/work-v2";
+import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
+import type { AiJob } from "../../src/lib/server/ai/jobs";
+import type { ProviderNodeObservation } from "../../src/lib/server/ai/types";
+import { readBookletDocumentV2 } from "../../src/lib/server/booklets/read-v2";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import {
   bookletRepositoryV2,
@@ -310,7 +314,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
     };
   }
   try {
-    await t.test("creative work derives retry identity from the actual request and bound paid Run", async () => {
+    await t.test("creative work derives retry identity from the actual request and bound paid Run", async (t) => {
       const f = await managerFixture();
       await f.write((m) => f.v2.indexEntries("production-v2", { ...m,
         subjects: [
@@ -348,7 +352,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const m = () => ({ key: "registration-" + ++ordinal, holderId: jobId, fence, expectedVersion: version });
       const request = {
         contractVersion: 2, invocationId: "invocation-1", callId: "call-1", service: "manuscript", operation: "write", intent: "create",
-        items: [{ itemId: "item-1", targetId: "book-subject", input: { instruction: "Keep exact text." } }],
+        items: [{ itemId: "item-1", targetId: "book-subject", input: { instruction: "Keep exact text.\n\u0645\u0631\u062d\u0628\u0627 \ud83d\ude00 e\u0301 Bearer creative-dialogue" } }],
         sources: [{ ...f.source, content: f.revision.content }],
         references: [{ assetId: "original-1", sha256: "a".repeat(64), bytes: 100, nativeFileId: "handle-1", url: "https://files.invalid/old" }],
         constraints: { language: "ar" },
@@ -386,6 +390,18 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const first = await repo.getWork(p._id, "call-1");
       assert.equal(first.category, "paidLlm");
       assert.equal(first.runId, jobId);
+      const expectedRequest = { ...request, references: request.references.map(({ assetId, sha256, bytes }) => ({ assetId, sha256, bytes })) };
+      assert.deepEqual(first.requestPayload, expectedRequest);
+      // A fresh repository instance after the registration reply is lost can
+      // reconstruct the exact intent, without diagnostic redaction or expiring URLs.
+      assert.deepEqual((await bookletRepositoryV2(f.db, actor).getWork(p._id, "call-1")).requestPayload, expectedRequest);
+      assert.equal(fingerprint(first.requestPayload), first.requestHash);
+      await assert.rejects(repo.registerWork(p._id, { ...m(),
+        callId: "forged-body", runId: jobId, actionKey: first.actionKey,
+        requestHash: first.requestHash, requestPayload: { changed: true },
+        service: "manuscript", operation: "write", targetIds: ["story-v2"],
+        sources: [], category: "paidLlm",
+      }), /Stored request differs/);
       assert.equal((await repo.getProduction(p._id)).mutationLease, null);
       const retry = structuredClone(request);
       retry.invocationId = "invocation-2"; retry.callId = "call-2"; retry.items[0].itemId = "item-2";
@@ -465,7 +481,57 @@ test("booklet repositories preserve embedded identities and transactional bounda
         expectedVersion: p.version, callId: "call-2", requestHash: second.requestHash });
       assert.equal((await repo.getWork(p._id, "call-2")).runId, nextJobId);
       assert.equal((await repo.getWork(p._id, "call-2")).status, "dispatching");
-
+      await t.test("native child retention survives terminal parents and rolls back with its worker transaction", async () => {
+        const nativeId = crypto.randomUUID();
+        const workflowId = crypto.randomUUID();
+        const parent = await f.db.collection("aiJobs").findOne({ _id: nextJobId as never });
+        const job = { ...parent, runId: nativeId, status: "cancelled", cancelRequested: true,
+          execution: { runId: nativeId, workflowId, status: "stopped" },
+          run: { ...parent!.run, orchestrator: { id: "booklet-manager", workflowId } } } as unknown as AiJob;
+        await f.db.collection("aiJobs").replaceOne({ _id: nextJobId as never }, job as never);
+        await f.db.collection("consumptionOrders").updateOne({ _id: "order-v2" as never }, { $set: { "value.state": "revoked" } });
+        const exact = "\u0645\u0631\u062d\u0628\u0627 e\u0301 \ud83d\ude00\nBearer creative-dialogue ".repeat(3000);
+        const result = { contractVersion: 2, invocationId: retry.invocationId, callId: retry.callId,
+          service: "manuscript", operation: "write", status: "succeeded", items: [{ itemId: "item-2",
+            status: "succeeded", proposals: [{ kind: "manuscript", subjectId: "book-subject",
+              content: { kind: "manuscript", units: [{ id: "unit", texts: [{ id: "text", kind: "prose", text: exact }] }] } }] }] };
+        const node: ProviderNodeObservation = { runId: nativeId, id: "observed-execution", nodeId: "child-manuscript",
+          nodeType: "tool", status: "succeeded", retryIndex: 0, iterationId: null, loopId: "iteration-2",
+          outputs: { json: [{ result: JSON.stringify(result) }] }, outputsTruncated: false,
+          error: null, executionMetadata: { total_tokens: 42 } };
+        const observe = async (observation: ProviderNodeObservation, parent = job, rollback = false) => {
+          const session = client.startSession();
+          try { await session.withTransaction(async () => {
+            await observeBookletNodeV2(f.db, parent, observation, session);
+            if (rollback) throw Error("fixture rollback");
+          }); } finally { await session.endSession(); }
+        };
+        for (const invalid of [{ ...node, outputsTruncated: true }, { ...node, runId: crypto.randomUUID() },
+          { ...node, nodeId: "untrusted-node" }, { ...node, outputs: { json: [{ result: JSON.stringify({ ...result, invocationId: "forged" }) }] } }])
+          await observe(invalid);
+        await observe(node, { ...job, execution: { ...job.execution!, workflowId: crypto.randomUUID() } });
+        assert.equal((await repo.getWork(p._id, "call-2")).resultPayload, undefined);
+        await assert.rejects(observe(node, job, true), /fixture rollback/);
+        assert.equal((await repo.getWork(p._id, "call-2")).resultPayload, undefined);
+        assert.equal(await f.db.collection("executionEvidence").countDocuments({ runId: nextJobId }), 0);
+        await observe(node);
+        const retained = await bookletRepositoryV2(f.db, actor).getWork(p._id, "call-2");
+        assert.deepEqual(retained.resultPayload, result);
+        type Page = { complete: boolean; sections: { key: string; complete: boolean; cursor?: string }[]; cursor: string | null };
+        let ownedRead = await readBookletDocumentV2(f.db, actor, p._id, { kind: "work", id: retry.callId }) as Page;
+        assert.equal(ownedRead.complete, false);
+        while (!ownedRead.sections.some(section => section.key === "resultPayload") && ownedRead.cursor)
+          ownedRead = await readBookletDocumentV2(f.db, actor, p._id, { kind: "work", id: retry.callId, cursor: ownedRead.cursor }) as Page;
+        assert.ok(ownedRead.sections.some(section => section.key === "resultPayload" && !section.complete));
+        assert.equal(retained.status, "succeeded");
+        assert.equal(retained.retryable, false);
+        assert.deepEqual(retained.resultObservation, { runId: nativeId, nodeId: node.nodeId, executionId: node.id,
+          retryIndex: 0, iterationId: null, loopId: "iteration-2" });
+        await observe(node);
+        assert.equal(await f.db.collection("executionEvidence").countDocuments({ runId: nextJobId }), 1);
+        assert.equal(await f.db.collection("bookletRevisions").countDocuments({ productionId: p._id }), 1);
+        assert.equal((await repo.getProduction(p._id)).lifecycleState, "in-progress");
+      });
     });
     await t.test(
       "v2 prepaid Run admission preserves funding, versions and saved state across continuation",

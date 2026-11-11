@@ -106,13 +106,16 @@ unknown/partial outcomes stay partial. Pre-action checkpoint receipts supply the
 confirmed fence to action/dispatch arguments, and registration supplies the complete
 hash-bound child envelope. Provider bindings and execution switches remain disabled.
 
-Local v2 checkpoint, index, document/history reads and creative-text registration
+Local v2 checkpoint, index, transfer, document/history reads and creative-text registration
 handlers now exist. Registration binds actual artifact responsibilities while native
 child selectors retain subject IDs and grouped revisions. Paid dispatch, image/review
-registration, remaining capabilities, trusted observers and recovery integration remain
+registration, remaining capabilities, complete provider observation and recovery integration remain
 pending. The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
 owns application checks and progress; the package digest below covers only native
 YAML, fixtures and their focused compatibility test.
+Registered work now retains exact meaningful request bodies and matching native child
+results for bounded owned readback after restart. The existing worker transaction
+fences retention; it does not authorize publication, retries or another paid call.
 
 Story Planner now permits a character/location description-only revision without an
 unrequested roster proposal. Initial creation still requires its roster; product

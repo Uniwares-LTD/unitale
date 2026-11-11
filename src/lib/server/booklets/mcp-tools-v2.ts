@@ -6,7 +6,7 @@ import type { RegisteredTool, ToolContext } from "../mcp/tools";
 import { database } from "../mongo";
 import { authorizedRun } from "../runs/capabilities";
 import { fingerprint } from "../foundation/canonical";
-import { bookletContext, bookletMissing } from "./context";
+import { bookletContext, bookletConflict, bookletMissing } from "./context";
 import { bookletRepositoryV2 } from "./repository-v2";
 import { registerBookletCreativeWorkV2 } from "./work-v2";
 import {
@@ -16,6 +16,7 @@ import {
 } from "./documents-v2";
 import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
+import { bookletTransfers, transferSchema } from "./mcp-transfers";
 
 const count = z.number().int().nonnegative().safe();
 const input = z.strictObject({
@@ -28,6 +29,8 @@ type Scope = {
   job: AiJob;
   production: ProductionV2;
   actor: { uid: string; authTime: number };
+  signal: AbortSignal;
+  secret: string;
 };
 
 export function createBookletMcpToolsV2(
@@ -82,7 +85,7 @@ export function createBookletMcpToolsV2(
       )
         throw bookletMissing();
       context.signal.throwIfAborted();
-      return { db, job, production, actor };
+      return { db, job, production, actor, signal: context.signal, secret };
     });
   }
   async function mutation(
@@ -133,13 +136,48 @@ export function createBookletMcpToolsV2(
       async run(raw, context) {
         const value = input.parse(raw);
         const s = await scope(value.runContext, fullName, context);
-        const response = await effect(JSON.parse(value.request), s);
+        const request: unknown = JSON.parse(value.request);
+        if (JSON.stringify(request).includes(s.secret))
+          throw bookletConflict(
+            "Private Run context cannot enter the request payload.",
+          );
+        const response = await effect(request, s);
         context.signal.throwIfAborted();
+        if (JSON.stringify(response).includes(s.secret))
+          throw bookletConflict("Private Run context cannot be returned.");
         return { result: z.json().parse(JSON.parse(JSON.stringify(response))) };
       },
     };
   }
   return [
+    tool(
+      "transfer",
+      "Stage a complete bounded payload with immutable metadata and replayable chunks; this does not publish content or authorize dispatch.",
+      async (raw, s) => {
+        const request = z
+          .discriminatedUnion("action", [
+            transferSchema.extend({ action: z.literal("open") }),
+            z.strictObject({
+              action: z.literal("part"),
+              transferId: id,
+              index: count,
+              data: z.string().max(10924),
+            }),
+          ])
+          .parse(raw);
+        const transfers = bookletTransfers(s.db, s.actor, s.production._id, 2);
+        if (request.action === "part")
+          return transfers.put(
+            request.transferId,
+            request.index,
+            request.data,
+            s.signal,
+            s.secret,
+          );
+        const { key, kind, bytes, sha256 } = request;
+        return transfers.open({ key, kind, bytes, sha256 });
+      },
+    ),
     tool(
       "index",
       "Register stable subject and artifact identities atomically within purchased capacity; matching existing entries are reused.",

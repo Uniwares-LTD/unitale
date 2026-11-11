@@ -34,8 +34,26 @@ native execution status, before changing a registered intent to dispatching. A r
 unsubmitted intent may bind to the current admitted successor; its work `runId` then
 records that dispatching parent. Previously dispatched work remains non-replayable.
 Dispatch usage/lock checks and trusted provider outcomes remain pending.
-No new fields/relationships are needed, so the JSON example and both diagrams
-remain applicable. Image/review gateway and runtime wiring remain 09 work.
+Work may additionally retain `requestPayload`, the exact meaningful request JSON,
+capped at 256 KiB and verified against `requestHash`. Creative registration stores
+it in the same transaction as intent, excluding only renewable reference URLs/native
+file handles. Owned work reads expose it through the existing bounded typed reader.
+This preserves text and extension fields without diagnostic redaction, so restart
+does not require reconstructing a request from a hash. Older records may omit it;
+their missing body is not proof that dispatch can resume. No new collection or index.
+The JSON example and both diagrams include this optional field. Image/review gateway
+and runtime wiring remain 09 work.
+The native v2 observer now retains matching complete child envelopes in optional
+`resultPayload` (at most 1 MiB), with `resultObservation` carrying native execution,
+node, retry and loop identities. These fields share the work record and its 4 MiB
+BSON bound; no separate output collection. The observer requires the accepted Manager
+workflow ID, native run, fixed child node and registered call/invocation/item identities.
+It uses the existing worker transaction and redacted trace storage. Exact creative
+bodies stay separate from diagnostic redaction. Truncated or unrelated output does
+not establish a terminal result. Duplicate observations are idempotent; conflicting
+terminal bodies fail. Retention may finish after cancellation, without granting
+dispatch, publication, acceptance or retry authority. Failure classification,
+reconciliation and integration proof remain checkpoint 09 work.
 Correction roots bind task, target
 and funding identity. Counts derive from distinct dispatched corrective actions;
 technical retries reuse an action key. No separate correction-budget collection.
