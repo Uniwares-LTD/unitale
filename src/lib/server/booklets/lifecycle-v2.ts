@@ -8,6 +8,7 @@ import {
   finishConsumptionWorkflow,
   quoteRevision,
   startRevision,
+  getConsumptionOrder,
 } from "../commerce/orders";
 import { bookletContext, bookletConflict } from "./context";
 import { id } from "./documents";
@@ -28,6 +29,19 @@ export function bookletLifecycleV2(
   const c = bookletContext(db, actor, now);
   const owned = (productionId: string) =>
     c.transaction((session) => c.owned(id.parse(productionId), session, 2));
+  async function releasePrevious(productionId: string, orderId: string, requestedWorkflowId: string) {
+    // Exact repeats belong to the existing commerce journal. They must never
+    // release a newer flow, including an unbound or still-running successor.
+    if (await db.collection("consumptionWorkflows").findOne({
+      _id: requestedWorkflowId as never, uid: actor.uid, orderId,
+    })) return;
+    const order = await getConsumptionOrder(db, actor, orderId);
+    if (order.value.targetId !== productionId) throw bookletConflict("Run target mismatch.");
+    if (order.activeWorkflow && order.activeWorkflow !== requestedWorkflowId)
+      // Existing service rechecks terminal job evidence atomically. Unknown or
+      // unbound predecessors remain busy; no provider call or new queue is used.
+      await finishConsumptionWorkflow(db, actor, orderId, order.activeWorkflow);
+  }
   return {
     async start(productionId: string) {
       const p = await owned(productionId);
@@ -55,6 +69,7 @@ export function bookletLifecycleV2(
     async continue(productionId: string, requestId: string) {
       id.parse(requestId);
       const p = await owned(productionId);
+      await releasePrevious(productionId, p.orderId, fingerprint([p.orderId, "continue", requestId]));
       return continueConsumption(
         db,
         actor,
@@ -99,6 +114,7 @@ export function bookletLifecycleV2(
     ) {
       const value = revisionRequestSchema.parse(raw);
       const p = await owned(productionId);
+      await releasePrevious(productionId, p.orderId, fingerprint([p.orderId, "revision", value.requestId]));
       const { expectedVersion, ...request } = value;
       return startRevision(
         db,

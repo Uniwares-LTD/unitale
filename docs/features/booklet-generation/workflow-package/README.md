@@ -194,12 +194,15 @@ and private-field-safe document reads. Actual Dify form rendering/readback remai
 The first 09.5 slice reports a committed application completion through the existing
 native facts/gate/finish path without reasoning or repeating completion. A checkpoint
 that merely claims completion is insufficient. It passes 28 MCP and 43 compatibility
-tests; remaining automatic retry/reconciliation wiring is still in progress.
+tests; remaining failed-action retry wiring is still in progress.
 Automatic readback now runs through the existing AI-worker extension: one due work
 record, short claim, bounded failed reads/backoff and fixed-code evidence. Local
 31-repository/28-MCP tests cover late retention, exhaustion, zero retry, credential
 failure, retry-after, claim takeover and cancellation/revocation. Build/typecheck and
-documentation checks pass. Failed-action retry and continuation wiring remain 09.5.
+documentation checks pass.
+V2 continuation/revision now invoke the existing verified-terminal flow release;
+original request receipts preserve repeat-click behavior and protect newer work.
+Failed-action retry and native failure routing remain in progress.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:

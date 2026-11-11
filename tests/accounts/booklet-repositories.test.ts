@@ -995,6 +995,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
             lifecycle.finishRun("production-v2", paid.workflowId),
             /Reconcile/,
           );
+          await assert.rejects(lifecycle.continue("production-v2", "still-active"), /Reconcile/);
           await f.db
             .collection("aiJobs")
             .updateOne(
@@ -1005,15 +1006,21 @@ test("booklet repositories preserve embedded identities and transactional bounda
             lifecycle.finishRun("production-v2", paid.workflowId),
             /Reconcile/,
           );
+          await assert.rejects(lifecycle.continue("production-v2", "unverified-termination"), /Reconcile/);
           await f.db
             .collection("aiJobs")
             .updateOne(
               { _id: admitted.attemptId as never },
               { $set: { terminationEvidence: "provider-failed" } },
             );
-          await lifecycle.finishRun("production-v2", paid.workflowId);
-          const nextFlow = await lifecycle.continue("production-v2", "explicit-continuation");
+          const [nextFlow, repeatedFlow] = await Promise.all([
+            lifecycle.continue("production-v2", "explicit-continuation"),
+            lifecycle.continue("production-v2", "explicit-continuation"),
+          ]);
+          assert.equal(repeatedFlow, nextFlow);
+          assert.equal((await f.db.collection("consumptionWorkflows").findOne({ _id: paid.workflowId as never }))!.state, "finished");
           assert.equal(await lifecycle.continue("production-v2", "explicit-continuation"), nextFlow);
+          await assert.rejects(lifecycle.continue("production-v2", "another-unbound-continuation"), /Unbound/);
           const successor = await enqueueBookletRun(f.db, actor, "production-v2", {
             ...input,
             key: "v2-continuation",
@@ -1021,11 +1028,18 @@ test("booklet repositories preserve embedded identities and transactional bounda
             predecessorId: admitted.attemptId,
           });
           assert.equal(successor.id, admitted.id);
+          assert.equal(await lifecycle.continue("production-v2", "explicit-continuation"), nextFlow);
+          assert.equal((await f.db.collection("consumptionWorkflows").findOne({ _id: nextFlow as never }))!.state, "active");
           const nextJob = await f.db
             .collection("aiJobs")
             .findOne({ _id: successor.attemptId as never });
           assert.equal(nextJob!.run.attempt, 2);
           assert.equal(nextJob!.credits, 0);
+          const activeProduction = await f.v2.getProduction("production-v2");
+          const activeRevision = { requestId: "active-revision", category: "story" as const, subjects: [],
+            inputHash: fingerprint("premature revision"), expectedVersion: activeProduction.version };
+          const activeQuote = await lifecycle.quoteRevision("production-v2", activeRevision);
+          await assert.rejects(lifecycle.startRevision("production-v2", activeRevision, activeQuote.hash, activeQuote.credits), /Reconcile/);
           assert.equal(
             await f.db
               .collection("consumptionCharges")
@@ -1042,7 +1056,6 @@ test("booklet repositories preserve embedded identities and transactional bounda
             { _id: successor.attemptId as never },
             { $set: { status: "failed", terminationEvidence: "provider-failed" } },
           );
-          await lifecycle.finishRun("production-v2", nextFlow);
           const revisionRequest = {
             requestId: "story-revision", category: "story" as const, subjects: [],
             inputHash: fingerprint("revised brief"), expectedVersion: after.version,
@@ -1057,7 +1070,10 @@ test("booklet repositories preserve embedded identities and transactional bounda
           }), /one round/);
           await assert.rejects(lifecycle.startRevision("production-v2", revisionRequest, quote.hash, 1), /quote/);
           const revisionFlow = await lifecycle.startRevision("production-v2", revisionRequest, quote.hash, quote.credits);
+          assert.equal((await f.db.collection("consumptionWorkflows").findOne({ _id: nextFlow as never }))!.state, "finished");
           assert.equal(await lifecycle.startRevision("production-v2", revisionRequest, quote.hash, quote.credits), revisionFlow);
+          assert.equal(await lifecycle.continue("production-v2", "explicit-continuation"), nextFlow);
+          assert.equal((await f.db.collection("consumptionOrders").findOne({ _id: "order-v2" as never }))!.activeWorkflow, revisionFlow);
           const revised = await f.v2.getProduction("production-v2");
           assert.equal(revised.revisionChargeId, revisionFlow);
           assert.deepEqual(revised.checkpoint, before.checkpoint);

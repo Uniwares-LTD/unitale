@@ -20,6 +20,9 @@ possible. Public work DTOs expose scheduling status without claim identities.
 The JSON example and complete diagram include this optional record; the regenerated
 core diagram keeps its existing abbreviated work fields and is unchanged. Old work
 remains valid without it. `db:indexes` provisions the work-status/readback eligibility index.
+V2 continuation/revision reuse the existing verified-terminal consumption-flow
+release before a new flow; replayed requests cannot release newer work. This changes
+lifecycle behavior over existing fields, so the JSON and diagrams need no further change.
 
 The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
 [v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing

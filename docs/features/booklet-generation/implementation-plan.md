@@ -1080,6 +1080,24 @@ updated; the regenerated abbreviated core Mermaid is unchanged. The package's na
 13-path digest is unchanged. This completes only automatic readback within 09.5;
 failed-action retry authorization/backoff and safe continuation still remain.
 
+09.5 continuation slice: `bookletLifecycleV2.continue`/`startRevision` now release
+the prior consumption workflow through the existing verified-terminal service before
+creating a new flow. Exact request repeats remain in the original commerce journal;
+they never release a newer active or unbound flow. Concurrent repeated continuation
+clicks share one flow, checkpoint and prepaid scope. Active/unverified native outcomes
+and an unbound predecessor remain busy; use the existing original admission/replay
+path for an unbound flow rather than creating another. No automatic successor,
+new funding interface, collection or Unibase change is introduced. Stored fields,
+model JSON/diagrams and native package digest are unchanged. Remaining 09.5 scope is
+failed-action retry classification/authorization/backoff and deterministic native
+failure routing; task 09.5 stays In progress.
+Continuation slice checks: 31 repository tests pass, including real v2 admission,
+concurrent continuation replay, active/unverified/unbound predecessor rejection,
+active revision rejection and replay of an old continuation after a newer revision.
+Build, post-build typecheck, scoped lint and docs/i18n/skills checks pass. A separate
+same-agent read-only slice review found no blocking issue. Charges, saved content,
+retry policy and allocation counts remain covered by the existing lifecycle fixture.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,
