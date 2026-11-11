@@ -586,6 +586,46 @@ export function bookletRepositoryV2(
         return workV2Schema.parse(row);
       });
     },
+    // Authenticated application control only; never exposed to Manager as an MCP
+    // action. One user click permits one additional attempt after automatic limits.
+    authorizeRetry(productionId: string, raw: { callId: string; key: string }) {
+      const value = z.strictObject({ callId: id, key: id }).parse(raw);
+      return context.transaction(async (session) => {
+        const p = await owned(productionId, session);
+        const identity = fingerprint([actor.uid, "retry-authorization-v2", p._id, value.key]);
+        const inputHash = fingerprint(value);
+        const prior = await receipts.findOne({ _id: identity }, { session });
+        if (prior) {
+          if (prior.inputHash !== inputHash) throw bookletConflict("Changed retry authorization.");
+          return prior.result;
+        }
+        if (p.lifecycleState !== "in-progress" || (p.expiresAt && p.expiresAt <= now()))
+          throw bookletConflict("Only unfinished entitled work can be retried.");
+        await context.entitled(p, session);
+        const rawWork = await work.findOne({ ownerId: actor.uid, productionId: p._id, callId: value.callId }, { session });
+        if (!rawWork) throw bookletMissing();
+        const row = workV2Schema.parse(rawWork);
+        const latest = await work.findOne({ ownerId: actor.uid, productionId: p._id, actionKey: row.actionKey },
+          { session, sort: { retryOrdinal: -1 } });
+        if (latest?.callId !== row.callId || row.status !== "failed" || !row.retryable || row.requestPayload === undefined ||
+          row.retryOrdinal < p.retryPolicy[row.category] || row.retryAuthorization ||
+          row.correctionRootId !== correctionRoot(p, row, p.revisionChargeId ?? "platform"))
+          throw bookletConflict("Retry requires the latest confirmed retriable failure after automatic allowance exhaustion.");
+        const result = { id: row.callId, version: p.version };
+        const timestamp = now();
+        const updated = await work.updateOne({ _id: row._id, ownerId: actor.uid, productionId: p._id, status: "failed", retryable: true,
+          retryAuthorization: { $exists: false } }, { $set: { retryAuthorization: {
+            key: value.key, authorizedAt: timestamp, consumedByCallId: null,
+          } } }, { session });
+        if (!updated.modifiedCount) throw bookletConflict("Retry authorization changed.");
+        await receipts.insertOne({ _id: identity, ownerId: actor.uid, productionId: p._id,
+          scope: "production-v2-retry:" + p._id, key: value.key, inputHash, result, createdAt: timestamp }, { session });
+        await db.collection("auditEvents").insertOne({ _id: identity as never, event: "booklet-action-retry-authorized",
+          actorUid: actor.uid, productionId: p._id, callId: row.callId, runId: row.runId,
+          category: row.category, retryOrdinal: row.retryOrdinal, timestamp }, { session });
+        return result;
+      });
+    },
     getCorrection(productionId: string, rootId: string) {
       return context.transaction(async (session) => {
         const p = await owned(productionId, session);
@@ -718,7 +758,8 @@ export function bookletRepositoryV2(
               throw bookletConflict(
                 "Reuse or reconcile existing work before retry.",
               );
-            if (previous.retryOrdinal >= p.retryPolicy[previous.category])
+            if (previous.retryOrdinal >= p.retryPolicy[previous.category] &&
+              (!previous.retryAuthorization || previous.retryAuthorization.consumedByCallId !== null))
               throw bookletConflict("Action retry allowance exhausted.");
             if (
               fingerprint([
@@ -790,6 +831,11 @@ export function bookletRepositoryV2(
               throw bookletConflict(
                 "Correction requires confirmed findings for every target.",
               );
+          }
+          if (previous?.retryAuthorization?.consumedByCallId === null) {
+            const consumed = await work.updateOne({ _id: previous._id, ownerId: actor.uid, productionId: p._id, "retryAuthorization.consumedByCallId": null },
+              { $set: { "retryAuthorization.consumedByCallId": value.callId } }, { session });
+            if (!consumed.modifiedCount) throw bookletConflict("Retry authorization already consumed.");
           }
           const row = workV2Schema.parse({
             ...registration,

@@ -190,6 +190,11 @@ export const workV2Schema = workRegistrationV2Schema.extend({
   retryable: z.boolean(),
   evidenceIds: ids,
   updatedAt: z.date(),
+  retryAuthorization: z.strictObject({
+    key: id,
+    authorizedAt: z.date(),
+    consumedByCallId: id.nullable(),
+  }).optional(),
   // Worker-only readback scheduling; never authorizes another provider attempt.
   reconciliation: z.strictObject({
     nextAt: z.date().nullable(),

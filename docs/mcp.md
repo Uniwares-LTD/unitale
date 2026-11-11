@@ -438,6 +438,13 @@ credential/identity failures stop automatic checking. Exhaustion leaves liabilit
 unresolved and does not authorize paid retry. Each check retains fixed-code trace
 evidence; owned work reads expose next-check time/count/reason without claim tokens.
 This local worker integration does not prove live Dify result availability.
+An authenticated application control can call `bookletRepositoryV2.authorizeRetry`
+with `{callId,key}` after the latest confirmed retriable failure exhausts its automatic
+allowance. Existing receipts/audit events deduplicate and log the one-attempt grant;
+registration consumes it atomically without resetting retry/correction counters.
+Context exposes the ordinal/authorization flag and owned work reads expose the grant
+timestamp/consuming call, omitting the click key. This method is not an MCP tool and
+Manager cannot grant retries. Its creator control and native recovery routing remain pending.
 The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original

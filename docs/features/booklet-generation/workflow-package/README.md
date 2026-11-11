@@ -203,6 +203,10 @@ documentation checks pass.
 V2 continuation/revision now invoke the existing verified-terminal flow release;
 original request receipts preserve repeat-click behavior and protect newer work.
 Failed-action retry and native failure routing remain in progress.
+The application-only explicit-retry backend is locally verified (32 repository and
+28 MCP tests): one authenticated, journaled grant permits one additional registration
+after automatic exhaustion, preserving counters and financial guards. Its UI control,
+retry timing and native routing remain pending; no new Manager MCP action was added.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:

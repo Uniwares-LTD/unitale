@@ -1098,6 +1098,36 @@ Build, post-build typecheck, scoped lint and docs/i18n/skills checks pass. A sep
 same-agent read-only slice review found no blocking issue. Charges, saved content,
 retry policy and allocation counts remain covered by the existing lifecycle fixture.
 
+09.5 explicit-retry amendment: the accepted public “Retry failed step” control needs
+an authenticated application authorization after automatic allowance exhaustion.
+Manager must not grant it. Add only `bookletRepositoryV2.authorizeRetry(productionId,
+{callId,key})` for the later creator control: existing owned transactions/receipts
+deduplicate clicks and existing audit events log authorization. An optional
+`retryAuthorization {key,authorizedAt,consumedByCallId}` on the failed work record
+permits exactly one additional registration. The new attempt retains the same action,
+scope/funding and an increasing retry ordinal; it inherits no fresh automatic budget.
+Unknown, non-retriable, obsolete, body-unavailable and still-automatically-eligible
+failures cannot obtain an extra grant. A consumed grant replays its original receipt;
+it does not authorize a second attempt. Registration consumes the grant atomically,
+and existing dispatch financial/correction/ownership guards still apply. This is an
+application-only method, not another MCP action, endpoint, scheduler or Run UI change.
+Verify with real registration/dispatch/outcome transactions and explicit trusted
+failure fixtures; fake failure evidence is not provider compatibility proof.
+
+Explicit-retry slice checks: 32 repository and 28 MCP tests, production build,
+post-build typecheck, scoped lint and docs/i18n/skills checks pass. Fixtures cover
+foreign ownership, unknown outcome denial, automatic allowance still available,
+concurrent click replay, changed-key payload rejection, exactly one consumption,
+increasing ordinal and unchanged policy, and authorization-key omission from work
+DTOs. Existing dispatch checks still apply after authorization. A separate same-agent
+read-only slice review found no blocking issue after adding the current-funding
+identity check. The JSON/model/complete Mermaid are updated; abbreviated core
+Mermaid and the 13-path native package digest remain unchanged. Native stage
+failure evidence is still insufficient to prove safe paid retry in the target;
+keep conservative stop/reconciliation as an accepted provider limitation. Remaining
+application work in 09.5 is retry eligibility timing and deterministic recovery
+routing for failed actions; do not count this backend grant as a wired creator control.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

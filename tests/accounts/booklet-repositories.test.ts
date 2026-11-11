@@ -240,7 +240,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
       },
     };
   }
-  async function managerFixture() {
+  async function managerFixture(retryPolicy = {}) {
     const f = await fixture();
     await createBookletV2Indexes(f.db);
     const v2 = bookletRepositoryV2(f.db, actor, f.now);
@@ -254,7 +254,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
       id: "production-v2",
       orderId: "order-v2",
       key: "create-v2",
-    });
+    }, retryPolicy);
     const lease = await v2.acquireLease("production-v2", {
       key: "lease",
       holderId: "worker",
@@ -614,6 +614,7 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const outcome = await repo.recordWorkOutcome(p._id, { ...m(), callId: "call-1", status: "failed", retryable: true, evidenceIds: ["trusted-fixture"] });
       version = outcome.version;
       fence = outcome.fence!;
+      await assert.rejects(repo.authorizeRetry(p._id, { callId: "call-1", key: "automatic-allowance-remains" }), /latest confirmed/);
       const retried = await invoke(m(), payload(retry, "call-1"));
       version = retried.version;
       fence = retried.fence!;
@@ -1104,6 +1105,61 @@ test("booklet repositories preserve embedded identities and transactional bounda
         }
       },
     );
+    await t.test("authenticated retry authorization adds exactly one attempt without resetting automatic counters", async () => {
+      const f = await managerFixture({ paidLlm: 0 });
+      await createCreditIndexes(f.db);
+      await createConsumptionIndexes(f.db);
+      await grantCredits(f.db, actor.uid, "retry-funding", { amount: 500, source: "purchase", reference: "fixture" });
+      const paid = await bookletLifecycleV2(f.db, actor).start("production-v2"), jobId = "retry-manager";
+      await f.db.collection("aiJobs").insertOne({ _id: jobId as never, uid: actor.uid, status: "running", cancelRequested: false,
+        runId: crypto.randomUUID(), consumption: { orderId: "order-v2", workflowId: paid.workflowId },
+        run: { target: { adapter: "booklet", version: "2", kind: "booklet-production", id: "production-v2" } } });
+      await f.db.collection("consumptionWorkflows").updateOne({ _id: paid.workflowId as never }, { $set: { jobId } });
+      const repo = bookletRepositoryV2(f.db, actor, undefined, { atomicMutations: true });
+      let ordinal = 0;
+      const mutation = async () => {
+        const p = await repo.getProduction("production-v2");
+        return { key: "retry-write-" + ++ordinal, holderId: jobId, expectedVersion: p.version, fence: p.fenceCounter };
+      };
+      const request = (callId: string) => ({ contractVersion: 2, invocationId: callId, callId, service: "manuscript", operation: "write", intent: "create",
+        items: [{ itemId: callId, targetId: "book-subject", input: { instruction: "Keep exact content." } }],
+        sources: [{ ...f.source, content: f.revision.content }], references: [], constraints: {} });
+      const register = (callId: string, retryOf: string | null, m: Mutation) => {
+        const childRequest = request(callId);
+        return registerBookletWorkV2(f.db, actor, "production-v2", jobId, m,
+          { childRequest, requestHash: fingerprint(childRequest), targets: ["story-v2"], retryOf });
+      };
+      await register("initial", null, await mutation());
+      await repo.dispatchWork("production-v2", { ...await mutation(), callId: "initial", requestHash: fingerprint(request("initial")) });
+      await assert.rejects(repo.authorizeRetry("production-v2", { callId: "initial", key: "one-click" }), /latest confirmed/);
+      // Trusted application failure fixture; model text/native timeout cannot set retryable.
+      await repo.recordWorkOutcome("production-v2", { ...await mutation(), callId: "initial", status: "unknown", retryable: false, evidenceIds: ["trusted-outcome"] });
+      await assert.rejects(repo.authorizeRetry("production-v2", { callId: "initial", key: "one-click" }), /latest confirmed/);
+      await repo.recordWorkOutcome("production-v2", { ...await mutation(), callId: "initial", status: "failed", retryable: true, evidenceIds: ["trusted-outcome"] });
+      await assert.rejects(register("extra", "initial", await mutation()), /allowance exhausted/);
+      await assert.rejects(bookletRepositoryV2(f.db, { ...actor, uid: "foreign" }).authorizeRetry("production-v2",
+        { callId: "initial", key: "one-click" }), /not found/i);
+      const value = { callId: "initial", key: "one-click" };
+      const [first, repeated] = await Promise.all([repo.authorizeRetry("production-v2", value), repo.authorizeRetry("production-v2", value)]);
+      assert.deepEqual(repeated, first);
+      await assert.rejects(repo.authorizeRetry("production-v2", { ...value, callId: "extra" }), /Changed retry/);
+      await assert.rejects(repo.authorizeRetry("production-v2", { ...value, key: "another-click" }), /latest confirmed/);
+      const before = await repo.getProduction("production-v2");
+      const nextMutation = await mutation();
+      const registered = await register("extra", "initial", nextMutation);
+      assert.deepEqual(await register("extra", "initial", nextMutation), registered);
+      assert.equal((await repo.getWork("production-v2", "initial")).retryAuthorization!.consumedByCallId, "extra");
+      assert.equal((await repo.getWork("production-v2", "extra")).retryOrdinal, 1);
+      assert.deepEqual(await repo.authorizeRetry("production-v2", value), first); // Receipt replay cannot add another grant.
+      assert.equal(await f.db.collection("auditEvents").countDocuments({ event: "booklet-action-retry-authorized" }), 1);
+      await repo.dispatchWork("production-v2", { ...await mutation(), callId: "extra", requestHash: fingerprint(request("extra")) });
+      await repo.recordWorkOutcome("production-v2", { ...await mutation(), callId: "extra", status: "failed", retryable: true, evidenceIds: ["trusted-outcome"] });
+      await assert.rejects(register("unapproved", "extra", await mutation()), /allowance exhausted/);
+      assert.equal((await repo.getProduction("production-v2")).retryPolicy.paidLlm, before.retryPolicy.paidLlm);
+      const read = await readBookletDocumentV2(f.db, actor, "production-v2", { kind: "work", id: "initial" }) as { value: Record<string, unknown> };
+      assert.equal(JSON.stringify(read).includes("one-click"), false);
+      assert.ok(read.value.retryAuthorization);
+    });
     await t.test("worker readback is bounded, leased and preserves unresolved liability after stopping", async () => {
       const f = await managerFixture(), now = new Date();
       const production = await f.v2.getProduction("production-v2");

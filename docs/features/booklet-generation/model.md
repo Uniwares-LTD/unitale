@@ -24,6 +24,16 @@ V2 continuation/revision reuse the existing verified-terminal consumption-flow
 release before a new flow; replayed requests cannot release newer work. This changes
 lifecycle behavior over existing fields, so the JSON and diagrams need no further change.
 
+An exhausted confirmed retriable failure can now carry optional
+`retryAuthorization {key, authorizedAt, consumedByCallId}`. The authenticated owner
+grants one extra attempt through an application service; Manager cannot grant it.
+Existing repository receipts deduplicate the click, and an audit event records it.
+Registration consumes the grant atomically and increments the existing retry ordinal;
+automatic and correction allowances are not reset. Unknown/non-retriable outcomes and
+missing request bodies remain ineligible. Work DTOs expose the timestamp/consuming call
+without the authorization key. The JSON example notes this optional field and the
+complete Mermaid includes it; the regenerated core Mermaid's abbreviated fields are unchanged.
+
 The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
 [v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing
 collections and owned transaction/admission validation. New v2 production creation is

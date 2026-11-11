@@ -420,6 +420,10 @@ export async function readBookletDocumentV2(
       category: row.category,
       retryOrdinal: row.retryOrdinal,
       retryable: row.retryable,
+      ...(row.retryAuthorization ? { retryAuthorization: {
+        authorizedAt: row.retryAuthorization.authorizedAt.toISOString(),
+        consumedByCallId: row.retryAuthorization.consumedByCallId,
+      } } : {}),
       sources: row.sources,
       targetIds: row.targetIds,
       correctionRootId: row.correctionRootId,

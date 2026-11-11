@@ -288,6 +288,15 @@ retains the decision about whether new context warrants a fresh assessment.
 
 ### A05-A07 - Admission and crash recovery
 
+The v2 application-only `authorizeRetry(productionId,{callId,key})` service is the
+backend for checkpoint 10's authenticated “Retry failed step” control. It accepts
+only the latest confirmed retriable failed action with a retained request after its
+automatic allowance is exhausted. One receipt/grant permits one additional registered
+attempt; ordinals, funding, correction history and dispatch guards are preserved.
+Manager receives facts about authorization and cannot issue it through MCP. Unknown
+paid outcomes remain ineligible. Native failures without sufficient stage/outcome
+evidence stop conservatively; they do not become safe retry evidence.
+
 Follow the [accepted retry/reconciliation policy](implementation-plan.md#action-retries-and-automatic-reconciliation):
 production-snapshotted paid LLM/image retries 2/0, retriable non-paid retries 3, no
 automatic retry for non-retriable errors. Preserve action/correction counts separately;
