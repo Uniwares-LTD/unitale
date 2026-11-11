@@ -677,9 +677,25 @@ MCP fixture now uses the actual Dify parser and worker event persistence before 
 Booklet observer, then publishes/checkpoints exact large text after a stream drops
 before parent completion. All 16 MCP and 34 imported adapter/tracing/worker tests pass
 in Unitale, along with template consistency, build, typecheck and required checks.
-Configured-suite dispatch/source
-bindings and complete text-journey exit evidence remain pending; MCP dispatch and
-`usage.canDispatch` remain gated.
+Configured-suite text dispatch/source bindings now use actual handler and native Code
+boundaries. Context reports attempt/cost/native step and elapsed bounds; dispatch
+rechecks them atomically. Native steps survive activity-log cleanup through existing
+accounting records. Elapsed coverage remains a labelled lower bound, with nested
+durations never added. The deterministic text journey checkpoints intent, checks
+sources, dispatches once, runs Manuscript validate/pack, retains native output, saves
+a compact checkpoint and publishes exact text once. Replay attempts with fresh context
+fail, while lost write replies reuse receipts. Image references/dispatch and remaining
+review-mode safeguards stay in 09.3. No execution switch or live binding was changed.
+
+09.2 final accounting review found a confirmed remaining blocker: Dify 1.17.1's Graphon
+0.7.0 Loop/Iteration metadata includes accumulated child cost. The shared adapter
+currently treats this as another additive node usage record. Correct normalization
+in Unibase before marking 09.2 Verified; preserve step/timing evidence and parent
+execution totals, without rewriting accepted records or adding a ledger.
+The current project slice passes 48 repository/MCP tests and 41 compatibility tests,
+build, post-build typecheck, scoped lint and required checks. Read-only review records
+the container billing blocker above; 09.2 remains In progress until its correction is
+imported and verified. Model JSON/diagrams and the native package digest are unchanged.
 Build, post-build typecheck, scoped lint, environment and docs/i18n/skills checks pass.
 A separate same-agent read-only slice review (cold-review fallback) found no blocking
 issue; checkpoint-wide final reviews remain 09.7 work.

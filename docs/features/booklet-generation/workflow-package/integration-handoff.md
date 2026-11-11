@@ -221,8 +221,13 @@ request carrier and explicit `result` wrapper. Both require a current private na
 Manager capability and owned prepaid workflow/job binding. Checkpoints accept the
 initial fence zero; subsequent atomic writes return the advanced fence. Exact retries
 reuse existing receipts, including after later mutations. Other MCP capabilities,
-paid dispatch, image/review registration, trusted outcomes and runtime recovery remain
-pending; no workflow is activated by these handlers.
+image dispatch, remaining review modes, other capabilities and runtime recovery remain
+pending. `begin_work` now supports guarded text dispatch; its configured suite must
+match the accepted Manager publication. It accepts only retained registered creative
+text or text/specification review with no image references. Image and other review
+bindings are completed in 09.3. `sources` verifies exact owned immutable text tuples
+and rejects nonempty reference lists until that image bridge exists. No workflow is
+activated by these handlers.
 
 This storage slice is not proof of real provider execution, effective retries or
 application-connected recovery. The existing candidate still has retries/activation
@@ -242,8 +247,9 @@ integration so large bodies are referenced throughout the journey; this API alon
 does not prove that complete path. Image and changed-source revalidation paths remain
 pending until their own trusted guards are implemented.
 
-The local context handler is partially integrated and keeps `usage.canDispatch:false`
-until dispatch safeguards are complete. It reads exactly one `bookletWorkflowPolicies`
+The local context handler derives `usage.canDispatch` from known text attempts,
+reported spending and native execution bounds. Dispatch rechecks those facts in its
+atomic mutation; context alone never authorizes work. It reads exactly one `bookletWorkflowPolicies`
 record using the production's execution profile/revision and accepted Run's orchestrator/
 configuration revision. In addition to the existing `reviewer:{id,revision,publicationId}`,
 the record supplies `suite:{managerWorkflowId,children,providerPackages}` and the accepted `managerGraph`.
@@ -260,7 +266,9 @@ Operator readback/provisioning stays pending; no model may submit this configura
 `usage.workAttempts` counts all dispatched owned work by `paidLlm`, `paidImage` and
 `nonPaid`, plus `active` (dispatching) and `unresolved` (unknown) totals. Registered
 intents do not consume these counts. This is not a provider-internal attempt count
-or complete native reasoning/cost accounting; those integrations remain 09.2 work.
+or a complete provider invoice. Native Manager reasoning is counted by trusted
+run/node/retry identity; its inputs are unavailable on the private observation hook
+and remain explicitly unobserved rather than reconstructed.
 `usage.costs` now reads the existing native usage ledger for owned production Runs.
 It returns the configured currency, exact-decimal `reportedSubtotal`, counts of
 unknown native records/other-currency records and `overCeiling`. Per Run it selects
@@ -268,6 +276,13 @@ the larger of execution-summary cost and node subtotal, without adding overlappi
 views. `complete:false` explicitly excludes any claim of a full invoice or visibility
 into hidden SDK/nested-provider charges. Missing ledger rows are not evidence of free
 work. This is a usage safeguard, not a provider spending reservation or guarantee.
+`usage.execution` reports distinct observed native steps and `reportedElapsedMs`.
+Steps combine activity events with the durable accounting ledger, so activity cleanup
+does not reset known executions. Per Run, elapsed time uses the larger of a reported
+whole-execution duration and the longest observed node; nested/container durations
+are never summed. Runs accumulate across continuation. Missing duration remains null,
+and `complete:false` labels the current lower bound. These asynchronous reports can
+block the next paid dispatch; they are not a hard provider cancellation deadline.
 Context returns at most 16 source/work and 8 assessment summaries, with an 8 KiB budget
 per summary group and explicit completeness flags. Correction facts describe selected
 work roots. Context carries the complete checkpoint and has a 128 KiB UTF-8 envelope

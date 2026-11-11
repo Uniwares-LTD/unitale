@@ -14,13 +14,14 @@ import {
   artifactKindV2Schema,
   type ProductionV2,
   type WorkV2,
+  type RevisionV2,
 } from "./documents-v2";
 import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
 import { bookletTransfers, transferSchema } from "./mcp-transfers";
 import { reconcileBookletWorkV2 } from "./reconcile-v2";
 import { readBookletSuiteV2 } from "./suite-v2";
-import { bookletNativeCostsV2, bookletWorkUsageV2 } from "./usage-v2";
+import { bookletNativeCostsV2, bookletWorkUsageV2, bookletRunBoundsV2 } from "./usage-v2";
 import {
   bookletContentV2Schema,
   bookletSourceV2Schema,
@@ -330,6 +331,11 @@ export function createBookletMcpToolsV2(
           ),
           16,
         );
+        const workAttempts = await bookletWorkUsageV2(s.db, s.production);
+        const costs = await bookletNativeCostsV2(s.db, s.production);
+        const execution = await bookletRunBoundsV2(s.db, s.production);
+        const textLimit = s.production.creativeConfigSnapshot.execution.maxTextCalls;
+        const canDispatch = workAttempts.paidLlm < textLimit && !costs.overCeiling && !execution.overLimit;
         const facts = {
           productionId: s.production._id,
           version: s.production.version,
@@ -364,10 +370,11 @@ export function createBookletMcpToolsV2(
             workFacts.length === work.length &&
             correctionFacts.length === correctionRoots.length,
           usage: {
-            canDispatch: false,
-            reason: "dispatch_safeguards_pending",
-            workAttempts: await bookletWorkUsageV2(s.db, s.production),
-            costs: await bookletNativeCostsV2(s.db, s.production),
+            canDispatch,
+            reason: canDispatch ? null : "production_usage_bound_reached",
+            workAttempts,
+            costs,
+            execution,
           },
         };
         if (Buffer.byteLength(JSON.stringify(facts)) > 128 * 1024)
@@ -621,11 +628,32 @@ export function createBookletMcpToolsV2(
       },
     ),
     tool(
+      "sources",
+      "Verify owned immutable text sources. Original-image binding remains unavailable until image safeguards are implemented.",
+      async (raw, s) => {
+        const request = z.strictObject({
+          sources: z.array(bookletSourceV2Schema),
+          references: z.array(z.json()).max(0),
+        }).parse(raw);
+        const records = await s.db.collection<RevisionV2>("bookletRevisions").find({
+          ownerId: s.actor.uid,
+          productionId: s.production._id,
+          documentVersion: 2,
+          _id: { $in: request.sources.map((source) => source.revisionId) },
+        }, { projection: { _id: 1, artifactId: 1, contentHash: 1 } }).toArray();
+        for (const source of request.sources)
+          if (!records.some((row) => row._id === source.revisionId && row.artifactId === source.artifactId && row.contentHash === source.contentHash))
+            throw bookletConflict("Source identity differs from its owned immutable revision.");
+        return { references: [] };
+      },
+      false,
+    ),
+    tool(
       "begin_work",
-      "Register validated creative-text or scoped Reviewer intent. Paid dispatch is unavailable until its remaining safeguards are implemented.",
+      "Register child intent or atomically authorize configured text work after current ownership, funding, lock and usage checks. Image dispatch remains unavailable.",
       async (raw, s) => {
         const request = z
-          .strictObject({
+          .discriminatedUnion("action", [z.strictObject({
             action: z.literal("register"),
             childRequest: z.json(),
             requestHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -633,8 +661,25 @@ export function createBookletMcpToolsV2(
             retryOf: id.nullable().optional(),
             correction: workRegistrationV2Schema.shape.correction,
             fence: count,
-          })
+          }), z.strictObject({
+            action: z.literal("dispatch"), callId: id,
+            requestHash: z.string().regex(/^[a-f0-9]{64}$/), fence: count,
+          })])
           .parse(raw);
+        if (request.action === "dispatch") {
+          await readBookletSuiteV2(s.db, s.production, s.job);
+          const repo = bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true });
+          const work = await repo.getWork(s.production._id, request.callId);
+          const payload = z.object({ references: z.array(z.json()).max(0) }).safeParse(work.requestPayload);
+          if (work.category !== "paidLlm" || work.service === "manager" || work.service === "image-executor" ||
+            (work.service === "quality-reviewer" && !["text", "specification"].includes(work.operation)) || !payload.success)
+            throw bookletConflict("Only registered text work without image references is available for dispatch.");
+          const m = await mutation(s, "dispatchWork", request, request.fence);
+          const receipt = await repo.dispatchWork(s.production._id, {
+            ...m, callId: request.callId, requestHash: request.requestHash,
+          });
+          return { callId: request.callId, requestHash: request.requestHash, status: "dispatching", fence: receipt.fence };
+        }
         const {
           fence,
           childRequest,

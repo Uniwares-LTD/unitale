@@ -39,7 +39,7 @@ import {
 } from "./documents-v2";
 import type { BookletAsset } from "./media";
 import type { AiJob } from "../ai/jobs";
-import { bookletWorkUsageV2, bookletNativeCostsV2 } from "./usage-v2";
+import { bookletWorkUsageV2, bookletNativeCostsV2, bookletRunBoundsV2 } from "./usage-v2";
 
 type CreateInput = Parameters<
   ReturnType<typeof bookletRepository>["createProduction"]
@@ -819,16 +819,17 @@ export function bookletRepositoryV2(
           await activeManager(p, value.holderId, value.holderId, session);
           const usage = await bookletWorkUsageV2(db, p, session);
           const costs = await bookletNativeCostsV2(db, p, session);
+          const bounds = await bookletRunBoundsV2(db, p, session);
           const limits = p.creativeConfigSnapshot.execution;
           if (
             (row.category === "paidLlm" &&
               usage.paidLlm >= limits.maxTextCalls) ||
             (row.category === "paidImage" &&
               usage.paidImage >= limits.maxImageCalls) ||
-            (row.category !== "nonPaid" && costs.overCeiling)
+            (row.category !== "nonPaid" && (costs.overCeiling || bounds.overLimit))
           )
             throw bookletConflict(
-              "Production call or reported spending ceiling reached.",
+              "Production call or reported spending ceiling reached, or native execution bound exhausted.",
             );
           if (
             p.lifecycleState === "in-progress" &&

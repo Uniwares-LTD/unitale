@@ -390,14 +390,20 @@ the same strictly named `MCP_TOKEN_*` credentials and Run client selection.
 
 Checkpoint 09 now adds versioned project tools alongside the v1 catalog:
 `booklet_checkpoint_v2`, atomic fence refresh through `booklet_lease_v2`, and
-creative-text/Reviewer registration through `booklet_begin_work_v2`.
+creative-text/Reviewer registration and guarded text dispatch through `booklet_begin_work_v2`.
 Each accepts private `runContext` plus a bounded JSON-string `request` and returns
 an explicit `result` object. They require an owned native v2 Manager Run and its current
 prepaid workflow/job binding, use atomic version/fence checks and leave no lease across
 calls. Exact retries replay existing receipts. Initial atomic checkpoints accept fence
 zero. The core catalog version is unchanged; these project-extension contracts are
-versioned in their names. Paid dispatch and the remaining v2 handlers are pending.
+versioned in their names. Dispatch accepts only registered creative text or text/specification
+review without image references, after configured suite, ownership, funding, lock,
+attempt, reported-cost and native execution-bound checks. Other review modes and
+image dispatch remain pending 09.3 safeguards. The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
+`booklet_sources_v2` verifies owned immutable `{sources,references:[]}` text tuples;
+foreign/changed revisions and nonempty image-reference lists fail explicitly until
+the original-image bridge is completed. It never silently drops requested references.
 `booklet_read_document_v2` additionally exposes owned production/checkpoint/revision/work/assessment DTOs
 under `extension:booklets:read`. Its existing `{kind,id,cursor?}` request returns whole
 small JSON values or bounded typed sections, array pages and decoded text fragments.

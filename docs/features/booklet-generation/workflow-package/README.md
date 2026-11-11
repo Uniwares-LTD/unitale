@@ -107,11 +107,12 @@ confirmed fence to action/dispatch arguments, and registration supplies the comp
 hash-bound child envelope. Provider bindings and execution switches remain disabled.
 
 Local v2 checkpoint, index, transfer, native reconciliation, creative-text publication,
-document/history reads and creative-text registration
+document/history reads, text-source verification and creative-text registration/dispatch
 handlers now exist. Registration binds actual artifact responsibilities while native
 child selectors retain subject IDs and grouped revisions. Reviewer intent registration
-is now available. Paid dispatch, image registration, remaining capabilities, complete
-provider observation and recovery integration remain
+is now available. Text dispatch checks configured suite identity, current ownership,
+locks, funding, attempts and reported cost/execution bounds. Image references, image
+dispatch, remaining capabilities and complete recovery integration remain
 pending. The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
 owns application checks and progress; the package digest below covers only native
 YAML, fixtures and their focused compatibility test.
@@ -146,12 +147,16 @@ remain distinct pending evidence.
 Paid child checkpoints now store references to exact retained work rather than copying
 full responses. Fresh work facts must confirm retention before pending intent is
 cleared. The real MCP fixture checks exact large-text publication and two successive
-checkpoint actions, including lost-reply replay; full Manager dispatch is still gated.
+checkpoint actions, including lost-reply replay. The latest fixture uses actual
+Manager/Manuscript Code nodes, guarded dispatch, native worker retention and exact
+revision publication. The package execution switch remains disabled; this is local
+boundary verification, not target Dify or provider execution.
 
 Current slice: 41/41 compatibility tests pass (11 preserved v1 and 30 native-package
-tests), plus 16 MCP tests. Typecheck, scoped test lint, docs/i18n/skills checks and an
+tests), plus 18 MCP and 30 repository tests. Build, typecheck, scoped test lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
-found no blocking issue in this slice. Current
+found a remaining container-usage normalization defect in the shared adapter; 09.2
+remains In progress until its correction is imported and verified. Current
 implementation SHA-256:
 `f553145a9fe6fa96a3a056f1085528fc5f91e559e63b774d7f2d092611cd2188`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total

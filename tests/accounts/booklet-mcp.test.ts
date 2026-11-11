@@ -1210,7 +1210,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         const facts = await successful("context", {});
         assert.equal(facts.productionId, production._id);
         assert.equal(facts.fence, registered.fence);
-        assert.equal(facts.usage.canDispatch, false);
+        assert.equal(facts.usage.canDispatch, true);
         assert.equal(facts.usage.workAttempts.paidLlm, 0);
         await t.test("native cost facts preserve unknowns and never add a Run summary to its nodes", async () => {
           const native = (id: string, scope: "node" | "execution", price: string | null, currency = "USD") => ({
@@ -1233,6 +1233,11 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal((await successful("context", {})).usage.costs.reportedSubtotal, "0.5");
           await db.collection("aiUsage").updateOne({ _id: summary._id }, { $set: { "cost.amount": String(production.creativeConfigSnapshot.execution.spendingCeiling.amountMinor) } });
           assert.equal((await successful("context", {})).usage.costs.overCeiling, true);
+          assert.equal((await successful("context", {})).usage.canDispatch, false);
+          const limited = await successful("context", {});
+          assert.equal((await invoke("begin_work", { action: "dispatch", callId: "call-v2",
+            requestHash: registration.requestHash, fence: limited.fence })).isError, true);
+          assert.equal((await db.collection("bookletWork").findOne({ productionId: production._id, callId: "call-v2" }))!.status, "registered");
           const foreign = { ...native("foreign", "execution", "999999999"), uid: "foreign-owner" };
           const other = native("other-currency", "node", "1", "EUR");
           await db.collection("aiUsage").insertMany([foreign, other]);
@@ -1254,6 +1259,47 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           await db.collection("aiJobs").deleteMany({ _id: { $in: [continuationId, unrelatedId] as never[] } });
           await db.collection("aiUsage").deleteMany({ _id: { $in: [...rows, foreign, other].map((row) => row._id) } });
         });
+        await t.test("native execution bounds count unique steps and survive activity cleanup", async () => {
+          const event = (id: string, native: string, elapsedMs: number, uid = "owner") => ({
+            _id: "bounds-" + id as never, uid, jobId: "run-v2", event: { type: "stage", id: native, elapsedMs },
+          });
+          const events = [event("start", "node-1", 0), event("finish", "node-1", 500), event("second", "node-2", 750), event("foreign", "foreign-node", 999999, "foreign")];
+          await db.collection("runEvents").insertMany(events);
+          const usage = [
+            { _id: "bounds-summary" as never, uid: "owner", jobId: "run-v2", id: "native-v2", scope: "execution", elapsedMs: 3000, cost: null },
+            ...["node-1", "node-2"].map((id) => ({ _id: "bounds-" + id as never, uid: "owner", jobId: "run-v2", id, scope: "node", elapsedMs: null, cost: null })),
+          ];
+          await db.collection("aiUsage").insertMany(usage);
+          let current = await successful("context", {});
+          assert.equal(current.usage.execution.steps, 2);
+          assert.equal(current.usage.execution.reportedElapsedMs, 3000);
+          await db.collection("aiUsage").updateOne({ _id: "bounds-summary" as never }, { $set: { elapsedMs: null } });
+          assert.equal((await successful("context", {})).usage.execution.reportedElapsedMs, 750);
+          await db.collection("aiUsage").updateOne({ _id: "bounds-summary" as never }, { $set: { elapsedMs: 3000 } });
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: {
+            "creativeConfigSnapshot.execution.maxWorkflowSteps": 2,
+          } });
+          current = await successful("context", {});
+          assert.equal(current.usage.canDispatch, false);
+          const dispatch = { action: "dispatch", callId: "call-v2", requestHash: registration.requestHash, fence: current.fence };
+          assert.equal((await invoke("begin_work", dispatch)).isError, true);
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: {
+            "creativeConfigSnapshot.execution.maxWorkflowSteps": production.creativeConfigSnapshot.execution.maxWorkflowSteps,
+            "creativeConfigSnapshot.execution.maxElapsedSeconds": 2,
+          } });
+          assert.equal((await successful("context", {})).usage.canDispatch, false);
+          assert.equal((await invoke("begin_work", dispatch)).isError, true);
+          await db.collection("runEvents").deleteMany({ _id: { $in: events.map((row) => row._id) } });
+          current = await successful("context", {});
+          assert.equal(current.usage.execution.steps, 2);
+          assert.equal(current.usage.execution.reportedElapsedMs, 3000);
+          assert.equal(current.fence, facts.fence);
+          assert.equal(current.work[0].status, "registered");
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: {
+            "creativeConfigSnapshot.execution.maxElapsedSeconds": production.creativeConfigSnapshot.execution.maxElapsedSeconds,
+          } });
+          await db.collection("aiUsage").deleteMany({ _id: { $in: usage.map((row) => row._id) } });
+        });
         assert.equal(facts.work[0].callId, "call-v2");
         assert.equal(facts.work[0].resultAvailable, false);
         assert.equal(facts.reviewerBinding, bindingRow.reviewer.publicationId);
@@ -1261,6 +1307,8 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(facts[key], undefined);
         await db.collection("bookletWorkflowPolicies").updateOne({ orchestratorId: "booklet-v2" }, { $set: { "reviewer.publicationId": randomUUID() } });
         assert.equal((await invoke("context", {})).isError, true);
+        assert.equal((await invoke("begin_work", { action: "dispatch", callId: "call-v2",
+          requestHash: registration.requestHash, fence: facts.fence })).isError, true);
         await db.collection("bookletWorkflowPolicies").updateOne({ orchestratorId: "booklet-v2" }, { $set: { reviewer: bindingRow.reviewer } });
         const duplicateBindingId = randomUUID();
         await assert.rejects(db.collection("bookletWorkflowPolicies").insertOne({ ...bindingRow, _id: duplicateBindingId as never }), /E11000/);
@@ -1354,7 +1402,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           units: [
             {
               id: "unit-v2",
-              texts: [{ id: "text-v2", kind: "prose", text: exactText }],
+              texts: [{ id: "text-v2", kind: "narration", text: exactText }],
             },
           ],
         };
@@ -1375,6 +1423,15 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assets: [],
         });
         await db.collection("bookletRevisions").insertOne(revision as never);
+        await t.test("text source binding rejects foreign or changed tuples and never drops image references", async () => {
+          const source = { artifactId: revision.artifactId, revisionId: revision._id, contentHash: revision.contentHash };
+          const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          assert.deepEqual(await successful("sources", { sources: [source], references: [] }), { references: [] });
+          for (const change of [{ artifactId: "foreign" }, { revisionId: revisionId }, { contentHash: "a".repeat(64) }])
+            assert.equal((await invoke("sources", { sources: [{ ...source, ...change }], references: [] })).isError, true);
+          assert.equal((await invoke("sources", { sources: [], references: [{ assetId: "image" }] })).isError, true);
+          assert.deepEqual(await db.collection("bookletProductions").findOne({ _id: production._id as never }), before);
+        });
         const documentRequest = { kind: "revision", id: revision._id };
         let section = await successful("read_document", documentRequest);
         assert.equal(section.complete, false);
@@ -1751,16 +1808,52 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         );
         await t.test("retained large proposals publish through the v2 transfer and revision tools exactly once", async () => {
           const workflowId = configured.workflowId;
+          // Exercise actual Code functions against real tool replies, not a Dify interpreter.
+          const runCode = (id: string, args: Record<string, unknown>, role = "manager") => {
+            const python = process.env.BOOKLET_PYTHON ?? (existsSync("output/tooling/python312/python.exe")
+              ? resolve("output/tooling/python312/python.exe") : "python3");
+            const graph = role === "manager" ? configured.graph : parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/" + role + "/workflow.yaml", "utf8")).workflow.graph;
+            const executed = spawnSync(python, ["-c",
+              "import json,sys; v=json.load(sys.stdin); s={}; exec(v['code'],s); print(json.dumps(s['main'](**v['args']),ensure_ascii=False))"], {
+              input: JSON.stringify({ code: graph.nodes.find((node: { id: string; data: Record<string, unknown> }) => node.id === id)!.data.code, args }),
+              encoding: "utf8", timeout: 5000, env: { ...process.env, PYTHONUTF8: "1" },
+            });
+            assert.equal(executed.status, 0, executed.stderr || String(executed.error));
+            return JSON.parse(executed.stdout);
+          };
+
+          const initial = await successful("context", {});
+          const initialFacts = runCode("facts", { raw: { result: initial }, execution_ready: "true" });
+          assert.equal(initialFacts.route, "reason");
+          const plan = runCode("guard", { context: initialFacts.context, decision: { action: "manuscript",
+            request_json: JSON.stringify(childRequest), reason: "Write the selected manuscript" } });
+          const intent = await successful("checkpoint", JSON.parse(plan.checkpoint));
+          const ready = runCode("saved", { raw: { result: intent }, context: initialFacts.context,
+            request: plan.request, dispatch: plan.dispatch, action: "manuscript" });
+          const originals = await successful("sources", JSON.parse(plan.sources));
+          const child = runCode("bind-originals", { raw: { result: originals }, request: ready.request, files: [] });
+          const dispatchRequest = JSON.parse(ready.dispatch);
+          const allowed = await successful("begin_work", dispatchRequest);
+          assert.equal(allowed.status, "dispatching");
+          runCode("dispatch-saved", { raw: { result: allowed }, request: ready.dispatch });
+          assert.deepEqual(await successful("begin_work", dispatchRequest), allowed);
+          assert.equal((await invoke("begin_work", { ...dispatchRequest, fence: allowed.fence })).isError, true);
+          assert.throws(() => runCode("guard", { context: JSON.stringify(initial), decision: { action: "manuscript",
+            request_json: JSON.stringify({ ...childRequest, callId: "invented-retry" }), reason: "Do not replay" } }), /Unregistered/);
+          const dispatched = await successful("context", {});
+          assert.throws(() => runCode("guard", { context: JSON.stringify(dispatched), decision: { action: "manuscript",
+            request_json: JSON.stringify(childRequest), reason: "Lost dispatch reply must not replay" } }), /already dispatched/);
           await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
             "run.orchestrator.workflowId": workflowId, execution: null, runId: null, taskId: null,
             lease: "fixture-worker", leaseUntil: new Date(Date.now() + 180000), capability: "booklet-fixture",
             binding: { name: "booklet-fixture", revision: "1", mode: "fake", kind: "workflow", fingerprint: "fixture" },
           } });
-          await db.collection("bookletWork").updateOne({ productionId: production._id, callId: "call-v2" }, { $set: { status: "dispatching" } });
           const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
-          const result = { contractVersion: 2, invocationId: childRequest.invocationId, callId: childRequest.callId,
-            service: "manuscript", operation: "write", status: "succeeded", items: [{ itemId: childRequest.items[0].itemId,
-              status: "succeeded", proposals: [{ kind: "manuscript", subjectId: "book-subject", content }] }] };
+          const validated = runCode("validate", { request: child.request, references: [], execution_ready: "true" }, "manuscript");
+          const result = JSON.parse(runCode("pack", { request: validated.request, response: {
+            items: [{ itemId: childRequest.items[0].itemId, status: "succeeded",
+              proposals: [{ kind: "manuscript", subjectId: "book-subject", content }] }],
+          } }, "manuscript").result);
           const nativeId = randomUUID(), taskId = randomUUID();
           const config = parseDifyConfig({ DIFY_MODE: "live", DIFY_BASE_URL: "https://offline.invalid/v1",
             DIFY_KEY_FIXTURE: "fixture-not-a-key", DIFY_ORCHESTRATORS_JSON: JSON.stringify([{
@@ -1769,7 +1862,9 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             }]) });
           assert.equal(config.mode, "live");
           if (config.mode !== "live") throw new Error("Invalid fixture config");
+          let dispatches = 0;
           const provider = createDifyWorkflow(config, config.bindings[0], async (url, options) => {
+            dispatches++;
             assert.equal(url, "https://offline.invalid/v1/workflows/" + workflowId + "/run");
             assert.equal(options?.method, "POST");
             const events = [
@@ -1789,6 +1884,14 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const captured = await db.collection("bookletWork").findOne({ productionId: production._id, callId: "call-v2" });
           assert.deepEqual(captured!.resultPayload, result);
           assert.equal((await db.collection<AiJob>("aiJobs").findOne({ _id: parent!._id }))!.execution!.status, "running");
+          let current = await successful("context", {});
+          const consumed = runCode("consume", { raw: [{ result }], action: "manuscript", request: ready.request,
+            context: current, version: ready.version });
+          const compact = JSON.parse(consumed.checkpoint);
+          assert.ok(Buffer.byteLength(consumed.checkpoint) < 1024);
+          assert.deepEqual(compact.state.lastResult.document, { kind: "work", id: childRequest.callId });
+          const confirmed = await successful("checkpoint", compact);
+          assert.deepEqual(await successful("checkpoint", compact), confirmed);
           const evidence = [captured!.evidenceIds.at(-1)];
           const bytes = Buffer.from(JSON.stringify(content));
           const transfer = await successful("transfer", { action: "open", key: "publish-large-manuscript",
@@ -1797,9 +1900,18 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             action: "part", transferId: transfer.transferId, index,
             data: bytes.subarray(index * transfer.chunkBytes, (index + 1) * transfer.chunkBytes).toString("base64"),
           });
-          const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
-          const request = { artifactId: "story-v2", content: { callId: "call-v2", itemId: childRequest.items[0].itemId, proposalIndex: 0 }, sources: [], assets: [],
-            evidence, mutationKey: "save-large-manuscript", fence: before!.fenceCounter };
+          current = await successful("context", {});
+          const facts = runCode("facts", { raw: { result: current }, execution_ready: "true" });
+          assert.equal(facts.route, "reason");
+          assert.equal(JSON.parse(facts.context).checkpointVersion, confirmed.checkpointVersion);
+          const saveArgs = { artifactId: "story-v2", content: { callId: "call-v2", itemId: childRequest.items[0].itemId, proposalIndex: 0 }, sources: [], assets: [],
+            evidence, mutationKey: "save-large-manuscript", fence: current.fence };
+          const plannedSave = runCode("guard", { context: facts.context, decision: { action: "save_revision",
+            request_json: JSON.stringify(saveArgs), reason: "Publish exact retained text" } });
+          const saveIntent = await successful("checkpoint", JSON.parse(plannedSave.checkpoint));
+          const saveReady = runCode("saved", { raw: { result: saveIntent }, context: facts.context,
+            request: plannedSave.request, dispatch: plannedSave.dispatch, action: "save_revision" });
+          const request = JSON.parse(saveReady.request);
           assert.ok(Buffer.byteLength(JSON.stringify(request)) < 1024);
           assert.equal((await invoke("save_revision", { ...request, content: { kind: "manuscript", units: [] } })).isError, true);
           assert.equal((await invoke("save_revision", { ...request, content: { ...request.content, proposalIndex: 1 } })).isError, true);
@@ -1814,49 +1926,13 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId: production._id,
             artifactId: "story-v2", "provenance.operationId": "call-v2" }), 1);
 
-          // Exercise actual Code functions against real tool replies, not a Dify interpreter.
-          const runCode = (id: string, args: Record<string, unknown>) => {
-            const python = process.env.BOOKLET_PYTHON ?? (existsSync("output/tooling/python312/python.exe")
-              ? resolve("output/tooling/python312/python.exe") : "python3");
-            const executed = spawnSync(python, ["-c",
-              "import json,sys; v=json.load(sys.stdin); s={}; exec(v['code'],s); print(json.dumps(s['main'](**v['args']),ensure_ascii=False))"], {
-              input: JSON.stringify({ code: configured.graph.nodes.find((node) => node.id === id)!.data.code, args }),
-              encoding: "utf8", timeout: 5000, env: { ...process.env, PYTHONUTF8: "1" },
-            });
-            assert.equal(executed.status, 0, executed.stderr || String(executed.error));
-            return JSON.parse(executed.stdout);
-          };
-          let current = await successful("context", {});
-          const pending = await successful("checkpoint", { expectedVersion: current.checkpointVersion, fence: current.fence,
-            state: { ...current.checkpoint, pending: { action: "manuscript", callId: childRequest.callId,
-              invocationId: childRequest.invocationId, requestHash: registration.requestHash } } });
-          current = await successful("context", {});
-          assert.equal(current.work.find((row: { callId: string }) => row.callId === childRequest.callId).resultAvailable, true);
-          const consumed = runCode("consume", { raw: [{ result }], action: "manuscript", request: JSON.stringify(childRequest),
-            context: current, version: pending.checkpointVersion });
-          const compact = JSON.parse(consumed.checkpoint);
-          assert.ok(Buffer.byteLength(consumed.checkpoint) < 1024);
-          assert.deepEqual(compact.state.lastResult.document, { kind: "work", id: childRequest.callId });
-          const confirmed = await successful("checkpoint", compact);
-          assert.deepEqual(await successful("checkpoint", compact), confirmed);
-
-          // A second action consumes new context/version/fence without repeating publication.
-          current = await successful("context", {});
-          const facts = runCode("facts", { raw: { result: current }, execution_ready: "false" });
-          assert.equal(facts.route, "pause"); // Full Manager activation is still gated.
-          assert.equal(JSON.parse(facts.context).checkpointVersion, confirmed.checkpointVersion);
-          const read = runCode("guard", { context: facts.context, decision: { action: "read_document",
-            request_json: JSON.stringify(compact.state.lastResult.document), reason: "Inspect retained exact proposals" } });
-          const readIntent = await successful("checkpoint", JSON.parse(read.checkpoint));
-          const rebound = runCode("saved", { raw: { result: readIntent }, context: facts.context,
-            request: read.request, dispatch: read.dispatch, action: "read_document" });
-          const body = await successful("read_document", JSON.parse(rebound.request));
-          const readResult = runCode("consume", { raw: { result: body }, action: "read_document", request: rebound.request,
-            context: await successful("context", {}), version: rebound.version });
-          const second = await successful("checkpoint", JSON.parse(readResult.checkpoint));
+          const published = runCode("consume", { raw: { result: saved }, action: "save_revision", request: saveReady.request,
+            context: await successful("context", {}), version: saveReady.version });
+          const second = await successful("checkpoint", JSON.parse(published.checkpoint));
           assert.equal(second.checkpointVersion, confirmed.checkpointVersion + 2);
           assert.ok(second.fence > confirmed.fence);
           assert.deepEqual((await db.collection("bookletWork").findOne({ productionId: production._id, callId: childRequest.callId }))!.resultPayload, result);
+          assert.equal(dispatches, 1);
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
