@@ -118,7 +118,7 @@ export const documents = [
   {
     name: "Manager acceptance",
     group: "lifecycle",
-    status: "I: 07 bookletAcceptances storage; Manager integration pending 09",
+    status: "I: bookletAcceptances; locally verified Manager gateway",
     fields: [
       "_id / documentVersion 2 / ownerId / productionId / runId",
       "revisionId / contentHash / targetIds[] / assetIds[]",
@@ -132,7 +132,8 @@ export const documents = [
     status: "I: T14 bookletRepositoryWrites",
     fields: [
       "_id / ownerId / scope / key / inputHash",
-      "result {id, version, revisionId?, ordinal?, fence?, expiresAt?}",
+      "result {id, version, revisionId?, ordinal?, fence?, expiresAt?, humanRequest?}",
+      "v2 humanRequest {requestId, runId, targets[], responseContract, presentationHash, formContent}",
       "createdAt",
       "Internal idempotency; not a charge or operation",
     ],
@@ -612,6 +613,7 @@ export const relationships = [
   ["Review request", "Production", "productionId"],
   ["Review request", "Artifact revision", "targets[] exact revisions"],
   ["Review request", "Human decision", "appliedDecisionId"],
+  ["Repository write receipt", "Human decision", "v2 humanRequest: original Run, native human node and exact presentation"],
   ["Review request", "Run", "runId"],
   ["Reuse acceptance", "Review request", "requestId"],
   ["Reuse acceptance", "Artifact revision", "revisionId in source production"],

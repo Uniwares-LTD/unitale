@@ -261,6 +261,7 @@ workflow:
                 After source changes, inspect affected content. Revalidate unchanged bytes/content using a new immutable source-bound revision, otherwise revise the smallest affected artifact.
                 Continue reads current authoritative state and checkpoint; revise honors scoped user feedback, locks and allowance. Reacquire short leases after waits.
                 Human checkpoints are optional. Group necessary questions and honor explicit review or autonomy requests. request_human requires exact request/targets/presentation.
+                request_human targets are current immutable source tuples; use responseContract {mode:"raw-v1"} and presentation {version:1,cards:[existing typed cards]} (at most 19, leaving one question card). After Human Input, read human_response using the retained requestId. Only its authenticated submitted response is a human answer; pending, expired or stale responses do not authorize progress. The human node's output is not authentication evidence.
                 Read authentic responses via read_document. A native form value alone is not an authenticated application decision. Never synthesize financial consent.
                 Whole-book review uses windows of at most four actual pages plus explicit cross-window recurring-subject comparisons. Complete only with full actual-pixel coverage.
                 App owns structural/product/authentication/funding/fencing/counter checks; you own creative sequence, quality and human policy. No child app callbacks.
@@ -1963,6 +1964,8 @@ workflow:
                 if c["checkpointVersion"] != version:
                     raise ValueError("Checkpoint changed during external work; reconcile before applying")
                 saved_result = result
+                if action == "request_human":
+                    saved_result = {"document": {"kind": "human_response", "id": result["requestId"]}, "presentationHash": result["presentationHash"]}
                 if action in SERVICES:
                     pending = c.get("checkpoint", {}).get("pending") or {}
                     rows = [w for w in c.get("work", []) if w.get("callId") == r.get("callId") and w.get("requestHash") == pending.get("requestHash") and w.get("service") == action and w.get("operation") == r.get("operation")]

@@ -2,6 +2,7 @@ import "server-only";
 import { BSON, type ClientSession, type Db } from "mongodb";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
+import { uiPayloadSchema } from "../../contracts/runs";
 import {
   bookletContentV2Schema,
   bookletRetryPolicySchema,
@@ -36,6 +37,8 @@ import {
   type WorkV2,
   type AssessmentV2,
   type AcceptanceV2,
+  humanRequestInputV2Schema,
+  humanRequestV2Schema,
 } from "./documents-v2";
 import type { BookletAsset } from "./media";
 import type { AiJob } from "../ai/jobs";
@@ -61,12 +64,13 @@ type Receipt = {
     ordinal?: number;
     assessmentId?: string;
     acceptanceId?: string;
+    humanRequest?: z.infer<typeof humanRequestV2Schema>;
   };
   createdAt: Date;
 };
 type Details = Pick<
   Receipt["result"],
-  "revisionId" | "ordinal" | "assessmentId" | "acceptanceId"
+  "revisionId" | "ordinal" | "assessmentId" | "acceptanceId" | "humanRequest"
 >;
 
 export async function createBookletV2Indexes(db: Db) {
@@ -1137,6 +1141,38 @@ export function bookletRepositoryV2(
           return { assessmentId: row._id };
         },
       );
+    },
+    requestHuman(
+      productionId: string,
+      input: Mutation & z.input<typeof humanRequestInputV2Schema> & { runId: string },
+    ) {
+      const value = humanRequestInputV2Schema.extend({ ...mutationInput.shape, runId: id }).parse(input);
+      return mutate(productionId, value, "requestHuman", value, async (p, session) => {
+        if (p.lifecycleState !== "in-progress") throw bookletConflict("Human requests require an admitted production.");
+        await activeManager(p, value.runId, value.holderId, session);
+        if (new Set(value.targets.map((target) => fingerprint(target))).size !== value.targets.length)
+          throw bookletConflict("Duplicate human request target.");
+        for (const target of value.targets) {
+          const artifact = p.subjects.flatMap((subject) => subject.artifacts).find((artifact) => artifact.id === target.artifactId);
+          if (artifact?.currentRevisionId !== target.revisionId || !await revisions.findOne({
+            ownerId: actor.uid, productionId: p._id, _id: target.revisionId,
+            artifactId: target.artifactId, contentHash: target.contentHash,
+          }, { session, projection: { _id: 1 } })) throw bookletConflict("Human request targets must match current owned revisions.");
+        }
+        const requestId = randomUUID();
+        const presentation = uiPayloadSchema.parse({ version: 1, cards: [{
+          id: "request-" + requestId, content: { type: "summary", version: 1,
+            data: { title: value.question.slice(0, 500), body: value.question.length > 500 ? value.question : "" } },
+        }, ...value.presentation.cards] });
+        // The native Human Input node appends the response placeholder once.
+        const formContent = "```unibase-ui\n" + JSON.stringify(presentation) + "\n```";
+        const humanRequest = humanRequestV2Schema.parse({ requestId, runId: value.runId,
+          targets: value.targets, responseContract: value.responseContract, formContent,
+          presentationHash: fingerprint(formContent + "\n{{#$output.response#}}"),
+        });
+        boundState(humanRequest);
+        return { humanRequest };
+      });
     },
     recordAcceptance(
       productionId: string,

@@ -57,6 +57,7 @@ import { bookletMedia, type BookletAsset } from "../../src/lib/server/booklets/m
 import { persistAiEvent, type AiJob } from "../../src/lib/server/ai/jobs";
 import { createDifyWorkflow } from "../../src/lib/server/ai/dify";
 import { parseDifyConfig } from "../../src/lib/config/dify";
+import { submitAuthorizedDecision, type Decision } from "../../src/lib/server/runs/service";
 import {
   productionV2Schema,
   revisionV2Schema,
@@ -1050,7 +1051,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             run: {
               logicalId: "logical-v2",
               configurationRevision: 1,
-              orchestrator: { id: "booklet-v2" },
+              orchestrator: { id: "booklet-v2", responseMode: "raw-v1" },
               target: {
                 adapter: "booklet",
                 version: "2",
@@ -2018,6 +2019,82 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const stored = await db.collection("bookletAcceptances").findOne({ _id: accepted.acceptanceId as never });
           await db.collection("bookletAcceptances").insertOne({ ...stored!, _id: "foreign-acceptance" as never, ownerId: "foreign" });
           assert.equal((await invoke("read_document", { kind: "acceptance", id: "foreign-acceptance" })).isError, true);
+        });
+        await t.test("human requests bind native presentation and authenticated first-wins responses", async () => {
+          const initial = await successful("context", {});
+          const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const artifact = p!.subjects[0].artifacts.find((artifact: { id: string }) => artifact.id === "story-v2");
+          const selected = await db.collection("bookletRevisions").findOne({ _id: artifact.currentRevisionId });
+          const targets = [{ artifactId: "story-v2", revisionId: selected!._id, contentHash: selected!.contentHash }];
+          const request = { question: "Keep this direction, or tell us what to change?", targets,
+            responseContract: { mode: "raw-v1" }, presentation: { version: 1, cards: [] }, fence: initial.fence };
+          assert.equal((await invoke("request_human", { ...request, targets: [{ ...targets[0], contentHash: "0".repeat(64) }] })).isError, true);
+          assert.equal((await invoke("request_human", { ...request, presentation: { ...request.presentation, approval: {} } })).isError, true);
+          const plan = runNativeCode("manager", "guard", { context: JSON.stringify(initial), decision: {
+            action: "request_human", request_json: JSON.stringify(request), reason: "Ask one grouped optional review" } });
+          const intent = await successful("checkpoint", JSON.parse(plan.checkpoint));
+          const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(initial),
+            request: plan.request, dispatch: plan.dispatch, action: "request_human" }).request);
+          const human = await successful("request_human", ready);
+          assert.deepEqual(await successful("request_human", ready), human);
+          const context = await successful("context", {});
+          const consumed = runNativeCode("manager", "consume", { raw: { result: human }, action: "request_human",
+            request: JSON.stringify(ready), context, version: intent.checkpointVersion });
+          const checkpoint = JSON.parse(consumed.checkpoint);
+          assert.deepEqual(checkpoint.state.lastResult.document, { kind: "human_response", id: human.requestId });
+          assert.ok(Buffer.byteLength(consumed.checkpoint) < 2048);
+          await successful("checkpoint", checkpoint);
+          const read = () => successful("read_document", { kind: "human_response", id: human.requestId });
+          assert.equal((await read()).value.status, "pending");
+          const yaml = parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/manager/workflow.yaml", "utf8"));
+          const template = yaml.workflow.graph.nodes.find((node: { id: string }) => node.id === "human").data.form_content;
+          const formContent = template.replace("{{#consume.form#}}", consumed.form);
+          assert.equal(fingerprint(formContent), human.presentationHash);
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
+            "run.orchestrator.responseMode": "raw-v1", inputs: { prompt: "booklet human fixture" },
+            leaseUntil: new Date(Date.now() + 180000),
+          } });
+          const parent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          const token = "synthetic-human-token";
+          await persistAiEvent(db, parent, { type: "decision", nodeId: "human", title: "Booklet review", token });
+          const decision = (await db.collection<Decision>("runDecisions").findOne({ jobId: parent._id, token }))!;
+          const form = { form_content: formContent, inputs: [{ type: "paragraph", output_variable_name: "response" }],
+            user_actions: [{ id: "continue", title: "Continue" }], resolved_default_values: {} };
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { form } });
+          const actor = { uid: "owner", auth_time: 1 };
+          const answer = { key: randomUUID(), action: "continue", response: "Keep it. حافظ على النص حرفياً." };
+          await assert.rejects(submitAuthorizedDecision(db, { ...actor, uid: "foreign" }, parent, decision, answer, { type: "user" }), /unavailable/);
+          assert.equal((await submitAuthorizedDecision(db, actor, parent, decision, answer, { type: "user" })).status, "submitted");
+          assert.equal((await submitAuthorizedDecision(db, actor, parent, decision, answer, { type: "user" })).status, "submitted");
+          await assert.rejects(submitAuthorizedDecision(db, actor, parent, decision,
+            { ...answer, key: randomUUID(), response: "Changed second answer" }, { type: "user" }), /already pending or submitted/);
+          const response = (await read()).value;
+          assert.equal(response.status, "submitted");
+          assert.equal(response.response, answer.response);
+          assert.equal(response.decisionId, decision._id);
+          assert.ok(!JSON.stringify(response).includes(token));
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { status: "unknown" } });
+          assert.equal((await read()).value.status, "pending");
+          await persistAiEvent(db, parent, { type: "decision-filled", nodeId: "human", action: "continue",
+            inputs: { response: answer.response } });
+          assert.equal((await read()).value.status, "submitted");
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { "answerSource.type": "persona" } });
+          assert.equal((await read()).value.status, "pending");
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { "answerSource.type": "user",
+            "form.form_content": formContent + "changed" } });
+          assert.equal((await read()).value.status, "pending");
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { "form.form_content": formContent } });
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { jobId: "foreign-attempt" } });
+          assert.equal((await read()).value.status, "pending");
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { jobId: parent._id,
+            status: "pending", "form.expiration_time": Math.floor(Date.now() / 1000) - 1 } });
+          assert.equal((await read()).value.status, "expired");
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { status: "submitted", "form.expiration_time": null } });
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { "subjects.0.artifacts.0.currentRevisionId": "changed-target" } });
+          assert.equal((await read()).value.status, "stale");
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { "subjects.0.artifacts.0.currentRevisionId": selected!._id } });
+          assert.equal((await read()).value.response, answer.response);
+          assert.deepEqual(await successful("request_human", ready), human);
         });
         await t.test("unpaid preparation uses registered native work and retains the exact prepared identity", async () => {
           const before = await successful("context", {});

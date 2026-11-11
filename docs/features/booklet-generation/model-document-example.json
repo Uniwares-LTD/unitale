@@ -525,7 +525,7 @@
     }
   },
   "v2StorageExamples": {
-    "status": "07 storage shapes; synthetic records, not chronological execution evidence or seed data",
+    "status": "Implemented v2 storage shapes; synthetic records, not chronological execution evidence or seed data",
     "production": {
       "_id": "production_v2_example",
       "documentVersion": 2,
@@ -846,6 +846,37 @@
       "evidenceIds": [
         "observed_review_v2"
       ]
+    },
+    "humanRequestReceipt": {
+      "_id": "ca3568d39af58e5624fbbfed96d5bff5a2f1282e4e4ae9f10252759171b92896",
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "scope": "production-v2:production_v2_example",
+      "key": "ask-human",
+      "inputHash": "a444d2b183b18d24c4009a9f5dc65da271860c045cd8e1e025be314107af03ab",
+      "result": {
+        "id": "production_v2_example",
+        "version": 13,
+        "checkpointVersion": 1,
+        "fence": 12,
+        "humanRequest": {
+          "requestId": "60000000-0000-4000-8000-000000000001",
+          "runId": "manager_v2",
+          "targets": [
+            {
+              "artifactId": "manuscript_v2",
+              "revisionId": "revision_v2_example",
+              "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+            }
+          ],
+          "responseContract": {
+            "mode": "raw-v1"
+          },
+          "presentationHash": "7e1b0cd06ea8edd9d13e117d061b4f14446452a0430c841454ddf065d658baf7",
+          "formContent": "```unibase-ui\n{\"version\":1,\"cards\":[{\"id\":\"request-60000000-0000-4000-8000-000000000001\",\"content\":{\"type\":\"summary\",\"version\":1,\"data\":{\"title\":\"Keep this direction, or tell us what to change?\",\"body\":\"\"}}}]}\n```"
+        }
+      },
+      "createdAt": "2026-11-11T09:00:00.000Z"
     }
   }
 }

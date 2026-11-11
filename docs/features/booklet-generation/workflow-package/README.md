@@ -173,19 +173,22 @@ its exact preflight fact outside the recent assessment preview. Correction findi
 lineage is verified at registration, so older findings need not remain in that preview.
 
 Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
-tests), plus 25 MCP and 30 repository tests (the previous media slice passed 17).
+tests), plus 26 MCP and 30 repository tests (the previous media slice passed 17).
 Build, typecheck, scoped lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
 found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
 remains imported. Tasks 09.1-09.3 are locally Verified; 09.4 is In progress.
-Its acceptance gateway/owned reader is locally implemented; authentic human
-decisions, manifest publication/completion and remaining history reads are pending.
+Its acceptance gateway/owned reader and human request/response correlation are
+locally implemented. Existing Run submission provides authenticated first-wins
+answers; uncertain submissions stay pending until trusted confirmation. Human forms
+checkpoint compact references. Manifest publication/completion and remaining history
+reads are pending; actual Dify form rendering/readback remains unverified.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`f63a43f7016e4ccd78b6218593d72dc7d95b1275e06f30ea3df3192d0e263953`.
+`09d66bac7a99df7bebd8840d41431cc2f9a424d6a81c85f82e83077784c01f1a`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-243,180 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+243,837 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

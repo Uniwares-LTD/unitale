@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { uiPayloadSchema } from "../../contracts/runs";
 import {
   bookletContentV2Schema,
   bookletRetryPolicySchema,
@@ -211,3 +212,18 @@ export const acceptanceDocumentV2Schema = z.strictObject({
 export type WorkV2 = z.infer<typeof workV2Schema>;
 export type AssessmentV2 = z.infer<typeof assessmentDocumentV2Schema>;
 export type AcceptanceV2 = z.infer<typeof acceptanceDocumentV2Schema>;
+
+// Existing Run raw responses and typed presentation; no parallel form engine.
+export const humanRequestInputV2Schema = z.strictObject({
+  question: z.string().trim().min(1).max(4000),
+  targets: z.array(bookletSourceV2Schema).max(100),
+  responseContract: z.strictObject({ mode: z.literal("raw-v1") }),
+  presentation: z.strictObject({ version: z.literal(1), cards: uiPayloadSchema.shape.cards.max(19) }),
+});
+export const humanRequestV2Schema = z.strictObject({
+  requestId: z.string().uuid(), runId: id,
+  targets: humanRequestInputV2Schema.shape.targets,
+  responseContract: humanRequestInputV2Schema.shape.responseContract,
+  presentationHash: z.string().regex(/^[a-f0-9]{64}$/),
+  formContent: z.string().max(100000 - "\n{{#$output.response#}}".length),
+});

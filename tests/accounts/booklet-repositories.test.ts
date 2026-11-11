@@ -34,6 +34,7 @@ import {
   workV2Schema,
   assessmentDocumentV2Schema,
   acceptanceDocumentV2Schema,
+  humanRequestV2Schema,
 } from "../../src/lib/server/booklets/documents-v2";
 import type {
   AppendInput,
@@ -3306,6 +3307,9 @@ test("canonical document example matches persistence schemas and embedded refere
   assert.equal(v2Assessment.callId, v2Work.callId);
   assert.equal(v2Assessment.assessment.targetHash, v2Revision.contentHash);
   assert.equal(v2Acceptance.revisionId, v2Revision._id);
+  const human = humanRequestV2Schema.parse(example.v2StorageExamples.humanRequestReceipt.result.humanRequest);
+  assert.equal(human.presentationHash, fingerprint(human.formContent + "\n{{#$output.response#}}"));
+  assert.equal(human.targets[0].revisionId, v2Revision._id);
   assert.equal(
     v2Parsed.subjects[0].artifacts[0].acceptedRevisionId,
     v2Acceptance.revisionId,

@@ -17,6 +17,7 @@ import {
   type WorkV2,
   type RevisionV2,
   type AssessmentV2,
+  humanRequestInputV2Schema,
 } from "./documents-v2";
 import { id, subjectInputSchema } from "./documents";
 import { readBookletDocumentV2 } from "./read-v2";
@@ -484,6 +485,21 @@ export function createBookletMcpToolsV2(
         }, { projection: { complete: 1 } });
         if (!recorded) throw bookletMissing();
         return { assessmentId: receipt.assessmentId, complete: recorded.complete, fence: receipt.fence };
+      },
+    ),
+    tool(
+      "request_human",
+      "Retain an exact current-target presentation for the existing native Human Input. Read human_response by requestId for authenticated replies; this never creates an answer or acceptance.",
+      async (raw, s) => {
+        const request = humanRequestInputV2Schema.extend({ fence: count }).parse(raw);
+        if (s.job.run?.orchestrator.responseMode !== "raw-v1")
+          throw bookletConflict("Booklet Human Input requires the accepted raw-v1 response mode.");
+        const m = await mutation(s, "requestHuman", request, request.fence);
+        const receipt = await bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true })
+          .requestHuman(s.production._id, { ...m, ...request, runId: s.job._id });
+        const human = receipt.humanRequest!;
+        return { requestId: human.requestId, presentationHash: human.presentationHash,
+          formContent: human.formContent, fence: receipt.fence };
       },
     ),
     tool(

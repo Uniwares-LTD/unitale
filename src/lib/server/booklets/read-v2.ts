@@ -4,7 +4,9 @@ import type { Db } from "mongodb";
 import type { CreditActor } from "../store/credit-types";
 import { fingerprint } from "../foundation/canonical";
 import { bookletRepositoryV2 } from "./repository-v2";
-import { acceptanceDocumentV2Schema, assessmentDocumentV2Schema, revisionV2Schema } from "./documents-v2";
+import { acceptanceDocumentV2Schema, assessmentDocumentV2Schema, revisionV2Schema, humanRequestV2Schema } from "./documents-v2";
+import { rawResponseTextSchema } from "../../contracts/runs";
+import type { Decision } from "../runs/service";
 import { bookletConflict, bookletMissing } from "./context";
 import { id } from "./documents";
 
@@ -17,6 +19,7 @@ export const bookletReadV2Schema = z.strictObject({
     "work",
     "assessment",
     "acceptance",
+    "human_response",
     "history",
     "work_history",
     "assessment_history",
@@ -298,6 +301,36 @@ export async function readBookletDocumentV2(
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };
+  } else if (request.kind === "human_response") {
+    const production = await repo.getProduction(productionId);
+    const receipt = await db.collection("bookletRepositoryWrites").findOne({
+      ownerId: actor.uid, productionId, "result.humanRequest.requestId": request.id,
+    });
+    if (!receipt) throw bookletMissing();
+    const human = humanRequestV2Schema.parse(receipt.result.humanRequest);
+    const stale = human.targets.some((target) => !production.subjects.some((subject) =>
+      subject.artifacts.some((artifact) => artifact.id === target.artifactId && artifact.currentRevisionId === target.revisionId)));
+    const matches = await db.collection<Decision>("runDecisions").find({
+      uid: actor.uid, jobId: human.runId, nodeId: "human",
+      "form.form_content": human.formContent + "\n{{#$output.response#}}",
+    }).limit(2).toArray();
+    if (matches.length > 1) throw bookletConflict("Human presentation has ambiguous native decisions; reconcile before reuse.");
+    const decision = matches[0];
+    let status = stale ? "stale" : "pending";
+    let response: Json = null;
+    if (!stale && decision?.status === "submitted" && decision.answerSource?.type === "user" && decision.intent) {
+      const action = decision.confirmedAction ?? decision.intent.action;
+      const original = "response" in decision.intent ? decision.intent.response : decision.intent.inputs.response;
+      const sent = rawResponseTextSchema.parse(original);
+      const confirmed = z.object({ response: z.string() }).safeParse(decision.confirmedInputs);
+      if (action !== "continue" || decision.intent.action !== "continue" || decision.intent.inputs.response !== sent ||
+        (decision.confirmedInputs !== undefined && (!confirmed.success || confirmed.data.response !== sent)))
+        throw bookletConflict("Human response differs from its authenticated submission.");
+      status = "submitted";
+      response = z.json().parse(original);
+    } else if (!stale && (decision?.status === "expired" ||
+      (decision?.form?.expiration_time && decision.form.expiration_time * 1000 < Date.now()))) status = "expired";
+    document = { ...human, status, decisionId: decision?._id ?? null, response };
   } else if (request.kind === "acceptance") {
     await repo.getProduction(productionId);
     const stored = await db.collection("bookletAcceptances").findOne({

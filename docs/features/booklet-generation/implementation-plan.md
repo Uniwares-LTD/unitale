@@ -907,6 +907,39 @@ transactional admission/evidence checks. The first MCP run exposed an invalid
 boolean lock fixture; the corrected schema-valid fixture passes. No native YAML,
 package digest, stored schema, Unibase code or live configuration changed.
 
+09.4 human-request slice: reuse the existing mutation receipt's result for the
+immutable request (ID, original Manager Run, current target tuples, exact presentation
+and response contract); actual answers remain in `runDecisions`. The supported
+contract is the existing `{mode:"raw-v1"}` paragraph response. Presentation uses
+existing typed cards, leaving one of twenty slots for the question/request identity.
+The gateway requires the accepted raw-v1 Run mode and does not create an approval
+or answer. Optional brief questions may have no revision targets. Owned response
+reads match original Run, native `human` node and exact form, and expose only a
+submitted user intent whose sent/confirmed response agrees. Unknown submissions
+remain pending; changed targets are stale. Existing Run submission supplies atomic
+first-wins/idempotency and same-execution continuation. A native filled event can
+confirm an uncertain submitted response without another submission. No application
+quality/human-policy gate, collection, scheduler or Unibase change was added.
+The native checkpoint stores a human-response document reference rather than copying
+a large form; the unchanged form reaches Human Input with its placeholder exactly
+once. Updated model guide/JSON and complete diagram describe the optional receipt
+result; the regenerated core diagram excludes receipts and is otherwise unchanged.
+Target Dify form rendering/readback remains checkpoint 12 evidence.
+
+Human-request slice checks: 26 MCP, 30 repository and 42 native/v1 compatibility
+tests pass. The actual Run submit service with its fake provider proves foreign-user
+rejection, exact repeat replay, conflicting second-answer rejection and exact Unicode
+response retention. Actual native decision/filled events prove that an unknown
+submission stays pending until confirmation. Changed presentation/attempt/targets,
+persona-only provenance and expired forms cannot supply a usable answer. Native Code
+fixtures preserve a large form while checkpointing a compact reference. Production
+build, post-build typecheck, scoped lint, model/docs/i18n/skills checks and independent
+13-path hash/disabled-gate audit pass. A separate same-agent read-only slice review
+found no blocking issue. The package identity is recorded in the candidate README;
+checkpoint-wide review pairs remain 09.7 work. Next within 09.4: manifest draft
+publication, structural completion and remaining backend histories, including the
+known acceptance/completion assessment-preview integration item.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

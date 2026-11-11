@@ -411,8 +411,13 @@ Generate work summaries expose exact preflight facts outside the recent assessme
 preview; correction finding lineage is verified at registration. The acceptance
 gateway records the current Manager's exact owned revision/source/original selection
 with admission, lock, funding and evidence checks. It grants no human or quality
-authority. The bounded reader supports owned `acceptance` records. Human decisions,
-manifest publication and completion remain 09.4 work. The candidate execution switch stays disabled.
+authority. The bounded reader supports owned `acceptance` records. `request_human`
+retains a current-target raw-v1 presentation in its existing mutation receipt;
+`read_document` kind `human_response` correlates authenticated Run answers by
+original attempt, native node and exact presentation. Unknown/mismatched answers
+stay pending; changed targets are stale. Existing Run submission provides first-wins.
+Manifest publication, completion and remaining histories are still 09.4 work.
+The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original
 identities, returning `{references:[{assetId,sha256,bytes}]}` plus ordered native MCP

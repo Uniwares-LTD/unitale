@@ -1075,6 +1075,12 @@ test("Human Input uses the actual correlated presentation and cannot fabricate o
     version: 5,
   };
   assert.equal(run("manager", "consume", args).form, "Which direction?");
+  args.raw[0].result.formContent = "Exact large presentation. ".repeat(3900);
+  const retained = run("manager", "consume", args);
+  assert.equal(retained.form, args.raw[0].result.formContent);
+  assert.ok(Buffer.byteLength(retained.checkpoint) < 1024);
+  assert.deepEqual(JSON.parse(retained.checkpoint).state.lastResult.document,
+    { kind: "human_response", id: "human-1" });
   const human = apps.manager.workflow.graph.nodes.find(
     (n: any) => n.id === "human",
   );

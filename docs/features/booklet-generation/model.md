@@ -307,6 +307,20 @@ live in `bookletRepositoryWrites`; identical retries return the original result
 after current access/ownership checks. Different input conflicts. Receipts are
 operational history, not generation operations or customer charges.
 
+V2 `requestHuman` receipts additionally retain `result.humanRequest`: request ID,
+original Manager Run, immutable target tuples, `{mode:"raw-v1"}` response contract,
+exact native form body and presentation hash. The question card's metadata
+ID identifies the request without displaying technical IDs. The form reserves the
+existing native response placeholder; its hash includes that placeholder exactly
+once. This reuses the receipt rather than adding another request collection. Actual
+answers remain in `runDecisions`; owned reads match the original Run, native `human`
+node and exact presentation. Only a submitted authenticated user intent is returned
+as an answer. Unknown submissions remain pending, and changed targets are stale.
+Manager acceptance remains separate. The JSON example and complete diagram include
+this optional receipt result. The core diagram excludes operational receipts; its
+structure is unchanged and its acceptance status is refreshed. Both generated views
+are checked. These are local checks, not live Dify form evidence.
+
 A production lease lasts 1?300 seconds. Acquisition/takeover increments a durable
 fence; every creative write checks expected version, holder, fence and expiry.
 Renewal and release are versioned/idempotent. Revisions and pointer updates commit

@@ -136,7 +136,8 @@ no access beyond the allowlisted DTO. `kind:history` uses the artifact ID and re
 up to 20 revision metadata items with a cursor and `snapshotOrdinal`. It pins the
 latest ordinal on the initial page, excludes later appends and never loads revision
 bodies for the history page. Fetch those separately by immutable revision ID.
-Human-response and execution reads remain pending.
+Human-response reads are now locally implemented as described below; execution
+history reads remain pending.
 
 The local v2 `index` tool accepts `subjects` entries `{id,kind,label,pageRole}` and
 `artifacts` entries `{subjectId,artifactId,kind}`, plus the current `fence`. It registers
@@ -271,8 +272,30 @@ the immutable writer rechecks current admission, locks, funding and owned eviden
 It records a Manager selection without imposing application quality/human policy.
 `read_document {kind:"acceptance",id}` returns its owned bounded DTO. Sources stay
 on the selected immutable revision rather than being copied into another record.
-Exact receipt replay remains stable after later writes or stage locks. Human
-response correlation and structural completion remain 09.4 work.
+Exact receipt replay remains stable after later writes or stage locks. Structural
+completion and manifest publication remain 09.4 work.
+
+`request_human` accepts current immutable source tuples in `targets` (or an empty
+list for a brief question), `{mode:"raw-v1"}` in `responseContract`, and
+`presentation:{version:1,cards:[...]}` using at most 19 existing typed cards. It adds
+one question card with the request ID in card metadata, requires the Run's accepted
+raw-v1 response mode, and returns the table's exact form/identity fields plus fence.
+The existing mutation receipt retains the request; there is no new request store.
+The candidate Human Input appends the native paragraph placeholder once. Do not
+add another placeholder to the returned body or supply an approval object. Gallery
+cards still require existing owned Run asset identities; booklet IDs do not become
+Run assets. Booklet media presentation remains checkpoint 10 integration work.
+
+After Human Input, follow the checkpoint's `human_response` document reference.
+The owned bounded reader matches the original Manager Run, native `human` node and
+exact presentation. It returns `status:submitted` and the exact response only for
+an authenticated submitted user intent with consistent sent/confirmed inputs.
+Missing, mismatched or unknown submissions remain pending; expired forms and changed
+targets return `expired`/`stale`. Multiple matching native decisions fail as ambiguous.
+Provider-filled output without a user intent is not authentication evidence. Existing
+Run submission enforces first-wins and exact repeat replay; no new submit endpoint or
+automatic acceptance is introduced. Local fixtures use the real submission service
+with the fake provider. Actual Dify form rendering/readback remains checkpoint 12 evidence.
 
 The creative-text `save_revision` implementation accepts an exact retained proposal
 reference in `content:{callId,itemId,proposalIndex}`. This small boundary refinement
