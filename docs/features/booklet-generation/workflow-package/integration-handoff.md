@@ -280,6 +280,15 @@ once; different returned originals may have separate candidate revisions from th
 Generate. Replays do not change the selected pointer or regenerate. Changed-source
 revalidation remains pending.
 
+For corrective registration, include the explicitly selected baseline revision among
+the child sources. A confirmed finding ID authorizes only the exact reviewed baseline
+or target group; another context source or identical content under a new revision ID
+does not establish lineage. Correction-review `findings` contains the original confirmed
+finding objects being checked, unchanged, and `before`/`after` match selected immutable
+source content. Subject-scoped findings map through their selected artifacts; whole-book
+findings retain the inspected page-original identity. These checks do not consume an
+additional correction or decide creative quality.
+
 The local context handler derives `usage.canDispatch` from known text attempts,
 reported spending and native execution bounds. Dispatch rechecks those facts in its
 atomic mutation; context alone never authorizes work. It reads exactly one `bookletWorkflowPolicies`

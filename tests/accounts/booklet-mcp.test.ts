@@ -2296,9 +2296,11 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           runNativeCode("quality-reviewer", "validate", { request: JSON.stringify(bound), references: files, execution_ready: "true" });
           const dispatched = await successful("begin_work", { action: "dispatch", callId: child.callId,
             requestHash: review.requestHash, fence: registered.fence });
+          const finding = { id: "visual-defect", criterion: "required-content", classification: "confirmed",
+            targetId: "sample-output", expected: "Required feature visible", observed: "Required feature absent" };
           const result = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(bound), response: {
             items: [{ itemId: "visual-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "sample-output", content: {
-              coverage: { targetIds: ["sample-output"], referencePositions: [0] }, disposition: "pass", findings: [], limitations: [],
+              coverage: { targetIds: ["sample-output"], referencePositions: [0] }, disposition: "repair", findings: [finding], limitations: [],
             } }] }],
           } }).result);
           const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
@@ -2313,6 +2315,44 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(assessment.complete, true);
           const saved = await db.collection("bookletAssessments").findOne({ _id: assessment.assessmentId as never });
           assert.deepEqual(saved!.assessment.coverage.assetIds, [assets[1]._id]);
+          const after = await db.collection<import("../../src/lib/server/booklets/documents-v2").RevisionV2>("bookletRevisions")
+            .findOne({ _id: first.revisionId });
+          const correction = { ...child, invocationId: "visual-correction-review", callId: "visual-correction-review", operation: "correction",
+            items: [{ itemId: "correction-item", input: { targetIds: ["sample-output"], targetHash: after!.contentHash,
+              before: selected!.content, after: after!.content, findings: [finding], visual: true, referencePositions: [0, 1] } }],
+            sources: [selected!, after!].map((source) => ({ artifactId: source.artifactId, revisionId: source._id,
+              contentHash: source.contentHash, content: source.content })),
+          };
+          const correctionRequest = { action: "register", childRequest: correction, requestHash: fingerprint(correction),
+            targets: ["sample-output"], fence: assessment.fence };
+          const forged = { ...correction, items: [{ ...correction.items[0], input: { ...correction.items[0].input,
+            findings: [{ ...finding, observed: "Invented defect" }] } }] };
+          assert.equal((await invoke("begin_work", { ...correctionRequest, childRequest: forged, requestHash: fingerprint(forged) })).isError, true);
+          const registration = await successful("begin_work", correctionRequest);
+          const correctionSources = await invoke("sources", { sources: correction.sources.map(({ artifactId, revisionId, contentHash }) =>
+            ({ artifactId, revisionId, contentHash })), references });
+          assert.notEqual(correctionSources.isError, true);
+          const correctedInput = JSON.parse(runNativeCode("manager", "bind-originals", { raw: correctionSources.structuredContent,
+            request: JSON.stringify(correction), files }).request);
+          runNativeCode("quality-reviewer", "validate", { request: JSON.stringify(correctedInput), references: files, execution_ready: "true" });
+          const correctionDispatch = await successful("begin_work", { action: "dispatch", callId: correction.callId,
+            requestHash: correctionRequest.requestHash, fence: registration.fence });
+          const checked = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(correctedInput), response: {
+            items: [{ itemId: "correction-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "sample-output", content: {
+              coverage: { targetIds: ["sample-output"], referencePositions: [0, 1] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          const correctionSession = db.client.startSession();
+          try { await correctionSession.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: parent!.runId!, id: "correction-review-execution", nodeId: "child-quality-reviewer", nodeType: "tool",
+            status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+            outputs: { json: [{ result: JSON.stringify(checked) }] }, outputsTruncated: false, error: null, executionMetadata: null,
+          }, correctionSession)); } finally { await correctionSession.endSession(); }
+          const recorded = await successful("record_assessment", { assessment: checked.items[0].proposals[0].content,
+            executionLocator: { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "correction-review-execution" },
+            fence: correctionDispatch.fence });
+          assert.equal(recorded.complete, true);
+          assert.deepEqual(checked.items[0].proposals[0].content.coverage.assetIds, references.map((ref) => ref.assetId));
         });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });

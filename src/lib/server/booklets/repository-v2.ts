@@ -40,6 +40,7 @@ import {
 import type { BookletAsset } from "./media";
 import type { AiJob } from "../ai/jobs";
 import { bookletWorkUsageV2, bookletNativeCostsV2, bookletRunBoundsV2 } from "./usage-v2";
+import { requireCorrectionFindingV2 } from "./guards";
 
 type CreateInput = Parameters<
   ReturnType<typeof bookletRepository>["createProduction"]
@@ -740,6 +741,11 @@ export function bookletRepositoryV2(
               );
             const coveredTargets = new Set<string>();
             for (const findingId of value.correction.findingIds) {
+              if (value.requestPayload !== undefined) {
+                const confirmed = await requireCorrectionFindingV2(db, p, findingId, value.targetIds, value.sources, session);
+                confirmed.targetIds.forEach((target) => coveredTargets.add(target));
+                continue;
+              }
               const finding = await assessments.findOne(
                 {
                   ownerId: actor.uid,

@@ -11,6 +11,54 @@ import {
 import type { AiJob } from "../ai/jobs";
 import type { Generation } from "./lifecycle";
 import type { BookletAsset } from "./media";
+import type { ProductionV2, AssessmentV2, RevisionV2 } from "./documents-v2";
+
+/** A finding ID alone is not lineage: bind it to an explicitly selected immutable
+ * target source. Subject-scoped findings may cover their selected artifacts. */
+export async function requireCorrectionFindingV2(
+  db: Db,
+  p: ProductionV2,
+  findingId: string,
+  targetIds: string[],
+  sources: AssessmentV2["assessment"]["sources"],
+  session?: ClientSession,
+) {
+  const baselines = sources.flatMap((source) => {
+    const parent = p.subjects.find((subject) => subject.artifacts.some((artifact) => artifact.id === source.artifactId));
+    const targets = targetIds.filter((target) => target === source.artifactId || target === parent?.id);
+    return targets.length ? [{ source, targets, aliases: [source.artifactId, ...(parent ? [parent.id] : [])] }] : [];
+  });
+  if (baselines.length) for await (const assessment of db.collection<AssessmentV2>("bookletAssessments").find({
+    ownerId: p.ownerId, productionId: p._id,
+    $or: baselines.map(({ source, aliases }) => ({
+      "assessment.sources": { $elemMatch: source },
+      "assessment.findings": { $elemMatch: { id: findingId, classification: "confirmed", targetId: { $in: aliases } } },
+    })),
+  }, { session }).batchSize(1)) {
+    const finding = assessment.assessment.findings.find((finding) => finding.id === findingId && finding.classification === "confirmed")!;
+    const reviewedTargets = assessment.assessment.sources.filter((source) =>
+      assessment.assessment.coverage.targetIds.includes(source.artifactId) || p.subjects.some((subject) =>
+        assessment.assessment.coverage.targetIds.includes(subject.id) && subject.artifacts.some((artifact) => artifact.id === source.artifactId)));
+    const groupMatches = fingerprint(reviewedTargets) === assessment.assessment.targetHash;
+    const targets: string[] = [];
+    for (const baseline of baselines) {
+      if (!baseline.aliases.includes(finding.targetId) || !assessment.assessment.sources.some((observed) =>
+        fingerprint(observed) === fingerprint(baseline.source))) continue;
+      let reviewed = baseline.source.contentHash === assessment.assessment.targetHash || groupMatches;
+      if (assessment.assessment.mode === "whole_book") {
+        const row = await db.collection<RevisionV2>("bookletRevisions").findOne({
+          _id: baseline.source.revisionId, ownerId: p.ownerId, productionId: p._id,
+          artifactId: baseline.source.artifactId, contentHash: baseline.source.contentHash,
+        }, { session });
+        reviewed = row?.content.kind === "page-image" &&
+          (assessment.assessment.coverage.assetIds ?? []).includes(row.content.asset.assetId);
+      }
+      if (reviewed) targets.push(...baseline.targets);
+    }
+    if (targets.length) return { finding, targetIds: [...new Set(targets)] };
+  }
+  throw bookletConflict("Correction requires a confirmed finding on its exact selected baseline source.");
+}
 
 export async function resolveReusedSource(
   db: Db,

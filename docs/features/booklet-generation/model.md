@@ -31,6 +31,11 @@ exact sources, funding and evidence. Each original/artifact publishes once; seve
 returned originals may have distinct candidate revisions without another generation.
 Acceptance/revalidation wiring remains checkpoint 09 work.
 
+Request-backed corrections now bind confirmed findings to exact selected baseline
+revision identities and reviewed targets. Correction review preserves the original
+finding body and before/after source identities. These guards reuse existing work,
+assessment and revision fields; the JSON example and both Mermaid views are unchanged.
+
 V2 image registration/dispatch now consumes the exact retained preparation, preserving
 its call ID/hash, target and source identities. Image eligibility uses its own configured
 call ceiling; Manager retains preflight policy ownership. Partial native image results

@@ -15,6 +15,8 @@ import {
 } from "./documents-v2";
 import { bookletConflict } from "./context";
 import { id, mutationSchema, type Mutation } from "./documents";
+import { requireCorrectionFindingV2 } from "./guards";
+import { bookletAssessmentV2Schema } from "../../../project/booklets/contracts-v2";
 
 const imageTargets = {
   "style-sample": ["reference"],
@@ -391,6 +393,16 @@ export async function registerBookletWorkV2(
           throw bookletConflict(
             "Correction review needs exact before/after sources and original findings.",
           );
+        if (request.operation === "correction") {
+          const before = request.sources.filter((source) => source.contentHash === fingerprint(scope.before));
+          for (const finding of bookletAssessmentV2Schema.shape.findings.parse(scope.findings)) {
+            const original = await requireCorrectionFindingV2(db, p, finding.id, scope.targetIds, before.map(
+              ({ artifactId, revisionId, contentHash }) => ({ artifactId, revisionId, contentHash }),
+            ));
+            if (fingerprint(finding) !== fingerprint(original.finding))
+              throw bookletConflict("Correction review changed its original confirmed finding.");
+          }
+        }
       }
     }
   }

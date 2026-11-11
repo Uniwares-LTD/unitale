@@ -798,6 +798,26 @@ Reviewer fixture uses an explicit local execution flag without changing candidat
 gates. No remaining mongod process was observed. Task 09.3 stays In progress;
 checkpoint-wide final review pairs remain 09.7 work.
 
+09.3 correction-lineage slice: request-backed corrective registration now requires
+each confirmed finding to identify an exact selected immutable baseline that was
+actually reviewed, not merely another source in the review context. Subject-scoped
+findings map only to their selected artifact sources; whole-book findings also bind
+the inspected page original. The same guard checks correction-review before/after
+inputs and rejects altered original finding bodies. Legacy metadata-only internal
+registrations keep their compatibility path. A streaming lookup reuses existing
+assessment/revision fields; no new schema, collection, dependency or provider control.
+Repository fixtures cover valid corrective registration, invented findings, changed
+finding text and identical-content/different-revision rejection. The real MCP/native
+Reviewer fixture also records a confirmed visual defect and checks before/after
+originals with that unchanged finding, retaining exact correction-review coverage.
+Native corrective-generation journey, whole-book integration and revalidation remain 09.3 work.
+Current slice checks: 30 repository and 22 MCP tests, typecheck, scoped lint and
+model/docs/i18n/skills/environment checks pass. The unchanged 13-path candidate hash
+audit passes. A separate same-agent read-only slice review found no blocking issue.
+Build and post-build typecheck now pass. A separate read-only follow-up of the added
+native correction-review fixture found no blocking issue. These slice checks do not
+complete task 09.3; checkpoint-wide review pairs remain 09.7 work.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

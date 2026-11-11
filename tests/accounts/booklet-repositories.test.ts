@@ -340,12 +340,22 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const repo = bookletRepositoryV2(f.db, actor, undefined, { atomicMutations: true });
       const p = await repo.getProduction("production-v2");
       const mutation = { key: "review-registration", holderId: jobId, expectedVersion: p.version, fence: p.fenceCounter };
+      const originalFinding = { id: "original-finding", criterion: "exact-text", classification: "confirmed" as const,
+        targetId: "story-v2", expected: "Correct text", observed: "Text defect" };
+      const reviewSources = [f.source, { artifactId: revision.artifactId, revisionId: revision._id, contentHash: revision.contentHash }];
+      for (const baseline of [f.revision, revision]) await f.db.collection("bookletAssessments").insertOne(assessmentDocumentV2Schema.parse({
+        _id: fingerprint(["original-review", baseline._id]), documentVersion: 2, ownerId: actor.uid, productionId: p._id,
+        createdAt: new Date(), callId: "original-review-" + baseline._id, policyBinding: "policy", reviewerBinding: "reviewer",
+        complete: true, evidenceIds: ["trusted-fixture"], assessment: { mode: "text", targetHash: baseline.contentHash,
+          requestHash: null, sources: reviewSources, coverage: { targetIds: ["story-v2"], referencePositions: [] },
+          disposition: "repair", findings: [originalFinding], limitations: [] },
+      }) as never);
       const request = {
         contractVersion: 2, invocationId: "review-invocation", callId: "review-correction",
         service: "quality-reviewer", operation: "correction", intent: "create",
         items: [{ itemId: "review-item", input: {
           targetIds: ["story-v2"], targetHash: revision.contentHash,
-          before: f.revision.content, after, findings: [{ id: "original-finding", summary: "Correct the text." }],
+          before: f.revision.content, after, findings: [originalFinding],
         } }],
         sources: [{ ...f.source, content: f.revision.content }, {
           artifactId: revision.artifactId, revisionId: revision._id, contentHash: revision.contentHash, content: after,
@@ -364,6 +374,35 @@ test("booklet repositories preserve embedded identities and transactional bounda
       const wrongTarget = structuredClone(request);
       wrongTarget.items[0].input.targetHash = "0".repeat(64);
       await assert.rejects(invoke(wrongTarget), /Review hash/);
+      const forgedFinding = structuredClone(request);
+      forgedFinding.items[0].input.findings[0].observed = "Invented defect";
+      await assert.rejects(invoke(forgedFinding), /original confirmed finding/);
+      const copy = { ...revision, _id: crypto.randomUUID(), ordinal: revision.ordinal + 1 };
+      await f.db.collection("bookletRevisions").insertOne(copy as never);
+      const stale = { ...request, items: [{ ...request.items[0], input: { ...request.items[0].input,
+        targetHash: f.revision.contentHash, before: after, after: f.revision.content as typeof after,
+      } }], sources: [request.sources[0], { ...request.sources[1], revisionId: copy._id }] };
+      await assert.rejects(invoke(stale), /exact selected baseline/);
+      const corrective = (baseline: typeof revision) => ({
+        contractVersion: 2, invocationId: "correct-creative", callId: "correct-creative", service: "manuscript", operation: "write",
+        intent: "revise", items: [{ itemId: "correct-item", targetId: "book-subject", input: {}, baseline: baseline.content,
+          feedback: originalFinding }], sources: [{ artifactId: baseline.artifactId, revisionId: baseline._id,
+          contentHash: baseline.contentHash, content: baseline.content }], references: [], constraints: {},
+      });
+      const correction = { rootId: fingerprint([p._id, "manuscript", "write", ["story-v2"], p.revisionChargeId ?? "platform"]),
+        family: "llm", findingIds: [originalFinding.id] };
+      const registerCorrection = (baseline: typeof revision, findingIds = correction.findingIds) => {
+        const child = corrective(baseline);
+        return registerBookletWorkV2(f.db, actor, p._id, jobId, { ...mutation, key: "corrective-registration" }, {
+          childRequest: child, targets: ["story-v2"], requestHash: fingerprint(child), correction: { ...correction, findingIds },
+        });
+      };
+      await assert.rejects(registerCorrection(copy), /exact selected baseline/);
+      await assert.rejects(registerCorrection(f.revision, ["invented"]), /exact selected baseline/);
+      const corrected = await registerCorrection(f.revision);
+      assert.equal((await repo.getWork(p._id, "correct-creative")).correction?.findingIds[0], originalFinding.id);
+      mutation.expectedVersion = corrected.version;
+      mutation.fence = corrected.fence!;
       // A batch may review different immutable versions of the same artifact.
       request.items.push({ itemId: "review-earlier", input: {
         ...request.items[0].input, targetHash: f.revision.contentHash,
