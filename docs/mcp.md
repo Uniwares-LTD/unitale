@@ -430,6 +430,14 @@ identifies that body, while Manager decides whether replacement context needs re
 Identical content alone cannot borrow another revision's assessment. When context
 reports an already completed production, native Manager facts/gate/finish return its
 committed outcome without another reasoning call; checkpoint intent alone cannot do so.
+The existing AI worker's booklet extension now checks one due unresolved work record
+per cycle, including after its parent terminates. Short per-work claims fence readback;
+successful active reads preserve the cumulative failed-read count. Failed status reads
+use the production's non-paid retry allowance and the Run's bounded backoff/deadline;
+credential/identity failures stop automatic checking. Exhaustion leaves liability
+unresolved and does not authorize paid retry. Each check retains fixed-code trace
+evidence; owned work reads expose next-check time/count/reason without claim tokens.
+This local worker integration does not prove live Dify result availability.
 The candidate execution switch stays disabled.
 No Dify binding, credential, shared provider or live configuration changes are included.
 `booklet_sources_v2` verifies owned immutable source tuples and requested original

@@ -77,6 +77,7 @@ export async function observeBookletNodeV2(
   job: AiJob,
   node: ProviderNodeObservation,
   session: ClientSession,
+  expectedCallId?: string,
 ) {
   if (!session.inTransaction())
     throw new Error("Observation requires the worker transaction.");
@@ -219,6 +220,7 @@ export async function observeBookletNodeV2(
   const parsed = unpack(node.outputs);
   if (!parsed?.success || parsed.data.service !== service) return;
   const result = parsed.data;
+  if (expectedCallId && result.callId !== expectedCallId) return;
   const records = db.collection<WorkV2>("bookletWork");
   const raw = await records.findOne(
     {

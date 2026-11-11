@@ -20,7 +20,7 @@ import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations
 import type { AiJob } from "../../src/lib/server/ai/jobs";
 import type { ProviderExecution, ProviderNodeObservation } from "../../src/lib/server/ai/types";
 import { readBookletDocumentV2 } from "../../src/lib/server/booklets/read-v2";
-import { reconcileBookletWorkV2 } from "../../src/lib/server/booklets/reconcile-v2";
+import { reconcileBookletWorkV2, reconcileOneBookletWorkV2 } from "../../src/lib/server/booklets/reconcile-v2";
 import { bookletContentV2Schema } from "../../src/project/booklets/contracts-v2";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import {
@@ -1088,6 +1088,132 @@ test("booklet repositories preserve embedded identities and transactional bounda
         }
       },
     );
+    await t.test("worker readback is bounded, leased and preserves unresolved liability after stopping", async () => {
+      const f = await managerFixture(), now = new Date();
+      const production = await f.v2.getProduction("production-v2");
+      const nativeId = crypto.randomUUID(), workflowId = crypto.randomUUID();
+      const job = { _id: "readback-manager", uid: actor.uid, status: "cancelled", cancelRequested: true,
+        runId: nativeId, execution: { runId: nativeId, workflowId, status: "stopped" },
+        reviewAfter: new Date(now.getTime() + 3600000), run: { logicalId: "readback-logical",
+          target: { adapter: "booklet", version: "2", kind: "booklet-production", id: production._id },
+          orchestrator: { workflowId }, retryBaseSeconds: 2, retryMaxSeconds: 60, pollSeconds: 5 } };
+      await f.db.collection("aiJobs").insertOne(job as never);
+      // Admission revocation/cancellation must not prevent retaining already paid results.
+      await f.db.collection("consumptionOrders").updateOne({ _id: production.orderId as never }, { $set: { "value.state": "revoked" } });
+      const records = f.db.collection("bookletWork");
+      const seed = async (callId: string) => {
+        const request = { invocationId: callId, callId, service: "manuscript", operation: "write", items: [{ itemId: "only" }] };
+        const row = workV2Schema.parse({ _id: fingerprint(callId), documentVersion: 2, ownerId: actor.uid,
+          productionId: production._id, callId, runId: job._id, actionKey: fingerprint(["action", callId]),
+          requestHash: fingerprint(request), requestPayload: request, service: "manuscript", operation: "write", category: "paidLlm",
+          targetIds: ["story-v2"], sources: [f.source], status: "dispatching", retryOrdinal: 0,
+          correctionRootId: fingerprint(["root", callId]), retryable: false, evidenceIds: [], createdAt: now, updatedAt: now });
+        await records.insertOne(row as never);
+        return row;
+      };
+      const read = async (callId: string) => (await records.findOne({ callId }))!;
+      const execution: ProviderExecution = { runId: nativeId, workflowId, status: "running", outputs: null,
+        usage: { scope: "execution", id: nativeId, inputTokens: null, outputTokens: null, totalTokens: null, elapsedMs: null, cost: null } };
+      let reads = 0;
+      const failure = { execution: async () => { reads++; return { kind: "unknown" as const, failure: "timeout" as const }; } };
+      assert.equal(await reconcileOneBookletWorkV2(f.db, now, failure), false);
+      await seed("exhaust");
+      assert.equal(await reconcileOneBookletWorkV2(f.db, now, failure), true);
+      assert.equal((await read("exhaust")).reconciliation.failedReads, 1);
+      assert.ok((await read("exhaust")).reconciliation.nextAt.getTime() >= now.getTime() + 2000);
+      assert.equal(await reconcileOneBookletWorkV2(f.db, now, failure), false);
+      // A successful active read does not reset the episode's previous failure count.
+      await reconcileOneBookletWorkV2(f.db, (await read("exhaust")).reconciliation.nextAt,
+        { execution: async () => ({ kind: "ok", value: execution }), trace: async () => [] });
+      assert.equal((await read("exhaust")).reconciliation.failedReads, 1);
+      for (let n = 2; n <= 4; n++) {
+        const eligible = (await read("exhaust")).reconciliation.nextAt;
+        await reconcileOneBookletWorkV2(f.db, eligible, n === 2 ? { execution: async () => {
+          reads++; return { kind: "rejected", failure: "rate-limit", retryAfterMs: 1000000 };
+        } } : failure);
+        assert.equal((await read("exhaust")).reconciliation.failedReads, n);
+        if (n === 2) assert.equal((await read("exhaust")).reconciliation.nextAt.getTime() - eligible.getTime(), 60000);
+      }
+      const exhausted = await read("exhaust");
+      assert.equal(reads, 4);
+      assert.equal(exhausted.reconciliation.nextAt, null);
+      assert.equal(exhausted.reconciliation.reason, "read_retries_exhausted");
+      assert.equal(exhausted.status, "dispatching");
+      assert.equal(exhausted.retryable, false);
+      assert.equal(await reconcileOneBookletWorkV2(f.db, new Date(now.getTime() + 60000), failure), false);
+      const late = await seed("late");
+      const result = { contractVersion: 2, invocationId: late.callId, callId: late.callId, service: "manuscript", operation: "write",
+        status: "succeeded", items: [{ itemId: "only", status: "succeeded", exact: "  e\u0301 مرحبا 😀\n" }] };
+      const node: ProviderNodeObservation = { runId: nativeId, id: "late-node", nodeId: "child-manuscript", nodeType: "tool",
+        status: "succeeded", retryIndex: null, iterationId: null, loopId: null, outputs: { result: JSON.stringify(result) },
+        outputsTruncated: false, error: null, executionMetadata: null };
+      let release!: () => void, started!: () => void;
+      const waiting = new Promise<void>((resolve) => { release = resolve; });
+      const claimed = new Promise<void>((resolve) => { started = resolve; });
+      const first = reconcileOneBookletWorkV2(f.db, now, { execution: async () => {
+        started(); await waiting; return { kind: "ok", value: { ...execution, status: "stopped" } };
+      }, trace: async () => [
+        { type: "node-observation", node: { ...node, id: "another-call", outputs: { result: JSON.stringify({ ...result, invocationId: "exhaust", callId: "exhaust" }) } } },
+        { type: "node-observation", node },
+      ] });
+      await claimed;
+      try { assert.equal(await reconcileOneBookletWorkV2(f.db, now, failure), false); } finally { release(); }
+      await first;
+      const retained = await read("late");
+      assert.deepEqual(retained.resultPayload, result);
+      assert.equal((await read("exhaust")).resultPayload, undefined); // This pass owns only its selected call.
+      assert.equal(retained.reconciliation.reason, "result_retained");
+      assert.equal(retained.reconciliation.nextAt, null);
+      assert.equal(await records.countDocuments(), 2); // No retry/successor action was created.
+      assert.deepEqual(await f.db.collection("aiJobs").findOne({ _id: job._id as never }), job);
+      assert.equal((await f.v2.getProduction(production._id)).version, production.version);
+      assert.equal(await f.db.collection("executionEvidence").countDocuments({ operationId: "exhaust" }), 5);
+      // A stale worker cannot retain a result after losing its short readback claim.
+      const stale = await seed("stale");
+      await reconcileOneBookletWorkV2(f.db, now, { execution: async () => {
+        await records.updateOne({ _id: stale._id as never }, { $set: { "reconciliation.leaseUntil": new Date(0) } });
+        return { kind: "ok", value: execution };
+      }, trace: async () => [{ type: "node-observation", node: { ...node, outputs: { result: JSON.stringify({ ...result, invocationId: stale.callId, callId: stale.callId }) } } }] });
+      assert.equal((await read("stale")).resultPayload, undefined);
+      const staleResult = { ...result, invocationId: stale.callId, callId: stale.callId };
+      await reconcileOneBookletWorkV2(f.db, now, { execution: async () => ({ kind: "ok", value: execution }),
+        trace: async () => [{ type: "node-observation", node: { ...node, id: "stale-node",
+          outputs: { result: JSON.stringify(staleResult) } } }] });
+      assert.deepEqual((await read("stale")).resultPayload, staleResult);
+      assert.equal((await read("stale")).reconciliation.leaseId, null);
+      await seed("credentials");
+      await reconcileOneBookletWorkV2(f.db, now, { execution: async () => ({ kind: "rejected", failure: "authentication" }) });
+      assert.equal((await read("credentials")).reconciliation.reason, "read_non_retriable");
+      assert.equal((await read("credentials")).reconciliation.nextAt, null);
+      await seed("deadline");
+      await f.db.collection("aiJobs").updateOne({ _id: job._id as never }, { $set: { reviewAfter: new Date(now.getTime() - 1) } });
+      await reconcileOneBookletWorkV2(f.db, now, failure);
+      assert.equal((await read("deadline")).reconciliation.reason, "reconciliation_deadline");
+      const missing = await seed("missing-identity");
+      await records.updateOne({ _id: missing._id as never }, { $set: { runId: "missing-manager" } });
+      await reconcileOneBookletWorkV2(f.db, now, failure);
+      assert.equal((await read("missing-identity")).reconciliation.reason, "native_identity_pending");
+      assert.equal((await read("missing-identity")).reconciliation.nextAt, null);
+      assert.equal(reads, 4); // Deadline handling performs no provider request.
+      // Explicit trusted readback can still retain a late result after automatic
+      // checks exhaust, without granting or resetting an action retry allowance.
+      const exhaustedResult = { ...result, invocationId: "exhaust", callId: "exhaust" };
+      await reconcileBookletWorkV2(f.db, actor, production._id, "exhaust", AbortSignal.timeout(5000), {
+        execution: async () => ({ kind: "ok", value: execution }), trace: async () => [{ type: "node-observation",
+          node: { ...node, id: "exhausted-late", outputs: { result: JSON.stringify(exhaustedResult) } } }],
+      });
+      assert.deepEqual((await read("exhaust")).resultPayload, exhaustedResult);
+      assert.equal((await read("exhaust")).reconciliation.failedReads, 4);
+      assert.equal((await read("exhaust")).retryable, false);
+      await f.db.collection("aiJobs").updateOne({ _id: job._id as never }, { $set: { reviewAfter: job.reviewAfter } });
+      await f.db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { "retryPolicy.nonPaid": 0 } });
+      await seed("no-read-retries");
+      await reconcileOneBookletWorkV2(f.db, now, failure);
+      assert.equal((await read("no-read-retries")).reconciliation.failedReads, 1);
+      assert.equal((await read("no-read-retries")).reconciliation.nextAt, null);
+      assert.equal(reads, 5);
+      assert.equal(bookletsServerExtension.reconcile, reconcileOneBookletWorkV2);
+    });
     await t.test(
       "v2 work state preserves unknown outcomes and enforces retries across runs",
       async () => {
@@ -3295,6 +3421,8 @@ test("canonical document example matches persistence schemas and embedded refere
     ...example.v2StorageExamples.work,
     createdAt: new Date(example.v2StorageExamples.work.createdAt),
     updatedAt: new Date(example.v2StorageExamples.work.updatedAt),
+    reconciliation: { ...example.v2StorageExamples.work.reconciliation,
+      leaseUntil: new Date(example.v2StorageExamples.work.reconciliation.leaseUntil) },
   });
   const v2Assessment = assessmentDocumentV2Schema.parse({
     ...example.v2StorageExamples.assessment,

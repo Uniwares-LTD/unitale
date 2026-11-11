@@ -8,6 +8,7 @@ import { bookletMcpTools } from "../../lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../lib/server/booklets/mcp-tools-v2";
 import { createBookletMcpIndexes } from "../../lib/server/booklets/mcp-transfers";
 import { createBookletV2Indexes } from "../../lib/server/booklets/repository-v2";
+import { reconcileOneBookletWorkV2 } from "../../lib/server/booklets/reconcile-v2";
 async function indexes(db: Parameters<typeof createBookletIndexes>[0]) {
   await createBookletIndexes(db);
   await createBookletServiceIndexes(db);
@@ -15,6 +16,7 @@ async function indexes(db: Parameters<typeof createBookletIndexes>[0]) {
 }
 export const bookletsServerExtension = defineServerExtension({
   module: "booklets",
+  reconcile: reconcileOneBookletWorkV2,
   indexes: async (db) => {
     await indexes(db);
     await createBookletMcpIndexes(db);

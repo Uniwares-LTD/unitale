@@ -190,6 +190,14 @@ export const workV2Schema = workRegistrationV2Schema.extend({
   retryable: z.boolean(),
   evidenceIds: ids,
   updatedAt: z.date(),
+  // Worker-only readback scheduling; never authorizes another provider attempt.
+  reconciliation: z.strictObject({
+    nextAt: z.date().nullable(),
+    failedReads: z.number().int().nonnegative().safe(),
+    leaseId: z.string().uuid().nullable(),
+    leaseUntil: z.date(),
+    reason: z.string().max(100).nullable(),
+  }).optional(),
 });
 export const assessmentDocumentV2Schema = z.strictObject({
   ...scope,

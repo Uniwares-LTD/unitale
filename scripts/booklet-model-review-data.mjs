@@ -95,6 +95,7 @@ export const documents = [
       "requestPayload? {exact meaningful JSON, max 256 KiB}",
       "resultPayload? {exact observed JSON, max 1 MiB}",
       "resultObservation? {runId, nodeId, executionId, retryIndex, iterationId, loopId}",
+      "reconciliation? {nextAt?, failedReads, leaseId?, leaseUntil, reason?}",
       "targetIds[] / sources[] / retryOf? / retryOrdinal",
       "status / retryable / evidenceIds[] / createdAt / updatedAt",
       "correctionRootId / correction? {rootId, family, findingIds[]}",

@@ -1054,6 +1054,32 @@ trusted failure classification/backoff and failed-action retry authorization, sa
 terminal-flow release before continuation/revision, and composed exhaustion/late-result/
 repeated-click/cancellation checks. Do not mark 09.5 Verified from this first slice.
 
+09.5 readback amendment: demonstrated gap is unresolved work after its parent Run is
+terminal, which the ordinary job claim loop cannot revisit. Reuse the imported optional
+extension-worker callback and `reconcile_work` reader/observer. The smallest added
+state is optional scheduling metadata on existing `bookletWork` (next check, cumulative
+failed reads and short claim lease/reason), with a status/eligibility index. No new
+queue, scheduler, provider, dispatch path or ledger. The callback processes at most
+one due record per existing worker cycle, retains fixed-code trace evidence, and
+never grants retries or successors. Verify claim concurrency/expiry, active reads,
+bounded failures/backoff/retry-after, terminal late output, revocation and deadlines
+against disposable persistence and injected readback. Keep actual Dify evidence pending.
+
+Readback slice checks: 31 repository and 28 MCP tests pass, production build,
+post-build typecheck, scoped lint and docs/i18n/skills checks pass. Fixtures prove
+four failed reads with default three retries, a zero-retry snapshot, capped retry-after,
+unchanged failure count across successful active reads, claim concurrency/expiry/takeover,
+terminal-parent late output after cancellation/revocation, credential/deadline/missing-ID
+stops, and explicit trusted late retention after automatic exhaustion. Selected-call
+readback cannot consume another call's history. No job, production fence, retry counter,
+paid action or successor is changed by this worker pass. Per-check fixed-code traces
+use existing held execution evidence; no provider error text or claim token is public.
+A separate same-agent read-only slice review fixed the cross-call history issue;
+its follow-up found no further blocking issue. Model guide/JSON/complete Mermaid are
+updated; the regenerated abbreviated core Mermaid is unchanged. The package's native
+13-path digest is unchanged. This completes only automatic readback within 09.5;
+failed-action retry authorization/backoff and safe continuation still remain.
+
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
 unknown failure and BSON-capacity fallback without losing attempt counts. Build,

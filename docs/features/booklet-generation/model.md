@@ -8,6 +8,19 @@ existing approval/quality records as Manager acceptance.
 
 ## Version 2 storage boundary
 
+Checkpoint 09.5 adds optional worker-only `reconciliation` metadata to an existing
+work attempt: `nextAt` (Date or null when automatic checks stop), cumulative
+`failedReads`, a short `leaseId`/`leaseUntil`, and a fixed diagnostic `reason`.
+It schedules non-paid readback through the existing AI worker, without changing
+production fences, native job status, action/correction counters or dispatch rights.
+Timing/deadlines come from the accepted Run snapshot; the production's non-paid
+retry allowance bounds failed status reads. Successful active reads do not reset
+that count. Exhaustion retains unknown liability and late-result retention remains
+possible. Public work DTOs expose scheduling status without claim identities.
+The JSON example and complete diagram include this optional record; the regenerated
+core diagram keeps its existing abbreviated work fields and is unchanged. Old work
+remains valid without it. `db:indexes` provisions the work-status/readback eligibility index.
+
 The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
 [v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing
 collections and owned transaction/admission validation. New v2 production creation is

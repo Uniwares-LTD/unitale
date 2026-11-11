@@ -78,6 +78,7 @@ and the adapter; the table does not require unrelated suites for every task.
   `read-v2.ts` owns v2 production/checkpoint/revision/work/assessment/acceptance/execution DTOs, authenticated human-response correlation, bounded typed sections and owned artifact/action/acceptance/human/execution/production history metadata;
   `suite-v2.ts` validates server-owned Manager/child-tool mappings and resolves the configured Reviewer policy;
   `usage-v2.ts` reads owned work-attempt totals, native Run costs and execution bounds for context and dispatch guards without adding an accounting ledger;
+  `reconcile-v2.ts` supplies one leased, non-paid accepted-work readback per existing AI-worker cycle, including after a parent Run terminates; it retains results/logs without dispatch or successor creation;
   `mcp-transfers.ts` owns bounded staging. `npm run test:booklet-mcp` verifies the
   real MCP handler with disposable persistence. [MCP guidance](mcp.md#unitale-booklet-catalog-t17)
   owns its permissions, transfer protocol and trusted reviewer binding.

@@ -89,6 +89,7 @@ export async function createBookletV2Indexes(db: Db) {
     correctionRootId: 1,
     status: 1,
   });
+  await db.collection("bookletWork").createIndex({ status: 1, "reconciliation.nextAt": 1, "reconciliation.leaseUntil": 1 });
   await db.collection("bookletAssessments").createIndex({
     ownerId: 1,
     productionId: 1,

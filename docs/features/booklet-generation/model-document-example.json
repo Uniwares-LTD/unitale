@@ -793,6 +793,13 @@
         "retryIndex": 0,
         "iterationId": null,
         "loopId": "manager_iteration_example"
+      },
+      "reconciliation": {
+        "nextAt": null,
+        "failedReads": 1,
+        "leaseId": null,
+        "leaseUntil": "1970-01-01T00:00:00.000Z",
+        "reason": "result_retained"
       }
     },
     "assessment": {

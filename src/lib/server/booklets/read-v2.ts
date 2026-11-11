@@ -426,6 +426,10 @@ export async function readBookletDocumentV2(
       correction: row.correction,
       reviewScope: row.reviewScope,
       evidenceIds: row.evidenceIds,
+      ...(row.reconciliation ? { reconciliation: {
+        nextAt: row.reconciliation.nextAt?.toISOString() ?? null,
+        failedReads: row.reconciliation.failedReads, reason: row.reconciliation.reason,
+      } } : {}),
       ...(row.resultPayload === undefined
         ? {}
         : { resultPayload: row.resultPayload }),

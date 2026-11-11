@@ -1,13 +1,19 @@
 import "server-only";
-import type { Db } from "mongodb";
+import { randomUUID } from "node:crypto";
+import type { Db, Filter } from "mongodb";
 import type { CreditActor } from "../store/credit-types";
 import type { AiJob } from "../ai/jobs";
 import type {
   ProviderEvent,
   ProviderExecution,
   ProviderOutcome,
+  ProviderFailure,
 } from "../ai/types";
-import { bookletRepositoryV2 } from "./repository-v2";
+import { productionV2Schema, workV2Schema, type WorkV2 } from "./documents-v2";
+import { fingerprint } from "../foundation/canonical";
+import { retainEvidence } from "../execution/measurements";
+import { bootstrapSettings } from "../settings";
+import { baseSettingsSchema } from "../../contracts/settings";
 import { observeBookletNodeV2 } from "./observations-v2";
 import { bookletConflict, bookletMissing } from "./context";
 
@@ -20,6 +26,8 @@ export async function reconcileBookletWorkV2(
   callId: string,
   signal: AbortSignal,
   readback: {
+    // Internal worker claim only; not exposed by the MCP request schema.
+    leaseId?: string;
     executionLocator?: { runId: string; nodeId?: string; executionId?: string };
     execution?: (
       job: AiJob,
@@ -28,18 +36,33 @@ export async function reconcileBookletWorkV2(
     trace?: (job: AiJob) => Promise<ProviderEvent[]>;
   } = {},
 ) {
-  const repository = bookletRepositoryV2(db, actor);
-  const before = await repository.getWork(productionId, callId);
+  // Accepted-work retention must survive account/entitlement revocation. The MCP
+  // wrapper still authenticates current access; this internal read grants no writes.
+  const readWork = async () => {
+    const row = await db
+      .collection<WorkV2>("bookletWork")
+      .findOne({ ownerId: actor.uid, productionId, callId });
+    if (!row) throw bookletMissing();
+    return workV2Schema.parse(row);
+  };
+  const before = await readWork();
   const reasoning =
     before.service === "manager" && before.operation === "reason";
   const nodeId = reasoning ? "decide" : `child-${before.service}`;
-  const summary = (row: typeof before, reason?: string) => ({
+  const summary = (
+    row: typeof before,
+    reason?: string,
+    readFailure?: ProviderFailure,
+    retryAfterMs?: number,
+  ) => ({
     callId: row.callId,
     requestHash: row.requestHash,
     status: row.status,
     retryable: row.retryable,
     resultAvailable: row.resultPayload !== undefined,
     document: { kind: "work", id: row.callId },
+    readFailure: readFailure ?? null,
+    retryAfterMs: retryAfterMs ?? null,
     ...(reason ? { reconciliation: reason } : {}),
   });
   const known =
@@ -76,7 +99,13 @@ export async function reconcileBookletWorkV2(
       return (await providerForRun(job, db)).retrieve(job.runId!, signal);
     })
   )(parent, signal);
-  if (execution.kind !== "ok") return summary(before, "execution_unconfirmed");
+  if (execution.kind !== "ok")
+    return summary(
+      before,
+      "execution_unconfirmed",
+      execution.failure,
+      execution.retryAfterMs,
+    );
   if (
     execution.value.runId !== parent.runId ||
     execution.value.workflowId !== parent.run.orchestrator.workflowId
@@ -121,6 +150,20 @@ export async function reconcileBookletWorkV2(
         { session },
       );
       if (!fresh) throw bookletMissing();
+      if (
+        readback.leaseId &&
+        !(await db.collection<WorkV2>("bookletWork").findOne(
+          {
+            _id: before._id,
+            ownerId: actor.uid,
+            productionId,
+            "reconciliation.leaseId": readback.leaseId,
+            "reconciliation.leaseUntil": { $gt: new Date() },
+          },
+          { session },
+        ))
+      )
+        throw bookletConflict("Readback claim expired or changed.");
       for (const event of nodes)
         if (event.type === "node-observation") {
           signal.throwIfAborted();
@@ -129,11 +172,222 @@ export async function reconcileBookletWorkV2(
             { ...fresh, execution: execution.value },
             event.node,
             session,
+            before.callId,
           );
         }
     });
   } finally {
     await session.endSession();
   }
-  return summary(await repository.getWork(productionId, callId));
+  return summary(await readWork());
+}
+
+/** One non-paid readback per existing AI-worker cycle. Never dispatches or resumes
+ * a workflow, changes a production fence, or acquires an AI-job lease. */
+export async function reconcileOneBookletWorkV2(
+  db: Db,
+  now = new Date(),
+  readback: Pick<
+    NonNullable<Parameters<typeof reconcileBookletWorkV2>[5]>,
+    "execution" | "trace"
+  > = {},
+) {
+  const records = db.collection<WorkV2>("bookletWork");
+  const due: Filter<WorkV2> = {
+    documentVersion: 2 as const,
+    $and: [
+      {
+        $or: [
+          { status: { $in: ["dispatching", "unknown"] } },
+          { status: "succeeded", resultPayload: { $exists: false } },
+        ],
+      },
+      {
+        $or: [
+          { reconciliation: { $exists: false } },
+          { "reconciliation.nextAt": { $lte: now, $ne: null } },
+        ],
+      },
+      {
+        $or: [
+          { "reconciliation.leaseUntil": { $exists: false } },
+          { "reconciliation.leaseUntil": { $lte: now } },
+        ],
+      },
+    ],
+  };
+  const candidate = await records.findOne(due, {
+    sort: { "reconciliation.nextAt": 1, createdAt: 1, _id: 1 },
+  });
+  if (!candidate) return false;
+  const leaseId = randomUUID();
+  const state = {
+    failedReads: 0,
+    nextAt: now,
+    reason: null,
+    ...candidate.reconciliation,
+    leaseId,
+    leaseUntil: new Date(now.getTime() + 180000),
+  };
+  const claimed = await records.findOneAndUpdate(
+    { ...due, _id: candidate._id },
+    { $set: { reconciliation: state } },
+    { returnDocument: "after" },
+  );
+  if (!claimed) return false;
+  const row = workV2Schema.parse(claimed);
+  const job = await db
+    .collection<AiJob>("aiJobs")
+    .findOne({
+      _id: row.runId,
+      uid: row.ownerId,
+      "run.target.adapter": "booklet",
+      "run.target.version": "2",
+      "run.target.id": row.productionId,
+    });
+  const stored = await db
+    .collection("bookletProductions")
+    .findOne({
+      _id: row.productionId as never,
+      ownerId: row.ownerId,
+      documentVersion: 2,
+    });
+  const production = stored ? productionV2Schema.parse(stored) : null;
+  const deadline =
+    job?.reviewAfter ??
+    new Date(
+      row.createdAt.getTime() + (job?.run?.reconciliationHours ?? 24) * 3600000,
+    );
+  let reason = "native_identity_pending",
+    failedRead = false,
+    resolved = false;
+  let readFailure: string | null = null,
+    retryAfterMs = 0;
+  if (now >= deadline) reason = "reconciliation_deadline";
+  else if (state.failedReads > (production?.retryPolicy.nonPaid ?? 0))
+    reason = "read_retries_exhausted";
+  else if (production && job?.runId && job.run?.orchestrator.workflowId) {
+    try {
+      const result = await reconcileBookletWorkV2(
+        db,
+        { uid: row.ownerId, authTime: 0 },
+        row.productionId,
+        row.callId,
+        AbortSignal.timeout(60000),
+        { ...readback, leaseId },
+      );
+      resolved =
+        result.resultAvailable &&
+        ["succeeded", "partial", "failed"].includes(result.status);
+      reason =
+        result.reconciliation ??
+        (resolved ? "result_retained" : "child_result_pending");
+      readFailure = result.readFailure;
+      if (
+        typeof result.retryAfterMs === "number" &&
+        Number.isFinite(result.retryAfterMs) &&
+        result.retryAfterMs > 0
+      )
+        retryAfterMs = Math.min(
+          result.retryAfterMs,
+          (job.run.retryMaxSeconds ?? 60) * 1000,
+        );
+      failedRead = [
+        "execution_unconfirmed",
+        "execution_identity_mismatch",
+      ].includes(reason);
+      if (["authentication", "invalid-request"].includes(readFailure ?? ""))
+        reason = "read_non_retriable";
+    } catch {
+      // Fixed code only; provider errors may contain credentials or signed URLs.
+      reason = "readback_failed";
+      failedRead = true;
+    }
+  }
+  const finished = new Date(Math.max(now.getTime(), Date.now()));
+  const failedReads = state.failedReads + Number(failedRead);
+  if (failedReads > (production?.retryPolicy.nonPaid ?? 0))
+    reason = "read_retries_exhausted";
+  if (finished >= deadline) reason = "reconciliation_deadline";
+  const stopped =
+    resolved ||
+    [
+      "native_identity_pending",
+      "read_retries_exhausted",
+      "reconciliation_deadline",
+      "read_non_retriable",
+      "execution_identity_mismatch",
+    ].includes(reason);
+  const seconds = failedRead
+    ? Math.min(
+        job?.run?.retryMaxSeconds ?? 60,
+        (job?.run?.retryBaseSeconds ?? 2) * 2 ** Math.min(failedReads - 1, 30),
+      )
+    : (job?.run?.pollSeconds ?? 5);
+  const nextAt = stopped
+    ? null
+    : new Date(
+        Math.min(
+          deadline.getTime(),
+          finished.getTime() + Math.max(seconds * 1000, retryAfterMs),
+        ),
+      );
+  const session = db.client.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const updated = await records.updateOne(
+        {
+          _id: row._id,
+          ownerId: row.ownerId,
+          productionId: row.productionId,
+          "reconciliation.leaseId": leaseId,
+          "reconciliation.leaseUntil": { $gt: finished },
+        },
+        {
+          $set: {
+            reconciliation: {
+              nextAt,
+              failedReads,
+              leaseId: null,
+              leaseUntil: new Date(0),
+              reason,
+            },
+          },
+        },
+        { session },
+      );
+      if (!updated.modifiedCount) return;
+      const settings = await db
+        .collection<{ _id: string; settings: unknown }>("baseSettings")
+        .findOne({ _id: "base" }, { session });
+      await retainEvidence(
+        db,
+        row.ownerId,
+        {
+          id: fingerprint([row._id, "reconcile", leaseId]),
+          runId: row.runId,
+          operationId: row.callId,
+          kind: "trace",
+          retentionDays: baseSettingsSchema.parse(
+            settings?.settings ?? bootstrapSettings(),
+          ).execution.rawLogRetentionDays,
+          payload: {
+            category: "nonPaid",
+            code: reason,
+            callId: row.callId,
+            runId: row.runId,
+            timestamp: finished.toISOString(),
+            readFailure,
+            failedReads,
+            nextAt: nextAt?.toISOString() ?? null,
+            resultAvailable: resolved,
+          },
+        },
+        session,
+      );
+    });
+  } finally {
+    await session.endSession();
+  }
+  return true;
 }
