@@ -42,6 +42,13 @@ state. Context exposes `dispatchReady` and ISO timing; owned reads return the IS
 The JSON example notes this optional field and the complete diagram includes it;
 the regenerated core diagram remains abbreviated and unchanged.
 
+The native `retry-wait` uses existing opaque checkpoint intent
+`{pending:{action:"wait",callId}}` and existing application-owned `runDecisions`.
+`booklet@2.resumePaused` checks registered work and the exact call-bound presentation,
+then uses the existing journaled application decision source when eligible. It neither
+grants nor dispatches work. These are existing fields, so JSON/schema diagrams remain
+unchanged. Fixed-code blocked-wait records use existing audit events.
+
 The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
 [v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing
 collections and owned transaction/admission validation. New v2 production creation is

@@ -263,7 +263,8 @@ workflow:
                 Use correction root/family and durable counters: three text/request and one image correction after the initial attempt. Reviews do not consume corrections.
                 Never create a new root/candidate/call to reset an existing task's counter. Customer revisions use their own actual purchased allocation.
                 Unknown paid work is never replayed. Reconcile it through reconcile_work/read_document; use existing results and retain known outputs independently.
-                A registered retry with dispatchReady false must wait until retryNotBefore. Pause with that time and preserve the registered call; do not poll with paid reasoning or repeat successful work. Continue can reuse it after verified predecessor termination.
+                For a server-confirmed failed work item with retryable true, read its retained request. When its retryOrdinal is below retryPolicy[category] or retryAuthorized is true, register the same failed action with retryOf set to that callId and fresh call/invocation/item IDs, preserving meaningful inputs, sources, targets and funding. App admission enforces the allowance. Do not retry successful/partial siblings or count a technical retry as a quality correction. If the failed paid stage cannot be isolated or its outcome is unknown, pause for reconciliation instead.
+                A registered retry with dispatchReady false must use wait with {callId} until retryNotBefore. The application resumes this native technical wait automatically; do not ask the creator, poll with paid reasoning or repeat successful work. If this execution has ended, Continue can reuse the registered call after verified predecessor termination.
                 Keep call identity separate from output keys. Retain each original and save its individual revision; never use a display derivative as an original.
                 After source changes, inspect affected content. Revalidate unchanged bytes/content using a new immutable source-bound revision, otherwise revise the smallest affected artifact.
                 Continue reads current authoritative state and checkpoint; revise honors scoped user feedback, locks and allowance. Reacquire short leases after waits.
@@ -280,7 +281,7 @@ workflow:
                 Read the exact selected revision before other artifact acceptance. context.acceptanceReview resolves its stored individual/grouped pass outside the preview. reviewedRevisionId identifies what was actually reviewed; an unchanged revalidation may inherit its ancestor's body review. Reuse that review only when your assessment of replacement context requires no fresh review; otherwise review the new revision. Inherited evidence does not claim inspection of new context.
                 record_assessment.executionLocator is {runId,nodeId:"child-quality-reviewer",executionId} from the retained work's resultObservation. Read that work document first; do not invent policy bindings or execution identities.
 
-                Allowed actions: read_document, lease, index, begin_work, transfer, retain_original, save_revision, request_human, record_evidence, record_assessment, sources, reconcile_work, record_acceptance, complete, story-planner, manuscript, art-director, page-composer, image-executor, quality-reviewer, pause
+                Allowed actions: read_document, lease, index, begin_work, transfer, retain_original, save_revision, request_human, record_evidence, record_assessment, sources, reconcile_work, record_acceptance, complete, story-planner, manuscript, art-director, page-composer, image-executor, quality-reviewer, wait, pause
                 Child JSON: {contractVersion:2, invocationId, callId, service, operation, intent:"create"|"revise", items:[{itemId,input,targetId?,targetIds?,baseline?,feedback?}], sources:[{artifactId,revisionId,contentHash,content}], references:[{assetId,sha256,bytes,nativeFileId}], constraints:{...}}.
                 Operations: story-planner concept/outline/cast/locations; manuscript write/reconcile_characters/reconcile_locations; art-director style/sample_spec/character_spec/location_spec; page-composer paginate/compose; image-executor prepare/generate; quality-reviewer text/specification/image_request/image/whole_book/correction.
                 Source content includes kind. Read immutable sources before dispatch; use their actual contentHash and exact content. Child native handles are rebound by the graph.
@@ -332,6 +333,7 @@ workflow:
                     - page-composer
                     - image-executor
                     - quality-reviewer
+                    - wait
                     - pause
                 request_json:
                   type: string
@@ -359,7 +361,7 @@ workflow:
           loop_id: actions
           code_language: python3
           code: |
-            ACTIONS = ["read_document","lease","index","begin_work","transfer","retain_original","save_revision","request_human","record_evidence","record_assessment","sources","reconcile_work","record_acceptance","complete","story-planner","manuscript","art-director","page-composer","image-executor","quality-reviewer","pause"]
+            ACTIONS = ["read_document","lease","index","begin_work","transfer","retain_original","save_revision","request_human","record_evidence","record_assessment","sources","reconcile_work","record_acceptance","complete","story-planner","manuscript","art-director","page-composer","image-executor","quality-reviewer","wait","pause"]
             SERVICES = ["story-planner","manuscript","art-director","page-composer","image-executor","quality-reviewer"]
             import json, hashlib
             def canonical(value):
@@ -479,12 +481,18 @@ workflow:
                 if action == "complete":
                     if not whole_book_pass(request.get("manifestRevisionId")):
                         raise ValueError("Whole-book selected-revision actual-page/continuity coverage incomplete")
+                wait_form = ""
+                if action == "wait":
+                    work = next((w for w in c["work"] if w.get("callId") == request.get("callId")), None)
+                    if set(request) != {"callId"} or not work or work.get("status") != "registered" or not work.get("retryNotBefore"):
+                        raise ValueError("Wait requires an owned registered retry with stored eligibility")
+                    wait_form = "Booklet retry wait " + digest(["booklet-retry-wait", request["callId"]])
                 pending_request = request["childRequest"] if action == "begin_work" and request.get("action") == "register" else request
                 pending = {"action": action, "callId": pending_request.get("callId"), "invocationId": pending_request.get("invocationId"), "requestHash": request_hash, "reason": d["reason"], "sources": [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in pending_request.get("sources", [])], "itemIds": [i["itemId"] for i in pending_request.get("items", [])], "mutationKey": request.get("mutationKey")}
                 checkpoint = {"expectedVersion": c["checkpointVersion"], "fence": c["fence"], "state": {**c.get("checkpoint", {}), "pending": pending}}
                 if len(canonical(checkpoint).encode("utf-8")) > 65536:
                     raise ValueError("Checkpoint capacity exceeded; transfer data first")
-                return {"action": action, "request": canonical(request), "checkpoint": canonical(checkpoint), "paid": "yes" if paid else "no", "dispatchChild": "yes" if action in SERVICES else "no", "dispatch": canonical({"action": "dispatch", "callId": request.get("callId"), "requestHash": request_hash, "fence": c["fence"]}), "sources": canonical({"sources": [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in request.get("sources", [])], "references": request.get("references", [])}), "reason": d["reason"]}
+                return {"action": action, "request": canonical(request), "checkpoint": canonical(checkpoint), "paid": "yes" if paid else "no", "dispatchChild": "yes" if action in SERVICES else "no", "dispatch": canonical({"action": "dispatch", "callId": request.get("callId"), "requestHash": request_hash, "fence": c["fence"]}), "sources": canonical({"sources": [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in request.get("sources", [])], "references": request.get("references", [])}), "reason": d["reason"], "waitForm": wait_form}
           variables:
             - variable: context
               value_selector:
@@ -510,6 +518,8 @@ workflow:
             sources:
               type: string
             reason:
+              type: string
+            waitForm:
               type: string
       - id: before
         type: custom
@@ -839,6 +849,16 @@ workflow:
                   varType: string
                   comparison_operator: is
                   value: quality-reviewer
+            - case_id: wait
+              logical_operator: and
+              conditions:
+                - id: wait
+                  variable_selector:
+                    - guard
+                    - action
+                  varType: string
+                  comparison_operator: is
+                  value: wait
             - case_id: pause
               logical_operator: and
               conditions:
@@ -2202,6 +2222,62 @@ workflow:
               config: {}
           timeout: 24
           timeout_unit: hour
+      - id: retry-wait
+        type: custom
+        position:
+          x: 1000
+          y: 1800
+        parentId: actions
+        extent: parent
+        data:
+          type: human-input
+          title: Automatic retry wait
+          desc: Application-owned technical wait; not a creator question.
+          selected: false
+          isInLoop: true
+          loop_id: actions
+          form_content: |-
+            {{#guard.waitForm#}}
+            {{#$output.response#}}
+          inputs:
+            - type: paragraph
+              output_variable_name: response
+              default:
+                type: constant
+                selector: []
+                value: ""
+          user_actions:
+            - id: continue
+              title: Continue
+              button_style: primary
+          delivery_methods:
+            - id: 092c88da-6c06-4b71-981b-b488ea258db1
+              type: webapp
+              enabled: true
+              config: {}
+          timeout: 24
+          timeout_unit: hour
+      - id: retry-resumed
+        type: custom
+        position:
+          x: 1300
+          y: 1800
+        parentId: actions
+        extent: parent
+        data:
+          type: code
+          title: Refresh retry facts next turn
+          selected: false
+          isInLoop: true
+          loop_id: actions
+          code_language: python3
+          code: |-
+            def main():
+                return {"ok": True}
+          variables: []
+          outputs:
+            ok:
+              type: boolean
       - id: pause
         type: custom
         position:
@@ -2882,6 +2958,24 @@ workflow:
       - id: human-__timeout-uncertain
         type: custom
         source: human
+        target: uncertain
+        sourceHandle: __timeout
+        targetHandle: target
+      - id: route-wait-retry-wait
+        type: custom
+        source: route
+        target: retry-wait
+        sourceHandle: wait
+        targetHandle: target
+      - id: retry-wait-continue-retry-resumed
+        type: custom
+        source: retry-wait
+        target: retry-resumed
+        sourceHandle: continue
+        targetHandle: target
+      - id: retry-wait-timeout-uncertain
+        type: custom
+        source: retry-wait
         target: uncertain
         sourceHandle: __timeout
         targetHandle: target

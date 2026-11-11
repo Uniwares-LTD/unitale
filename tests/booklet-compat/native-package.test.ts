@@ -385,6 +385,43 @@ test("seven readable native candidates preserve private bindings and disable nod
   );
 });
 
+test("native retry wait binds only a registered call and leaves retry authority in the application", () => {
+  const r = request(), c = register(r);
+  c.work[0].retryNotBefore = "2030-01-01T00:00:00.000Z";
+  c.work[0].dispatchReady = false;
+  const planned = guard("wait", { callId: r.callId }, c);
+  assert.equal(planned.paid, "no");
+  assert.equal(planned.dispatchChild, "no");
+  assert.equal(JSON.parse(planned.checkpoint).state.pending.callId, r.callId);
+  assert.equal(planned.waitForm, "Booklet retry wait " + hash(["booklet-retry-wait", r.callId]));
+  assert.throws(() => guard("wait", { callId: "foreign" }, c), /owned registered retry/);
+  c.work[0].status = "unknown";
+  assert.throws(() => guard("wait", { callId: r.callId }, c), /owned registered retry/);
+  const graph = apps.manager.workflow.graph;
+  const node = graph.nodes.find((node: any) => node.id === "retry-wait");
+  assert.equal(node.data.type, "human-input");
+  assert.match(node.data.form_content, /guard.waitForm/);
+  assert.equal(graph.edges.find((edge: any) => edge.source === node.id && edge.sourceHandle === "continue").target, "retry-resumed");
+  assert.equal(graph.edges.find((edge: any) => edge.source === node.id && edge.sourceHandle === "__timeout").target, "uncertain");
+});
+
+test("native failure branches stop deterministically without another reasoning call or implicit retry", () => {
+  const graph = apps.manager.workflow.graph;
+  for (const node of graph.nodes.filter((node: any) => ["tool", "llm"].includes(node.data.type))) {
+    assert.equal(node.data.retry_config.retry_enabled, false);
+    assert.equal(graph.edges.find((edge: any) => edge.source === node.id && edge.sourceHandle === "fail-branch")?.target, "uncertain");
+  }
+  const stopped = run("manager", "uncertain", {});
+  assert.equal(stopped.done, true);
+  assert.equal(JSON.parse(stopped.result).status, "unknown");
+  assert.equal(parseResult(run("manager", "finish", { result: stopped.result, done: stopped.done })).outcome, "partial");
+  const store = graph.nodes.find((node: any) => node.id === "uncertain-store");
+  assert.deepEqual(store.data.items.find((item: any) => item.variable_selector[1] === "done").value, ["uncertain", "done"]);
+  assert.equal(graph.edges.find((edge: any) => edge.source === "uncertain")?.target, "uncertain-store");
+  assert.equal(graph.edges.some((edge: any) => edge.source === "uncertain-store"), false);
+  assert.equal(graph.nodes.find((node: any) => node.id === "actions").data.break_conditions[0].value, true);
+});
+
 test("every inline Python node compiles without running a workflow", () => {
   const source = roles.flatMap((role) =>
     apps[role].workflow.graph.nodes

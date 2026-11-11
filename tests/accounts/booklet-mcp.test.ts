@@ -54,8 +54,12 @@ import { bookletMcpTools } from "../../src/lib/server/booklets/mcp-tools";
 import { bookletMcpToolsV2 } from "../../src/lib/server/booklets/mcp-tools-v2";
 import { bookletTransfers } from "../../src/lib/server/booklets/mcp-transfers";
 import { observeBookletNodeV2 } from "../../src/lib/server/booklets/observations-v2";
+import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
+import { resumeBookletRetryV2 } from "../../src/lib/server/booklets/retry-v2";
+import { bookletDomainV2 } from "../../src/project/booklets/domain";
 import { bookletMedia, type BookletAsset } from "../../src/lib/server/booklets/media";
 import { persistAiEvent, type AiJob } from "../../src/lib/server/ai/jobs";
+import { processOneAiJob } from "../../src/lib/server/ai/worker";
 import { createDifyWorkflow } from "../../src/lib/server/ai/dify";
 import { parseDifyConfig } from "../../src/lib/config/dify";
 import { submitAuthorizedDecision, type Decision } from "../../src/lib/server/runs/service";
@@ -1982,11 +1986,158 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(stored!.reviewerBinding, bindingRow.reviewer.publicationId);
           assert.equal(await db.collection("bookletAssessments").countDocuments({ productionId: production._id, callId: child.callId }), 1);
         });
+        await t.test("a confirmed failed action retries through actual Manager and MCP boundaries without replaying successful work", async () => {
+          const template = (await db.collection("bookletWork").findOne({ productionId: production._id, callId: "review-gateway" }))!;
+          const original = { ...template.requestPayload, callId: "technical-review-original", invocationId: "technical-review-original",
+            constraints: { recoveryFixture: true } };
+          const before = await successful("context", {});
+          const charged = await db.collection("consumptionCharges").countDocuments();
+          const revisions = await db.collection("bookletRevisions").countDocuments({ productionId: production._id });
+          const registered = await successful("begin_work", { action: "register", childRequest: original,
+            requestHash: fingerprint(original), targets: ["story-v2"], fence: before.fence });
+          await successful("begin_work", { action: "dispatch", callId: original.callId,
+            requestHash: fingerprint(original), fence: registered.fence });
+          const repo = bookletRepositoryV2(db, { uid: "owner", authTime: 1 }, undefined, { atomicMutations: true });
+          const outcome = async (status: "unknown" | "failed", retryable: boolean) => {
+            const p = await repo.getProduction(production._id);
+            // Explicit trusted application fixture, not a claim that Dify errors
+            // prove provider rejection or the absence of an outstanding paid call.
+            return repo.recordWorkOutcome(production._id, { key: "technical-outcome-" + status, holderId: "run-v2",
+              expectedVersion: p.version, fence: p.fenceCounter, callId: original.callId, status, retryable,
+              evidenceIds: ["trusted-offline-technical-failure"] });
+          };
+          const retried = { ...original, callId: "technical-review-retry", invocationId: "technical-review-retry",
+            items: original.items.map((item: Record<string, unknown>) => ({ ...item, itemId: "retry-item" })) };
+          await outcome("unknown", false);
+          assert.equal((await invoke("begin_work", { action: "register", childRequest: retried,
+            requestHash: fingerprint(retried), targets: ["story-v2"], retryOf: original.callId,
+            fence: (await successful("context", {})).fence })).isError, true);
+          await outcome("failed", true);
+          let current = await successful("context", {});
+          const registrationPlan = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: { action: "begin_work",
+            request_json: JSON.stringify({ action: "register", childRequest: retried, requestHash: fingerprint(retried),
+              targets: ["story-v2"], retryOf: original.callId, fence: current.fence }), reason: "Retry only the confirmed failed review" } });
+          const intent = await successful("checkpoint", JSON.parse(registrationPlan.checkpoint));
+          const readyRegistration = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(current),
+            request: registrationPlan.request, dispatch: registrationPlan.dispatch, action: "begin_work" }).request);
+          await successful("begin_work", readyRegistration);
+          const first = await repo.getWork(production._id, original.callId), retry = await repo.getWork(production._id, retried.callId);
+          assert.equal(retry.actionKey, first.actionKey);
+          assert.equal(retry.retryOrdinal, first.retryOrdinal + 1);
+          assert.equal(retry.retryNotBefore!.getTime(), first.retryNotBefore!.getTime());
+          current = await successful("context", {});
+          const waiting = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: { action: "wait",
+            request_json: JSON.stringify({ callId: retried.callId }), reason: "Wait automatically for the registered retry" } });
+          await successful("checkpoint", JSON.parse(waiting.checkpoint));
+          const graph = parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/manager/workflow.yaml", "utf8")).workflow.graph;
+          const waitTemplate = graph.nodes.find((node: { id: string }) => node.id === "retry-wait").data.form_content;
+          const formContent = waitTemplate.replace("{{#guard.waitForm#}}", waiting.waitForm);
+          const originalParent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { status: "paused",
+            "execution.status": "paused", inputs: { prompt: "booklet retry fixture" }, leaseUntil: new Date(Date.now() + 180000),
+            reviewAfter: new Date(Date.now() + 3600000) } });
+          const waitParent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          const notifications = await db.collection("notifications").countDocuments();
+          await persistAiEvent(db, waitParent, { type: "decision", nodeId: "retry-wait", title: "Automatic retry wait", token: "retry-wait-token" });
+          const decision = (await db.collection<Decision>("runDecisions").findOne({ jobId: "run-v2", nodeId: "retry-wait" }))!;
+          assert.equal(decision.applicationWait, true);
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { form: {
+            form_content: formContent, inputs: [{ type: "paragraph", output_variable_name: "response" }],
+            user_actions: [{ id: "continue", title: "Continue" }], resolved_default_values: {},
+          } } });
+          const paused = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          assert.equal(paused.applicationWait, true);
+          assert.deepEqual(bookletDomainV2.applicationWaitNodes, ["retry-wait"]);
+          assert.equal(bookletDomainV2.resumePaused, resumeBookletRetryV2);
+          assert.equal((await resumeBookletRetryV2(db, paused, new Date(retry.retryNotBefore!.getTime() - 1)))!.getTime(), retry.retryNotBefore!.getTime());
+          assert.equal((await db.collection<Decision>("runDecisions").findOne({ _id: decision._id }))!.intent, undefined);
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { "form.form_content": formContent + "changed" } });
+          assert.equal((await resumeBookletRetryV2(db, paused, retry.retryNotBefore!))!.getTime(), paused.reviewAfter.getTime());
+          await resumeBookletRetryV2(db, paused, retry.retryNotBefore!);
+          assert.equal(await db.collection("auditEvents").countDocuments({ event: "booklet-retry-wait-blocked", code: "presentation_mismatch" }), 1);
+          assert.equal((await db.collection<Decision>("runDecisions").findOne({ _id: decision._id }))!.intent, undefined);
+          await db.collection("runDecisions").updateOne({ _id: decision._id as never }, { $set: { "form.form_content": formContent } });
+          await resumeBookletRetryV2(db, { ...paused, cancelRequested: true }, retry.retryNotBefore!);
+          assert.equal((await db.collection<Decision>("runDecisions").findOne({ _id: decision._id }))!.intent, undefined);
+          await resumeBookletRetryV2(db, paused, paused.reviewAfter);
+          assert.equal((await db.collection<Decision>("runDecisions").findOne({ _id: decision._id }))!.intent, undefined);
+          await assert.rejects(submitAuthorizedDecision(db, { uid: "owner", auth_time: 1 }, paused, decision,
+            { key: randomUUID(), action: "continue", response: "manual" }, { type: "user" }), /managed by the application/);
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
+            lease: null, leaseUntil: new Date(0), nextAttemptAt: new Date(0), attempts: 0,
+          } });
+          let resumes = 0;
+          assert.equal(await processOneAiJob(db, {
+            now: () => retry.retryNotBefore!, authorize: async () => true, validateOutput: () => true,
+            provider: () => ({ start: async () => { throw Error("Retry wait must not start another workflow"); },
+              stop: async () => { throw Error("No cancellation requested"); },
+              retrieve: async () => ({ kind: "ok", value: { ...paused.execution!, status: "paused" } }),
+            }),
+            resumePaused: async (job) => { resumes++; return resumeBookletRetryV2(db, job, retry.retryNotBefore!); },
+          }), true);
+          assert.equal(resumes, 1);
+          const answered = (await db.collection<Decision>("runDecisions").findOne({ _id: decision._id }))!;
+          assert.equal(answered.status, "submitted");
+          assert.equal(answered.answerSource!.type, "application");
+          await resumeBookletRetryV2(db, paused, retry.retryNotBefore!);
+          assert.deepEqual((await db.collection<Decision>("runDecisions").findOne({ _id: decision._id }))!.intent, answered.intent);
+          assert.equal(await db.collection("notifications").countDocuments(), notifications);
+          assert.equal(await db.collection("runEvents").countDocuments({ jobId: "run-v2", "event.nodeId": "retry-wait" }), 0);
+          // Simulate the next fenced native stream after the worker released its claim.
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { lease: "fixture-worker", leaseUntil: new Date(Date.now() + 180000) } });
+          const resumedParent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          await persistAiEvent(db, resumedParent, { type: "decision-filled", nodeId: "retry-wait", action: "continue", inputs: { response: "eligible" } });
+          assert.equal((await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!.applicationWait, false);
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { status: originalParent.status,
+            "execution.status": originalParent.execution!.status } });
+          // Real MCP dispatch still uses its own authoritative wall clock; only
+          // the internal wait handler used an explicit test clock above.
+          await new Promise((resolve) => setTimeout(resolve, Math.max(0, retry.retryNotBefore!.getTime() - Date.now() + 10)));
+          current = await successful("context", {});
+          assert.equal(current.work.find((row: { callId: string }) => row.callId === retried.callId).dispatchReady, true);
+          const action = runNativeCode("manager", "guard", { context: JSON.stringify(current), decision: {
+            action: "quality-reviewer", request_json: JSON.stringify(retried), reason: "Execute the eligible retry" } });
+          const childIntent = await successful("checkpoint", JSON.parse(action.checkpoint));
+          const ready = runNativeCode("manager", "saved", { raw: { result: childIntent }, context: JSON.stringify(current),
+            request: action.request, dispatch: action.dispatch, action: "quality-reviewer" });
+          const dispatched = await successful("begin_work", JSON.parse(ready.dispatch));
+          assert.deepEqual(await successful("begin_work", JSON.parse(ready.dispatch)), dispatched);
+          const result = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: ready.request, response: { items: [{
+            itemId: "retry-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "story-v2", content: {
+              coverage: { targetIds: ["story-v2"], referencePositions: [] }, disposition: "pass", findings: [], limitations: [],
+            } }],
+          }] } }).result);
+          const parent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          await persistAiEvent(db, parent, { type: "node-observation", node: { runId: parent.runId!, id: "technical-retry-result",
+            nodeId: "child-quality-reviewer", nodeType: "tool", status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+            outputs: { json: [{ result: JSON.stringify(result) }] }, outputsTruncated: false, error: null, executionMetadata: null,
+          } }, new Date(), (job, node, session) => observeBookletNodeV2(db, job, node, session));
+          const consumed = runNativeCode("manager", "consume", { raw: { result }, action: "quality-reviewer", request: ready.request,
+            context: await successful("context", {}), version: childIntent.checkpointVersion });
+          await successful("checkpoint", JSON.parse(consumed.checkpoint));
+          assert.equal((await repo.getWork(production._id, retried.callId)).status, "succeeded");
+          assert.equal((await repo.getWork(production._id, "call-v2")).status, "succeeded");
+          assert.equal(await db.collection("bookletWork").countDocuments({ productionId: production._id, actionKey: retry.actionKey }), 2);
+          assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId: production._id }), revisions);
+          assert.equal(await db.collection("consumptionCharges").countDocuments(), charged);
+        });
         await t.test("Manager acceptance binds exact revision identity and sources without creating human or quality authority", async () => {
           const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
           const artifact = p!.subjects.flatMap((subject: { artifacts: unknown[] }) => subject.artifacts)
             .find((artifact: { id: string }) => artifact.id === "story-v2");
           const revision = await db.collection("bookletRevisions").findOne({ _id: artifact.currentRevisionId });
+          // Select explicitly through the real read/checkpoint path, independently
+          // of whichever completed action preceded this acceptance decision.
+          const selection = await successful("context", {});
+          const readPlan = runNativeCode("manager", "guard", { context: JSON.stringify(selection), decision: { action: "read_document",
+            request_json: JSON.stringify({ kind: "revision", id: revision!._id }), reason: "Read the exact revision before selection" } });
+          const readIntent = await successful("checkpoint", JSON.parse(readPlan.checkpoint));
+          const readReady = runNativeCode("manager", "saved", { raw: { result: readIntent }, context: JSON.stringify(selection),
+            request: readPlan.request, dispatch: readPlan.dispatch, action: "read_document" });
+          const document = await successful("read_document", JSON.parse(readReady.request));
+          const readResult = runNativeCode("manager", "consume", { raw: { result: document }, action: "read_document", request: readReady.request,
+            context: await successful("context", {}), version: readIntent.checkpointVersion });
+          await successful("checkpoint", JSON.parse(readResult.checkpoint));
           const assessment = await db.collection("bookletAssessments").findOne({ productionId: production._id,
             callId: "review-gateway", "assessment.mode": "text", "assessment.targetHash": revision!.contentHash });
           const newer = Array.from({ length: 9 }, (_, i) => ({ ...assessment!, _id: "text-preview-" + i as never,

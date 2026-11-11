@@ -6,6 +6,7 @@ import {
 } from "../../lib/server/booklets/context";
 import { validateBookletApproval } from "../../lib/server/booklets/lifecycle";
 import { observeBookletNodeV2 } from "../../lib/server/booklets/observations-v2";
+import { resumeBookletRetryV2 } from "../../lib/server/booklets/retry-v2";
 
 export const bookletDomain: DomainAdapter = {
   id: "booklet",
@@ -38,6 +39,8 @@ export const bookletDomainV2: DomainAdapter = {
   kind: "booklet-production",
   picker: bookletDomain.picker,
   observeNode: observeBookletNodeV2,
+  applicationWaitNodes: ["retry-wait"],
+  resumePaused: resumeBookletRetryV2,
   async own(db, uid, id, session) {
     await bookletContext(db, { uid, authTime: 0 }).owned(id, session, 2);
   },

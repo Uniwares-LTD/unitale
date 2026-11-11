@@ -28,8 +28,8 @@
     {
       "service": "manager",
       "path": "manager/workflow.yaml",
-      "sha256": "4acfce5ccb5620e759a90dc6c7b08eec3acb5c5a354dfde47517e267faf7a17f",
-      "bytes": 112632,
+      "sha256": "1efe7d7065514eaea8d5fe003172a4af02e9302c111df23ab2ca49ab80678b71",
+      "bytes": 116293,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -125,8 +125,8 @@
     6
   ],
   "review": {
-    "mode": "09.1-09.4 verified locally; 09.5 in progress; checkpoint-wide reviews pending; 01-06 reviews historical",
-    "implementationSha256": "3342964e6664b9658a025ac00d329afde394458ec12ef59a4545c125d644b6a4",
+    "mode": "09.1-09.5 verified locally; 09.6 in progress; checkpoint-wide reviews pending; 01-06 reviews historical",
+    "implementationSha256": "d6080a52fa77a260e5e26556fa33fadbe5b97e45f7fb494c29f58bd8fd3f7900",
     "independentAgentReview": false
   }
 }

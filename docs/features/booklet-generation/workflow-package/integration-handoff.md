@@ -205,8 +205,30 @@ from the validated child request, preserving ordered inputs, source/asset identi
 meaningful settings, feedback and constraints. Changed meaningful payload starts a
 new creative/corrective action only under its existing funding/correction authorization;
 it cannot masquerade as another technical attempt. requestHash still binds the exact
-per-attempt envelope as the native graph expects. Manual retry authorization, runtime
-observation, restricted reconciliation and financial checks remain 09 obligations.
+per-attempt envelope as the native graph expects. Runtime observation, restricted
+readback, explicit one-attempt authorization and financial/timing guards are now locally
+implemented; target-environment execution remains pending.
+
+Known, isolated, server-confirmed retriable failures may use the same request with a
+new call/invocation/item envelope and `retryOf` referencing the failed call. Do not
+retry successful/partial siblings. The app enforces the snapshotted allowance or one
+authenticated extra grant, unchanged action/funding identity and `retryNotBefore`.
+Manager cannot issue the extra grant. Native failures whose paid outcome cannot be
+proved remain unknown and stop; no custom provider control is required to proceed.
+
+For backoff inside a live Manager execution, the candidate now has `wait {callId}`
+and one reserved application-owned Human Input node, `retry-wait`. Unitale's v2 domain
+declares that node in `applicationWaitNodes` and implements `resumePaused` through
+the existing AI worker. Checkpoint intent selects the registered retry. The fixed
+presentation hash binds that call; the worker verifies owned work, exact native form,
+due time, cancellation/deadline and the existing journaled application decision fence.
+It submits only `continue/eligible`, never a creator answer or paid action. Ordinary
+`human` remains user-only. No production lease or reasoning poll spans the wait.
+Invalid/unavailable/ambiguous forms stay unresolved with a fixed-code audit record.
+Target import/execution must still prove native pause/reentry on this revised graph
+and remote form readback; local fake execution is not live compatibility evidence.
+Keep activation disabled until both the web application and AI worker use this v2
+domain registration; an older runtime would treat `retry-wait` as an ordinary question.
 
 The local `registerBookletWorkV2` service validates the actual creative-text
 child envelope for Planner, Manuscript, Art Director and Page Composer, checks exact

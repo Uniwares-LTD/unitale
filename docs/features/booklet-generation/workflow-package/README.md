@@ -100,125 +100,51 @@ before 348 individually inventoried source/generated/test files were removed.
 
 ## Current integration slice
 
-Checkpoint 09 preserves the Manager domain outcome as `booklet_result` and returns
-an existing sanitized Run UI `result`. Confirmed structural completion becomes success;
-unknown/partial outcomes stay partial. Pre-action checkpoint receipts supply the
-confirmed fence to action/dispatch arguments, and registration supplies the complete
-hash-bound child envelope. Provider bindings and execution switches remain disabled.
+Tasks 09.1?09.5 are locally Verified; 09.6 connected journeys is In progress and
+09.7 final review/handoff is Pending. The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
+owns exit conditions and application evidence. This summary supersedes earlier slice
+counts and pending claims; historical reviews below apply only to their recorded state.
 
-Local v2 checkpoint, index, transfer, native reconciliation, creative-text publication,
-document/history reads, text-source verification and creative-text registration/dispatch
-handlers now exist. Registration binds actual artifact responsibilities while native
-child selectors retain subject IDs and grouped revisions. Reviewer intent registration
-is now available. Text dispatch checks configured suite identity, current ownership,
-locks, funding, attempts and reported cost/execution bounds. Image references, image
-dispatch, remaining capabilities and complete recovery integration remain
-pending. The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
-owns application checks and progress; the package digest below covers only native
-YAML, fixtures and their focused compatibility test.
-Registered work now retains exact meaningful request bodies and matching native child
-results for bounded owned readback after restart. The existing worker transaction
-fences retention; it does not authorize publication, retries or another paid call.
-The separate publication guard now saves retained creative proposals by reference,
-avoiding exact-text copying. Current Manager/funding, scope, sources, locks and product
-limits are checked. Images, revalidation and native large-body hydration are now
-locally verified; final acceptance and the remaining runtime integration are pending.
+The v2 gateway supplies the sixteen Manager capabilities through actual owned,
+fenced handlers. Native Code fixtures cover private Start context, hash-bound
+registration/dispatch, large exact-text publication, all six assessment modes,
+image preparation/preflight, independently retained originals, immutable revalidation,
+authentic human-response correlation, Manager acceptance and selected-manifest
+structural completion. Checkpoints retain compact references to authoritative work;
+owned histories page beyond previews. Existing v1 behavior remains covered.
 
-Story Planner now permits a character/location description-only revision without an
-unrequested roster proposal. Initial creation still requires its roster; product
-capacity, duplicate and revision-scope checks remain. The regression failed against
-the prior exported pack node, then passed with the focused fix. No target-environment
-import or execution of this revised candidate is claimed.
+Recovery uses existing Run/commerce/worker services: durable action allowances and
+eligibility, one journaled extra retry grant after exhaustion, verified-terminal
+continuation without another purchase, and bounded accepted-work reconciliation.
+A registered retry's native `retry-wait` is resumed by the application when due,
+without a creator question, paid polling, another scheduler or an automatic successor.
+Creator questions remain separate. Unknown outcomes and unisolatable paid failures
+stop deterministically for reconciliation; successful siblings are preserved.
 
-Manager now uses the existing Run runtime's required private Start `context` text
-input, bound directly to MCP `runContext` arguments. The public request limit matches
-Run metadata (4,000 characters); authoritative brief/configuration stay in app context.
-The regression failed on the prior export and passes through the actual capability
-inspector with the supported Start metadata. This isolated binding check does not
-prove full registration while the remaining v2 tools and Human Input wiring are pending.
+Current checks: **45 compatibility tests** (11 preserved v1 and 34 native), **29 MCP**
+and **32 repository tests** pass, plus production build, post-build typecheck,
+scoped ESLint, model generation, docs/i18n/skills checks and hash/disabled-gate audit.
+A separate same-agent read-only slice review found no blocking issue. Checkpoint-wide
+reviews remain pending in 09.7. The preceding lifecycle/media slice passed 17 tests.
 
-Manager context is now bounded at 128 KiB, independently of the unchanged 64 KiB
-checkpoint cap. It preserves the entire checkpoint alongside bounded facts instead
-of introducing partial-state merging. Actual Code-node tests cover preservation and
-oversize rejection; the application transport fixture uses the existing configurable
-MCP limits documented in the handoff. Installed-plugin and remote binding readback
-remain distinct pending evidence.
+These are local handler/worker and isolated YAML Code boundaries with fake providers,
+not execution of a Dify graph. Page/layout metadata in the completion fixture is
+staged; composed creation/revision/correction/continuation journeys remain 09.6 work.
+Safe technical failure evidence is explicit in fixtures, not inferred from a provider
+error. Hidden SDK attempts/costs and unproved target failure classification remain
+accepted limitations; no provider controls or telemetry framework is added. Revised
+Dify wait/form readback and original-image conversion remain checkpoint 12 evidence.
+The UI for explicit retry, continuation and owned histories remains checkpoint 10.
 
-Paid child checkpoints now store references to exact retained work rather than copying
-full responses. Fresh work facts must confirm retention before pending intent is
-cleared. The real MCP fixture checks exact large-text publication and two successive
-checkpoint actions, including lost-reply replay. The latest fixture uses actual
-Manager/Manuscript Code nodes, guarded dispatch, native worker retention and exact
-revision publication. The package execution switch remains disabled; this is local
-boundary verification, not target Dify or provider execution.
+The managed MCP/tool publication slots and execution gates remain disabled. Activate
+only after both web and AI worker use the matching v2 domain registration and the
+separately authorized target checks pass. No deployment or paid call is claimed.
 
-Image preparation, preflight and generation now use durable registered work and native
-result retention. Generate consumes the exact retained preparation under a distinct
-call ID. The original-retention gateway matches observed files, downloads through the
-existing restricted helper and preserves independently keyed original bytes. Fixtures
-prove partial output, byte/canvas/format checks, cancellation and storage replay without
-regeneration. Originals now travel as ordered MCP image blocks, outside JSON, and the
-native Manager/Reviewer fixture verifies a saved image's exact original coverage.
-Image publication saves each selected original once, allowing separate returned
-candidates without another generation. Revalidation writes linked immutable revisions
-with unchanged content/assets and replacement sources, preserving Manager review policy.
-The local corrective-generation fixture also proves preflight, bounded dispatch,
-retention/publication and final review without resetting the image allowance.
-Specification and whole-book fixtures now verify actual registration, native
-retention and exact assessment recording. Whole-book inputs bind the selected
-immutable manifest, page-image sources and inspected originals. Manifest publication
-and revalidation now use actual handlers; page metadata remains staged, so this is
-not yet a complete page-creation journey. Actual Dify
-image-block conversion remains unverified. Registered Generate work now carries
-its exact preflight fact outside the recent assessment preview. Correction finding
-lineage is verified at registration, so older findings need not remain in that preview.
-
-Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
-tests), plus 27 MCP and 30 repository tests (the previous media slice passed 17).
-Build, typecheck, scoped lint, docs/i18n/skills checks and an
-independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
-found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
-remains imported. Tasks 09.1-09.4 are locally Verified; 09.5 is In progress.
-Its acceptance gateway/owned reader and human request/response correlation are
-locally implemented. Existing Run submission provides authenticated first-wins
-answers; uncertain submissions stay pending until trusted confirmation. Human forms
-checkpoint compact references. Manager manifest publication/revalidation is locally
-verified without a provider call or automatic completion. Explicit selected-manifest
-completion is now locally wired through native guard/checkpoint and real handlers,
-including byte verification, dependency/layout checks and full-history coverage beyond
-the preview. Page/layout metadata in that fixture is staged; full creation/revision
-journeys remain pending. Non-manifest acceptance now uses exact full-history review
-facts, including grouped targets and unchanged revalidation lineage. Owned acceptance,
-human, execution and version-labelled production histories use bounded metadata pages
-and private-field-safe document reads. Actual Dify form rendering/readback remains unverified.
-The first 09.5 slice reports a committed application completion through the existing
-native facts/gate/finish path without reasoning or repeating completion. A checkpoint
-that merely claims completion is insufficient. It passes 28 MCP and 43 compatibility
-tests; remaining failed-action retry wiring is still in progress.
-Automatic readback now runs through the existing AI-worker extension: one due work
-record, short claim, bounded failed reads/backoff and fixed-code evidence. Local
-31-repository/28-MCP tests cover late retention, exhaustion, zero retry, credential
-failure, retry-after, claim takeover and cancellation/revocation. Build/typecheck and
-documentation checks pass.
-V2 continuation/revision now invoke the existing verified-terminal flow release;
-original request receipts preserve repeat-click behavior and protect newer work.
-Failed-action retry and native failure routing remain in progress.
-The application-only explicit-retry backend is locally verified (32 repository and
-28 MCP tests): one authenticated, journaled grant permits one additional registration
-after automatic exhaustion, preserving counters and financial guards. Its UI control,
-retry timing and native routing remain pending; no new Manager MCP action was added.
-Retry timing is now locally verified: persisted eligibility uses the originating
-Run's bounded backoff/retry-after, and both native/application guards reject early
-dispatch without losing registered work. Checks pass: 32 repository, 28 MCP and 43
-compatibility tests, build/typecheck, scoped lint, docs/i18n/skills and hash audit.
-Recovery routing and the 09.5 exit audit remain in progress.
-Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
-Current
-implementation SHA-256:
-`3342964e6664b9658a025ac00d329afde394458ec12ef59a4545c125d644b6a4`.
-The digest uses the existing 13-path algorithm described below; seven YAML files total
-245,823 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
-and application-connected execution remain pending.
+Current implementation SHA-256:
+`d6080a52fa77a260e5e26556fa33fadbe5b97e45f7fb494c29f58bd8fd3f7900`.
+The existing 13-path algorithm described below covers native YAML, five fixtures and
+the compatibility test; application code and documentation are outside that digest.
+Seven YAML files total 249,484 bytes.
 
 ## Checkpoint evidence
 

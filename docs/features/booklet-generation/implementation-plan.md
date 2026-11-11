@@ -532,8 +532,8 @@ use estimated completion percentages as acceptance evidence.
 | 09.2 One complete text action | Verified | Local guarded dispatch, native usage, exact retained text/publication and compact checkpoint journey pass, including lost-reply/replay denial. Provider/target limitations remain accepted and explicitly labelled below. |
 | 09.3 Assessment and image actions | Verified | Local handler/native Code fixtures cover all six modes, correction lineage, exact preparation/preflight, original bytes, publication and revalidation. Exact assessments/coverage cannot be altered; partial results and save/attachment replay preserve originals. Live Dify conversion remains checkpoint 12 evidence. |
 | 09.4 Human decisions and completion | Verified | Authentic first-wins response correlation, exact Manager acceptance, manifest publication and structural completion pass local handler/native Code fixtures. Owned acceptance/human/execution/production histories page beyond previews and exclude private/foreign records. Actual Dify rendering remains checkpoint 12 evidence. |
-| 09.5 Bounded recovery | In progress | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
-| 09.6 Connected journeys | Pending | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
+| 09.5 Bounded recovery | Verified | Local repository/handler/worker and native Code fixtures prove durable retry eligibility, explicit retry authorization, automatic technical waits, bounded readback, terminal continuation, cancellation and replay without lost successful work or another charge. Provider-safe failure classification remains an accepted limitation; unknown/unisolatable outcomes stop for reconciliation. Creator controls remain 10. |
+| 09.6 Connected journeys | In progress | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
 | 09.7 Review and handoff | Pending | Fix blockers, apply demonstrated simplifications, run final affected checks and two consecutive clean read-only reviews on the same final state. Consolidate evidence and revise checkpoint 10 around completed interfaces, then stop before its implementation. |
 
 Execute in order; existing code from later tasks remains reusable. Verify each exit
@@ -1151,6 +1151,44 @@ native Manager prompt/guard, fixtures and package identity are refreshed togethe
 the regenerated abbreviated core diagram is unchanged. This is local timing proof,
 not proof that target provider failures are safe to repeat. Remaining: deterministic
 failed-action routing and the full 09.5 exit audit; 09.6-09.7 remain Pending.
+
+09.5 native-wait amendment: a registered, authorized retry waiting only for its
+stored eligibility should not require a creator Continue click. Reuse one native
+Human Input node `retry-wait`, declared application-owned by `booklet@2`, and the
+imported domain `resumePaused`/existing worker seam. Manager checkpoints only the
+selected registered call; the fixed native presentation is bound to that call's hash.
+The worker verifies owner/production/native decision/presentation and returns the
+stored due time, then journal-submits `continue` through the existing application
+decision source when eligible. Never answer the creator's `human` node, grant a retry,
+dispatch work, create a successor, hold a production lease, add timing settings or
+poll with reasoning. Unknown paid outcomes retain deterministic stop/reconciliation.
+Prove timing, identity, first-wins, cancellation and no creator notifications locally
+before treating this application integration as verified. Target Dify execution remains 12.
+
+09.5 exit evidence (2026-11-12): 29 MCP, 32 repository and 45 compatibility tests
+pass; production build, post-build typecheck, scoped ESLint, model generation,
+docs/i18n/skills and hash/disabled-gate checks pass. The actual worker fixture resumes
+the native call-bound wait only when eligible; changed presentation logs one fixed-code
+audit and remains unresolved. Cancellation, deadlines, user-answer denial, repeat
+submission, retained successful siblings and unchanged charges are checked. Native
+tool/LLM failures route directly to a deterministic unknown/partial stop, without
+another reasoning call. A separate same-agent read-only slice review found no blocking
+issue. Earlier slice counts/pending statements above are historical for those states.
+The task is locally Verified under the accepted provider-gap amendment: fixtures use
+explicit trusted confirmed failures; real provider errors do not prove safe retry.
+No provider classifier/control expansion is required. Revised target wait/form and
+image transport remain checkpoint 12; public recovery controls remain checkpoint 10.
+
+09.6 sequence: first compose a minimal creation-to-completion journey through actual
+handlers and native Code boundaries, using deterministic specialist responses. Then
+exercise purchased revision/correction and verified-terminal continuation on the same
+saved state, including reuse from an owned predecessor where required by R02. Reuse
+existing large-text, partial-original, human-wait, six-mode review and v1 fixtures;
+extend only missing composed behavior. Verify multi-window whole-book coverage beyond
+four pages. Do not build a graph interpreter or duplicate already-proven boundaries.
+Record precisely which fixture state is synthetic and which production entrypoints
+are exercised; stage neither page/layout content nor completion authority as proof of
+the creation journey. Fix only demonstrated behavior gaps before the 09.6 exit audit.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,
