@@ -28,8 +28,8 @@
     {
       "service": "manager",
       "path": "manager/workflow.yaml",
-      "sha256": "7beb4fa932385781a53ad6d9b4628ca5d7605b7eb5ed43cb382f5173bf5e7c07",
-      "bytes": 108474,
+      "sha256": "ca852fdb80187384267ceb4dfa6b61aae94cdad2760365e85ef70979ad5063a0",
+      "bytes": 109009,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -68,8 +68,8 @@
     {
       "service": "image-executor",
       "path": "image-executor/workflow.yaml",
-      "sha256": "f8aa0ec19d663002d388b896391bda87e3bba8a4689dfe9b2c23bc62befaed84",
-      "bytes": 27776,
+      "sha256": "e8426bf49ecabf16128463f164b0c49b118dacfab2aef95be3a0b128e2e5d593",
+      "bytes": 27920,
       "publicationId": null,
       "workflowToolId": null
     },
@@ -125,8 +125,8 @@
     6
   ],
   "review": {
-    "mode": "09.3 assessment gateway slice verified locally; 09.2 verified locally; checkpoint-wide reviews pending; 01-06 reviews historical",
-    "implementationSha256": "0f17287de18bfa65905d78aab6373392dd7f9ed19c565fff52299545db367256",
+    "mode": "09.3 preparation/preflight slice verified locally; 09.2 verified locally; checkpoint-wide reviews pending; 01-06 reviews historical",
+    "implementationSha256": "f12d7ef758238375ec0bf9c4cefb53961b8792a8cff175faec105e1862f27e7e",
     "independentAgentReview": false
   }
 }

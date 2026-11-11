@@ -696,7 +696,7 @@ export function createBookletMcpToolsV2(
     ),
     tool(
       "begin_work",
-      "Register child intent or atomically authorize configured text work after current ownership, funding, lock and usage checks. Image dispatch remains unavailable.",
+      "Register child intent or atomically authorize configured text work or unpaid image preparation. Paid image dispatch remains unavailable.",
       async (raw, s) => {
         const request = z
           .discriminatedUnion("action", [z.strictObject({
@@ -717,9 +717,10 @@ export function createBookletMcpToolsV2(
           const repo = bookletRepositoryV2(s.db, s.actor, undefined, { atomicMutations: true });
           const work = await repo.getWork(s.production._id, request.callId);
           const payload = z.object({ references: z.array(z.json()).max(0) }).safeParse(work.requestPayload);
-          if (work.category !== "paidLlm" || work.service === "manager" || work.service === "image-executor" ||
-            (work.service === "quality-reviewer" && !["text", "specification"].includes(work.operation)) || !payload.success)
-            throw bookletConflict("Only registered text work without image references is available for dispatch.");
+          const prepare = work.service === "image-executor" && work.operation === "prepare" && work.category === "nonPaid";
+          if ((!prepare && work.category !== "paidLlm") || work.service === "manager" || (work.service === "image-executor" && !prepare) ||
+            (work.service === "quality-reviewer" && !["text", "specification", "image_request"].includes(work.operation)) || !payload.success)
+            throw bookletConflict("Only registered text work or unpaid preparation without image references is available for dispatch.");
           const m = await mutation(s, "dispatchWork", request, request.fence);
           const receipt = await repo.dispatchWork(s.production._id, {
             ...m, callId: request.callId, requestHash: request.requestHash,

@@ -11,12 +11,13 @@ import { bookletRepositoryV2 } from "./repository-v2";
 import {
   workRegistrationV2Schema,
   reviewInputV2Schema,
+  type WorkV2,
 } from "./documents-v2";
 import { bookletConflict } from "./context";
 import { id, mutationSchema, type Mutation } from "./documents";
 
 // Creative responsibilities; Reviewer operations use explicit immutable scopes
-// below. Image preparation/generation registration is not yet enabled.
+// below. Image generation registration is not yet enabled.
 const operations = {
   "story-planner": {
     concept: { book: ["concept"] },
@@ -39,6 +40,14 @@ const operations = {
     paginate: { book: ["book-layout"] },
     compose: { page: ["page-spec"] },
   },
+  "image-executor": {
+    prepare: {
+      "style-sample": ["reference"],
+      character: ["reference"],
+      location: ["reference"],
+      page: ["page-image"],
+    },
+  },
 } as const;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const ids = z
@@ -54,6 +63,7 @@ const childRequest = z.strictObject({
     "art-director",
     "page-composer",
     "quality-reviewer",
+    "image-executor",
   ]),
   operation: id,
   intent: z.enum(["create", "revise"]),
@@ -130,6 +140,7 @@ export async function registerBookletWorkV2(
   if (Buffer.byteLength(JSON.stringify(request)) > 256 * 1024)
     throw bookletConflict("Child request exceeds its accepted capacity.");
   const review = request.service === "quality-reviewer";
+  const prepare = request.service === "image-executor" && request.operation === "prepare";
   const supported = (
     review ? {} : operations[request.service as keyof typeof operations]
   ) as Record<string, Readonly<Record<string, readonly string[]>>>;
@@ -147,6 +158,18 @@ export async function registerBookletWorkV2(
   )
     throw bookletConflict("Unsupported child operation.");
   const responsibilities = supported[request.operation];
+  if (prepare) {
+    if (request.items.length !== 1 || value.targets.length !== 1 || request.references.length)
+      throw bookletConflict("Prepare requires one image target; original references are not yet available.");
+    const data = request.items[0].input;
+    const specification = bookletContentV2Schema.parse(data.specification);
+    const style = bookletContentV2Schema.parse(data.style);
+    if (style.kind !== "style" ||
+      (specification.kind !== "image-spec" && specification.kind !== "page-spec") ||
+      ![specification, style].every((content) => request.sources.some((source) =>
+        source.contentHash === fingerprint(content))))
+      throw bookletConflict("Prepare requires exact selected image specification and style sources.");
+  }
   if (
     new Set(request.items.map((item) => item.itemId)).size !==
     request.items.length
@@ -236,7 +259,7 @@ export async function registerBookletWorkV2(
         );
       if (request.operation === "image_request") {
         const prepared = z
-          .object({ requestHash: hash })
+          .object({ callId: id, requestHash: hash })
           .catchall(z.json())
           .parse(scope.prepared);
         const { requestHash, ...body } = prepared;
@@ -245,6 +268,19 @@ export async function registerBookletWorkV2(
           fingerprint(body) !== requestHash
         )
           throw bookletConflict("Review requires the exact prepared request.");
+        const preparation = await db.collection<WorkV2>("bookletWork").findOne({
+          ownerId: actor.uid, productionId: p._id, callId: prepared.callId,
+          service: "image-executor", operation: "prepare", category: "nonPaid", status: "succeeded",
+        });
+        const retained = z.object({ items: z.array(z.object({ prepared: z.json() })).length(1) })
+          .safeParse(preparation?.resultPayload);
+        if (!preparation?.resultObservation || !retained.success ||
+          fingerprint(retained.data.items[0].prepared) !== fingerprint(prepared) ||
+          fingerprint([...preparation.targetIds].sort()) !== fingerprint([...scope.targetIds].sort()) ||
+          fingerprint(prepared.sources) !== fingerprint(request.sources.map(({ artifactId, revisionId, contentHash }) =>
+            ({ artifactId, revisionId, contentHash }))) ||
+          fingerprint(prepared.references) !== fingerprint(meaningful.references))
+          throw bookletConflict("Preflight must use the exact retained preparation, target, sources and ordered originals.");
       } else if (request.operation === "whole_book") {
         const manifest = await db.collection("bookletRevisions").findOne({
           ownerId: actor.uid,
@@ -368,6 +404,8 @@ export async function registerBookletWorkV2(
       throw bookletConflict(
         "Creative target must identify an artifact responsibility for the selected operation.",
       );
+    if (prepare && request.items[0].input.imageKind !== subject.kind)
+      throw bookletConflict("Prepared image kind differs from its registered target.");
     targetSubjects.add(subject.id);
     if (request.intent === "create" && artifact.kind === "roster")
       allowLocalSubjects = true;
@@ -422,7 +460,7 @@ export async function registerBookletWorkV2(
     requestHash: value.requestHash,
     requestPayload: meaningful,
     actionKey,
-    category: "paidLlm",
+    category: prepare ? "nonPaid" : "paidLlm",
     targetIds: value.targets,
     sources: request.sources.map(({ artifactId, revisionId, contentHash }) => ({
       artifactId,

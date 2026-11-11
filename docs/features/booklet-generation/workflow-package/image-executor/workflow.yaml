@@ -164,8 +164,10 @@ workflow:
                 prepared = data["prepared"]
                 if digest({k: v for k, v in prepared.items() if k != "requestHash"}) != prepared["requestHash"]:
                     raise ValueError("Prepared request changed")
-                if prepared["callId"] != r["callId"] or prepared["sources"] != sources or prepared["references"] != [identity(ref) for ref in refs]:
-                    raise ValueError("Prepared source/call/original identity changed")
+                if not prepared.get("callId") or prepared["callId"] == r["callId"]:
+                    raise ValueError("Generate requires a distinct callId from its retained Prepare")
+                if prepared["sources"] != sources or prepared["references"] != [identity(ref) for ref in refs]:
+                    raise ValueError("Prepared source/original identity changed")
                 settings = prepared["settings"]
                 if settings["mode"] != ("edit" if refs else "generate") or not 1 <= settings["count"] <= 10:
                     raise ValueError("Image mode/count mismatch")

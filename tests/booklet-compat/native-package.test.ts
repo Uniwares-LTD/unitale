@@ -723,17 +723,51 @@ test("deterministic Prepare preserves text and meaningful hash while Generate re
   r.operation = "generate";
   r.items[0].input = { prepared };
   assert.throws(
+    () => run("image-executor", "validate", {
+      request: JSON.stringify(r), execution_ready: "true",
+    }),
+    /distinct callId/,
+  );
+  r.callId = "generate-1";
+  assert.throws(
     () => run("image-executor", "validate", { request: JSON.stringify(r) }),
     /Activation blocked/,
   );
   assert.equal(run("image-executor", "validate", {
     request: JSON.stringify(r), execution_ready: "true",
   }).model, "gpt-image-2.5-sunburst");
+  assert.equal(prepared.callId, "call-1");
+  const changedSources = structuredClone(r);
+  changedSources.sources[0].revisionId = "different-revision";
+  assert.throws(() => run("image-executor", "validate", {
+    request: JSON.stringify(changedSources), execution_ready: "true",
+  }), /source\/original identity changed/);
   prepared.prompt += "changed";
   assert.throws(
     () => run("image-executor", "validate", { request: JSON.stringify(r) }),
     /request changed/,
   );
+});
+
+test("unpaid Prepare requires durable registration and checkpoints a retained work reference", () => {
+  const r = imageRequest();
+  assert.throws(() => guard(r.service, r), /Unregistered/);
+  const c = register(r);
+  c.usage.canDispatch = false;
+  const planned = guard(r.service, r, c);
+  assert.equal(planned.paid, "no");
+  assert.equal(planned.dispatchChild, "yes");
+  assert.equal(JSON.parse(planned.dispatch).callId, r.callId);
+  c.checkpoint = JSON.parse(planned.checkpoint).state;
+  const result = JSON.parse(run("image-executor", "validate", { request: JSON.stringify(r) }).result);
+  const consume = () => run("manager", "consume", { raw: { result }, action: r.service,
+    request: JSON.stringify(r), context: { result: c }, version: c.checkpointVersion });
+  assert.throws(consume, /not confirmed in retained work/);
+  Object.assign(c.work[0], { service: r.service, operation: r.operation, status: "succeeded", resultAvailable: true });
+  assert.deepEqual(JSON.parse(consume().checkpoint).state.lastResult, {
+    document: { kind: "work", id: r.callId }, requestHash: hash(r), status: "succeeded",
+  });
+  assert.throws(() => guard(r.service, r, c), /already dispatched/);
 });
 
 test("partial image outputs retain individual identities; lost results remain unknown", () => {
@@ -742,6 +776,7 @@ test("partial image outputs retain individual identities; lost results remain un
     run("image-executor", "validate", { request: JSON.stringify(r) }).result,
   ).items[0].prepared;
   r.operation = "generate";
+  r.callId = "generate-1";
   r.items[0].input = { prepared };
   const result = JSON.parse(
     run("image-executor", "generate-result", {
@@ -750,7 +785,7 @@ test("partial image outputs retain individual identities; lost results remain un
     }).result,
   );
   assert.equal(result.status, "partial");
-  assert.equal(result.items[0].outputs[0].outputKey, "call-1:0");
+  assert.equal(result.items[0].outputs[0].outputKey, "generate-1:0");
   assert.equal(
     JSON.parse(
       run("image-executor", "generate-result", { request: JSON.stringify(r) })
@@ -892,6 +927,7 @@ test("Manager requires exact preflight and whole-book actual-pixel coverage", ()
     run("image-executor", "validate", { request: JSON.stringify(r) }).result,
   ).items[0].prepared;
   r.operation = "generate";
+  r.callId = "generate-1";
   r.items[0].input = { prepared };
   const c = register(r);
   assert.throws(() => guard(r.service, r, c), /preflight/);

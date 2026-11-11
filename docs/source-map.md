@@ -87,8 +87,9 @@ and the adapter; the table does not require unrelated suites for every task.
   lifecycle calls live in `src/lib/server/booklets/lifecycle-v2.ts` and reuse existing
   commerce quote/allocation journals and shared product revision-scope checks;
   MCP and observer wiring remain checkpoint 09 work.
-  `src/lib/server/booklets/work-v2.ts` derives creative-text registration identity
-  from validated child inputs; it records intent without dispatching providers.
+  `src/lib/server/booklets/work-v2.ts` derives creative-text, review and unpaid image-preparation
+  registration identity from validated child inputs; preflight binds exact retained preparation.
+  Registration records intent without dispatching providers.
   `observations-v2.ts` retains matching child envelopes through the existing native
   worker hook; raw creative bodies stay separate from redacted diagnostic traces.
   V2 transfer reuses `mcp-transfers.ts` with server-selected versioned ownership.

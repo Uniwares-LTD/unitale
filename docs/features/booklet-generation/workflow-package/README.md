@@ -152,17 +152,22 @@ Manager/Manuscript Code nodes, guarded dispatch, native worker retention and exa
 revision publication. The package execution switch remains disabled; this is local
 boundary verification, not target Dify or provider execution.
 
-Current slice: 41/41 compatibility tests pass (11 preserved v1 and 30 native-package
-tests), plus 19 MCP and 30 repository tests. Build, typecheck, scoped test lint, docs/i18n/skills checks and an
+Unpaid image preparation now uses durable registered work and native result retention.
+Preflight can review that exact retained preparation; fabricated replacement hashes
+fail. Prepare/Generate have distinct call IDs. Original-byte bridging, paid generation
+and the remaining 09.3 image safeguards are still pending.
+
+Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
+tests), plus 20 MCP tests; the previous repository slice passed 30 tests. Build, typecheck, scoped test lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
-found and corrected container-usage normalization through Unibase PR #52; its exact
-reviewed merge is imported. Task 09.2 is locally Verified; 09.3 is In progress.
+found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge
+remains imported. Task 09.2 is locally Verified; 09.3 is In progress.
 Provider visibility/SDK and target-environment gaps remain accepted, labelled limits.
 Current
 implementation SHA-256:
-`0f17287de18bfa65905d78aab6373392dd7f9ed19c565fff52299545db367256`.
+`f12d7ef758238375ec0bf9c4cefb53961b8792a8cff175faec105e1862f27e7e`.
 The digest uses the existing 13-path algorithm described below; seven YAML files total
-241,521 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
+242,200 bytes. Earlier 01-06 reviews remain historical, and checkpoint-wide 09 reviews
 and application-connected execution remain pending.
 
 ## Checkpoint evidence

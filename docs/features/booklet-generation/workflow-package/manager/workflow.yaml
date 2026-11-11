@@ -251,7 +251,7 @@ workflow:
                 Use the focused operations in the package specification. Context selection and source identities must be explicit. No fixed persona/counts.
                 Register new subject local keys through index and substitute returned IDs. Never fabricate persisted identities.
                 Transfer/save returned proposals as immutable revisions, then obtain independent text/specification review before record_acceptance/downstream use.
-                Prepare is unpaid. It produces a final request; a distinct Generate call keeps that prepared identity and exact hash. Register work via begin_work before a paid child action.
+                Prepare is unpaid. It produces a final request; a distinct Generate call keeps that prepared identity and exact hash. Register work via begin_work before every child action, including Prepare, so native observations can retain its exact result.
                 Every image kind requires image_request pass on its exact prepared hash before Generate, and image review of actual returned original pixels afterward.
                 Only request corrections for confirmed findings, selecting the smallest target. Advisory or uncertain findings do not authorize regeneration.
                 Use correction root/family and durable counters: three text/request and one image correction after the initial attempt. Reviews do not consume corrections.
@@ -265,7 +265,7 @@ workflow:
                 Whole-book review uses windows of at most four actual pages plus explicit cross-window recurring-subject comparisons. Complete only with full actual-pixel coverage.
                 App owns structural/product/authentication/funding/fencing/counter checks; you own creative sequence, quality and human policy. No child app callbacks.
                 Use existing record/read/transfer services, bounded context and explicit capacity failures; do not invent tools or unsupported arguments.
-                Checkpoint automatically happens before/after actions. Paid child results are retained in work documents; read the checkpoint's lastResult.document for complete proposals. A checkpoint stores intent/references, not proof of execution. App work facts override stale intent.
+                Checkpoint automatically happens before/after actions. All child results are retained in work documents; read the checkpoint's lastResult.document for complete proposals or preparation. A checkpoint stores intent/references, not proof of execution. App work facts override stale intent.
                 When missing facts, exhausted corrections, unresolved evidence or no safe useful action remain, pause with a readable reason. Do not invent progress.
                 Action payloads follow integration-handoff.md. Child request_json is the complete child envelope; MCP payloads contain only that operation's arguments.
                 record_acceptance supplies contentHash and exact targetIds/assetIds. complete supplies the selected manifest {pages:[{pageId,assetId,...}], continuityPairs:[...]}.
@@ -276,7 +276,7 @@ workflow:
                 Operations: story-planner concept/outline/cast/locations; manuscript write/reconcile_characters/reconcile_locations; art-director style/sample_spec/character_spec/location_spec; page-composer paginate/compose; image-executor prepare/generate; quality-reviewer text/specification/image_request/image/whole_book/correction.
                 Source content includes kind. Read immutable sources before dispatch; use their actual contentHash and exact content. Child native handles are rebound by the graph.
                 Image prepare input: specification and style equal selected source contents, imageKind, settings {mode,model,count,canvas:{width,height},quality,background,format}, lettering (exact layout spans for pages). Include selected book-layout for page preparation.
-                Image generate input: prepared (unchanged Prepare output). Prepare/Generate share the planned generation callId. Register paid requestHash over canonical child request excluding transient native reference IDs/URLs; do not hash only the prompt.
+                Image generate input: prepared (unchanged retained Prepare output, including its callId and requestHash). Give Generate a distinct callId; never rewrite prepared.callId to the Generate identity. Register paid requestHash over canonical child request excluding transient native reference IDs/URLs; do not hash only the prompt.
                 Reviewer item input: targetIds, targetHash (exact content/request/manifest hash), referencePositions, continuityPairs where applicable; image_request includes prepared; whole_book includes pageIds; correction includes before,after,findings,visual where applicable.
                 MCP request JSON fields: read_document {kind,id,cursor?}; lease {action,fence}; index {subjects,artifacts,fence}; begin_work {action:"register",childRequest:complete_child_envelope,requestHash,targets,retryOf?,correction?,fence}; transfer {action,key,...bounded parts}; retain_original {callId,outputKey,nativeFile,fence}; save_revision {artifactId,content,sources,assets,evidence,mutationKey,fence,revalidatedFrom?}; request_human {question,targets,responseContract,presentation,fence}; record_evidence {key,content}; record_assessment {assessment,executionLocator,fence}; sources {sources,references}; reconcile_work {callId,executionLocator?}; record_acceptance {revisionId,contentHash,targetIds,assetIds,sources,evidence,fence}; complete {manifest,fence}.
                 begin_work registration supplies the actual complete childRequest, not just its hash. The app derives call/service/operation/sources/category and normalized action identity from it; never supply an actionKey or retry category. Retry changes invocation/call/item carriers only; preserve the meaningful requested operation and identify retryOf.
@@ -419,12 +419,14 @@ workflow:
                     meaningful = dict(request)
                     meaningful["references"] = [{k: v for k, v in ref.items() if k not in ("nativeFileId", "url")} for ref in request.get("references", [])]
                     request_hash = digest(meaningful)
+                    work = next((w for w in c["work"] if w.get("callId") == request.get("callId")), None)
+                    if not work or work.get("status") != "registered" or work.get("requestHash") != request_hash:
+                        raise ValueError("Unregistered/changed/already dispatched or unknown work; reconcile before replay")
+                    if c.get("cancelled") or c.get("leaseHeld"):
+                        raise ValueError("Child dispatch currently blocked")
                     if paid:
-                        if not c["usage"].get("canDispatch") or c.get("cancelled") or c.get("leaseHeld"):
+                        if not c["usage"].get("canDispatch"):
                             raise ValueError("Paid dispatch currently blocked")
-                        work = next((w for w in c["work"] if w.get("callId") == request.get("callId")), None)
-                        if not work or work.get("status") != "registered" or work.get("requestHash") != request_hash:
-                            raise ValueError("Unregistered/changed/already dispatched or unknown work; reconcile before replay")
                         correction = work.get("correction")
                         if correction:
                             chain = next((x for x in c["corrections"] if x.get("rootId") == correction.get("rootId") and x.get("family") == correction.get("family")), None)
@@ -437,6 +439,8 @@ workflow:
                     if action == "image-executor" and request.get("operation") == "generate":
                         for item in request["items"]:
                             prepared = item["input"]["prepared"]
+                            if not prepared.get("callId") or prepared["callId"] == request.get("callId"):
+                                raise ValueError("Generate requires a distinct callId from its retained Prepare")
                             if digest({k: v for k, v in prepared.items() if k != "requestHash"}) != prepared["requestHash"] or not passed("image_request", prepared["requestHash"]):
                                 raise ValueError("Exact independent preflight pass required")
                 else:
@@ -461,7 +465,7 @@ workflow:
                 checkpoint = {"expectedVersion": c["checkpointVersion"], "fence": c["fence"], "state": {**c.get("checkpoint", {}), "pending": pending}}
                 if len(canonical(checkpoint).encode("utf-8")) > 65536:
                     raise ValueError("Checkpoint capacity exceeded; transfer data first")
-                return {"action": action, "request": canonical(request), "checkpoint": canonical(checkpoint), "paid": "yes" if paid else "no", "dispatch": canonical({"action": "dispatch", "callId": request.get("callId"), "requestHash": request_hash, "fence": c["fence"]}), "sources": canonical({"sources": [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in request.get("sources", [])], "references": request.get("references", [])}), "reason": d["reason"]}
+                return {"action": action, "request": canonical(request), "checkpoint": canonical(checkpoint), "paid": "yes" if paid else "no", "dispatchChild": "yes" if action in SERVICES else "no", "dispatch": canonical({"action": "dispatch", "callId": request.get("callId"), "requestHash": request_hash, "fence": c["fence"]}), "sources": canonical({"sources": [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in request.get("sources", [])], "references": request.get("references", [])}), "reason": d["reason"]}
           variables:
             - variable: context
               value_selector:
@@ -479,6 +483,8 @@ workflow:
             checkpoint:
               type: string
             paid:
+              type: string
+            dispatchChild:
               type: string
             dispatch:
               type: string
@@ -1452,7 +1458,7 @@ workflow:
         extent: parent
         data:
           type: if-else
-          title: paid
+          title: Record child dispatch
           desc: ""
           selected: false
           isInLoop: true
@@ -1464,7 +1470,7 @@ workflow:
                 - id: "yes"
                   variable_selector:
                     - guard
-                    - paid
+                    - dispatchChild
                   varType: string
                   comparison_operator: is
                   value: "yes"
@@ -1955,7 +1961,7 @@ workflow:
                 if c["checkpointVersion"] != version:
                     raise ValueError("Checkpoint changed during external work; reconcile before applying")
                 saved_result = result
-                if action in SERVICES and not (action == "image-executor" and r.get("operation") == "prepare"):
+                if action in SERVICES:
                     pending = c.get("checkpoint", {}).get("pending") or {}
                     rows = [w for w in c.get("work", []) if w.get("callId") == r.get("callId") and w.get("requestHash") == pending.get("requestHash") and w.get("service") == action and w.get("operation") == r.get("operation")]
                     if pending.get("action") != action or pending.get("callId") != r.get("callId") or pending.get("invocationId") != r.get("invocationId") or len(rows) != 1 or rows[0].get("resultAvailable") is not True or rows[0].get("status") not in ("succeeded", "partial", "failed"):

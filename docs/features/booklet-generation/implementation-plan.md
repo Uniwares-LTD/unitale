@@ -728,9 +728,24 @@ This slice also passes 41 compatibility tests, build, post-build typecheck, scop
 docs/i18n/skills/environment checks and an independent 13-path hash audit. A separate
 same-agent read-only review (cold-review fallback) found no blocking issue in this
 addition; checkpoint-wide final review pairs remain 09.7 work.
-Build, post-build typecheck, scoped lint, environment and docs/i18n/skills checks pass.
-A separate same-agent read-only slice review (cold-review fallback) found no blocking
-issue; checkpoint-wide final reviews remain 09.7 work.
+09.3 preparation/preflight slice: unpaid Prepare now registers and dispatches through
+the existing work/receipt path (`nonPaid`), and native observations retain its exact
+result. Manager routes every child through durable dispatch and checkpoints a compact
+work reference after confirmed retention. The internal branch keeps its node ID and
+uses an explicit child-dispatch flag, separate from paid budget classification.
+Prepare and Generate now have distinct call IDs in the actual YAML/fixtures; the
+unchanged prepared object's call ID remains part of its hash. Image-request Reviewer
+registration rejects self-consistent fabricated preparations and requires the exact
+retained native preparation, targets, source tuples and ordered original identities.
+It can dispatch without original references and record its exact native assessment.
+This adds no stored fields, collections or provider controls; model JSON and diagrams
+remain structurally unaffected. Original-byte bridging, paid generation, remaining
+visual review modes, correction lineage, publication and revalidation remain 09.3 work.
+Slice evidence: 20 MCP and 42 compatibility tests pass, including preflight rejection
+before native retention, fabricated preparation, exact assessment and replay cases.
+Build, post-build typecheck, scoped lint, model/docs/i18n/skills/environment checks and
+independent 13-path hash audit pass. A separate same-agent read-only review (cold-review
+fallback) found no blocking issue in this slice; final checkpoint review pairs remain 09.7.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,

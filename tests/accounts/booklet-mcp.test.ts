@@ -1978,6 +1978,117 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(stored!.reviewerBinding, bindingRow.reviewer.publicationId);
           assert.equal(await db.collection("bookletAssessments").countDocuments({ productionId: production._id, callId: child.callId }), 1);
         });
+        await t.test("unpaid preparation uses registered native work and retains the exact prepared identity", async () => {
+          const before = await successful("context", {});
+          const indexed = await successful("index", {
+            subjects: [{ id: "sample-prepare", kind: "style-sample", label: "Style sample", pageRole: null }],
+            artifacts: [
+              { artifactId: "sample-output", subjectId: "sample-prepare", kind: "reference" },
+              { artifactId: "sample-spec", subjectId: "sample-prepare", kind: "image-spec" },
+              { artifactId: "sample-style", subjectId: "book-subject", kind: "style" },
+            ], fence: before.fence,
+          });
+          const contents = [
+            { kind: "image-spec", purpose: "Show the selected style", requiredFeatures: [], style: "watercolor" },
+            { kind: "style", direction: "warm watercolor", letteringDirection: "none", exclusions: [] },
+          ];
+          const sources = contents.map((content, i) => {
+            const row = revisionV2Schema.parse({ ...revision, _id: "prepare-source-" + i,
+              subjectId: i ? "book-subject" : "sample-prepare", artifactId: i ? "sample-style" : "sample-spec",
+              kind: content.kind, content, contentHash: fingerprint(content), sources: [], assets: [],
+            });
+            return { row, source: { artifactId: row.artifactId, revisionId: row._id, contentHash: row.contentHash, content } };
+          });
+          await db.collection("bookletRevisions").insertMany(sources.map(({ row }) => row) as never);
+          const child = { contractVersion: 2, invocationId: "prepare-invocation", callId: "prepare-action",
+            service: "image-executor", operation: "prepare", intent: "create",
+            items: [{ itemId: "prepare-item", targetId: "sample-prepare", input: {
+              imageKind: "style-sample", specification: contents[0], style: contents[1],
+              settings: { mode: "generate", model: "gpt-image-2.5-sunburst", count: 2,
+                canvas: { width: 1024, height: 1024 }, quality: "high", background: "opaque", format: "png" },
+            } }], sources: sources.map(({ source }) => source), references: [], constraints: {},
+          };
+          const request = { action: "register", childRequest: child, requestHash: fingerprint(child),
+            targets: ["sample-output"], fence: indexed.fence };
+          assert.equal((await invoke("begin_work", { ...request, targets: ["story-v2"] })).isError, true);
+          const altered = { ...child, items: [{ ...child.items[0], input: { ...child.items[0].input, style: {
+            ...contents[1], direction: "unselected" } } }] };
+          assert.equal((await invoke("begin_work", { ...request, childRequest: altered, requestHash: fingerprint(altered) })).isError, true);
+          const registered = await successful("begin_work", request);
+          assert.deepEqual(await successful("begin_work", request), registered);
+          const work = await db.collection("bookletWork").findOne({ productionId: production._id, callId: child.callId });
+          assert.equal(work!.category, "nonPaid");
+          const facts = await successful("context", {});
+          const planned = runNativeCode("manager", "guard", { context: JSON.stringify(facts), decision: {
+            action: child.service, request_json: JSON.stringify(child), reason: "Prepare the selected image without payment" } });
+          assert.equal(planned.paid, "no");
+          assert.equal(planned.dispatchChild, "yes");
+          const intent = await successful("checkpoint", JSON.parse(planned.checkpoint));
+          const ready = runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(facts),
+            request: planned.request, dispatch: planned.dispatch, action: child.service });
+          const dispatched = await successful("begin_work", JSON.parse(ready.dispatch));
+          assert.deepEqual(await successful("begin_work", JSON.parse(ready.dispatch)), dispatched);
+          const result = JSON.parse(runNativeCode("image-executor", "validate", { request: ready.request }).result);
+          const prepared = result.items[0].prepared;
+          const { requestHash, ...body } = prepared;
+          assert.equal(prepared.callId, child.callId);
+          assert.equal(requestHash, fingerprint(body));
+          const review = { ...child, invocationId: "preflight-invocation", callId: "preflight-action",
+            service: "quality-reviewer", operation: "image_request", items: [{ itemId: "preflight-item", input: {
+              targetIds: ["sample-output"], targetHash: prepared.requestHash, prepared, referencePositions: [],
+            } }] };
+          assert.equal((await invoke("begin_work", { action: "register", childRequest: review, requestHash: fingerprint(review),
+            targets: ["sample-output"], fence: dispatched.fence })).isError, true);
+          const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
+          const session = db.client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: parent!.runId!, id: "prepare-execution", nodeId: "child-image-executor", nodeType: "tool",
+            status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+            outputs: { json: [{ result: JSON.stringify(result) }] }, outputsTruncated: false, error: null, executionMetadata: null,
+          }, session)); } finally { await session.endSession(); }
+          const observed = await successful("context", {});
+          assert.equal(observed.usage.workAttempts.nonPaid, facts.usage.workAttempts.nonPaid + 1);
+          assert.equal(observed.usage.workAttempts.paidImage, facts.usage.workAttempts.paidImage);
+          const consumed = runNativeCode("manager", "consume", { raw: { result }, action: child.service,
+            request: ready.request, context: { result: observed }, version: intent.checkpointVersion });
+          const state = JSON.parse(consumed.checkpoint).state;
+          assert.deepEqual(state.lastResult.document, { kind: "work", id: child.callId });
+          assert.equal(state.lastResult.requestHash, fingerprint(child));
+          await successful("checkpoint", JSON.parse(consumed.checkpoint));
+          const retained = await db.collection("bookletWork").findOne({ productionId: production._id, callId: child.callId });
+          assert.deepEqual(retained!.resultPayload, result);
+          assert.equal((await invoke("begin_work", { action: "dispatch", callId: child.callId,
+            requestHash: fingerprint(child), fence: (await successful("context", {})).fence })).isError, true);
+          const preflight = { action: "register", childRequest: review, requestHash: fingerprint(review),
+            targets: ["sample-output"], fence: (await successful("context", {})).fence };
+          // A self-consistent prompt/hash is insufficient without the exact native preparation.
+          const forgedPrepared = { ...body, prompt: body.prompt + "changed" };
+          const forgedHash = fingerprint(forgedPrepared);
+          const forged = { ...review, items: [{ ...review.items[0], input: { ...review.items[0].input,
+            targetHash: forgedHash, prepared: { ...forgedPrepared, requestHash: forgedHash } } }] };
+          assert.equal((await invoke("begin_work", { ...preflight, childRequest: forged, requestHash: fingerprint(forged) })).isError, true);
+          const registeredReview = await successful("begin_work", preflight);
+          const reviewDispatch = await successful("begin_work", { action: "dispatch", callId: review.callId,
+            requestHash: preflight.requestHash, fence: registeredReview.fence });
+          const reviewed = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(review), response: {
+            items: [{ itemId: "preflight-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "sample-output", content: {
+              coverage: { targetIds: ["sample-output"], referencePositions: [] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          const reviewSession = db.client.startSession();
+          try { await reviewSession.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: parent!.runId!, id: "preflight-execution", nodeId: "child-quality-reviewer", nodeType: "tool",
+            status: "succeeded", retryIndex: null, iterationId: null, loopId: null,
+            outputs: { json: [{ result: JSON.stringify(reviewed) }] }, outputsTruncated: false, error: null, executionMetadata: null,
+          }, reviewSession)); } finally { await reviewSession.endSession(); }
+          const assessment = await successful("record_assessment", { assessment: reviewed.items[0].proposals[0].content,
+            executionLocator: { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "preflight-execution" },
+            fence: reviewDispatch.fence });
+          assert.equal(assessment.complete, true);
+          const accepted = await db.collection("bookletAssessments").findOne({ _id: assessment.assessmentId as never });
+          assert.equal(accepted!.assessment.targetHash, prepared.requestHash);
+          assert.equal(accepted!.assessment.requestHash, prepared.requestHash);
+        });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
           const request = { action: "acquire", fence: before!.fenceCounter };

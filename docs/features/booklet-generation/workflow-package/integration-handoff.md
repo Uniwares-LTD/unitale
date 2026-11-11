@@ -84,8 +84,11 @@ Prepare input contains exact selected source `specification` and `style` content
 `imageKind`, `settings:{mode,model,count,canvas:{width,height},quality,background,format}`
 and exact layout lettering spans. Include selected book-layout for pages. Prepare
 returns a deterministic prepared object/requestHash; Generate receives that unchanged
-object under `input.prepared`, with the same planned generation callId. No hidden paid
-preparation call. One provider call may yield several separately keyed originals.
+object under `input.prepared`. Prepare and Generate have distinct call IDs;
+`prepared.callId` identifies the preparation and stays covered by `prepared.requestHash`.
+Never replace it with the generation call ID. The application must match the prepared
+object to retained preparation before paid dispatch (09.3 integration remains pending).
+No hidden paid preparation call. One provider call may yield several separately keyed originals.
 
 Reviewer input includes `targetIds`, `targetHash`, `referencePositions` and required
 continuityPairs. Whole-book adds pageIds; image_request adds prepared; correction
@@ -223,23 +226,23 @@ Active registration rechecks the owned native Manager Run and its actual consump
 workflow/job binding in the mutation transaction. Registration records intent only.
 Dispatch now rechecks that active binding, cancellation and native execution status;
 registered unsubmitted work binds to its actual dispatching parent on continuation.
-The local project registry now exposes `booklet_checkpoint_v2` and creative-text
-registration through `booklet_begin_work_v2`, using the candidate's JSON-string
-request carrier and explicit `result` wrapper. Both require a current private native
-Manager capability and owned prepaid workflow/job binding. Checkpoints accept the
-initial fence zero; subsequent atomic writes return the advanced fence. Exact retries
-reuse existing receipts, including after later mutations. Other MCP capabilities,
-image dispatch, remaining review modes, other capabilities and runtime recovery remain
-pending. `begin_work` now supports guarded text dispatch; its configured suite must
-match the accepted Manager publication. It accepts only retained registered creative
-text or text/specification review with no image references. Image and other review
-bindings are completed in 09.3. `sources` verifies exact owned immutable text tuples
-and rejects nonempty reference lists until that image bridge exists. No workflow is
-activated by these handlers.
+The local project registry exposes `booklet_checkpoint_v2` and child registration/
+dispatch through `booklet_begin_work_v2`, using the candidate's JSON-string request
+carrier and explicit `result` wrapper. They require a current private native Manager
+capability and owned prepaid workflow/job binding. Checkpoints accept the initial fence
+zero; subsequent atomic writes return the advanced fence. Exact retries reuse existing
+receipts, including after later mutations. Dispatch's configured suite must match the
+accepted Manager publication. It accepts registered creative text, text/specification/
+image-request review and unpaid image preparation, with no image references yet.
+Preparation uses the existing work category `nonPaid`; native observations retain its
+exact result before Manager clears pending intent. Preflight registration requires that
+exact retained prepared object and its original target/source/reference identities.
+Paid image dispatch, visual review modes and runtime recovery remain pending.
+`sources` verifies exact owned immutable source tuples and rejects nonempty reference
+lists until the image bridge exists. No workflow is activated by these handlers.
 
 This storage slice is not proof of real provider execution, effective retries or
-application-connected recovery. The existing candidate still has retries/activation
-disabled and remains unchanged until the separately checked 09 integration slice.
+application-connected recovery. The candidate still has retries/activation disabled.
 
 ### Context and transition facts
 
@@ -383,13 +386,12 @@ Checkpoint writes atomically compare version/fence and persist opaque bounded st
 Before an action it contains pending action/call/item/source identities and request hash/reason;
 large request bodies stay outside the checkpoint. Preserve the prior opaque state while
 recording pending intent. Afterward it preserves that state and updates lastAction,
-lastResult and pending:null. Paid child results use `lastResult:{document:{kind:"work",id:callId},requestHash,status}`,
+lastResult and pending:null. All child results use `lastResult:{document:{kind:"work",id:callId},requestHash,status}`,
 not a copy of their full body. Before clearing pending intent, the native consume node
 requires matching call/invocation/request identity and fresh application work facts
 confirming a retained terminal result. Unknown or not-yet-retained outcomes leave the
 saved intent available for reconciliation. Read the owned work document for complete
-proposals, including partial successes. Unpaid image preparation still uses its bounded
-result until the preparation/retention path is completed in 09.3.
+proposals, including partial successes, or the exact prepared image request.
 The checkpoint fence always comes from the fresh
 authoritative context, never a child/document result field.
 Do not replace authoritative work facts with intent.
