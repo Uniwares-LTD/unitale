@@ -2475,6 +2475,104 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             fence: finalDispatch.fence })).complete, true);
           assert.equal((await successful("read_document", { kind: "correction", id: correctionMetadata.rootId })).value.used, 1);
         });
+        await t.test("specification review records only the exact retained immutable specification", async () => {
+          const current = await successful("context", {});
+          const selected = await db.collection("bookletRevisions").findOne({ _id: "prepare-source-0" as never });
+          const child = { contractVersion: 2, invocationId: "spec-review", callId: "spec-review", service: "quality-reviewer",
+            operation: "specification", intent: "create", items: [{ itemId: "spec-item", input: {
+              targetIds: ["sample-spec"], targetHash: selected!.contentHash, referencePositions: [],
+            } }], sources: [{ artifactId: selected!.artifactId, revisionId: selected!._id, contentHash: selected!.contentHash,
+              content: selected!.content }], references: [], constraints: {} };
+          const requestHash = fingerprint(child);
+          const registered = await successful("begin_work", { action: "register", childRequest: child,
+            requestHash, targets: ["sample-spec"], fence: current.fence });
+          runNativeCode("quality-reviewer", "validate", { request: JSON.stringify(child), references: [], execution_ready: "true" });
+          const dispatched = await successful("begin_work", { action: "dispatch", callId: child.callId, requestHash, fence: registered.fence });
+          const result = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(child), response: {
+            items: [{ itemId: "spec-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "sample-spec", content: {
+              coverage: { targetIds: ["sample-spec"], referencePositions: [] }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
+          const session = db.client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: parent!.runId!, id: "spec-execution", nodeId: "child-quality-reviewer", nodeType: "tool", status: "succeeded",
+            retryIndex: null, iterationId: null, loopId: null, outputs: { json: [{ result: JSON.stringify(result) }] },
+            outputsTruncated: false, error: null, executionMetadata: null,
+          }, session)); } finally { await session.endSession(); }
+          const request = { assessment: result.items[0].proposals[0].content,
+            executionLocator: { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "spec-execution" }, fence: dispatched.fence };
+          assert.equal((await invoke("record_assessment", { ...request, assessment: { ...request.assessment,
+            targetHash: "0".repeat(64) } })).isError, true);
+          const recorded = await successful("record_assessment", request);
+          assert.equal(recorded.complete, true);
+          assert.deepEqual(await successful("record_assessment", request), recorded);
+        });
+        await t.test("whole-book review binds manifest, immutable page sources and inspected originals", async () => {
+          const current = await successful("context", {});
+          const indexed = await successful("index", { subjects: [], artifacts: [
+            { subjectId: "page-v2", artifactId: "whole-page-image", kind: "page-image" },
+            { subjectId: "book-subject", artifactId: "whole-manifest", kind: "book-manifest" },
+          ], fence: current.fence });
+          const originals = await db.collection<BookletAsset>("bookletAssets").find({ productionId: production._id,
+            operationId: "generate-action", originalAssetId: null }).sort({ outputKey: 1 }).toArray();
+          const pairs = [{ pageId: "page-v2", referenceAssetId: originals[1]._id }];
+          const pageContent = { kind: "page-image", asset: { assetId: originals[0]._id, sha256: originals[0].sha256 } };
+          const manifest = { kind: "book-manifest", pages: [{ pageId: "page-v2", assetId: originals[0]._id }], continuityPairs: pairs };
+          // Owned immutable review inputs, staged independently of 09.4 publication/completion.
+          const rows = [revisionV2Schema.parse({ ...revision, _id: "whole-page-fixture", ordinal: 1,
+            artifactId: "whole-page-image", subjectId: "page-v2", kind: "page-image", content: pageContent,
+            contentHash: fingerprint(pageContent), sources: [], assets: [pageContent.asset] }),
+          revisionV2Schema.parse({ ...revision, _id: "whole-manifest-fixture", ordinal: 1,
+            artifactId: "whole-manifest", subjectId: "book-subject", kind: "book-manifest", content: manifest,
+            contentHash: fingerprint(manifest), sources: [], assets: [] })];
+          const selectedManifest = { ...rows[1], _id: "whole-manifest-selected", ordinal: 2 };
+          await db.collection("bookletRevisions").insertMany([...rows, selectedManifest] as never);
+          const references = originals.map((asset) => ({ assetId: asset._id, sha256: asset.sha256, bytes: asset.bytes }));
+          const child = { contractVersion: 2, invocationId: "whole-review", callId: "whole-review", service: "quality-reviewer",
+            operation: "whole_book", intent: "create", items: [{ itemId: "whole-item", input: {
+              targetIds: ["page-v2"], pageIds: ["page-v2"], targetHash: fingerprint(manifest), referencePositions: [0, 1], continuityPairs: pairs,
+            } }], sources: [rows[0], selectedManifest].map((row) => ({ artifactId: row.artifactId, revisionId: row._id, contentHash: row.contentHash,
+              content: row.content })), references, constraints: {} };
+          const registration = { action: "register", childRequest: child, requestHash: fingerprint(child), targets: ["page-v2"], fence: indexed.fence };
+          for (const sources of [[child.sources[0]], [child.sources[1]]]) {
+            const omitted = { ...child, sources };
+            assert.equal((await invoke("begin_work", { ...registration, childRequest: omitted, requestHash: fingerprint(omitted) })).isError, true);
+          }
+          const wrongPixels = { ...child, references: [references[1]], items: [{ ...child.items[0], input: {
+            ...child.items[0].input, referencePositions: [0] } }] };
+          assert.equal((await invoke("begin_work", { ...registration, childRequest: wrongPixels,
+            requestHash: fingerprint(wrongPixels) })).isError, true);
+          const registered = await successful("begin_work", registration);
+          const pixels = await invoke("sources", { sources: child.sources.map(({ artifactId, revisionId, contentHash }) =>
+            ({ artifactId, revisionId, contentHash })), references });
+          assert.notEqual(pixels.isError, true);
+          const files = references.map(() => ({ related_id: randomUUID() })); // Synthetic target conversion only.
+          const bound = JSON.parse(runNativeCode("manager", "bind-originals", { raw: pixels.structuredContent,
+            request: JSON.stringify(child), files }).request);
+          runNativeCode("quality-reviewer", "validate", { request: JSON.stringify(bound), references: files, execution_ready: "true" });
+          const dispatched = await successful("begin_work", { action: "dispatch", callId: child.callId,
+            requestHash: registration.requestHash, fence: registered.fence });
+          const packed = JSON.parse(runNativeCode("quality-reviewer", "pack", { request: JSON.stringify(bound), response: {
+            items: [{ itemId: "whole-item", status: "succeeded", proposals: [{ kind: "assessment", subjectId: "page-v2", content: {
+              coverage: { targetIds: ["page-v2"], referencePositions: [0, 1], continuityPairs: pairs }, disposition: "pass", findings: [], limitations: [],
+            } }] }],
+          } }).result);
+          const parent = await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" });
+          const session = db.client.startSession();
+          try { await session.withTransaction(async () => observeBookletNodeV2(db, parent!, {
+            runId: parent!.runId!, id: "whole-execution", nodeId: "child-quality-reviewer", nodeType: "tool", status: "succeeded",
+            retryIndex: null, iterationId: null, loopId: null, outputs: { json: [{ result: JSON.stringify(packed) }] },
+            outputsTruncated: false, error: null, executionMetadata: null,
+          }, session)); } finally { await session.endSession(); }
+          const request = { assessment: packed.items[0].proposals[0].content,
+            executionLocator: { runId: parent!.runId!, nodeId: "child-quality-reviewer", executionId: "whole-execution" }, fence: dispatched.fence };
+          assert.equal((await invoke("record_assessment", { ...request, assessment: { ...request.assessment,
+            coverage: { ...request.assessment.coverage, continuityPairs: [] } } })).isError, true);
+          const recorded = await successful("record_assessment", request);
+          assert.equal(recorded.complete, true);
+          assert.deepEqual(await successful("record_assessment", request), recorded);
+        });
         await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
           const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
           const request = { action: "acquire", fence: before!.fenceCounter };

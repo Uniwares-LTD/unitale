@@ -842,8 +842,33 @@ image correction. Synthetic provider results/pixels and native file handles are
 explicit fixtures; no provider or paid call occurs. The 22-test MCP suite, typecheck
 and scoped lint pass. A separate same-agent read-only review found no blocking issue.
 No runtime/schema/DSL change was needed, so prior build and package hash evidence
-remain applicable. Whole-book integration remains the outstanding 09.3 exit evidence;
+remain applicable. Whole-book integration was the remaining mode fixture at that slice;
 checkpoint-wide final review pairs remain 09.7 work.
+
+09.3 whole-book/specification slice: whole-book registration now requires the
+selected immutable manifest source and each scoped page's matching page-image
+source and inspected original. Manifest lookup uses its explicit revision ID,
+including when two revisions have equal content hashes. Actual MCP/native Code
+fixtures reject missing sources, wrong pixels and altered assessment coverage;
+exact assessment replay is stable. The specification-mode fixture likewise uses
+actual registration, dispatch, native retention and assessment recording, rejecting
+an altered target hash. The whole-book fixture stages owned page/manifest metadata;
+it is not proof of manifest publication/completion (09.4) or a fully composed
+creation journey (09.6). Native file conversion is synthetic, not target evidence.
+These are input-validation changes; persisted schemas, model JSON/diagrams and
+the package digest are unchanged.
+
+09.3 exit audit still requires fixing the native guard's use of the eight-row
+assessment preview as complete authorization history. A confirmed finding or exact
+preflight can fall outside that window. Reuse owned assessment reads/validation;
+do not raise the preview cap or add a second quality-policy framework. Completion
+and acceptance must also avoid this mistake when connected in 09.4. Until this
+is verified, 09.3 remains In progress.
+
+This slice passes 24 MCP tests, production build, post-build typecheck, scoped lint
+and docs/i18n/skills checks. A separate same-agent read-only review found no blocking
+issue in its source/manifest binding and exact-assessment changes. The known preview
+guard issue above remains open; this is not checkpoint exit or target Dify evidence.
 
 The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
 normalized duplicate observations, exact native readback, late output hydration,

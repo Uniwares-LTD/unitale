@@ -289,7 +289,13 @@ export async function registerBookletWorkV2(
         if (prepared.requestHash !== scope.targetHash)
           throw bookletConflict("Review requires the exact prepared request.");
       } else if (request.operation === "whole_book") {
+        const selectedManifest = request.sources.find(
+          (source) => source.content.kind === "book-manifest" && source.contentHash === scope.targetHash,
+        );
+        if (!selectedManifest)
+          throw bookletConflict("Whole-book review requires its selected immutable manifest source.");
         const manifest = await db.collection("bookletRevisions").findOne({
+          _id: selectedManifest.revisionId as never,
           ownerId: actor.uid,
           productionId: p._id,
           kind: "book-manifest",
@@ -305,6 +311,14 @@ export async function registerBookletWorkV2(
           scope.pageIds.some(
             (pageId) => !pages.some((page) => page.pageId === pageId),
           ) ||
+          scope.pageIds.some((pageId) => {
+            const page = pages.find((page) => page.pageId === pageId);
+            const original = request.references.find((ref) => ref.assetId === page?.assetId);
+            const subject = p.subjects.find((subject) => subject.id === pageId && subject.kind === "page");
+            return !request.sources.some((source) => source.content.kind === "page-image" &&
+              source.content.asset.assetId === page?.assetId && source.content.asset.sha256 === original?.sha256 &&
+              subject?.artifacts.some((artifact) => artifact.id === source.artifactId && artifact.kind === "page-image"));
+          }) ||
           scope.pageIds.some(
             (pageId) =>
               !scope.referencePositions.some(

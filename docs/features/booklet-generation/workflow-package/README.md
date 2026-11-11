@@ -164,11 +164,15 @@ candidates without another generation. Revalidation writes linked immutable revi
 with unchanged content/assets and replacement sources, preserving Manager review policy.
 The local corrective-generation fixture also proves preflight, bounded dispatch,
 retention/publication and final review without resetting the image allowance.
-Whole-book integration remains 09.3 work;
-actual Dify image-block conversion remains unverified.
+Specification and whole-book fixtures now verify actual registration, native
+retention and exact assessment recording. Whole-book inputs bind the selected
+immutable manifest, page-image sources and inspected originals; page/manifest
+metadata is staged, so publication/completion remains 09.4 evidence. Actual Dify
+image-block conversion remains unverified. The bounded-assessment preview guard
+still needs correction before 09.3 can be marked Verified.
 
 Current slice: 42/42 compatibility tests pass (11 preserved v1 and 31 native-package
-tests), plus 22 MCP and 30 repository tests (the previous media slice passed 17).
+tests), plus 24 MCP and 30 repository tests (the previous media slice passed 17).
 Build, typecheck, scoped lint, docs/i18n/skills checks and an
 independent hash audit pass. A separate same-agent read-only review (cold-review fallback)
 found no blocking issue in this slice. The previously reviewed Unibase PR #52 merge

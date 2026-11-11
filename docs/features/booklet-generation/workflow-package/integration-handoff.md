@@ -355,7 +355,11 @@ Source previews are navigational facts, not a complete authorization list. The a
 validates owned source tuples at registration, and the native guard matches the full
 meaningful registered request hash before a paid child call while checking exact
 source-content hashes. Review/preflight/whole-book guard integration must likewise
-avoid treating bounded assessment previews as complete history in 09.3/09.6.
+avoid treating bounded assessment previews as complete history; this remains a
+09.3 exit item, including the subsequent acceptance/completion wiring in 09.4.
+Whole-book registration requires the explicitly selected immutable manifest source
+and every scoped page's matching page-image source and original. An equal content
+hash on another manifest revision does not change which revision is supplied.
 These selections are not complete history or product limits. Context additionally
 selects registered checkpoint-pending work outside its recent window. Follow
 `workHistoryDocument` and `assessmentHistoryDocument` through `read_document` using
