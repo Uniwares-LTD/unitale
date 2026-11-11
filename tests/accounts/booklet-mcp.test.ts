@@ -1053,6 +1053,10 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
         assert.equal(saved.checkpointVersion, 1);
         assert.equal(saved.fence, 1);
         assert.deepEqual(await successful("checkpoint", checkpoint), saved);
+        const savedCheckpoint = await successful("read_document", { kind: "checkpoint", id: production._id });
+        assert.equal(savedCheckpoint.complete, true);
+        assert.deepEqual(savedCheckpoint.value, { checkpointVersion: 1, state: checkpoint.state });
+        assert.equal((await invoke("read_document", { kind: "checkpoint", id: "foreign-production" })).isError, true);
         const childRequest = {
           contractVersion: 2,
           invocationId: "invocation-v2",
@@ -1621,6 +1625,35 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(stored!.provenance.operationId, "call-v2");
           assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId: production._id,
             artifactId: "story-v2", "provenance.operationId": "call-v2" }), 1);
+        });
+        await t.test("v2 lease refreshes replayable fences without blocking the next write", async () => {
+          const before = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const request = { action: "acquire", fence: before!.fenceCounter };
+          const acquired = await successful("lease", request);
+          assert.equal(acquired.fence, before!.fenceCounter + 1);
+          assert.equal(acquired.leaseHeld, false);
+          assert.deepEqual(await successful("lease", request), acquired);
+          const renewed = await successful("lease", { action: "renew", fence: acquired.fence });
+          const released = await successful("lease", { action: "release", fence: renewed.fence });
+          assert.equal((await invoke("lease", { action: "acquire", fence: 0 })).isError, true);
+          const current = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          assert.equal(current!.mutationLease, null);
+          const saved = await successful("checkpoint", { expectedVersion: current!.checkpointVersion,
+            fence: released.fence, state: { step: "after-fence-refresh" } });
+          assert.equal(saved.fence, released.fence + 1);
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: {
+            mutationLease: { holderId: "other-run", fence: saved.fence, expiresAt: new Date(Date.now() + 60000) },
+          } });
+          assert.equal((await invoke("lease", { action: "acquire", fence: saved.fence })).isError, true);
+          const held = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          assert.equal(held!.fenceCounter, saved.fence);
+          assert.equal(held!.mutationLease.holderId, "other-run");
+          await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { mutationLease: null } });
+          const largeState = { exact: "\u0645\u0631\u062d\u0628\u0627 \ud83d\ude00\n".repeat(1500) };
+          await successful("checkpoint", { expectedVersion: saved.checkpointVersion, fence: saved.fence, state: largeState });
+          const largeRead = await successful("read_document", { kind: "checkpoint", id: production._id });
+          assert.equal(largeRead.complete, false);
+          assert.ok(largeRead.sections.some((section: { key: string; cursor?: string }) => section.key === "state" && section.cursor));
         });
         for (const change of [
           { cancelRequested: true },

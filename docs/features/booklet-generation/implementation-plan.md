@@ -517,6 +517,61 @@ no code if all seams suffice. Do not claim an external required reviewer can be 
 
 ### 09 - Unitale Gateway & Recovery
 
+#### Sequential execution and progress
+
+The accepted remaining-work sequence is 09.1–09.7 below. Baseline: `d294935`.
+Reuse the delivered foundation described below; passing foundation tests do not
+establish a complete application-connected journey. Track tasks as Pending,
+In progress or Verified, with one task active at a time. Report task ID, intended
+outcome, changes/checks and remaining work at each implementation point. Do not
+use estimated completion percentages as acceptance evidence.
+
+| Task | State | Required outcome and exit evidence |
+| --- | --- | --- |
+| 09.1 Manager context and bindings | In progress | Reuse server-owned suite/Reviewer configuration, ownership, typed reads and lease primitives. Bounded context/source references exclude private bindings; foreign identities fail and actual configured identities are validated. |
+| 09.2 One complete text action | Pending | Finish register/dispatch safeguards and trusted usage, including Manager reasoning without parent/child double counting. Actual gateway/YAML boundaries complete a deterministic child, retain and publish exact text, and advance a compact checkpoint. Lost replies never repeat execution or publication. |
+| 09.3 Assessment and image actions | Pending | Complete assessment gateway/all six modes, correction-finding lineage, preparation/preflight, verified originals, image publication and revalidation. Exact retained assessments/coverage cannot be altered; partial results survive and attachment/save retries never regenerate. |
+| 09.4 Human decisions and completion | Pending | Connect existing authentic first-wins decisions, Manager acceptance, manifest drafts, structural completion and backend history reads. Correct requests resume; stale responses and invalid purchased structures fail without partial finalization. |
+| 09.5 Bounded recovery | Pending | Wire accepted action retries, reconciliation/backoff and retry/continue/stop through existing worker/native failure routes. Prove unknown outcomes, late results, exhaustion, repeated clicks and cancellation preserve successful work, liability, counters and prepaid scope. |
+| 09.6 Connected journeys | Pending | Complete native bindings and deterministic creation/revision/correction/continuation/completion journeys through actual handlers and YAML boundaries. Cover all review modes, large text, originals, human waits and partial results; preserve v1/unrelated Runs. |
+| 09.7 Review and handoff | Pending | Fix blockers, apply demonstrated simplifications, run final affected checks and two consecutive clean read-only reviews on the same final state. Consolidate evidence and revise checkpoint 10 around completed interfaces, then stop before its implementation. |
+
+Execute in order; existing code from later tasks remains reusable. Verify each exit
+before marking its task Verified. Within a task implement coherent slices, run focused
+checks and record concise evidence here; reserve full checkpoint review pairs for 09.7.
+Routine implementation choices need no further approval. Demonstrate a named behavior
+gap before adding an interface, persisted field or abstraction, and record the smallest
+necessary amendment here. No speculative scaffolding, framework, generator, scheduler,
+dependency, custom provider plugin, dashboard or additional tracking hierarchy.
+
+For 09.3, preparation and generation use distinct action/call IDs. Generation consumes
+the exact retained prepared request, including its preparation identity. Replace the
+candidate's same-call-ID equality check and its focused fixtures together, preserving
+prepared/source/reference hash checks. This resolves the demonstrated collision with
+the existing unique work call identity without introducing phase records.
+
+All accepted retry/reconciliation, financial, human and ownership decisions above
+remain binding. Manager owns creative orchestration; application guards remain
+structural/financial, not replacement quality policy. Use local fixtures/fake providers.
+Default to no further Unibase changes; demonstrated generic gaps originate there and
+enter Unitale through reviewed template integration. Continue independent local work
+when an external capability blocks a dependent path; never weaken its exit criteria.
+Scope B covers local implementation. Deployments, paid calls and live activation stay
+behind scope C at checkpoint 12; no preliminary tunnel or checkpoint 10 UI work.
+
+#### Delivered foundation and current evidence
+
+09.1 slice: the v2 lease adapter uses the existing atomic mutation/receipt mechanism
+to refresh a fence and return `leaseHeld:false` for acquire/renew/release. Every later
+write still checks its own fence. Held repository leases block refresh and remain
+unchanged; no lock spans a workflow call. Context and suite binding remain pending,
+so 09.1 is not Verified. This adds no persisted field; model JSON and diagrams remain
+applicable. Focused gateway coverage checks replay, stale fences and the next write.
+The same document reader now exposes owned `{checkpointVersion,state}` via
+`kind:checkpoint`, allowing cursor-based reads of large saved state without a new
+storage field. Thirteen MCP tests pass, including large checkpoint sections and
+foreign-production rejection; scoped lint and documentation checks pass.
+
 In progress; not ready for activation. Checkpoint 07 storage and checkpoint 08 shared
 seams are complete locally. Current 09 implementation provides:
 
@@ -567,7 +622,7 @@ seams are complete locally. Current 09 implementation provides:
   No Unibase extension was needed. Full registration still requires the remaining
   tools and Human Input integration; revised candidate import/execution remains pending.
 
-The exposed v2 tools are checkpoint, index, transfer, creative-text/Reviewer work registration,
+The exposed v2 tools are lease/fence refresh, checkpoint, index, transfer, creative-text/Reviewer work registration,
 native work reconciliation, creative-text publication and the partial document reader.
 Registration does not authorize paid dispatch. Automatic recovery, image publication/reviews,
 human decisions and accounting remain incomplete. There is no complete application-connected

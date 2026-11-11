@@ -113,7 +113,10 @@ that exact wrapper before binding; unexpected wrappers fail closed.
 V2 read_document returns decoded, typed JSON sections with completeness/cursor metadata.
 Reuse existing bounded storage reads, but keep byte/base64 transport outside the model:
 Manager must not reconstruct base64 chunks or invent content from an incomplete section.
-The local `booklet_read_document_v2` now reads owned production, revision, work and assessment DTOs.
+The local `booklet_read_document_v2` now reads owned production, checkpoint, revision, work and assessment DTOs.
+`kind:checkpoint` uses the current production ID and exposes only
+`{checkpointVersion,state}` through the same bounded section/cursor reader. Large
+saved state can therefore be referenced without filling the entire Manager context.
 `kind:production` uses the current production ID and exposes only its brief, creative
 configuration, subjects, locks, state/version, manifest pointer and expiry. Order,
 owner, lease and private checkpoint fields are excluded. This uses the same bounded
@@ -144,7 +147,7 @@ reuse that artifact ID. A rejected batch rolls back its entries and fence togeth
 | --- | --- | --- |
 | context | `{}` -> bounded facts below | existing context + owned production/read services |
 | read_document | kind,id,cursor? -> immutable body or bounded history page | existing chunked reads; add human_response/work/assessment/execution kinds |
-| lease | action,fence -> current Run-owned fence | existing acquire/renew/release |
+| lease | action,fence -> current Run-owned fence,leaseHeld:false | atomic gateway fence refresh; no held lease across calls |
 | index | subjects,artifacts,fence -> stable ID map | existing embedded production index |
 | begin_work | register: childRequest,requestHash,targets,retryOf?,correction?,fence; dispatch: callId,requestHash,fence -> callId,requestHash,status,fence | derive identity/category/sources from the complete validated child request; durable correction/usage checks |
 | transfer | action,key and bounded parts -> verified transfer receipt | existing transfer storage/integrity/capacity |
@@ -158,6 +161,13 @@ reuse that artifact ID. A rejected batch rolls back its entries and fence togeth
 | record_acceptance | revisionId,contentHash,targetIds,assetIds,sources,evidence,fence -> Manager selection | separate Manager selection from authenticated human apply_decision |
 | checkpoint | expectedVersion,fence,state -> checkpointVersion,fence | small opaque CAS record on owned production; return authoritative post-write fence; no scheduling |
 | complete | manifest,fence -> status complete only after structural/product checks | existing completion, removing app quality/human-policy gates for v2 |
+
+For the local v2 atomic gateway, lease actions `acquire`, `renew` and `release` each
+check and advance the current fence in one transaction, with an exact replay receipt.
+They leave `leaseHeld:false`; subsequent writes validate and advance their own fence.
+A live repository lease blocks refresh rather than being stolen. Existing repository
+held-lease operations and v1 semantics are unchanged. This avoids introducing a second
+lock around the already atomic local writes or carrying a lock across a Dify call.
 
 This is a versioned boundary proposal, not a demand to replace all v1 handlers. Keep
 v1 tools on old bindings; register only v2 on this Manager. Preserve catalog bounds,

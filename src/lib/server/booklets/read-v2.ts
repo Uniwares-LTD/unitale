@@ -9,7 +9,14 @@ import { bookletConflict, bookletMissing } from "./context";
 import { id } from "./documents";
 
 export const bookletReadV2Schema = z.strictObject({
-  kind: z.enum(["production", "revision", "work", "assessment", "history"]),
+  kind: z.enum([
+    "production",
+    "checkpoint",
+    "revision",
+    "work",
+    "assessment",
+    "history",
+  ]),
   id,
   cursor: z.string().max(16384).optional(),
 });
@@ -130,7 +137,14 @@ export async function readBookletDocumentV2(
     };
   }
   let document: unknown;
-  if (request.kind === "production") {
+  if (request.kind === "checkpoint") {
+    if (request.id !== productionId) throw bookletMissing();
+    const row = await repo.getProduction(productionId);
+    document = {
+      checkpointVersion: row.checkpointVersion,
+      state: row.checkpoint,
+    };
+  } else if (request.kind === "production") {
     if (request.id !== productionId) throw bookletMissing();
     const row = await repo.getProduction(productionId);
     document = {

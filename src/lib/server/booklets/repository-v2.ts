@@ -1625,6 +1625,20 @@ export function bookletRepositoryV2(
         },
       );
     },
+    refreshFence(productionId: string, input: Mutation) {
+      if (!options.atomicMutations)
+        throw bookletConflict("Fence refresh requires atomic gateway writes.");
+      const value = mutationInput.parse(input);
+      return mutate(
+        productionId,
+        value,
+        "refreshFence",
+        value,
+        async (p, session) => {
+          await activeManager(p, value.holderId, value.holderId, session);
+        },
+      );
+    },
     async acquireLease(
       productionId: string,
       input: {

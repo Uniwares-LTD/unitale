@@ -158,6 +158,23 @@ export function createBookletMcpToolsV2(
   }
   return [
     tool(
+      "lease",
+      "Refresh the Run-owned mutation fence atomically. Acquire, renew and release hold no lease between tool calls; every write checks its fence independently.",
+      async (raw, s) => {
+        const request = z
+          .strictObject({
+            action: z.enum(["acquire", "renew", "release"]),
+            fence: count,
+          })
+          .parse(raw);
+        const m = await mutation(s, "refreshFence", request, request.fence);
+        const receipt = await bookletRepositoryV2(s.db, s.actor, undefined, {
+          atomicMutations: true,
+        }).refreshFence(s.production._id, m);
+        return { ...receipt, leaseHeld: false };
+      },
+    ),
+    tool(
       "save_revision",
       "Publish an exact retained creative proposal with trusted producer evidence, current funding and locks. Prefer content {callId,itemId,proposalIndex} to avoid copying model text; typed JSON and complete {transferId} payloads are also supported.",
       async (raw, s) => {
