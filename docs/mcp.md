@@ -531,7 +531,8 @@ separate candidate revisions without another generation. Revalidation accepts
 `revalidatedFrom` with unchanged assets, replacement sources and retained producer
 or exact-context review evidence; content can be omitted for server-side reuse.
 It writes immutable lineage and grants no acceptance or new provider dispatch.
-Final acceptance remains pending.
+Manager acceptance and selected-manifest structural completion are locally implemented
+and fixture-tested; actual target acceptance remains pending at checkpoint 12.
 
 The `booklets` server extension registers these private v1 tools on the existing
 `/api/mcp`. One service credential with `extension:booklets:read` and

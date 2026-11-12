@@ -19,17 +19,20 @@ local candidate is complete on `feature/10-dify-workflow-design` from `713da2d`.
 The [candidate README](features/booklet-generation/workflow-package/README.md)
 records current checks/reviews. Follow the
 [compatibility runbook](features/booklet-generation/workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
-before relying on target bindings; checkpoint 09 application integration is in progress.
+before relying on target bindings; checkpoint 09 is Verified locally.
 
 The user subsequently requested committing the reviewed candidate/plan and executing
 approved scope B. Baseline committed as `2dc7b8c`; 07 local storage is complete and reviewed,
-with the 08 shared-runtime import verified at `2873e60`; 09 gateway/recovery is next.
+with reviewed 08 imports through Unibase `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`.
+Tasks 09.1-09.7 are Verified locally; checkpoint 10 remains unimplemented.
+The active goal stops before checkpoint 10 implementation.
 Live operations, scope C and paid calls remain gated. The
 [remaining 07-12 plan](features/booklet-generation/implementation-plan.md#remaining-implementation-kickoff-and-ownership)
 aligns T18-T21, fixes Unitale/Unibase ownership and groups approvals at kickoff/final
 acceptance. It includes snapshotted action retries (LLM 2, image 0, retriable non-paid 3),
 automatic evidence reconciliation, preserved correction counters and explicit retry/
-continuation controls. These are planned changes, not current runtime capabilities.
+continuation controls. The local backend/native Code boundaries are implemented and
+fixture-tested; creator controls/admin settings remain checkpoint 10, target execution 12.
 T18-T20 candidates are locally implemented; integration/acceptance remains pending.
 T21 includes all six creator outcomes through existing Run UI, including quote/consent
 and accessible history. Earlier authorization covered DSL-first workflows, essential
@@ -43,8 +46,9 @@ initial stop at the validated Dify/provider handoff. Scope B for minimal checkpo
 07-11 is now approved, including scoped commits/pushes/PRs/merges/imports after checks.
 Checkpoint 07 v2 content/revision/work/assessment/acceptance/checkpoint storage is
 complete locally, with unchanged v1 behavior. Checkpoint 08 imports reviewed Unibase
-PRs #49/#50 at exact revision `98b77fd1926bc38cefa172a1c90e4735597ca6db`;
-application-specific integration remains 09-11. No temporary tunnel
+PRs #49/#50/#52 through exact revision `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`;
+local gateway/recovery and final 09.7 reviews pass, with 10-12
+creator UI/integration/acceptance remaining. No temporary tunnel
 is planned: local MCP contract checks precede live conversion proof in 12. Scope C
 remains pending, with a selected US$3 future provider cap and no spending approval. The user authorized
 committing/pushing this candidate and updating issue #10 on 2026-11-09; that does

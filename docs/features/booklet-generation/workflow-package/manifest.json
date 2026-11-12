@@ -113,7 +113,7 @@
   ],
   "activationBlockers": [
     "Shared-provider import/configuration/export readback passed for all seven disabled candidates; revised-binding execution and full application acceptance remain pending.",
-    "Unitale managed MCP/retention, actual Manager journeys, authenticated response correlation, durable continuation and trusted observations are not verified."
+    "Local Unitale MCP/retention, authenticated responses, durable continuation and trusted observations pass fixtures; actual application-connected Dify Manager execution and deployed image conversion remain unverified."
   ],
   "stagingEvidence": "README.md#historical-no-money-staging-evidence",
   "localCheckpointCompletion": [
@@ -125,7 +125,7 @@
     6
   ],
   "review": {
-    "mode": "09.1-09.6 verified locally; 09.7 in progress; checkpoint-wide reviews pending; 01-06 reviews historical",
+    "mode": "09.1-09.7 verified locally; two clean same-agent whole-package reviews; 01-06 reviews historical",
     "implementationSha256": "87e7875505486d6e6edc7992720f19501043ae8f7d1878bfeb93a2a37da41911",
     "independentAgentReview": false
   }

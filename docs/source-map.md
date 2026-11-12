@@ -30,16 +30,15 @@ and the adapter; the table does not require unrelated suites for every task.
   [remaining 07-12 plan](features/booklet-generation/implementation-plan.md#remaining-implementation-kickoff-and-ownership)
   maps T18-T21, Unitale/Unibase ownership and approval gates; its
   [retry/reconciliation policy](features/booklet-generation/implementation-plan.md#action-retries-and-automatic-reconciliation)
-  owns planned defaults and recovery semantics. The current amendment is documentation
-  only at its original checkpoint; 07 storage is now implemented locally and reviewed.
-  Shared runtime seams are imported and locally verified in 08; application integration remains 09-11.
+  owns accepted defaults and recovery semantics. Storage and reviewed shared seams are
+  delivered in 07-08; local gateway/recovery tasks 09.1-09.7 are Verified, and the sequenced 10 plan covers creator UI/admin settings.
   [Workflow package design](features/booklet-generation/workflow-design.md) owns
   issue #10's accepted Manager/app/service boundaries, integration gap assessment and
   open contract decisions. It distinguishes the target from current application code.
   The [candidate package](features/booklet-generation/workflow-package/README.md)
   contains readable native Dify YAML, essential inline checks and source provenance;
   its [integration handoff](features/booklet-generation/workflow-package/integration-handoff.md)
-  records proposed application deltas without runtime registration.
+  records implemented local boundaries separately from pending UI and target acceptance.
   Official provider plugins are configuration dependencies; no custom provider package
   or workflow authoring framework is delivered. Target capabilities remain pending.
   The handoff also links the bounded offline-tested upstream patch for demonstrated
@@ -56,7 +55,7 @@ and the adapter; the table does not require unrelated suites for every task.
   application integration and staging acceptance. Its execution procedure owns slice
   order, two-pass review, evidence/resume records and dependency reassessment.
   Package boundaries describe the target integration; 07 implements opt-in v2 storage
-  in the model docs, with application-specific runtime wiring remaining in 09-11. The package integration handoff is created in 01 and
+  in the model docs, with local application runtime wiring verified through 09.6 and UI/target evidence pending. The package integration handoff is created in 01 and
   closed in 06, without a second application implementation queue.
   [Implementation-readiness audit](features/booklet-generation/workflow-design.md#implementation-readiness-audit)
   maps A01-A22 to selected technical resolutions and their remaining verification gates.
@@ -70,7 +69,7 @@ and the adapter; the table does not require unrelated suites for every task.
   [v2 repository](../src/lib/server/booklets/repository-v2.ts) are opt-in 07 work,
   preserving strict v1 readers and records. V2 work, scoped assessments and Manager
   acceptance use project-owned collections and the index-only 0004 migration; trusted
-  runtime/tool wiring remains pending.
+  runtime/tool wiring is locally verified through 09.6; target execution remains pending.
   `src/project/booklets/extension.ts` and `server.ts` own registration.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
@@ -89,7 +88,7 @@ and the adapter; the table does not require unrelated suites for every task.
   domain version; both adapters reject generic Run-start admission. V2 financial
   lifecycle calls live in `src/lib/server/booklets/lifecycle-v2.ts` and reuse existing
   commerce quote/allocation journals and shared product revision-scope checks;
-  MCP and observer wiring remain checkpoint 09 work.
+  MCP and observer wiring are implemented and locally fixture-tested in 09.
   `src/lib/server/booklets/work-v2.ts` derives creative-text, review and image-action
   registration identity from validated child inputs; preflight binds exact retained preparation.
   Registration records intent without dispatching providers.

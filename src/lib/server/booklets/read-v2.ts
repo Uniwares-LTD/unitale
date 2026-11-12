@@ -389,7 +389,8 @@ export async function readBookletDocumentV2(
       brief: row.brief,
       creativeConfig: row.creativeConfigSnapshot,
       subjects: row.subjects,
-      stageLocks: row.stageLocks,
+      stageLocks: Object.fromEntries(Object.entries(row.stageLocks).map(([stage, lock]) =>
+        [stage, lock ? { ...lock, lockedAt: lock.lockedAt.toISOString() } : null])),
       currentManifestRevisionId: row.currentManifestRevisionId,
       expiresAt: row.expiresAt?.toISOString() ?? null,
     };

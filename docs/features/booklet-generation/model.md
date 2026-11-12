@@ -70,7 +70,8 @@ The same text producer/artifact publishes once, including across continuation.
 Image writes now match a selected original from observed Generate work, using its
 exact sources, funding and evidence. Each original/artifact publishes once; several
 returned originals may have distinct candidate revisions without another generation.
-Acceptance wiring remains checkpoint 09 work; revalidation is locally verified below.
+Manager acceptance, structural completion and revalidation wiring are locally verified
+in 09; actual application-connected Dify execution remains checkpoint 12 evidence.
 
 V2 revisions gain optional `revalidatedFrom`
 lineage to an owned revision of the same artifact. The write preserves exact
@@ -156,7 +157,8 @@ inside its transaction. Dispatch repeats the same checks, including cancellation
 native execution status, before changing a registered intent to dispatching. A registered,
 unsubmitted intent may bind to the current admitted successor; its work `runId` then
 records that dispatching parent. Previously dispatched work remains non-replayable.
-Dispatch usage/lock checks and trusted provider outcomes remain pending.
+Dispatch usage/lock checks and trusted native outcome retention are locally verified
+in 09; hidden provider SDK attempts and incomplete costs remain accepted unknowns.
 Work may additionally retain `requestPayload`, the exact meaningful request JSON,
 capped at 256 KiB and verified against `requestHash`. Creative registration stores
 it in the same transaction as intent, excluding only renewable reference URLs/native
@@ -170,7 +172,8 @@ compare distinct revisions of one artifact; duplicate source tuples fail. Reques
 assessment writes match the selected item's scope and exact retained native proposal.
 Legacy metadata-only server records retain their existing behavior. No persisted fields
 changed, so the JSON example and both diagrams remain structurally unchanged. Image
-registration, the assessment MCP gateway and complete runtime wiring remain 09 work.
+registration, the assessment MCP gateway and bounded recovery are locally verified
+in 09. Actual Dify execution remains 12.
 Native Manager `decide` observations also use the existing work fields for durable
 paid LLM attempt facts. Their request body is unobserved; the metadata hash is not a
 prompt hash. Successful complete bounded outputs may be retained; failed reasoning
@@ -187,8 +190,10 @@ It uses the existing worker transaction and redacted trace storage. Exact creati
 bodies stay separate from diagnostic redaction. Truncated or unrelated output does
 not establish a terminal result. Duplicate observations are idempotent; conflicting
 terminal bodies fail. Retention may finish after cancellation, without granting
-dispatch, publication, acceptance or retry authority. Failure classification,
-reconciliation and integration proof remain checkpoint 09 work.
+dispatch, publication, acceptance or retry authority. Bounded worker reconciliation
+is locally verified in 09. Safe provider-failure classification remains an accepted
+limitation; absent explicit evidence, outcomes stay unknown and cannot be replayed.
+Actual target integration proof remains 12.
 Correction roots bind task, target
 and funding identity. Counts derive from distinct dispatched corrective actions;
 technical retries reuse an action key. No separate correction-budget collection.

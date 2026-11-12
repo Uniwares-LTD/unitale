@@ -38,7 +38,7 @@ provider handoff. Scope B was later approved on 2026-11-10 for minimal 07-11 wor
 and scoped code publication/imports after checks/reviews; 07 storage is locally complete.
 The [approval register](workflow-package/integration-handoff.md#approval-register) owns
 current limits: no tunnel; scope C pending; US$3 selected for future acceptance, not
-current spending authorization. Scope B execution is active; runtime integration and scope C remain pending.
+current spending authorization. Scope B execution is active; 09 is locally verified; creator UI and target acceptance remain pending.
 A bounded test-only
 exception permits namespaced copies of the submitted official-plugin fixes: identical
 runtime code, metadata-only identity changes, preserving shared experiment plugins.
@@ -177,8 +177,9 @@ history through existing Run UI. No separate creator workspace is required.
 ## Integration gap assessment
 
 Source-inspected baseline: Unitale `f269357d302eff53702c8c51d3a26cce900e43f8`.
-These are current gaps, not implemented fixes or a second task queue. Proposed
-resolutions must be checked against the accepted ownership boundary above.
+The table records historical gaps at that source baseline, not current pending work
+or a second task queue. Current local closure and remaining evidence follow it.
+Resolutions remain subject to the accepted ownership boundary above.
 
 | ID | Current evidence | Required contract/integration work |
 | --- | --- | --- |
@@ -203,12 +204,30 @@ resolutions must be checked against the accepted ownership boundary above.
 Booklet changes belong in project extensions. If Run/card/transport extension points
 need reusable core changes, implement them in Unibase and import through reviewed
 template integration. An upstream dependency is not permission to patch copied core
-locally or publish changes. A20 permits only demonstrated missing generic seams. Checkpoint 08 may close without code; any necessary implementation and reviewed import remain pending.
+locally or publish changes. A20 permits only demonstrated missing generic seams. Checkpoint 08 delivered reviewed generic seams through exact Unibase revision
+`a7eda79b0f7c77732913e3a6b82a6eab3f6485fe` (PRs #49/#50/#52). Default further
+Unibase work is none; local project integration is verified through 09.6.
+
+### Current gap disposition
+
+The [09 evidence summary](implementation-plan.md#delivered-foundation-and-current-evidence)
+and candidate README own current check totals; 09.7 final reviews pass locally.
+
+| Gaps | Verified local disposition | Remaining evidence/work |
+| --- | --- | --- |
+| G01-G06 | V2 typed revisions/specifications, separate assessments/selection, structural completion, exact Prepare/Generate and durable correction accounting | Actual target execution and quality in 12 |
+| G07-G09 | Trusted bounded usage, authentic decisions/recovery, complete-payload transfers and owned cursor reads | Public decisions/history in 10; target observations in 12; hidden SDK attempts/cost remain accepted unknowns |
+| G10 | Ordered original MCP blocks, native file mapping and exact private bytes/hash locally verified | Actual deployed Dify conversion/capacity/expiry in 12; URL renewal beyond current evidence is an accepted limitation |
+| G11-G12 | Product registration, prepaid admission, terminal release, continuation and revision services with local one-charge journeys | Public package/consent/recovery facade in 10; real configured package in 12 |
+| G13 | Authentic bounded cards and owned media services exist | Creator views and owned media HTTP bridge in 10; browser proof in 10/11 |
+| G14-G15 | Server-owned suite/Reviewer identity validation, prepared tools and fresh local checks; historical isolated/shared-provider import evidence | Current exact application-connected bindings and execution in 12 |
+| G16-G17 | Independently retained original outputs and per-kind execution/canvas guards verified locally | Target original transport and configured profile acceptance in 12 |
 
 ## Contract design working decisions
 
 These technical defaults follow the accepted ownership boundary and existing services.
-They are design choices, not implemented schemas. Accepted user preferences are
+They record accepted technical choices; implemented local boundaries are identified
+by the current gap disposition and model documentation. Accepted user preferences are
 explicitly marked; technical proposals do not imply user approval or live feasibility.
 
 ### Versioning, identity and persistence
@@ -413,15 +432,12 @@ justify an upstream delta. No fixed upstream implementation is a prerequisite.
 
 ### Closure criteria
 
-Design closure means an explicit owner, contract and acceptance criterion; it does
-not mean a missing feature is implemented. G01–G09 have working contract directions
-above, with executable schemas and usage-evidence integration still unimplemented. G10 and
-G14 require real composition/transport evidence; G11–G13 need implementation and
-UI verification; G15 requires dependency setup and fresh checks. Keep all gaps open
-until verified; G16/G17 require item-aware media and per-kind output constraints. Keep
-implementation status separate from settled design choices. No gap is resolved
-until the applicable evidence exists. User preferences, model configuration and
-live/paid approval remain separate from technical defaults.
+Design closure means an explicit owner, contract and acceptance criterion. It does
+not establish implementation or target execution. The current gap disposition above
+replaces the original baseline's pending claims: local v2 storage/runtime boundaries
+have evidence through 09.6; 09.7 has passed its local exit; public UI and actual target acceptance
+retain their own exits. No gap is closed beyond the scope of its evidence. User
+preferences, model configuration and live/paid approval remain separate.
 
 ### Additional source findings
 
@@ -489,8 +505,8 @@ The [package specification](workflow-package-spec.md#technical-resolutions-for-a
 and [delivery plan](implementation-plan.md#necessity-and-simplicity-gate) own their
 smallest implementation and required proof. There is no requirement for 19 new tools,
 125 exported schemas, a custom provider ABI, a generator or an engine emulator.
-Keep G01-G17 as application gaps until verified implementation addresses them. Keep
-E1-E5 pending; source inspection and local tests never establish target execution.
+Use the current G01-G17 disposition for implemented local work and remaining UI/target
+evidence. Keep E1-E5 partially evidenced or pending as recorded in the specification; source inspection and local tests never establish target execution.
 Incompatible plugin behavior blocks activation rather than authorizing a custom plugin.
 
 ## Sources and maintenance

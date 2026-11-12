@@ -616,6 +616,70 @@ test("booklet repositories preserve embedded identities and transactional bounda
       version = outcome.version;
       fence = outcome.fence!;
       await assert.rejects(repo.authorizeRetry(p._id, { callId: "call-1", key: "automatic-allowance-remains" }), /latest confirmed/);
+      await t.test("image dispatch preserves funding, stage locks and unresolved target isolation", async (referenceTest) => {
+        const before = await repo.getProduction(p._id);
+        for (const kind of ["character", "location", "style-sample", "page"] as const) {
+          const subjectId = kind === "style-sample" ? "sample-v2" : kind + "-v2", targetId = kind + "-original";
+          const revised = structuredClone(before);
+          revised.revisionChargeId = "reference-revision-fixture";
+          const subject = revised.subjects.find((s) => s.id === subjectId)!;
+          subject.artifacts.push({ ...subject.artifacts[0], id: targetId, kind: kind === "page" ? "page-image" : "reference", currentRevisionId: null, acceptedRevisionId: null });
+          const callId = "reference-dispatch-" + kind;
+          const row = { ...first, _id: fingerprint(callId), callId, actionKey: fingerprint([callId, "action"]),
+            service: "image-executor", operation: "generate", category: "paidImage", targetIds: [targetId],
+            correctionRootId: fingerprint([p._id, "image-executor", "generate", [targetId], revised.revisionChargeId]) };
+          const allocationId = "reference-allocation-" + kind;
+          try {
+            await f.db.collection("bookletProductions").replaceOne({ _id: p._id as never }, revised);
+            await f.db.collection("bookletWork").insertOne(row as never);
+            await f.db.collection("consumptionAllocations").insertOne({ _id: allocationId as never,
+              orderId: p.orderId, ownerId: actor.uid, chargeId: revised.revisionChargeId,
+              category: kind === "page" ? "page" : kind === "style-sample" ? "style" : "reference", subjectId: "wrong-subject", revoked: false });
+            const dispatch = () => repo.dispatchWork(p._id, { ...m(), callId, requestHash: row.requestHash });
+            await assert.rejects(dispatch(), /financial consent/);
+            await f.db.collection("consumptionAllocations").updateOne({ _id: allocationId as never }, { $set: { subjectId } });
+            await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: {
+              [kind === "style-sample" ? "stageLocks.style" : "stageLocks.references"]: { operationId: "page-started", lockedAt: new Date(), sourceRevisionIds: [] },
+            } });
+            if (kind !== "page") await assert.rejects(dispatch(), /stage is locked/);
+            assert.equal((await repo.getWork(p._id, callId)).status, "registered");
+            await f.db.collection("bookletProductions").updateOne({ _id: p._id as never }, { $set: { "stageLocks.references": null, "stageLocks.style": null } });
+            const blocker = { ...row, _id: fingerprint([callId, "prior"]), callId: callId + "-prior",
+              actionKey: fingerprint([callId, "prior"]), correctionRootId: fingerprint([p._id, "prior-funding"]),
+              status: "unknown", runId: "terminated-prior-run" };
+            await f.db.collection("bookletWork").insertOne(blocker as never);
+            await referenceTest.test(kind + " unresolved work crosses funding boundaries", async () => {
+            const blockedSnapshot = await repo.getProduction(p._id);
+            try {
+              await assert.rejects(dispatch(), /Reconcile unresolved/);
+              await f.db.collection("bookletWork").updateOne({ _id: blocker._id as never }, { $set: { status: "dispatching" } });
+              await assert.rejects(dispatch(), /Reconcile unresolved/);
+              assert.deepEqual(await repo.getProduction(p._id), blockedSnapshot);
+            } finally {
+              await f.db.collection("bookletWork").deleteOne({ _id: blocker._id as never });
+            }
+            });
+            const dispatchInput = { ...m(), callId, requestHash: row.requestHash };
+            const dispatched = await repo.dispatchWork(p._id, dispatchInput);
+            assert.deepEqual(await repo.dispatchWork(p._id, dispatchInput), dispatched);
+            assert.equal((await repo.getWork(p._id, callId)).status, "dispatching");
+            const locked = await repo.getProduction(p._id);
+            assert.equal(locked.stageLocks.story?.operationId, callId);
+            assert.equal(locked.stageLocks.style?.operationId ?? null, kind === "style-sample" ? null : callId);
+            assert.equal(locked.stageLocks.references?.operationId ?? null, kind === "page" ? callId : null);
+            await assert.rejects(bookletLifecycleV2(f.db, actor).quoteRevision(p._id, {
+              requestId: "locked-story-quote", expectedVersion: locked.version, category: "story", subjects: [], inputHash: hash,
+            }), /stage is locked/);
+            await repo.recordWorkOutcome(p._id, { ...m(), expectedVersion: dispatched.version, fence: dispatched.fence!,
+              callId, status: kind === "character" ? "unknown" : "failed", retryable: false, evidenceIds: ["trusted-fixture"] });
+            assert.deepEqual((await repo.getProduction(p._id)).stageLocks, locked.stageLocks);
+          } finally {
+            await f.db.collection("bookletProductions").replaceOne({ _id: p._id as never }, before);
+            await f.db.collection("bookletWork").deleteOne({ _id: row._id as never });
+            await f.db.collection("consumptionAllocations").deleteOne({ _id: allocationId as never });
+          }
+        }
+      });
       const retried = await invoke(m(), payload(retry, "call-1"));
       version = retried.version;
       fence = retried.fence!;

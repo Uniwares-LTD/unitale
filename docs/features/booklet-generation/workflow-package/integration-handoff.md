@@ -136,8 +136,8 @@ no access beyond the allowlisted DTO. `kind:history` uses the artifact ID and re
 up to 20 revision metadata items with a cursor and `snapshotOrdinal`. It pins the
 latest ordinal on the initial page, excludes later appends and never loads revision
 bodies for the history page. Fetch those separately by immutable revision ID.
-Human-response reads are now locally implemented as described below; execution
-history reads remain pending.
+Human-response, execution and production histories are locally implemented through
+the bounded owned readers; creator-visible history remains checkpoint 10.
 
 The local v2 `index` tool accepts `subjects` entries `{id,kind,label,pageRole}` and
 `artifacts` entries `{subjectId,artifactId,kind}`, plus the current `fence`. It registers
@@ -188,8 +188,8 @@ identity from server context, never from model claims.
 
 ### Checkpoint 07 storage boundary
 
-V2 storage now exists in the project repository; MCP/observer/lifecycle wiring
-remains 09 work. Generic 08 seams are imported; v2 prepaid Run binding passes local
+V2 storage and MCP/observer/lifecycle wiring are implemented and locally verified
+through 09.6; final 09.7 checks/reviews pass locally. Generic 08 seams are imported; v2 prepaid Run binding passes local
 ownership, race and one-charge continuation checks. Work records use distinct call IDs, a server action identity,
 request hash and retry ordinal. Automatic retries require the latest confirmed
 retryable failure of that same action; unknown or terminal success cannot be replayed.
@@ -197,8 +197,11 @@ Correction roots bind production/task/targets/funding, with distinct corrective
 actions counted once even when technically retried. Assessments and Manager selections
 have separate immutable records; human responses remain in existing Run decision storage.
 
-For unfinished-production continuation, pass the verified terminal predecessor to
-`enqueueBookletRun`; it preserves the logical Run chain and consumes no new package.
+For unfinished-production continuation after verified failed/cancelled termination,
+pass the predecessor to `enqueueBookletRun`; it preserves the logical Run chain and
+consumes no new package. After a successful Manager stop, omit `predecessorId` to
+start a new logical Run against the same saved production; shared restart rejects
+succeeded attempts. The connected fixture covers both termination shapes.
 A customer revision uses its quote/consent-created workflow and starts a new logical
 Run on the same production (`predecessorId` omitted). A succeeded Run is not eligible
 for generic successor restart. Production-owned history links those separate Runs;
@@ -273,7 +276,8 @@ context's `canDispatchImage` reports its separate configured call eligibility, w
 `canDispatch` remains the text/reasoning eligibility. Manager owns exact preflight policy.
 Visual image review is locally verified; whole-book/correction lineage and runtime
 recovery were remaining at that earlier slice. All six review modes and correction
-lineage are now locally verified; runtime recovery remains pending. `sources` verifies exact owned immutable source
+lineage and bounded application recovery are now locally verified; target runtime
+execution remains pending. `sources` verifies exact owned immutable source
 tuples and returns ordered original bytes as MCP image blocks with identity metadata.
 It rejects derivatives, changed identities and foreign assets without partial delivery.
 The JSON result excludes binary carriers. Actual target conversion to Dify native files
@@ -292,7 +296,8 @@ An expired observed URL is an unresolved retention outcome. Renewal would requir
 broader provider work and remains an accepted gap; never regenerate to recover it.
 
 This storage slice is not proof of real provider execution, effective retries or
-application-connected recovery. The candidate still has retries/activation disabled.
+application-connected recovery. Blanket node retries and activation remain disabled; guarded action retry/wait
+boundaries are locally fixture-tested.
 
 ### Context and transition facts
 
@@ -303,8 +308,8 @@ It records a Manager selection without imposing application quality/human policy
 `read_document {kind:"acceptance",id}` returns its owned bounded DTO. Sources stay
 on the selected immutable revision rather than being copied into another record.
 Exact receipt replay remains stable after later writes or stage locks. Structural
-completion is now locally implemented as described below; remaining history and
-non-manifest acceptance preview handling are still 09.4 work.
+completion, history and non-manifest acceptance previews are locally implemented;
+public controls/history are checkpoint 10.
 
 `complete` takes an explicit immutable `manifestRevisionId`, avoiding ambiguous
 same-hash snapshots and another copy of the body through the model. It verifies the
@@ -514,15 +519,17 @@ older metadata-only records; missing bodies do not authorize reconstruction/repl
 Native result retention checks the accepted Manager workflow ID and reported native
 run plus registered child call/invocation/item identities. If the native execution
 has not supplied its workflow identity yet, the observation remains untrusted until
-readback establishes it. Readback/reconciliation and full provider-accounting proof
-remain incomplete; this local hook does not prove a connected Dify journey.
+readback establishes it. Readback/reconciliation is locally implemented; actual
+Dify/application execution and full provider-accounting proof remain unverified.
 The current `reconcile_work` implementation uses the existing accepted parent provider
 retrieve/tracing APIs, checks the reported workflow identity, then retains matching
 child results transactionally. Its optional locator is a stored parent native `runId`
 with optional child `nodeId`/`executionId` filters. It cannot redirect to a supplied
 app/provider or grant retry authority. Known results return their work-document locator
-without another read; timeout/missing evidence remains unresolved. Automatic polling,
-backoff, failure classification and effective-usage settlement are still pending.
+without another read; timeout/missing evidence remains unresolved. Existing-worker
+bounded reconciliation, durable backoff and usage observations are locally verified.
+Provider-safe failure classification remains an accepted limitation: absent explicit
+safe evidence, no redispatch is authorized.
 
 Correction summaries contain rootId,family,used,limit,targetIds. App keys durable chains
 by actual task/target/funding, preventing new invocation/candidate/root IDs from resetting
@@ -537,7 +544,8 @@ non-paid retries 3; non-retriable errors stop. App reconciliation automatically 
 trusted Dify evidence using existing worker scheduling. Unknown outcomes never permit
 blind redispatch. Explicit Retry failed step grants one attempt without resetting
 counters; Continue booklet requires verified termination and reuses saved work.
-Current candidate retries remain disabled; implementation and fresh proof are pending.
+Application retry guards and the native technical wait are locally implemented and
+fixture-tested. Blanket node retries remain disabled; target execution is pending.
 
 
 Checkpoint writes atomically compare version/fence and persist opaque bounded state.
@@ -558,7 +566,7 @@ Durably save partial outputs and original receipts before selecting a manifest.
 Keep leases short. Gateway-local mutations check the expected production version and
 existing fence, advance the fence and leave no lease in the same database transaction.
 Registration, guarded dispatch, revision publication and assessment writes use this
-atomic repository mode; later facades remain pending. No transaction or lease spans
+atomic repository mode; the public application facade remains checkpoint 10. No transaction or lease spans
 model/tool/Human Input waits.
 Re-read current context for a valid mutation fence after external waits. On a version
 race stop and recover from authoritative facts.
@@ -605,7 +613,7 @@ states to partial. The public view uses fixed summaries and sanitized failure co
 empty cards/images and no checkpoint; domain evidence stays outside it. The existing
 worker additionally requires native execution success. Booklet state/assets remain
 authoritative; terminating a workflow does not itself complete a book. Application
-registration and v2 domain wiring remain checkpoint 09 work.
+registration and v2 domain wiring are locally implemented and verified through 09.6.
 
 ## Provider and deployment handoff
 
@@ -691,7 +699,7 @@ This changes provider requirements only; checkpoint 07 implementation remains ga
 
 | Tradeoff | Accepted behavior and minimum integration handoff |
 | --- | --- |
-| Automatic SDK retries | Accept the installed SDK defaults (two retries, up to three attempts in the mocked failure cases). Keep Dify node and Manager retries off in the current candidate; the 07-11 action-retry amendment above governs future implementation. Admin evidence must distinguish workflow dispatch count from SDK attempt count; record actual retries only when independently evidenced, otherwise explicitly unknown. Preserve available workflow/node IDs, timestamps, errors, plugin identity and provider request/response IDs. Final returned usage may omit costs from preceding uncertain attempts; report it as incomplete and reconcile with provider billing. A per-dispatch estimate is not a hard total spend guarantee. No new retry telemetry is implemented in 01-06. |
+| Automatic SDK retries | Accept the installed SDK defaults (two retries, up to three attempts in the mocked failure cases). Keep blanket Dify node retries off; guarded application actions and the native wait are locally implemented under the 07-11 retry amendment. Admin evidence must distinguish workflow dispatch count from SDK attempt count; record actual retries only when independently evidenced, otherwise explicitly unknown. Preserve available workflow/node IDs, timestamps, errors, plugin identity and provider request/response IDs. Final returned usage may omit costs from preceding uncertain attempts; report it as incomplete and reconcile with provider billing. A per-dispatch estimate is not a hard total spend guarantee. No new retry telemetry is implemented in 01-06. |
 | Default network timeout | Temporarily accept the observed 600-second SDK read timeout; it is neither a total workflow deadline nor proof the provider stopped. Manager/application timeout leaves the call unknown, with unresolved liability and no automatic redispatch. Inspect the existing Dify run/node result and retain any late outcome before reconciliation; absence of a result is not proof of no execution. |
 | Sunburst alias | Use `gpt-image-2.5-sunburst`. The dated snapshot is no longer mandatory. Record the requested alias, exact plugin package and returned model identity when available; never invent a resolved snapshot or promise reproducibility across alias updates. Keep quality, canvas, count, background, original bytes and output format unchanged. |
 
@@ -1103,7 +1111,7 @@ identity recovery, or a general asynchronous timer/reentry API. The test deliber
 retried a Code exception to exercise the engine, not the product error classifier.
 Do not enable blanket native retries on paid nodes on the strength of this result.
 
-Concrete upstream needs are now clearer: the Unitale stream adapter does not consume
+Historical source findings before the reviewed 08 imports: the Unitale stream adapter does not consume
 `node_retry`; `tracingForRun` drops retry/exception rows and output bodies. Extend
 trusted bounded observation in Unibase only as required, preserving default behavior.
 Native retry can be considered as the sole executor only if the accepted classification,
@@ -1114,8 +1122,7 @@ MCP-native-file conversion remains unverified. The user accepted the simpler pat
 **no temporary tunnel or standalone reachable fixture**. Verify response shape, order,
 hashes and bounds locally in 08-09; test actual Dify conversion through the real staging
 application endpoint in 12. This is an accepted evidence deferral, not removal of the
-original-image requirement or a claim that deployed conversion passes. Application
-recovery proof remains in 09-12.
+original-image requirement or a claim that deployed conversion passes. Local application recovery is verified through 09.6; actual target proof remains 12.
 
 ### Approval register
 
@@ -1124,7 +1131,7 @@ Scope A approved on 2026-11-10. User response: "I approve but it's important to 
 | Scope | Agreed scope | Current status / exclusions |
 | --- | --- | --- |
 | A: zero-cost feasibility probes | Up to three disposable `unitale10_capability_20261110_*` apps and their test-only workflow-tool/MCP bindings; deterministic nodes and synthetic PNG fixtures; import/publication/execution/readback, disconnect/retrieval and cleanup of those resources. Probe ordered MCP image conversion, retained node/iteration evidence, and safe action retry delay/reentry. Any fixture endpoint must use an already approved reachable route; no new host/network setup | Approved 2026-11-10 with minimum reasonable resource use. US$0; no LLM/image/provider calls, production app changes, shared plugin changes, application implementation or commits. If a reachable fixture route is absent, stop that probe and report it |
-| B: implementation kickoff | Checkpoints 07-11 in Unitale; demonstrated bounded generic changes in Unibase; local fixtures/checks, scoped commits/pushes/PRs/normal merges and reviewed exact template imports after required reviews | Approved 2026-11-10: "I approve with this note: keep everything simple and minimal, do not over-engineer". Reuse existing services/worker/Run UI; no new framework, scheduler, plugin or dashboard. No deployment, release/tag, new dependency, paid call, production migration or bypass of branch protections. External required reviews may still block; 07-08 complete locally; continuing at 09 |
+| B: implementation kickoff | Checkpoints 07-11 in Unitale; demonstrated bounded generic changes in Unibase; local fixtures/checks, scoped commits/pushes/PRs/normal merges and reviewed exact template imports after required reviews | Approved 2026-11-10: "I approve with this note: keep everything simple and minimal, do not over-engineer". Reuse existing services/worker/Run UI; no new framework, scheduler, plugin or dashboard. No deployment, release/tag, new dependency, paid call, production migration or bypass of branch protections. External required reviews may still block; 07-09 complete locally; current goal stops before 10 |
 | C: staging acceptance | Exact reviewed application deployment/migration, specialist-first Dify publication/bindings, named test package/accounts, cleanup and finite paid acceptance | Pending by explicit choice "Keep C pending". User selected US$3 total for future provider acceptance; no spending until C approval. Review exact artifacts, deployment/configuration/migration, secure inputs and resource identities after 11; historical US$1 cap is not renewed |
 
 Scope A is closed for the minimum feasible probe; MCP live proof is deferred to 12.
@@ -1145,18 +1152,25 @@ an approval boundary. No technical approval establishes unverified capabilities.
 | 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README | Local checks can run unattended; no further implementation is needed for this handoff |
 | Provider/composition feasibility | Isolated probes and installed-source audit complete; SDK retries/default timeout/alias accepted | Reuse shared providers unchanged; current-provider configuration and all seven secret-free candidate import/readbacks now pass; actual execution of this revised binding and application acceptance remain unverified | No-money checks can run unattended with authorized staging access. No plugin installation or upstream release required; any further paid probes need a newly agreed finite scope/cap. Billing reconciliation needs account usage/invoice access |
 | 07: application contracts/persistence | Complete locally; two clean same-agent reviews | Follow the [bounded slices](../implementation-plan.md#07---application-contracts--persistence); v2 compatibility, action/assessment/checkpoint facts and retry snapshots | Kickoff approval covers 07-11 and scoped cross-repository publication; disposable local persistence only |
-| 08: shared runtime seams | Complete locally at Unitale `2873e60`; two clean same-agent reviews | Unibase PRs #49/#50 imported at `98b77fd1926bc38cefa172a1c90e4735597ca6db`; image transport, private observations, internal waits, Run UI slots and existing-worker late reconciliation pass local checks | No provider release dependency; project wiring remains 09-11 and live MCP conversion remains 12 |
-| 09: Unitale gateway/recovery | In progress: Manager terminal view validated offline | Wire versioned Manager MCP, prepaid admission, per-output retention, bounded retries, automatic evidence reconciliation and explicit continuation | Reuse existing worker/commerce; no new scheduler or blind replay; fake-provider tests unattended after dependencies |
-| 10: existing Run UI / T21 | Not started | Brief, quote/consent, progress, decisions, revisions and accessible history; retry settings/evidence in existing admin | Local browser fixtures; en/ar public and English/LTR admin; no standalone creator workspace |
+| 08: shared runtime seams | Complete locally; reviewed exact imports | Unibase PRs #49/#50/#52 imported through `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`; image transport, private observations, internal waits, Run UI slots and existing-worker late reconciliation pass local checks | No provider release dependency; project wiring remains 09-11 and live MCP conversion remains 12 |
+| 09: Unitale gateway/recovery | Tasks 09.1-09.7 Verified locally | Delivered owned Manager MCP, prepaid admission, originals, guarded action retries, bounded worker reconciliation and connected journeys; final checks and two clean same-agent whole-package reviews pass | Reuse existing worker/commerce; no new scheduler or blind replay; fake-provider tests unattended after dependencies |
+| 10: existing Run UI / T21 | Sequenced plan revised; implementation not started | Follow 10.1-10.7: private facade, consent, results/decisions/media, recovery/revisions, history, minimal admin and browser/review exits | Local browser fixtures; en/ar public and English/LTR admin; no standalone creator workspace |
 | 11: integrated validation | Not started | Actual boundaries, failure/recovery/race tests and two clean reviews; distinguish offline from Dify evidence | Local tests unattended under kickoff approval; final handoff records exact revisions and pending gates |
 | 12: staging acceptance | Integrated acceptance pending | Publish specialists then Manager, verify bindings/tags, execute T18-T21 journeys and retain secret-free evidence | Final grouped approval: deployment/migration/publication, secure inputs, package/capacity, test accounts and selected US$3 total cap (no spend until approval); real staging MCP image proof; human consent remains human |
 
 
-Current execution: 07-08 are complete locally; scope B continues at 09. Retain the
-validated candidate and local storage evidence.
+Current execution: 07-08 and 09.1-09.6 are locally verified; 09.7 is Verified; stopped
+before implementing 10. Reuse delivered services and exact imported shared seams.
 Scope B is approved for 07-11 with minimal implementation; scope C stays pending.
 Reuse the verified provider/structured-output behavior and existing services when
 implementation starts. No temporary tunnel is planned. A compatibility failure narrows or revises
 the affected step; it does not authorize a new plugin or framework. Keep all seven
 execution switches disabled until the activation prerequisites above are satisfied;
 scoped paid probes use separately authorized disposable copies.
+
+Checkpoint 09 closure follow-up is locally verified: dispatch establishes existing
+stage locks and rejects overlapping unresolved creative work across funding scopes.
+Production readback renders lock timestamps as ISO strings. See the
+[checkpoint 10 prerequisite report](../implementation-plan.md#checkpoint-10-prerequisite-report):
+local 10.1 can start under B after instruction; no additional manual prerequisite is
+identified. Scope C and target acceptance remain pending.

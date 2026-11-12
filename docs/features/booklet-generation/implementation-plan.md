@@ -16,13 +16,14 @@ Earlier implementation evidence below retains its historical scope.
 ## Execution prerequisites
 
 **Readiness: candidate checkpoints 01-06, local storage 07 and shared-runtime import 08 are
-implemented and reviewed. Scope B covers 07-11; checkpoint 09 is in progress. Runtime/live
+implemented and reviewed. Scope B covers 07-11; checkpoint 09 is Verified locally. The active goal stops before 10. Runtime/live
 acceptance and scope C remain separate.** The
 [A01-A22 register](workflow-design.md#implementation-readiness-audit)
 links each resolution to the [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22).
 Checkpoints 01-12 below replace the application-first C0-C10 sequence. Deliver the
 candidate workflows and proposed application changes at 06. That initial stop was
-superseded by the recorded scope B approval; continue through 11, with 12 still gated. E1-E5 retain partial or pending runtime evidence; E6 records current local checks, not
+superseded by the recorded scope B approval for 07-11. The active goal completes
+09.7 and the 10 plan, then stops before 10 implementation; 12 remains gated. E1-E5 retain partial or pending runtime evidence; E6 records current local checks, not
 integrated acceptance; candidate validation is distinct from integrated/live acceptance.
 A failed probe blocks its dependent binding, not independent schemas/fake-provider work.
 No checkpoint starts merely because documentation has been updated.
@@ -91,10 +92,10 @@ acceptance retain separate authorization. No agent delegation is implied.
 | T14 | Unitale | Owned book/production/revision repositories with embedded subjects/artifact index | T01 | Implemented; local verification complete |
 | T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Implemented; local verification complete |
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Implemented; local verification complete |
-| T17 | Unitale | MCP-only booklet tools | T15,T16 | Implemented; manifest transport-limit review finding remains; verification notes below |
+| T17 | Unitale | MCP-only booklet tools | T15,T16 | v1 implemented and preserved with historical transport bounds; v2 complete-payload path locally verified in 09 |
 | T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Candidate implemented; integration/acceptance pending |
-| T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | Candidate implemented; persistence/integration/acceptance pending |
-| T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Candidate implemented; application/recovery/acceptance pending |
+| T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | Candidate, persistence and local enforcement verified through 09.6; target acceptance pending |
+| T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Candidate and local application/recovery verified through 09.6; creator controls and target acceptance pending |
 | T21 | Unitale | Creator brief, quotes, progress, decisions, revisions and history | T15,T16 | Pending |
 | T22 | Unitale | Private reader and image downloads | T15,T16 | Pending |
 | T23 | Unitale | Manifest-bound deterministic PDF | T15,T16 | Pending |
@@ -140,7 +141,7 @@ engine for tests. Code size is a review signal, never permission to omit require
 | 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
 | 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
 | 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Locally complete with two clean reviews; v1 preserved; model/example/both Mermaid versions updated; runtime integration remains 08-11 |
-| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Complete locally at Unitale `2873e60`; exact Unibase PR #49/#50 import, checks and two clean same-agent reviews; live conversion remains 12 |
+| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Reviewed imports through Unibase `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe` (PRs #49/#50/#52); local checks pass; live conversion remains 12 |
 | 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
 | 10 - Run UI Integration | T21 brief, quotes, progress, decisions, revisions and history in existing Run UI | Browser/race checks; no separate creator workspace |
 | 11 - Integrated Verification | Actual workflows against implemented application interfaces | Real integrated offline checks and two clean reviews |
@@ -150,7 +151,9 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 Planning amendment accepted 2026-11-10. **Scope B execution started.** The user requested committing the current changes
 and executing 07-11. Candidate/planning baseline committed as `2dc7b8c`; checkpoint 07
-is complete through `867759c`, and 08 is imported/verified at `2873e60`; 09 is next. Scope C and paid/live operations remain pending. The plan targets unattended
+is complete through `867759c`. The latest reviewed 08 import is Unibase
+`a7eda79b0f7c77732913e3a6b82a6eab3f6485fe` (PRs #49/#50/#52);
+09.1-09.7 are Verified locally; checkpoint 10 remains unimplemented. Scope C and paid/live operations remain pending. The plan targets unattended
 Sol Medium work under the recorded approval.
 
 The [capability audit and approval register](workflow-package/integration-handoff.md#approval-register)
@@ -196,15 +199,50 @@ patches locally. No booklet roles, collections or policy in Unibase.
 
 | Milestone | Verified progress | Remaining coverage |
 | --- | --- | --- |
-| T18 | Specialist candidates implemented locally in 01-04/06; opt-in v2 storage in 07 | 08-09 bindings/originals and 11-12 integration/acceptance |
-| T19 | Six Reviewer modes, correction candidate and 07 durable assessment/counter storage | 09 runtime enforcement and 11-12 proof |
-| T20 | Manager candidate implemented locally in 05-06; 07 durable work/checkpoint storage | 08-10 authenticated decisions, retry/recovery and continuation; 11-12 proof |
-| T21 | Generic Run capabilities exist | 09 backend and 10 brief, quote/consent, progress, decisions, revisions and history; 11-12 proof |
+| T18 | Seven candidates, storage and local handler/native Code bindings/originals verified through 09.6 | 11-12 integration/acceptance |
+| T19 | Six modes, immutable assessments and durable correction enforcement verified locally through 09.6 | 11-12 proof |
+| T20 | Local Manager gateway, authenticated decisions, retry/reconciliation and connected continuation verified through 09.6 | Creator controls in 10; 11-12 proof |
+| T21 | Generic Run slots and local booklet lifecycle/quote/recovery/history services exist | 10 all six creator outcomes and admin settings; 11-12 proof |
 
 No T18-T20 behavior is intentionally omitted. Complete T21 through existing Run
 surfaces; a dedicated booklet list/workspace is excluded, not its history or financial
 consent requirements. Reader/PDF/sharing/storefront and full-product T26-T28 remain
 separate. Earlier T18-T20 next-step statements below are historical evidence.
+
+### Estimated implementation effort completed and checkpoint mapping
+
+Planning estimate as of 2026-11-12, not measured hours, acceptance percentages or a
+claim that the MVP is ready. Ranges estimate each T milestone's implementation work
+already delivered, including reusable foundations. Milestones differ in size and share
+services: do not average these percentages or add them as effort. Live acceptance is
+reported separately, principally in 12 and T28. No per-T time ledger exists.
+
+| T checkpoint | Estimated implementation effort done | Current delivery-checkpoint relationship | Remaining outcome |
+| --- | --- | --- | --- |
+| T01 | 95-100% | Original contracts; v2 refinement in 01/07/09 | Boundary adjustments demonstrated during UI/integration |
+| T02 | 100% of accepted offline scope | 02/06; reused in 09/11 | Live evidence belongs to 12 |
+| T03 | 95-100% | Earlier Unibase foundation, reused by 08/11 | Store/device acceptance in T28 |
+| T04-T08 (each) | 95-100% | Earlier Unibase foundation; necessary generic extensions in 08 | Final integrated regression/acceptance |
+| T09-T12 (each) | 90-100% | Earlier billing/Android/admin imports, reused by 08/11 | Actual configured stores/device and final integration |
+| T13 | 100% of local foundation scope | Earlier import; reviewed runtime updates in 08 | Future imports only for demonstrated gaps |
+| T14 | 95-100% | 07 persistence; 09 runtime use | Final UI/integration boundary validation |
+| T15 | 90-95% | 09 lifecycle/recovery; consumed by 10 | Public recovery/revision integration and acceptance |
+| T16 | 90-95% | 09 originals/reuse; 10 owned media bridge | Public delivery and real transport evidence |
+| T17 | 90-95% | 09 v2 MCP; 11 regression; 12 live bindings | Actual deployed MCP/native-file proof |
+| T18 | 85-95% | 03/04/06 workflows; 09 integration | 11 local integration and 12 actual execution/quality |
+| T19 | 85-95% | 03/04 Reviewer; 07/09 durable enforcement | Broader revision cases and actual quality acceptance |
+| T20 | 80-90% | 05 Manager; 09 recovery; 10 controls | Creator integration and real Dify journeys |
+| T21 | 15-25% | Supporting 09 services; primary work is 10 | All six creator outcomes, browser checks in 10/11 |
+| T22 | 10-20% | Reuses 09 media and 10 bridge; delivery is after 12 | Private ordered reader and accepted downloads |
+| T23 | 0-5% | After 12; reuses immutable manifest/originals | Deterministic PDF |
+| T24 | 0-5% | After 12 | Revocable version-bound sharing/download controls |
+| T25 | 25-40% | Reuses earlier commerce/wallet; beyond 10-12 scope | Customer storefront/offer/entitlement integration |
+| T26 | 15-25% | 11 contributes a subset | Whole-product journeys including delivery/sharing/storefront |
+| T27 | 10-20% | 11/12 contribute evidence | Whole-product migration/recovery rehearsal and reviews |
+| T28 | 5-10% | 12 contributes Dify acceptance | Full provider/store/device acceptance; historical probes are feasibility only |
+
+The final MVP still needs T21-T28. Checkpoints 10-12 complete the workflow integration
+slice and do not replace those later delivery, commerce-experience or release outcomes.
 
 ### Requirements alignment check
 
@@ -534,7 +572,7 @@ use estimated completion percentages as acceptance evidence.
 | 09.4 Human decisions and completion | Verified | Authentic first-wins response correlation, exact Manager acceptance, manifest publication and structural completion pass local handler/native Code fixtures. Owned acceptance/human/execution/production histories page beyond previews and exclude private/foreign records. Actual Dify rendering remains checkpoint 12 evidence. |
 | 09.5 Bounded recovery | Verified | Local repository/handler/worker and native Code fixtures prove durable retry eligibility, explicit retry authorization, automatic technical waits, bounded readback, terminal continuation, cancellation and replay without lost successful work or another charge. Provider-safe failure classification remains an accepted limitation; unknown/unisolatable outcomes stop for reconciliation. Creator controls remain 10. |
 | 09.6 Connected journeys | Verified | Real handlers/native Code fixtures cover creation, correction, purchased revision, continuation, predecessor reuse and completion; all review modes, large exact text, originals, human waits, partial results and v1/unrelated Run regressions pass locally. Target graph execution remains 12. |
-| 09.7 Review and handoff | In progress | Fix blockers, apply demonstrated simplifications, run final affected checks and two consecutive clean read-only reviews on the same final state. Consolidate evidence and revise checkpoint 10 around completed interfaces, then stop before its implementation. |
+| 09.7 Review and handoff | Verified | Final affected checks and two consecutive clean same-agent read-only whole-package reviews pass. Evidence consolidated; 10.1-10.7 plan revised around delivered services. Stopped before 10 implementation. |
 
 Execute in order; existing code from later tasks remains reusable. Verify each exit
 before marking its task Verified. Within a task implement coherent slices, run focused
@@ -551,11 +589,10 @@ add provider controls, plugins, telemetry interfaces or infrastructure to close 
 Keep the accepted application ownership, funding, persistence and replay safeguards;
 target execution stays a separately authorized checkpoint 12 activity.
 
-For 09.3, preparation and generation use distinct action/call IDs. Generation consumes
-the exact retained prepared request, including its preparation identity. Replace the
-candidate's same-call-ID equality check and its focused fixtures together, preserving
-prepared/source/reference hash checks. This resolves the demonstrated collision with
-the existing unique work call identity without introducing phase records.
+09.3 now uses distinct preparation/generation action and call IDs. Generation consumes
+the exact retained prepared request, including preparation identity. The candidate and
+fixtures preserve prepared/source/reference hash checks without colliding with unique
+work call identities or introducing phase records.
 
 All accepted retry/reconciliation, financial, human and ownership decisions above
 remain binding. Manager owns creative orchestration; application guards remain
@@ -568,884 +605,301 @@ behind scope C at checkpoint 12; no preliminary tunnel or checkpoint 10 UI work.
 
 #### Delivered foundation and current evidence
 
-09.1 slice: the v2 lease adapter uses the existing atomic mutation/receipt mechanism
-to refresh a fence and return `leaseHeld:false` for acquire/renew/release. Every later
-write still checks its own fence. Held repository leases block refresh and remain
-unchanged; no lock spans a workflow call. Context/suite integration is partial,
-and now verifies its local boundary. This adds no production field; model JSON and diagrams remain
-applicable. Focused gateway coverage checks replay, stale fences and the next write.
-The same document reader now exposes owned `{checkpointVersion,state}` via
-`kind:checkpoint`, allowing cursor-based reads of large saved state without a new
-storage field. Thirteen MCP tests pass, including large checkpoint sections and
-foreign-production rejection; scoped lint and documentation checks pass.
-The 09.1 suite validator compares server-owned Manager/child publication and tool
-metadata with the actual exported Manager's six child nodes. A fixture binds those
-nodes in memory and rejects missing children, foreign tools/Manager publications and
-duplicate node IDs. It performs no Dify call and does not prove that remote workflow
-tools still resolve to the recorded child publications. Context now loads one matching
-server-owned policy record, validates its suite/Manager graph and Reviewer publication,
-and exposes only binding identities. Sources, recent work, assessments and correction
-facts are bounded with explicit completeness flags; complete bodies use owned reads.
-Dispatch remains disabled. Context now includes an older checkpoint-pending work item
-outside its recent selection. Owned work/assessment histories expose continuation
-cursors, invalidated by production changes rather than silently omitting new records;
-individual work/assessment/correction bodies use bounded document reads. Local tests
-cover 26 work records, pending selection, cross-query/foreign cursors and changed state.
-The demonstrated large-checkpoint mismatch is resolved with a 128 KiB context envelope,
-keeping the entire checkpoint inline and its storage cap at 64 KiB. Actual Manager
-Code fixtures preserve its state beyond the prior context cap and reject oversize
-context. No checkpoint merge/projection protocol is needed. Registration's owned
-immutable sources and full request hash authorize a paid child's source selection;
-the native guard no longer treats the bounded source preview as a complete allowlist.
-Content hashes and registered paid-call matching remain enforced, including a 20-source
-fixture with an empty preview. Actual remote readback remains checkpoint 12 evidence.
-Provider snapshots pin unique full text/image package identifiers; child app/publication
-identities are distinct and the Reviewer policy matches its child publication. Dispatch binding
-enforcement belongs to 09.2. No suite provisioning or live activation is claimed.
+This is the current local checkpoint summary. Superseded slice counts, intermediate
+pending claims and detailed debugging chronology remain in Git history; they are not
+additional work or evidence for a later state. The sequential table above owns status.
 
-09.1 exit evidence: 60 affected repository/lifecycle/MCP tests passed in the combined
-run; the final changed MCP/suite cases passed again (15 tests). Forty native/v1
-compatibility tests, build, post-build typecheck, scoped lint, docs and independent
-13-path hash audit pass. A separate same-agent read-only review (cold-review fallback)
-found and fixed the source-preview/product-limit defect; its follow-up found no further
-blocking issue. The disposable Mongo fixture needed forced shutdown once; a subsequent
-process inventory found no remaining mongod process. This is local verification, not
-integrated Dify execution. Checkpoint-wide review pair remains 09.7 work.
-
-09.2 in progress: context now reports production-owned dispatched work-attempt counts
-by paid LLM/image/non-paid category, with active and unresolved totals. Registered
-intents are excluded and aggregation covers all owned work, not its recent preview.
-These are application-attempt facts, not provider-internal counts or complete native
-usage. Terminal native Manager `decide` observations now create metadata-only work facts with
-native identity, bounded exact outputs when available and separate redacted trace.
-Duplicate/normalized retry observations count once; failed reasoning remains unknown
-until trusted success, and late success/readback updates that same attempt. Complete
-late output can hydrate a previously truncated observation without another attempt;
-unavailable/oversized output is explicitly omitted while retaining attempt accounting.
-Observation never
-advances production versions/fences. History cursors also bind inventory counts to
-notice newly observed work without forcing checkpoint races. No prompt inputs are
-available on this hook: its request hash identifies native metadata, not an observed
-prompt, and trace explicitly records `requestObserved:false`. Complete prompt/cost
-integration, dispatch safeguards and the text journey remain pending;
-`usage.canDispatch` stays false. Existing work fields suffice; model JSON and diagrams
-are structurally unaffected.
-
-09.2 cost facts now reuse the existing `aiUsage` ledger through production-owned Runs.
-Per Run, the larger of a reported execution total and the reported node subtotal is
-used, never their sum; a lagging summary cannot hide already reported node cost.
-Decimal arithmetic is exact. Missing/invalid reports and other currencies are counted
-explicitly, not converted or claimed as a zero invoice. The reported subtotal is
-compared with the configured minor-unit ceiling, with `complete:false` because nested
-provider/SDK costs may be absent. No duplicate ledger, estimate pricing configuration
-or spending reservation is introduced. Dispatch integration remains pending.
-The cost-fact slice passes 16 MCP tests (exact decimals, lagging summaries, unknowns,
-cross-Run accumulation and owner/production isolation), build, post-build typecheck,
-scoped lint and docs checks. A separate same-agent read-only review fixed the lagging
-summary issue and found no further blocking issue in this addition. No stored fields
-changed, so the model JSON/diagrams and native package digest remain applicable.
-Native text-journey reassessment: the previous stale-context finding was not confirmed.
-The actual `turn -> context -> facts -> can-reason -> decide` path is inside the Loop,
-so `facts.context` is refreshed each iteration. Preserve this existing path and verify
-two consecutive actions before closing 09.2; no additional Loop state is required.
-
-Paid child checkpoints now retain a compact owned work reference instead of copying
-the response body. The consume node clears pending intent only after fresh context
-confirms matching retained work; missing results, changed identity and unknown outcomes
-stop advancement. Complete/partial proposal bodies remain in existing work storage.
-The real MCP fixture publishes exact oversized text, saves/replays a compact checkpoint,
-then exercises a second read/checkpoint action using fresh context and advancing fences.
-It executes actual YAML Code functions against actual handler replies, not a Dify
-interpreter. This verifies local boundaries; dispatch and full Manager execution remain
-gated. No schema or storage field changed, so the model JSON/diagrams are unaffected.
-This slice passes 16 MCP and 41 native/v1 compatibility tests, typecheck, scoped lint,
-docs/i18n/skills checks and an independent 13-path hash audit. A separate same-agent
-read-only review (cold-review fallback) found no blocking issue in this slice. Full
-09.2 exit evidence and the checkpoint-wide review pair remain pending.
-
-Repository dispatch now checks production-wide paid LLM/image attempt limits and the
-reported spending ceiling in its existing atomic mutation. Active creative dispatch
-also reuses the publication-stage lock and current revision-allocation checks, so
-forbidden work is rejected before execution. Reviews remain possible for locked
-creative stages; draft storage fixtures keep their existing construction behavior.
-Attempt totals moved into the existing usage reader to avoid a repository/registration
-import cycle. No new ledger, reservation, contract field or dependency is introduced.
-Thirty repository and 16 MCP tests pass, including rollback of dispatch denied by
-usage, price, lock and funding guards. Model JSON/diagrams and YAML digest are unchanged.
-The native stream's demonstrated identity timing gap is resolved through Unibase
-[PR #51](https://github.com/Uniwares-LTD/unibase/pull/51), imported with `template:update`
-at exact reviewed merge revision `949ac66d2e02ab5c9ed4a6fa59b0ad66c97742d4`.
-Opt-in observers receive the actual initial publication through the existing running
-execution event before node results. Legacy missing identities are not inferred;
-reconnect preserves newer state. No generic interface or stored field was added.
-Shared verification passes 17 Dify/tracing and 17 AI-job tests, build, separate
-typecheck and required checks; two same-agent read-only reviews are clean. The Unitale
-MCP fixture now uses the actual Dify parser and worker event persistence before its
-Booklet observer, then publishes/checkpoints exact large text after a stream drops
-before parent completion. All 16 MCP and 34 imported adapter/tracing/worker tests pass
-in Unitale, along with template consistency, build, typecheck and required checks.
-Configured-suite text dispatch/source bindings now use actual handler and native Code
-boundaries. Context reports attempt/cost/native step and elapsed bounds; dispatch
-rechecks them atomically. Native steps survive activity-log cleanup through existing
-accounting records. Elapsed coverage remains a labelled lower bound, with nested
-durations never added. The deterministic text journey checkpoints intent, checks
-sources, dispatches once, runs Manuscript validate/pack, retains native output, saves
-a compact checkpoint and publishes exact text once. Replay attempts with fresh context
-fail, while lost write replies reuse receipts. Image references/dispatch and remaining
-review-mode safeguards stay in 09.3. No execution switch or live binding was changed.
-
-09.2 exit accounting review corrected additive Loop/Iteration child-cost aggregates
-in Unibase [PR #52](https://github.com/Uniwares-LTD/unibase/pull/52), imported through
-`template:update` at exact revision `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`.
-Native step/duration records and parent execution totals remain; invalid timing does
-not discard valid pricing. Accepted records are not rewritten and no ledger is added.
-The correction passes 18 native adapter/tracing and 17 shared worker tests, build,
-separate typecheck and two clean same-agent read-only reviews. The final Unitale state
-passes 18 MCP, 30 repository, 18 native adapter/tracing and 41 compatibility tests,
-build, post-build typecheck, scoped lint, template consistency and required checks.
-The separate task review found no remaining local text-action blocker. Model JSON/
-diagrams and the native package digest are unchanged. Checkpoint-wide final reviews
-remain 09.7 work.
-
-Accepted provider limits: SDK attempts and complete nested charges can be unknown;
-Manager prompt inputs are not exposed by the existing private hook; elapsed coverage
-is a reported lower bound; current remote bindings/file conversion and live execution
-remain unverified. Preserve these labels and safe unresolved-work handling. They do
-not trigger broader provider implementation or block the remaining local tasks.
-
-09.3 assessment slice: `record_assessment` resolves exact retained native Reviewer
-work by its existing run/node/execution locator, derives the originating configured
-policy server-side, and reuses repository content/coverage guards and replay receipts.
-The native prompt names that locator; no workflow graph, execution switch, interface
-field, stored schema or provider control was added. Model JSON/diagrams remain valid.
-The large-text review fixture demonstrated that the default 64 KiB request limit
-cannot carry an accepted child envelope. The fixture and handoff now configure the
-existing `requestBytes` allowance to 2 MiB for JSON/RPC escaping; shared defaults and
-live configuration are unchanged. The 19-test MCP suite passes exact review output,
-wrong identity/content/coverage/policy claims and replay cases. Image/preflight,
-correction-finding lineage and revalidation remain 09.3 work.
-This slice also passes 41 compatibility tests, build, post-build typecheck, scoped lint,
-docs/i18n/skills/environment checks and an independent 13-path hash audit. A separate
-same-agent read-only review (cold-review fallback) found no blocking issue in this
-addition; checkpoint-wide final review pairs remain 09.7 work.
-09.3 preparation/preflight slice: unpaid Prepare now registers and dispatches through
-the existing work/receipt path (`nonPaid`), and native observations retain its exact
-result. Manager routes every child through durable dispatch and checkpoints a compact
-work reference after confirmed retention. The internal branch keeps its node ID and
-uses an explicit child-dispatch flag, separate from paid budget classification.
-Prepare and Generate now have distinct call IDs in the actual YAML/fixtures; the
-unchanged prepared object's call ID remains part of its hash. Image-request Reviewer
-registration rejects self-consistent fabricated preparations and requires the exact
-retained native preparation, targets, source tuples and ordered original identities.
-It can dispatch without original references and record its exact native assessment.
-This adds no stored fields, collections or provider controls; model JSON and diagrams
-remain structurally unaffected. Original-byte bridging, paid generation, remaining
-visual review modes, correction lineage, publication and revalidation remain 09.3 work.
-Slice evidence: 20 MCP and 42 compatibility tests pass, including preflight rejection
-before native retention, fabricated preparation, exact assessment and replay cases.
-Build, post-build typecheck, scoped lint, model/docs/i18n/skills/environment checks and
-independent 13-path hash audit pass. A separate same-agent read-only review (cold-review
-fallback) found no blocking issue in this slice; final checkpoint review pairs remain 09.7.
-
-09.3 generation/original slice: Generate reuses the retained-preparation guard and
-registers as `paidImage`; actual Manager/Executor fixtures dispatch the reviewed request
-and retain two originals from a partial three-image result without redispatch.
-The demonstrated separate call ceilings require one context fact, `canDispatchImage`;
-text/reasoning retains `canDispatch`. The existing media service now selects v2 ownership
-internally, requires an observed outputKey, and verifies exact canvas/format/bytes.
-The new `retain_original` gateway matches the observed native file and reuses the existing
-restricted downloader, mutation receipt and byte store. Replays do not download again.
-Retention can finish after cancellation without granting publication or dispatch.
-No new collection, persisted field, provider change or dependency; model guide/example and both
-diagrams explain the v2 work relationship using the existing asset format.
-Expired observed URLs remain an accepted unresolved-retention gap; do not regenerate
-or expand provider support. Specialist original-input delivery, visual reviews,
-correction-finding lineage, image publication and revalidation remain 09.3 work.
-Slice evidence: 20 MCP, 17 lifecycle/media and 42 compatibility tests pass. The extended
-native fixture covers partial Generate, exact file download through fake HTTP, one
-download across replay, multiple originals, cancellation, foreign access and canvas/
-format rejection. Build, post-build typecheck, scoped lint, model/docs/i18n/skills/env
-checks and the independent 13-path hash audit pass. A separate same-agent read-only
-slice review (cold-review fallback) found no blocking issue; checkpoint-wide review
-pairs remain 09.7. The lifecycle fixture needed forced Mongo shutdown; the subsequent
-process inventory found no remaining mongod process.
-
-09.3 original-input/publication slice: `sources` now returns ordered verified original
-MCP image blocks with separate identity metadata, using the imported native image seam.
-It rejects changed/foreign/derivative bytes and insufficient response capacity. The
-demonstrated 16 MiB MCP tool ceiling requires an explicit 8 MiB aggregate/16-original
-carrier bound; existing admin limits are documented for base64 expansion, without
-changing shared defaults, live configuration or product counts. Creative/visual work
-registration verifies owned original metadata; the real source read verifies bytes.
-Actual native Manager/Executor fixtures bind synthetic native handles for edit input.
-Image publication reuses revision/asset storage and guards each selected observed
-original, sources, evidence, funding and locks. Each original/artifact has one saved
-effect, allowing separate candidate revisions for different outputs from one Generate.
-The Manager prompt now names that exact image-content boundary. The visual-review
-fixture reads these saved revisions and actual original pixels, then retains/records
-exact native coverage. No schema, collection, index or model relationship changes;
-the model guide records why its JSON example and both diagrams remain valid.
-All review modes are dispatchable, but whole-book/correction integration and finding
-lineage/revalidation still require their 09.3 exit evidence. Target Dify conversion
-remains an accepted unverified capability; no plugin/provider work is added.
-Slice evidence: 22 MCP, 30 repository and 42 compatibility tests pass, including
-old-candidate replay without pointer rollback. Build, post-build typecheck, scoped
-lint, model/docs/i18n/skills/environment checks and the independent 13-path hash audit
-pass. A separate same-agent read-only slice review (cold-review fallback) found no
-blocking issue. The repository registration fixture now supplies owned original
-metadata; full byte integrity is proved separately by the MCP fixture. The native
-Reviewer fixture uses an explicit local execution flag without changing candidate
-gates. No remaining mongod process was observed. Task 09.3 stays In progress;
-checkpoint-wide final review pairs remain 09.7 work.
-
-09.3 correction-lineage slice: request-backed corrective registration now requires
-each confirmed finding to identify an exact selected immutable baseline that was
-actually reviewed, not merely another source in the review context. Subject-scoped
-findings map only to their selected artifact sources; whole-book findings also bind
-the inspected page original. The same guard checks correction-review before/after
-inputs and rejects altered original finding bodies. Legacy metadata-only internal
-registrations keep their compatibility path. A streaming lookup reuses existing
-assessment/revision fields; no new schema, collection, dependency or provider control.
-Repository fixtures cover valid corrective registration, invented findings, changed
-finding text and identical-content/different-revision rejection. The real MCP/native
-Reviewer fixture also records a confirmed visual defect and checks before/after
-originals with that unchanged finding, retaining exact correction-review coverage.
-Native corrective-generation journey, whole-book integration and revalidation remain 09.3 work.
-Current slice checks: 30 repository and 22 MCP tests, typecheck, scoped lint and
-model/docs/i18n/skills/environment checks pass. The unchanged 13-path candidate hash
-audit passes. A separate same-agent read-only slice review found no blocking issue.
-Build and post-build typecheck now pass. A separate read-only follow-up of the added
-native correction-review fixture found no blocking issue. These slice checks do not
-complete task 09.3; checkpoint-wide review pairs remain 09.7 work.
-
-09.3 revalidation slice is locally verified. The repository and existing save gateway now
-accept `revalidatedFrom`; omitting content copies the retained body server-side.
-The write preserves exact content/assets. Manager may reuse retained producer evidence;
-new review evidence must match the baseline plus ordered replacement sources, with
-original-pixel coverage for images. A new revision records lineage; old history and pointers are
-not rewritten by receipt replay. The first real MCP fixture passes source rebinding
-and replay. The 22-test MCP suite now also rejects changed content/assets and a
-mismatched replacement-source review. Typecheck, scoped lint and model/docs checks
-pass, as do 30 repository regression tests, 42 compatibility tests, build, post-build
-typecheck and the independent 13-path hash audit. The read-only review removed an
-unnecessary mandatory-review gate to preserve Manager policy ownership; the follow-up
-found no blocking issue. The Manager prompt/handoff and model guide/example/diagrams
-track the optional lineage field. Task 09.3 remains In progress pending whole-book
-integration and the corrective-generation journey; final review pairs remain 09.7 work.
-
-09.3 corrective-generation evidence: the existing real MCP fixture now chains unpaid
-Prepare, exact preflight, native Manager guard, bounded image-correction dispatch,
-native observation, original retention, image publication and before/after review of
-the newly published original. A second corrective intent may register, but dispatch
-is denied after the image allowance is consumed. Review does not consume another
-image correction. Synthetic provider results/pixels and native file handles are
-explicit fixtures; no provider or paid call occurs. The 22-test MCP suite, typecheck
-and scoped lint pass. A separate same-agent read-only review found no blocking issue.
-No runtime/schema/DSL change was needed, so prior build and package hash evidence
-remain applicable. Whole-book integration was the remaining mode fixture at that slice;
-checkpoint-wide final review pairs remain 09.7 work.
-
-09.3 whole-book/specification slice: whole-book registration now requires the
-selected immutable manifest source and each scoped page's matching page-image
-source and inspected original. Manifest lookup uses its explicit revision ID,
-including when two revisions have equal content hashes. Actual MCP/native Code
-fixtures reject missing sources, wrong pixels and altered assessment coverage;
-exact assessment replay is stable. The specification-mode fixture likewise uses
-actual registration, dispatch, native retention and assessment recording, rejecting
-an altered target hash. The whole-book fixture stages owned page/manifest metadata;
-it is not proof of manifest publication/completion (09.4) or a fully composed
-creation journey (09.6). Native file conversion is synthetic, not target evidence.
-These are input-validation changes; persisted schemas, model JSON/diagrams and
-the package digest are unchanged.
-
-09.3 exit audit fixed the native guard's use of the eight-row assessment preview
-as complete authorization history. Context now resolves the registered Generate
-action's exact complete passing preflight under the configured policy/publication,
-with matching targets, outside the recent preview. It exposes that compact fact on
-the existing work summary; the summary retains its 8 KiB bound. The native guard
-checks it instead of searching recent assessments. Correction dispatch relies on
-the confirmed finding/baseline lineage already verified at registration and keeps
-the durable allowance check. No stored field, provider change or second quality
-policy was added. Fixtures prove preflight outside nine newer assessments, reject
-wrong policy, and dispatch an app-registered correction with an empty preview.
-Acceptance/completion must likewise avoid bounded-preview authority in 09.4.
-
-This slice passes 24 MCP tests, production build, post-build typecheck, scoped lint
-and docs/i18n/skills checks. A separate same-agent read-only review found no blocking
-issue in its source/manifest binding and exact-assessment changes. The known preview
-guard issue was subsequently fixed as described above.
-
-09.3 exit evidence: 24 MCP and 42 native/v1 compatibility tests pass, including all
-six review modes, partial originals, exact source delivery, corrective generation,
-revalidation, immutable selected manifests and preview-independent preflight.
-Production build, post-build typecheck, scoped lint and the independent 13-path
-hash/disabled-gate audit pass. A separate same-agent read-only slice review found
-no blocking issue after the preview fix. No stored schema changed; model JSON and
-diagrams remain applicable. This establishes local 09.3 behavior, not target Dify
-execution or connected creation/completion. The final checkpoint review pair is
-still 09.7 work. Next: 09.4 authentic decisions, acceptance, manifest publication,
-structural completion and backend history; no checkpoint 10 UI implementation.
-
-09.4 acceptance slice: `record_acceptance` now records the current prepaid Manager's
-selection through the existing immutable acceptance writer. Request sources must
-equal the selected revision's sources; revision/hash/target/original identities are
-checked. Admitted writes recheck active Manager, stage locks, revision funding and
-owned work/assessment evidence in the transaction. This does not add app quality
-or human-approval gates. `read_document` adds the owned `acceptance` DTO through its
-existing bounded reader. Fixtures execute the actual Manager guard/checkpoint and
-MCP gateway, reject changed identities, foreign evidence/sources and model-supplied
-Run identity, preserve exact replay after a stage lock, and reject a foreign
-acceptance read. The existing 07 acceptance schema is reused unchanged; model JSON
-and both diagrams are unaffected. Human request/response correlation, manifest
-publication, structural completion and remaining backend histories are still 09.4
-work; 09.5-09.7 remain Pending.
-
-Acceptance slice checks: 25 MCP and 30 repository tests pass, plus production build,
-post-build typecheck, scoped lint and docs/i18n/skills checks. A separate same-agent
-read-only review found no blocking issue in the gateway, immutable reader or
-transactional admission/evidence checks. The first MCP run exposed an invalid
-boolean lock fixture; the corrected schema-valid fixture passes. No native YAML,
-package digest, stored schema, Unibase code or live configuration changed.
-
-09.4 human-request slice: reuse the existing mutation receipt's result for the
-immutable request (ID, original Manager Run, current target tuples, exact presentation
-and response contract); actual answers remain in `runDecisions`. The supported
-contract is the existing `{mode:"raw-v1"}` paragraph response. Presentation uses
-existing typed cards, leaving one of twenty slots for the question/request identity.
-The gateway requires the accepted raw-v1 Run mode and does not create an approval
-or answer. Optional brief questions may have no revision targets. Owned response
-reads match original Run, native `human` node and exact form, and expose only a
-submitted user intent whose sent/confirmed response agrees. Unknown submissions
-remain pending; changed targets are stale. Existing Run submission supplies atomic
-first-wins/idempotency and same-execution continuation. A native filled event can
-confirm an uncertain submitted response without another submission. No application
-quality/human-policy gate, collection, scheduler or Unibase change was added.
-The native checkpoint stores a human-response document reference rather than copying
-a large form; the unchanged form reaches Human Input with its placeholder exactly
-once. Updated model guide/JSON and complete diagram describe the optional receipt
-result; the regenerated core diagram excludes receipts and is otherwise unchanged.
-Target Dify form rendering/readback remains checkpoint 12 evidence.
-
-Human-request slice checks: 26 MCP, 30 repository and 42 native/v1 compatibility
-tests pass. The actual Run submit service with its fake provider proves foreign-user
-rejection, exact repeat replay, conflicting second-answer rejection and exact Unicode
-response retention. Actual native decision/filled events prove that an unknown
-submission stays pending until confirmation. Changed presentation/attempt/targets,
-persona-only provenance and expired forms cannot supply a usable answer. Native Code
-fixtures preserve a large form while checkpointing a compact reference. Production
-build, post-build typecheck, scoped lint, model/docs/i18n/skills checks and independent
-13-path hash/disabled-gate audit pass. A separate same-agent read-only slice review
-found no blocking issue. The package identity is recorded in the candidate README;
-checkpoint-wide review pairs remain 09.7 work. Next within 09.4: manifest draft
-publication, structural completion and remaining backend histories, including the
-known acceptance/completion assessment-preview integration item.
-
-09.4 manifest-publication slice: the existing `save_revision` gateway now resolves
-typed/transfer content before selecting a producer. A Manager-assembled book manifest
-uses the admitted Manager identity and a `manifest:` snapshot operation ID, without
-inventing a specialist result or dispatching work. Its page IDs must select owned
-immutable page-image sources, and attachments must be exactly those originals. Any
-supplied evidence must belong to the production; assembly may use an empty evidence
-array. Text/image publication still requires its retained producer evidence and
-creative funding/locks. Manifest assembly/selection is metadata over saved artifacts,
-so it does not require a new story allocation during a page-only paid revision.
-The active prepaid Manager and ownership checks remain mandatory.
-
-The existing immutable writer also revalidates unchanged manifest content/assets
-with replacement sources and `revalidatedFrom`, without another provider. Exact
-replays and equivalent snapshot writes return the prior revision without rewinding
-the selected candidate. The enhanced whole-book fixture now saves and revalidates
-actual manifests (only page metadata remains staged), reviews the explicitly selected
-revision among equal-content snapshots, and records Manager selection through the
-app gateway. Neither save nor selection sets production completion or its final
-manifest pointer. No schema field/collection changed: the model guide records the
-existing provenance semantics, and the JSON/diagrams remain structurally applicable.
-Completion, remaining backend histories and native acceptance/completion proof beyond
-the recent assessment preview remain 09.4 work.
-
-Manifest slice checks: 26 MCP and 30 repository tests, production build, post-build
-typecheck, scoped lint and docs/i18n/skills checks pass. A separate same-agent
-read-only slice review found no blocking issue in publication, immutable revalidation
-or original/source binding. No native YAML or hash-covered fixture changed, so the
-existing 42 compatibility tests and package identity remain applicable. The native
-whole-book acceptance guard is still an open integration item, not established by
-the fixture's direct acceptance gateway call. Final checkpoint review pairs remain
-09.7 work.
-
-Completion must distinguish the latest draft from Manager's selected candidate.
-Equal-content manifest revisions can have different source contexts, as the fixture
-now demonstrates. Bind an explicit immutable selection and aggregate review evidence
-for that exact manifest revision, rather than its content hash or recent preview
-alone. Keep quality policy in Manager and structural/financial checks in the app.
-
-09.4 completion amendment and implementation: `complete` now accepts
-`{manifestRevisionId,fence}` instead of copying a manifest body. The verified
-equal-content/different-source snapshots demonstrate why hash/body alone is ambiguous.
-This is the smallest explicit selection boundary; no new persisted field is needed.
-The app validates Manager acceptance and the owned accepted dependency graph (allowing
-older selected candidates), purchased layout/order/roles/canvas/format/panel capacity,
-complete original bytes and unresolved paid work. Byte I/O stays outside the short
-fenced transaction; exact committed replay skips it. Completion preserves native Run
-termination/settlement as separate facts and permits its final checkpoint, while
-rejecting further creative writes.
-
-Context now resolves one owned manifest selection from the last saved/read revision
-or recorded/read assessment, falling back to the accepted/current manifest. Its compact
-`manifestReview` counts aggregate all matching complete passing assessments under the
-configured policy/publication and the exact manifest source tuple. Required pages,
-originals and continuity comparisons are intersected with observed coverage; extra
-reference originals are not missing/extra pages. The native Manager guard checks
-these facts before whole-book selection/completion, independently of the recent
-eight-row preview. The app stores/derives facts without adding a quality/human gate.
-Non-manifest acceptance preview handling and remaining backend histories are still
-09.4 work; multi-window and complete creation/revision journeys remain 09.6 evidence.
-
-Completion slice checks: 27 MCP, 30 repository and 42 native/v1 compatibility tests
-pass, plus production build, post-build typecheck, scoped lint, docs/i18n/skills and
-independent 13-path hash/disabled-gate audit. The actual gateway/native Code fixture
-rejects a missing layout, corrupt bytes, wrong immutable selection and unresolved
-paid work without partial finalization. It proves same-hash/different-source review
-invalidation, valid coverage outside nine newer assessments, selection of an older
-candidate despite a newer draft, final checkpoint/replay and replay without byte I/O.
-Page/layout/original setup is explicitly staged; this is not full provider creation
-or multi-window execution evidence. A separate same-agent read-only slice review
-fixed historical same-artifact lineage handling and terminal paid-eligibility facts;
-its follow-up found no further blocking issue in this slice. Native reasoning/image
-eligibility is false after completion. Deterministic resume after a committed completion
-remains a 09.5 recovery case; no new paid reasoning may be used to rediscover completion.
-Checkpoint-wide final review pairs are still 09.7 work. Next within 09.4: non-manifest
-acceptance evidence beyond previews and remaining owned backend histories.
-
-09.4 exit evidence: context now resolves selected non-manifest review facts across
-owned individual/grouped passing assessments outside the preview. Exact revision
-identity is required; equal content alone cannot borrow another revision's review.
-Unchanged revalidation identifies its actually reviewed ancestor without claiming
-inspection of replacement context; Manager retains that judgment. Existing bounded
-reads now expose acceptance/human/execution histories and version-labelled same-book
-production metadata. Execution DTOs exclude private inputs, outputs and credentials.
-All histories retain ownership/query-bound cursors, item/byte limits and separate
-body navigation; inventory changes require restart. No stored schema changed, so
-the model JSON and both diagrams remain applicable.
-
-Exit checks: 28 MCP, 30 repository and 42 native/v1 compatibility tests pass, plus
-production build, post-build typecheck, scoped lint, docs/i18n/skills checks and the
-independent 13-path hash/disabled-gate audit. History fixtures cover 25 additional
-records per family, foreign owners, same-owner different productions/books, v1 metadata,
-private-field omission, cross-query cursors and inventory-change rejection. A separate
-same-agent read-only slice review (cold-review fallback) found no blocking issue;
-unrelated formatting was removed. The final checkpoint review pair remains 09.7.
-Task 09.5 now begins with deterministic completion resume, existing-worker recovery,
-bounded retry eligibility and safe terminal consumption-flow release. Full composed
-creation/revision/multi-window journeys remain 09.6, not inferred from these slices.
-
-09.5 first slice: the native Manager facts/gate path now returns an already committed
-application completion directly, even when its completion reply or result checkpoint
-was lost. It does not invoke reasoning, redispatch, rewrite the checkpoint or repeat
-original-byte I/O. A pending/complete-looking checkpoint is not authority: an
-in-progress production remains partial. This reuses the existing gate/finish nodes
-without adding a graph branch, record or interface. The activation gate remains
-disabled; reporting an owned committed outcome does not enable dispatch.
-Checks: 28 MCP and 43 native/v1 compatibility tests pass, plus scoped test lint and
-the refreshed package identity. A separate same-agent read-only slice review found
-no blocking issue. Existing build/typecheck evidence applies to unchanged application
-runtime code. Model JSON/diagrams are unchanged because no stored shape changed.
-Remaining 09.5 work: automatic bounded readback on the existing extension-worker seam,
-trusted failure classification/backoff and failed-action retry authorization, safe
-terminal-flow release before continuation/revision, and composed exhaustion/late-result/
-repeated-click/cancellation checks. Do not mark 09.5 Verified from this first slice.
-
-09.5 readback amendment: demonstrated gap is unresolved work after its parent Run is
-terminal, which the ordinary job claim loop cannot revisit. Reuse the imported optional
-extension-worker callback and `reconcile_work` reader/observer. The smallest added
-state is optional scheduling metadata on existing `bookletWork` (next check, cumulative
-failed reads and short claim lease/reason), with a status/eligibility index. No new
-queue, scheduler, provider, dispatch path or ledger. The callback processes at most
-one due record per existing worker cycle, retains fixed-code trace evidence, and
-never grants retries or successors. Verify claim concurrency/expiry, active reads,
-bounded failures/backoff/retry-after, terminal late output, revocation and deadlines
-against disposable persistence and injected readback. Keep actual Dify evidence pending.
-
-Readback slice checks: 31 repository and 28 MCP tests pass, production build,
-post-build typecheck, scoped lint and docs/i18n/skills checks pass. Fixtures prove
-four failed reads with default three retries, a zero-retry snapshot, capped retry-after,
-unchanged failure count across successful active reads, claim concurrency/expiry/takeover,
-terminal-parent late output after cancellation/revocation, credential/deadline/missing-ID
-stops, and explicit trusted late retention after automatic exhaustion. Selected-call
-readback cannot consume another call's history. No job, production fence, retry counter,
-paid action or successor is changed by this worker pass. Per-check fixed-code traces
-use existing held execution evidence; no provider error text or claim token is public.
-A separate same-agent read-only slice review fixed the cross-call history issue;
-its follow-up found no further blocking issue. Model guide/JSON/complete Mermaid are
-updated; the regenerated abbreviated core Mermaid is unchanged. The package's native
-13-path digest is unchanged. This completes only automatic readback within 09.5;
-failed-action retry authorization/backoff and safe continuation still remain.
-
-09.5 continuation slice: `bookletLifecycleV2.continue`/`startRevision` now release
-the prior consumption workflow through the existing verified-terminal service before
-creating a new flow. Exact request repeats remain in the original commerce journal;
-they never release a newer active or unbound flow. Concurrent repeated continuation
-clicks share one flow, checkpoint and prepaid scope. Active/unverified native outcomes
-and an unbound predecessor remain busy; use the existing original admission/replay
-path for an unbound flow rather than creating another. No automatic successor,
-new funding interface, collection or Unibase change is introduced. Stored fields,
-model JSON/diagrams and native package digest are unchanged. Remaining 09.5 scope is
-failed-action retry classification/authorization/backoff and deterministic native
-failure routing; task 09.5 stays In progress.
-Continuation slice checks: 31 repository tests pass, including real v2 admission,
-concurrent continuation replay, active/unverified/unbound predecessor rejection,
-active revision rejection and replay of an old continuation after a newer revision.
-Build, post-build typecheck, scoped lint and docs/i18n/skills checks pass. A separate
-same-agent read-only slice review found no blocking issue. Charges, saved content,
-retry policy and allocation counts remain covered by the existing lifecycle fixture.
-
-09.5 explicit-retry amendment: the accepted public “Retry failed step” control needs
-an authenticated application authorization after automatic allowance exhaustion.
-Manager must not grant it. Add only `bookletRepositoryV2.authorizeRetry(productionId,
-{callId,key})` for the later creator control: existing owned transactions/receipts
-deduplicate clicks and existing audit events log authorization. An optional
-`retryAuthorization {key,authorizedAt,consumedByCallId}` on the failed work record
-permits exactly one additional registration. The new attempt retains the same action,
-scope/funding and an increasing retry ordinal; it inherits no fresh automatic budget.
-Unknown, non-retriable, obsolete, body-unavailable and still-automatically-eligible
-failures cannot obtain an extra grant. A consumed grant replays its original receipt;
-it does not authorize a second attempt. Registration consumes the grant atomically,
-and existing dispatch financial/correction/ownership guards still apply. This is an
-application-only method, not another MCP action, endpoint, scheduler or Run UI change.
-Verify with real registration/dispatch/outcome transactions and explicit trusted
-failure fixtures; fake failure evidence is not provider compatibility proof.
-
-Explicit-retry slice checks: 32 repository and 28 MCP tests, production build,
-post-build typecheck, scoped lint and docs/i18n/skills checks pass. Fixtures cover
-foreign ownership, unknown outcome denial, automatic allowance still available,
-concurrent click replay, changed-key payload rejection, exactly one consumption,
-increasing ordinal and unchanged policy, and authorization-key omission from work
-DTOs. Existing dispatch checks still apply after authorization. A separate same-agent
-read-only slice review found no blocking issue after adding the current-funding
-identity check. The JSON/model/complete Mermaid are updated; abbreviated core
-Mermaid and the 13-path native package digest remain unchanged. Native stage
-failure evidence is still insufficient to prove safe paid retry in the target;
-keep conservative stop/reconciliation as an accepted provider limitation. Remaining
-application work in 09.5 is retry eligibility timing and deterministic recovery
-routing for failed actions; do not count this backend grant as a wired creator control.
-
-09.5 retry-timing amendment: persist optional `retryNotBefore` on a confirmed
-retriable failed work record and carry it to its registered successor. Derive the
-delay from the originating Run's existing base/max settings and durable retry ordinal;
-honor trusted `retryAfterMs` within the same maximum. Older metadata-only records use
-the existing 2/60-second timing defaults. No new timing setting or scheduler. Enforce
-the stored time at dispatch; context/owned reads expose it with `dispatchReady` for
-the native guard. A waiting action remains registered and may be reused after a safe
-continuation. Pause instead of spending reasoning calls to poll time. Native stage
-isolation/provider outcome gaps still use the accepted stop/reconcile fallback;
-failed-action routing and the 09.5 exit audit remain incomplete.
-
-Retry-timing slice checks: 32 repository, 28 MCP and 43 native/v1 compatibility
-tests pass, plus build, post-build typecheck, scoped lint, docs/i18n/skills and the
-13-path hash/disabled-gate audit. Controlled-clock fixtures prove the 2/4-second
-ordinal backoff, early-dispatch rollback, exact eligibility, bounded retry-after,
-retained registered intent, and unchanged retry/correction policy. Older fixtures
-now advance their clock rather than bypass the new guard or sleep. A separate
-same-agent read-only slice review fixed failure/eligibility timestamp consistency;
-its follow-up found no further blocking issue. The model guide/JSON/complete diagram,
-native Manager prompt/guard, fixtures and package identity are refreshed together;
-the regenerated abbreviated core diagram is unchanged. This is local timing proof,
-not proof that target provider failures are safe to repeat. Remaining: deterministic
-failed-action routing and the full 09.5 exit audit; 09.6-09.7 remain Pending.
-
-09.5 native-wait amendment: a registered, authorized retry waiting only for its
-stored eligibility should not require a creator Continue click. Reuse one native
-Human Input node `retry-wait`, declared application-owned by `booklet@2`, and the
-imported domain `resumePaused`/existing worker seam. Manager checkpoints only the
-selected registered call; the fixed native presentation is bound to that call's hash.
-The worker verifies owner/production/native decision/presentation and returns the
-stored due time, then journal-submits `continue` through the existing application
-decision source when eligible. Never answer the creator's `human` node, grant a retry,
-dispatch work, create a successor, hold a production lease, add timing settings or
-poll with reasoning. Unknown paid outcomes retain deterministic stop/reconciliation.
-Prove timing, identity, first-wins, cancellation and no creator notifications locally
-before treating this application integration as verified. Target Dify execution remains 12.
-
-09.5 exit evidence (2026-11-12): 29 MCP, 32 repository and 45 compatibility tests
-pass; production build, post-build typecheck, scoped ESLint, model generation,
-docs/i18n/skills and hash/disabled-gate checks pass. The actual worker fixture resumes
-the native call-bound wait only when eligible; changed presentation logs one fixed-code
-audit and remains unresolved. Cancellation, deadlines, user-answer denial, repeat
-submission, retained successful siblings and unchanged charges are checked. Native
-tool/LLM failures route directly to a deterministic unknown/partial stop, without
-another reasoning call. A separate same-agent read-only slice review found no blocking
-issue. Earlier slice counts/pending statements above are historical for those states.
-The task is locally Verified under the accepted provider-gap amendment: fixtures use
-explicit trusted confirmed failures; real provider errors do not prove safe retry.
-No provider classifier/control expansion is required. Revised target wait/form and
-image transport remain checkpoint 12; public recovery controls remain checkpoint 10.
-
-09.6 sequence: first compose a minimal creation-to-completion journey through actual
-handlers and native Code boundaries, using deterministic specialist responses. Then
-exercise purchased revision/correction and verified-terminal continuation on the same
-saved state, including reuse from an owned predecessor where required by R02. Reuse
-existing large-text, partial-original, human-wait, six-mode review and v1 fixtures;
-extend only missing composed behavior. Verify multi-window whole-book coverage beyond
-four pages. Do not build a graph interpreter or duplicate already-proven boundaries.
-Record precisely which fixture state is synthetic and which production entrypoints
-are exercised; stage neither page/layout content nor completion authority as proof of
-the creation journey. Fix only demonstrated behavior gaps before the 09.6 exit audit.
-
-09.6 composition amendment: the connected fixture proves pagination can publish the
-exact large manuscript as a layout, but composition incorrectly requires another copy
-of that manuscript even though its code uses only the selected layout. The isolated
-layout-only regression fails with `One selected manuscript required`. Require the
-manuscript only for pagination; composition retains its exact layout source and
-unchanged panel/lettering checks. This removes duplicate carrier data without a new
-contract, abstraction or dependency. Feed the actual published layout into structural
-completion instead of staging it. Page-image metadata in that fixture remains
-synthetic until its creation path is composed; do not mark 09.6 Verified yet.
-
-The first connected 09.6 slice passes 30 MCP and 46 compatibility tests, post-change
-typecheck and scoped lint. It executes actual Manager checkpoint/dispatch/consume,
-Page Composer validation/packing, native observation and replayable publication for
-pagination and composition of the retained large Unicode manuscript. Completion now
-uses that published layout. The regression fails against the preceding composition
-Code node and passes after the operation-specific requirement fix. Page images remain
-synthetic in the completion fixture; no complete creation or Dify journey is claimed.
-No persistence/schema/model relationship changes are made by this slice.
-Docs/i18n/skills and the refreshed 13-path hash/disabled-gate audit also pass. A
-separate same-agent read-only slice review found no blocking issue; this is not
-either of the two final checkpoint-wide reviews reserved for 09.7. Remaining 09.6
-work is composed page-image creation, revision/continuation, predecessor reuse and
-multi-window review, followed by the complete journey exit audit.
-
-09.6 creation/continuation evidence: 31 MCP tests now pass, including a separate
-five-page production with a supported 1024-square canvas and zero optional characters/
-locations. Actual book/production creation, prepaid start/admission, all seven roles,
-style sample, pagination/composition, page preparation/preflight, original retention,
-independent review, Manager acceptance and manifest completion run through the existing
-services/MCP/native Code/observation boundaries. All 18 revisions are published through
-handlers; no artifact, assessment, acceptance or completion state is staged. Checkout,
-native start/termination identity, specialist responses and image pixels are synthetic;
-this is not Dify graph execution or image-quality evidence.
-
-After two pages, a confirmed terminal fixture permits actual lifecycle/admission
-continuation. The successor preserves checkpoint, retry policy and existing revisions,
-uses a fresh capability, rejects the predecessor capability and completes without a
-second package charge or Run reservation. Two whole-book windows cover four pages,
-then the fifth; native completion rejects the partial coverage. Native acceptance
-guards bind independently reviewed, explicitly read revisions. Earlier large-text,
-tiny-canvas, partial-result and correction fixtures remain separate regressions.
-Typecheck, scoped ESLint and docs/i18n/skills checks pass. No production code, model
-relationship, package YAML or hashed artifact changes in this slice. Remaining 09.6:
-composed purchased revision, predecessor reuse and the full journey exit audit.
-A separate same-agent read-only slice review found no blocking issue. It verified
-the synthetic/real boundary, original-byte handling, partial/full window coverage,
-current Run/capability replacement, unchanged v1 record and one-charge/no-reservation
-assertions. Final checkpoint-wide review pairs remain reserved for 09.7.
-
-09.6 purchased-revision fixture: extend that same completed production with one
-scoped page revision whose frozen terms require five fixture credits. Exercise
-quote/consent mismatch rejection, repeated consent, actual revision admission,
-scoped native composition/image preparation/preflight/publication/review and a new
-selected manifest. Check preservation of the other four pages, immutable previous
-manifest/original, retry policy, one allocation and one revision charge. Only the
-same synthetic provider/native identity boundaries above are used. Do not add a
-revision executor or UI implementation; reuse the existing lifecycle and handlers.
-The connected probe confirms that a succeeded Run cannot use generic successor
-admission. A customer revision therefore starts a new logical Run (no predecessorId)
-under its newly consented revision workflow and the same production/order. Production-
-owned history retains the previous Run and exact content. Unfinished-production
-continuation still uses predecessorId and the existing logical chain. Keep this
-distinction in checkpoint 10; do not change Unibase restart rules to admit revisions.
-
-Purchased-revision evidence: 31 MCP tests, typecheck and scoped ESLint pass. The
-connected fixture completes a five-credit page revision through real quote, consent,
-admission, native composition/image/Reviewer boundaries and structural completion.
-It rejects changed consent, replays the original consent once, preserves all four
-unselected page subjects and previous immutable manifest/original, and records one
-revision allocation/charge. Three new revisions produce the revised specification,
-original and manifest; the retry snapshot is unchanged. No application code or shared
-runtime change was needed. Docs/i18n/skills checks and a separate same-agent read-only
-slice review pass. Predecessor reuse and the full 09.6 exit audit remain pending.
-
-09.6 predecessor-reuse amendment (R02): a new paid production must be able to select
-owned predecessor content without paying to recreate unchanged text or originals.
-Current v2 reads and revalidation are restricted to the current production, despite
-the stored `sourceProductionId`. Verify that gap with a selected-predecessor fixture.
-Reuse existing `read_document` and `save_revision.revalidatedFrom` boundaries: expose
-only the direct owned v2 predecessor in the same booklet, and copy exact content/assets
-into an empty matching responsibility as an unaccepted candidate. Keep replacement
-dependencies local. Original bytes stay in their existing store with an additional
-verified attachment, rather than duplicating storage or inventing provider work.
-Manager still decides review and acceptance; compatible body-review lineage may be
-reported as inherited, never as a review of the new context. No new tool, schema field,
-generator, plugin, dependency or shared-runtime change is needed.
-
-Evidence must reject foreign/unselected sources, changed content/assets, occupied
-responsibilities and incompatible page originals; prove receipt replay, current
-ownership, original delivery and fresh Manager acceptance through actual handlers.
-The existing v1 paths remain unchanged; this amendment does not migrate legacy content
-into the v2 content contract. JSON/diagram relationships already contain the optional
-lineage and source-production links; update their explanatory model notes together.
-
-The reuse slice also checks subsequent source-context revalidation of an imported
-image. Its owned immutable reuse origin supplies write provenance; unchanged bytes
-and compatible body-review lineage remain explicit. Do not require a fabricated
-current producer or a paid body review just to preserve an already imported original.
-The same write path now applies the existing purchased-layout validation to both
-generated and revalidated layouts. This removes the duplicate producer-only gate and
-rejects incompatible page count/canvas/direction/panels before reused content can
-advance. The connected negative fixture checks changed assets and incompatible
-layout/page-original snapshots with rollback, then restores the valid fixture snapshot.
-
-09.6 exit audit (2026-11-12) supersedes earlier slice-level pending claims:
-
-| Required boundary | Verified local evidence |
+| Accepted behavior | Delivered boundary and observable local evidence |
 | --- | --- |
-| Creation/completion | Five-page real book/production/prepaid admission journey, seven native roles, exact publication/acceptance and completion. Whole-book windows reject four-of-five coverage before completing five. |
-| Purchased revision | Actual quote/consent/admission, scoped composition/image/review and a new manifest; one five-credit fixture charge/allocation, unchanged other pages and immutable previous content. Revisions use a new logical Run. |
-| Correction | Existing MCP confirmed-finding, corrective Prepare/preflight/Generate/publication/correction-review path; repository fixtures preserve three text/one image limits separately from technical retries. |
-| Continuation/recovery | Actual successor after verified terminal fixture preserves checkpoint, retry policy, saved revisions and package charge; old capability rejected. Focused 09.5 fixtures cover unknown/late work, cancellation, bounded readback, retry authorization/timing and automatic waits. |
-| Predecessor reuse | Separately paid v2 version copies selected predecessor candidates, adds no original storage or creative work, preserves labelled compatible body review, performs fresh whole-book reviews and completes. Imported-image revalidation, altered assets, incompatible layout/page originals, occupied targets and foreign/unselected sources are checked. |
-| Human/large/partial | Real handler fixtures cover authenticated first-wins questions, uncertain submission, large Unicode publication/transfer, ordered original image blocks and partial successful siblings. Actual Code functions cover native failure/capacity gates. |
-| Compatibility | V1 lifecycle/media includes successive paid-version reuse; generic Run/AI fixtures cover unrelated execution, credit holds, private observations, internal waits, decision uncertainty and successor fencing. |
+| Manager-only application access | Sixteen v2 capabilities in `mcp-tools-v2.ts`, fresh owned Run capabilities, per-operation bounded schemas, server-selected suite/publication/Reviewer identity and module admission. Specialists receive no private Run context or app tools. |
+| Durable state and exact text | `repository-v2.ts`, `read-v2.ts` and existing transfers enforce atomic fences/version checks, immutable writes, exact replay receipts, complete hash-bound bodies, Unicode fragments and owned cursors. No lease spans provider or human waits. |
+| Registration and guarded dispatch | `work-v2.ts` binds the thirteen creative operations, six assessment modes and image preparation/generation to exact sources, targets, funding and retained requests. Registration alone grants no dispatch authority. Preparation and generation have distinct call IDs; generation consumes the exact retained preparation. |
+| Observation and accounting | `observations-v2.ts` retains matching complete/partial child envelopes and execution identities, including after cancellation. `usage-v2.ts` separates reported, estimated and unknown cost without another ledger or parent/child double counting. Truncated/unrelated model output cannot grant authority. |
+| Original images | Existing private media storage verifies ordered native files, permitted download sources, size/hash/ownership and per-kind canvas. Successful originals are retained independently of failed siblings; attachment/save replay creates no second generation. JSON identifiers never substitute for image bytes. |
+| Assessments and quality | Current-publication Reviewer identity, exact retained proposals, immutable source/target hashes and correction-finding lineage are checked. All six modes, before/after revisions and batch item scopes have local coverage. Manager owns creative acceptance, quality usage and human policy. |
+| Human response and completion | Native decision identities correlate to authentic first-wins responses. Explicit Manager acceptance selects candidates; completion checks the selected manifest, current accepted dependency graph, locks, originals and unresolved paid liability. Replay uses the saved completion receipt rather than another creative call. |
+| Bounded recovery | `retry-v2.ts` and `reconcile-v2.ts` reuse existing worker hooks. Durable action allowances, eligibility/backoff, one journaled explicit extra retry grant, technical `retry-wait`, bounded leased readback and verified-terminal continuation preserve successful work and consumption. Unknown outcomes grant no redispatch. |
+| Revision and reuse | Existing quote/allocation journals enforce one consent/charge and scope locks. Purchased revision starts a new logical Run on the same production. Selected predecessor candidates copy exact bodies/original attachments with local dependency identities; unchanged compatible body-review provenance may survive, but whole-book review is fresh. Imported-image context revalidation preserves original pixels. |
+| Product and configuration admission | The project registry contributes booklet product schema 1 using existing creative fields; content contract 2 is independent. Invalid package fields, disabled modules, mismatched suite bindings and duplicate matching policy rows are rejected. No catalog seed or administration UI is added in 09. |
+| Regression protection | Strict v1 readers, lifecycle/media, generic Run/AI behavior and unrelated project hooks remain covered. Shared core changes originate in reviewed Unibase imports, not local copied-core patches. |
 
-Current checks pass: 31 MCP, 33 repository, 17 lifecycle/media, 46 compatibility and
-32 generic Run/AI tests; production build, post-build typecheck, scoped ESLint,
-model generation, docs/i18n/skills and 13-path hash/disabled-gate audit. Separate
-same-agent read-only slice review corrected imported-image provenance and shared
-structural validation; follow-up found no blocking issue. The model guide/JSON notes
-are updated; both regenerated Mermaid versions remain structurally unchanged.
-No new tool, schema field, dependency, byte store, provider control or Unibase change.
-This is local handler/fake-provider/Code evidence, not Dify graph execution, real image
-quality or UI acceptance. Revised import/resume/file conversion remains 12, and UI
-remains 10. Proceed to 09.7 whole-package review, evidence consolidation and the 10 plan.
+The connected five-page fixture uses actual lifecycle, admission and MCP handlers with
+isolated native Code nodes for all seven roles. It creates the style original and every
+page artifact, completes two whole-book windows, resumes after verified termination
+without another purchase, buys one five-credit fixture page revision and preserves the
+other pages. A second production reuses the selected predecessor DAG/originals and runs
+fresh whole-book review without fabricated creative producer work. It also covers
+rejected foreign sources, altered copied bodies/assets and incompatible canvas/layout.
+The separate large Unicode composition journey and partial-result, human, correction
+and immutable-publication fixtures remain necessary coverage.
 
-The reasoning slice passes 29 repository and 15 MCP tests, including fenced rollback,
-normalized duplicate observations, exact native readback, late output hydration,
-unknown failure and BSON-capacity fallback without losing attempt counts. Build,
-post-build typecheck, scoped lint, environment and model/docs checks pass. A separate
-same-agent read-only slice review fixed the observation/checkpoint race and found no
-further blocking issue in this addition. This does not complete 09.2.
+Checkout terms, native provider starts/termination, specialist replies and pixels are
+synthetic. These fixtures execute real application boundaries and essential inline
+logic; they do not recreate the Dify graph engine or establish creative quality. Older
+structural tests that stage metadata are labelled separately from connected journeys.
 
-In progress; not ready for activation. Checkpoint 07 storage and checkpoint 08 shared
-seams are complete locally. Current 09 implementation provides:
+The current candidate identity and check totals are in the
+[candidate README](workflow-package/README.md#current-integration-slice). Final affected
+checks and two same-state checkpoint review passes passed in 09.7, as recorded below.
+The final review found missing product registration and checked policy uniqueness;
+the existing unique policy index already prevents ambiguity, so the proposed extra
+lookup was removed and a regression asserts that guarantee. Product registration
+introduces no schema or model change.
+Model JSON and both diagrams therefore remain applicable to these fixes.
 
-- V2 prepaid Run admission, start/continuation/revision lifecycle services and quote
-  guards using existing commerce journals; generic Run admission remains blocked.
-- Atomic checkpoint/index writes, stable identities, version/fence checks and exact
-  replay receipts. No lease is held across a provider or Human Input wait.
-- Creative-text registration for the thirteen native operations. Artifact accounting
-  targets and child subject selectors are checked separately. Correction limits remain
-  durable across regrouping, technical retries, continuation and funding scopes.
-- Reviewer registration validates all six modes against immutable target hashes and
-  owned source/original identities. Distinct before/after revisions of one artifact
-  are allowed; identical source tuples are rejected. Each batch item's scope is
-  retained. Current request-backed assessment writes require that item's exact
-  retained native proposal, rather than treating the first item as the entire batch.
-  This does not yet supply the assessment MCP gateway, immutable Reviewer binding,
-  dispatch authorization or complete correction-finding verification.
-- Owned revision/work/assessment reads with typed sections and Unicode text fragments;
-  artifact history uses a stable ordinal snapshot. Complete bodies never truncate.
-- Durable meaningful request bodies in the existing work record (optional for older
-  records, maximum 256 KiB), atomically hash-checked at registration. Renewable reference
-  URLs/native handles are excluded; creative JSON is preserved without diagnostic
-  redaction. The existing owned typed reader exposes the body after restart.
-- V2 transfer reuses the existing bounded chunk store, ownership checks, cumulative
-  budget and secret scanning. It grants no publication/dispatch authority.
-- The native worker hook retains matching complete child results and native execution
-  identity in the existing work record, plus a separate redacted trace. Fenced rollback,
-  duplicate observations, unrelated/truncated output rejection and retention after
-  parent cancellation/revocation are covered locally. Retention alone does not verify
-  Reviewer scope, settle costs, classify technical retries or publish a revision.
-- Native reconciliation reads the work's stored parent Run through existing provider
-  retrieval and bounded tracing. It verifies native run/workflow identities before
-  transactional retention, without rewriting the AI worker lease/status. Optional
-  locators only constrain readback; they cannot select another provider or app.
-  Missing identity, timeout or missing child output leaves work unresolved and grants
-  no retry. Automatic worker polling/backoff and measurement settlement remain pending.
-- Native Manager result/fence integration and Story Planner description-only revision
-  fixes. Seven role identities, provider bindings and disabled execution gates remain.
-- Creative-text publication accepts an exact retained proposal reference, typed content
-  or complete transfer. It checks the current prepaid Manager, native producer, target,
-  sources/evidence, funding, stage locks and purchased layout/panel limits. A producer
-  publishes each artifact once across continuation. Roster deltas preserve the other
-  narrative group and record their preceding roster source; raw child output is retained.
-  Proposal references avoid copying large exact text through the model.
-- Manager's private Start now uses the existing Run `context` text-input convention,
-  bound directly to MCP `runContext`. The actual capability inspector regression
-  fails on the prior export and passes on the corrected isolated Start/tool boundary.
-  No Unibase extension was needed. Full registration still requires the remaining
-  tools and Human Input integration; revised candidate import/execution remains pending.
+#### 09.7 exit evidence
 
-The exposed v2 tools are context, lease/fence refresh, checkpoint, index, transfer, creative-text/Reviewer work registration,
-native work reconciliation, creative-text publication and the partial document reader.
-Registration does not authorize paid dispatch. Automatic recovery, image publication/reviews,
-human decisions and accounting remain incomplete. There is no complete application-connected
-journey. The latest YAML identity and verification are maintained in the
-[candidate README](workflow-package/README.md#current-integration-slice).
+Checkpoint 09 closure follow-up is verified locally; its fresh evidence and
+checkpoint 10 prerequisite report are recorded below. Earlier identities remain historical.
 
-Current application verification: 60 affected repository, lifecycle/media and MCP
-tests pass, including native retention/readback, continuation publication, roster
-lineage, product-capacity rejection and large exact-text reference/transfer publication.
-Reviewer tests use the real native observation hook for a partial batch, preserve
-before/after source revisions, save distinct assessments of the same scope and reject
-altered assessment content. Owned production reads exclude order/owner/lease/checkpoint
-fields. These checks do not establish Reviewer publication identity or paid dispatch.
-The revised native package passes 40 compatibility tests, including private Start
-inspection against existing application code. Its hashes/digest are refreshed.
-Production build, sequential typecheck, scoped lint, environment and model/docs/i18n/
-skills checks pass. A separate same-agent read-only slice review found no blocking
-issue. No Dify, provider, deployment or checkpoint 10 UI implementation occurred. Historical
-slice results remain in Git; they are not acceptance of unimplemented paths. Checkpoint
-09 requires two clean read-only reviews after its complete behavior is implemented.
-The readback addition also passes 16 existing native adapter/tracing tests. Publication
-changes no stored fields or native YAML; model diagrams and package hashes remain
-applicable. Large-body source/checkpoint hydration, images, Reviewer bindings and the
-remaining runtime behavior still need implementation before checkpoint-wide reviews.
+Verified locally on 2026-11-12. Initial exit checks pass: 32 MCP, 33 repository, 17
+lifecycle/media, 46 compatibility, 31 commerce and 58 generic Run/AI/Dify/MCP tests;
+production build and worker bundle; post-build typecheck; scoped ESLint; environment,
+model generation, docs/i18n/skills checks; workflow/fixture/digest and disabled-gate audit;
+`git diff --check`. Handbook readiness exits successfully with pre-existing advisory
+tracking/preferences warnings; no tracking or project configuration was changed.
 
-Wire the sixteen capabilities in the [existing handoff](workflow-package/integration-handoff.md#minimum-managerapplication-interface):
-context, document reads, lease, index, work register/dispatch, transfer, original retention,
-revision save, human request, evidence, assessment, sources, reconciliation, acceptance,
-checkpoint and completion. Parse each operation's bounded request; no generic executor.
-Validate private Run context and production ownership on every tool. Children never
-receive private context or call app tools. Pin suite/publication and reviewer identity
-from server configuration, not model claims.
+Two consecutive clean **same-agent cold-review fallback** passes cover the whole
+package against `713da2d`: first ownership/funding/persistence/recovery and requirement
+coverage; second graph/bindings, compatibility, necessity/scope, evidence and the 10 plan.
+No blocking findings were identified in those passes. These are separate passes, not independent-agent reviews.
+Their identical 86-file pre-evidence-update content hash is
+`86ab530b3460461f19ec7468867240c84d371bf7d7b5f083a0a78ca5dc247c4b`.
+Compute it by sorting the baseline diff's repository-relative paths, concatenating each
+path + NUL + SHA-256 of its bytes + LF, then hashing the concatenation. This progress
+record changes documentation metadata after review; runtime/workflows/planned behavior
+are unchanged. The corresponding non-doc source/test/import identity is
+`49b1d25bcf273ca63c885fcabba62ba8452bf7c26b45fac6527ee608344475c3`
+(same algorithm, excluding `docs/` and `CHANGELOG.md`). Eighteen shared runtime/project
+slot files match exact imported commit blobs. The 13-path candidate digest remains in
+README; it intentionally does not cover application code or these progress records.
 
-Register v2 booklet domain/product contributions through project registries. Reuse
-existing quote/consumption/continuation/revision services; validate price/input identity
-at consent and consume once. Keep generic restart from bypassing prepaid admission.
-A successor requires verified termination and the same production/order scope.
+Review fixes: add the missing existing product-type registration; prove policy uniqueness
+through the existing index rather than another lookup; cover both failed and successful
+Manager termination in the connected continuation journey; remove superseded slice
+chronology and stale pending claims; sequence 10 configuration parsing before its editor.
+No new framework, dependency, plugin, application UI or live operation was added.
+Model field/relationship definitions, JSON example and both diagrams are unaffected by
+these final registration/evidence changes. The completed local goal stops before 10.
 
-Implement trusted observations and per-output original retention before enabling paid
-dispatch. Retain full successful/partial outputs before checkpoint advancement; validate
-restricted download hosts, ownership, size, output order and original hashes. Validate
-per-kind authorized canvas settings, not one blanket page canvas for all references.
-Use bounded typed reads/cursors and complete-payload transfer for large revisions;
-never silently truncate or impose transport item limits as product limits. Measurements
-separate reported/estimated/unknown costs and avoid parent/child double counting.
+Follow-up correction (2026-11-12): character/location `reference` image artifacts now
+use the existing reference funding and stage-lock classification, like their image
+specifications. Previously an authorized reference revision could be rejected as story
+work. A regression reproduced the failure before the one-line fix and now verifies both
+subject kinds, wrong-subject funding rejection, locked-stage rejection and permitted
+dispatch. All 34 repository and 32 MCP tests, build, post-build typecheck, scoped ESLint
+and docs/i18n/skills checks pass. Two separate same-agent read-only passes of this
+bounded correction found no remaining blocker. The whole-package review hashes above
+are historical identities preceding this correction, not hashes of the current tree.
+No model fields, persistence shape, JSON example, schema diagrams, workflow YAML or
+candidate digest changed; checkpoint 10 remains unimplemented.
 
-Add the retry/reconciliation behavior above to existing services and necessary native
-YAML failure branches. Correct only demonstrated integration mismatches; no prompt or
-graph redesign unrelated to accepted behavior. Preserve seven role/tool identities.
-Refresh YAML hashes/digest and reset affected checks/reviews when YAML actually changes.
+#### Accepted amendments and remaining evidence
 
-Completion verifies ownership, immutable identities, product structure, locks and
-accounting. Manager alone decides creative acceptance, human policy and quality usage.
-Exit: handler/repository tests prove these paths with fake providers, including safe
-retention after cancellation, correction exhaustion and no duplicate continuation charge.
+- Page Composer `compose` consumes the retained layout rather than requiring a second
+  manuscript copy; exact manuscript content is already bound during pagination.
+- The private Manager Start uses existing Run `context`, bound to MCP `runContext`.
+  Stored child identities and the server-owned policy row supply suite/Reviewer facts.
+- Technical retries wait in the existing native application-owned Human Input node;
+  the existing worker resumes the call-bound form only when eligible. Creator questions
+  are separate. No automatic successor or second scheduler is introduced.
+- Provider error alone is not safe-rejection evidence. Accepted hidden SDK attempts,
+  incomplete billing, default timeout and alias drift remain labelled limitations.
+  Missing locators, expired readback budgets/deadlines or unresolved outcomes remain
+  unknown; no expanded provider control is required to progress.
+- Generic Run restart accepts only terminated failed/cancelled attempts. A customer
+  revision after successful completion therefore starts a new logical Run. A later
+  product continuation after a successful Manager stop also uses a new execution,
+  preserving production state; never weaken shared restart rules to reuse a Run ID.
+- Source reuse follows only an owned current/direct predecessor production and exact
+  verified lineage. New current candidates must be explicitly selected; historical
+  acceptance does not satisfy current whole-book coverage.
+
+All execution gates remain disabled. Actual revised Dify imports/publications, nested
+runtime execution, retry-form resume, Manager/application MCP image conversion,
+configured commercial packages and paid acceptance are checkpoint 12 evidence.
+Creator controls and public history are checkpoint 10; saving history is not its UI.
+The active goal stops before implementing 10. No deployment or paid call occurred.
+
+### Checkpoint 09 closure follow-up and checkpoint 10 prerequisites
+
+Closure follow-up on 2026-11-12, branch `feature/10-dify-workflow-design`,
+HEAD `554ec9d51004264d2e9e8f7b874485dfb414fda7` plus the preserved working tree.
+
+| Task | State | Evidence |
+| --- | --- | --- |
+| 09-F1 baseline | Verified | Existing changes preserved; relevant worker/provider/commerce boundaries match reviewed Unibase import. Unresolved replay regression failed before the correction. |
+| 09-F2 dispatch locks | Verified | Existing transaction sets first story/style/reference locks according to generated subject kind. Repository cases cover style, character, location and page, replay, locked quotes and retained locks after failed/unknown outcomes. |
+| 09-F3 unresolved targets | Verified | Existing work lookup rejects overlapping paid creative attempts across funding/Run/service scopes, preserving funding-scoped correction accounting. Both unknown and dispatching states reject atomically. |
+| 09-F4 verification | Verified | 38 repository, 32 MCP, 17 lifecycle/media and 46 compatibility tests pass. Build, sequential typecheck, scoped lint and docs/model/i18n/skills checks pass. Two separate same-agent focused read-only passes found no blocking issue. |
+| 09-F5 readiness handoff | Verified | Prerequisite inventory below; checkpoint 10 remains unimplemented. |
+
+A necessary adjacent correction projects lock timestamps as ISO strings in the
+existing production reader. Populated locks exposed two JSON-read failures in the
+MCP suite; no new wire fields or persistence shapes were introduced. Model fields,
+JSON example and both diagrams remain applicable. Seven workflow hashes still match
+the manifest; YAML, provider bindings and disabled execution gates are unchanged.
+No Unibase changes, imports, dependencies, migration, UI, deployment or paid call.
+
+#### Checkpoint 10 prerequisite report
+
+| Category | Finding / next action | Owner and automation |
+| --- | --- | --- |
+| Local foundations | Prepaid admission, lifecycle/recovery, owned history/media, authentic decisions and existing Run start/detail project slots are available. | Unitale; reusable locally |
+| Remaining pre-10 work | None identified after the final connected MCP regression and focused review pair. | No manual setup needed |
+| Work belonging to 10 | Execute 10.1 facade, then 10.2-10.7 in their existing order. Configuration parsing/defaults belong to 10.1; its editor follows in 10.6. | Unitale; unattended local implementation under B |
+| User decisions/manual inputs before local 10 | None identified. Scope B is approved. A subsequent instruction starts 10; this task stops before it. | User starts next task |
+| Later evidence | Broader local integration in 11; live publication/bindings, MCP image conversion and paid acceptance in 12. | Implementer, then operator under C |
+| Later manual gate | Scope C, exact release/configuration, credentials, test package/account and finite spending approval remain deferred. The selected US$3 ceiling grants no current spending. | User/operator at 12 |
+
+**Ready to start checkpoint 10 locally.** No prerequisite user decision or manual
+setup remains identified. The next task is **10.1 Private application facade** after
+a subsequent start instruction. No additional pre-10 interface, configuration field
+or shared-runtime change is proposed.
+
+Reviewed correction identities (SHA-256, source/test bytes):
+- `repository-v2.ts`: `d0824174d67db0db05d7bebc0e7279a50fb6a990f9c55b2940a1f480b463f678`
+- `read-v2.ts`: `42c07b7259f4265376495549e0303960eda10d888baf4ed1cadf2da8e6b7a9e4`
+- `booklet-repositories.test.ts`: `7f6544f81ca3c91910f223db633d0731fcc1ddaf18103925dc35275566ad0852`
+- `booklet-mcp.test.ts`: `dc7390f5343ec1643ca2fea73e45871ab838a3c46510cd44a5b63f4e69c720f6`
+
+These focused passes cover the correction and its integration tests, not a fresh
+independent review of the entire historical package. Synthetic prior-work rows exercise
+cross-funding protection; the connected journey separately proves actual purchased
+revision and continuation. No live execution or exact hidden-provider retry count is claimed.
 
 ### 10 - Existing Run UI and complete T21
 
-Use `/runs/new`, existing Run detail/history surfaces and Unitale project components.
-Supply all six outcomes: package/brief/audience/preferences; creation/revision quote and
-financial consent; progress/results; authentic decisions; target-scoped revisions;
-owner-bound paginated production, artifact revision, decision and execution history.
-Saving history alone does not meet the UI requirement. Use existing owned media services;
-never pass booklet IDs into Run asset routes without an ownership-aware resolver.
+**Planning only; not started.** Begin only after 09 exits and an instruction activates
+this next checkpoint. Scope B is already approved; routine local implementation needs
+no repeated approval. Live inputs/actions stay grouped in 12. Default Unibase work:
+none. Reuse the imported project slots, domain picker and existing decision UI. Do not
+edit copied shared core or add a standalone workspace/listing page, scheduler or plugin.
 
-Add Retry failed step, Continue booklet and Stop with server-enforced eligibility above.
-Show saved progress and reconciliation states without technical identifiers in public
-copy. Review prompts are optional Manager policy; combine related questions. Financial
-consent remains mandatory. Expose retry settings and sanitized evidence in existing
-administration; no new dashboard, standalone workspace or booklet listing page.
-Public UI uses typed en/ar dictionaries and logical RTL; admin remains English/LTR.
+#### Fixed scope and sequence
+
+| Task | State | Smallest change and exit evidence |
+| --- | --- | --- |
+| 10.1 Private application facade | Pending | Define/validate the existing policy row's capacity and retry-default fields here (the editor follows in 10.6); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
+| 10.2 Package and financial consent | Pending | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Published package snapshots and changed-price/input tests pass; no production seeds. |
+| 10.3 Progress, decisions and originals | Pending | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
+| 10.4 Revision and recovery controls | Pending | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
+| 10.5 Accessible history | Pending | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
+| 10.6 Minimal administration | Pending | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
+| 10.7 Verification and handoff | Pending | Run affected service/UI checks, desktop/390px en/ar browser journeys, English/LTR admin with Arabic public preference and restoration, keyboard and served-document CSP checks. Two clean same-state read-only reviews; update evidence and remaining 11/12 steps. |
+
+Implement in order; keep only one task In progress. Small affected checks per slice;
+checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.
+
+#### Application boundary and financial ordering
+
+Keep server orchestration in a project-owned `src/lib/server/booklets/application.ts`
+facade using existing actor, errors, module guards, commerce and booklet services.
+Create a small client-safe contract file only for actual request/DTO boundaries;
+never export private records. Reuse existing `endpoint` authentication, mutation-origin
+checks and account limits. Server components call private modules directly.
+
+Use `/api/booklets` GET for the existing domain picker (`{rows:[{id,title}],next}` with
+search/cursor); a distinct bounded `section=packages` returns allowlisted published
+booklet package summaries. POST accepts discriminated quote/start commands. Use
+`/api/booklets/[productionId]` GET for public views/history and POST for revision/recovery
+commands; each action has a strict schema, stable idempotency key and fresh ownership
+check. Do not add an endpoint per internal service. Resolve user identity, configuration,
+funding and native status on the server, never from browser claims.
+
+A creation quote binds the selected published catalog ID/revision/hash, brief/input
+hash and existing consent semantics. Reject changed terms/input and require fresh
+consent. Start resumes this idempotent sequence:
+
+1. Create/read the owned booklet and queue consumption using the existing order journal
+   and a stable request key. The admission callback validates owned target and pinned
+   fields; it must not create a v2 production before the order exists.
+2. Create/read the v2 production against the committed frozen order and trusted profile
+   capacity/retry defaults. If it already exists, verify the same owned input/order and
+   reuse its stored snapshots; later admin edits cannot change an in-progress purchase.
+3. Call the existing lifecycle start once, then enqueue the prepaid booklet Run with
+   the exact stored orchestrator/configuration. The Run itself reserves no extra credits.
+4. On interruption, resume the first incomplete committed effect under the same key;
+   changed payloads conflict. Do not wrap provider calls in a transaction or create a
+   parallel purchase journal. An unstarted queued order is not a paid generation.
+
+Read published catalog heads/versions through the existing commerce model, filtering
+booklet product type/schema and module eligibility. Return public fields and price;
+never return provider bindings, credentials, policy rows or environment snapshots.
+Keep v1 history readable through its existing readers; no automatic content migration.
+
+#### Run views, decisions, recovery and history
+
+Replace the project Run start/detail stubs through their existing slots, keyed by
+`target.adapter`, `target.version` and `kind`; unrelated Runs retain existing behavior.
+Show the six T21 outcomes: package/brief/audience/preferences, quote/consent, progress/
+results, authentic decisions, scoped revisions and owned accessible history.
+Reuse shadcn primitives and typed page-scoped en/ar catalogs with logical RTL styles.
+No technical call/provider IDs in public copy; show clear saved progress and uncertainty.
+
+Public projections allowlist status, selected result metadata, retry eligibility/time,
+revision scope/price, safe progress summary and owned media URLs. Never forward raw
+work requests/results, checkpoints, feedback, private execution JSON or raw audit rows.
+Use existing bounded readers for production/artifact/acceptance/human/execution histories
+and their cursors; do not turn transport windows into product limits. Clearly label
+historical versus current selected candidates and predecessor provenance.
+
+Serve originals through `/api/booklets/[productionId]/assets/[assetId]` using
+`bookletMedia.read` and fresh owner checks, including verified predecessor attachments.
+Use private no-store responses, validated MIME and nosniff. No arbitrary client URL
+fetching and no booklet IDs passed to generic Run asset routes.
+
+Keep creator questions in existing authentic first-wins Run decision controls; never
+answer them via application retry waits. Manager chooses optional review prompts and
+may group related questions. Financial consent is always explicit.
+
+- **Retry failed step:** after automatic allowance is exhausted, authorize the existing
+  single extra action grant using `authorizeRetry`; preserve its counter and stable key.
+  Resume through the ordinary owned continuation path only when the previous Manager
+  execution is verified terminal. An active Manager retains control; do not enqueue a
+  parallel successor. Unknown outcomes offer status/reconciliation, not paid retry.
+- **Continue booklet:** preserve production/order, successful artifacts, counters and
+  checkpoint. For eligible failed/cancelled predecessors use existing predecessor
+  chaining. After a successfully terminated Manager execution, start a new logical Run
+  against the same production, omitting `predecessorId`; retain production history.
+  Test both terminal shapes. Never label this Start over or discard paid work.
+- **Stop:** call the existing Run cancellation command. Explain that accepted provider
+  work may finish and be retained; cancellation is not proof of provider termination or
+  a refund. Do not add a second cancellation implementation.
+- **Revision:** use `quoteRevision`/`startRevision`, expected version and stable request ID.
+  Preserve categories story (one scoped round), style (affected style samples), reference
+  (selected character/location identities) and page (selected page identities). Server
+  locks, entitlement, quote hash and allocation remain authoritative. A revision after
+  completion starts a new logical Run without generic restart or another package charge.
+
+#### Administration and local configuration
+
+Keep the defaults labelled **action retries**: paid LLM 2, paid image 0, retriable
+non-paid 3; non-retriable actions have no allowance. Retry counts and correction counts
+remain separate and durable. SDK attempts stay unknown when unavailable; no new controls.
+
+Reuse the project-owned `bookletWorkflowPolicies` record keyed by execution profile ID/
+revision and orchestrator/configuration revision. Extend it only with validated profile
+capacity and retry defaults needed by the application boundary. Capacity must match its
+profile identity and is immutable per profile revision; changes require a new profile
+revision. Retry-default edits affect new productions only. Existing snapshots win on
+replay. Reject absent/duplicate/mismatched bindings; never infer live configuration.
+
+The imported admin settings surface has no project form slot. Add one small Booklet
+settings section at `/admin/booklets` using existing `adminSections`, shell and admin
+authentication; do not change shared settings core. `/api/admin/booklets` reads/updates
+only allowed settings with explicit booklet module guard. Do not declare these under
+module route prefixes that overlap core `/admin` or `/api/admin`. Read-only identity,
+three bounded integer inputs and sanitized evidence suffice; no new dashboard.
+Use conflict detection against the previously read settings, existing transactions and
+audit events. Preserve suite/provider/Reviewer bindings on retry-default edits. Reuse
+existing admin AI/report evidence for errors, application attempts and reconciliation;
+if needed, render a bounded sanitized table in this section, not another operations UI.
+
+Use synthetic published catalogs, frozen terms, policy/profile fixtures and local
+accounts for all 10 tests. Real package/capacity selection, credentials and live binding
+readback are final 12 inputs. Admin stays English/LTR without changing public preference.
+No deployment, migration of a live database, provider call or live import is part of 10.
 
 ### 11 - Integrated verification and handoff
 
@@ -1507,17 +961,18 @@ permissions failure or excluded-scope change; keep independent work moving. Neve
 branch protections or claim a gated capability is proven. Routine syntax/file organization
 choices belong to the implementer; business behavior and ownership above are fixed.
 
-This documentation amendment changes no executable contract or persistence. The model
-JSON/diagrams therefore remain unchanged until 07. Existing 01-06 evidence remains
-historical for those exact artifacts; the new retry behavior needs fresh implementation
-and verification. No current application or YAML retry capability is claimed.
+The original planning amendment was documentation-only. Subsequent 07-09 changes
+implemented the storage and local application/native retry boundaries recorded above.
+Model JSON/diagrams track implemented contracts. Existing 01-06 evidence is historical
+for its exact artifacts; 09 uses fresh checks and reviews, with target execution pending.
 
 ### Execution boundary and artifact layout
 
 Original 01-06 local scope: package YAML, essential inline checks, focused fixtures/tests and
-canonical booklet documentation/navigation. Application code, runtime registries,
-migrations, root dependencies/lockfiles, deployment settings and Unibase are excluded.
-Commits, pushes, live operations and paid calls require separate authorization.
+canonical booklet documentation/navigation. That original scope excluded application code, runtime registries,
+migrations, root dependencies/lockfiles, deployment settings and Unibase. Scope B later
+authorized bounded 07-11 implementation/publication as recorded above. Deployments,
+paid calls and live activation remain excluded until scope C approval.
 Existing v1 compatibility tests are preserved. No retroactive issue is needed.
 
 Package root: `docs/features/booklet-generation/workflow-package/`. Maintain one
@@ -1571,9 +1026,9 @@ digest. E1-E5 remain open. Authorized no-money staging probes established dispos
 candidate import/readback, native child/files/control and Human Input resume; the
 README records exact scope, remaining gates and cleanup. Actual paid provider probes
 are recorded in the handoff; no integrated application journey is claimed.
-The user explicitly stopped before checkpoint 07 after validated provider feasibility.
-All eight disposable apps and both test plugins are removed, with original apps/shared
-plugins unchanged. No application changes have started. Future changes reset affected
+The initial stop before 07 was superseded by scope B. Checkpoints 07-08 and tasks
+09.1-09.6 are locally verified; 09.7 is now Verified locally; checkpoint 10 remains unimplemented. All eight historical disposable
+apps and both test plugins were removed, with original apps/shared plugins preserved. Future changes reset affected
 checks/reviews; do not inherit the superseded framework evidence.
 The [compatibility procedure](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
 separates early Dify feasibility checks from application-dependent integration proof.
@@ -1584,23 +1039,16 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
-Continue scope B on `feature/10-dify-workflow-design`: 01-06 native candidates and 07
-storage and 08 shared-runtime integration are complete locally; continue at 09. Read AGENTS,
-the accepted plan/handoff, current code and checkpoint evidence. Use prepared tools,
-small slices and the necessity/simplicity gate. Scope B already covers necessary
-Unitale/Unibase implementation, scoped code commits/pushes/PRs/merges and reviewed exact
-template imports after checks/reviews. Verify upstream Unibase main before branching;
-never patch copied shared core locally. No new framework, scheduler, plugin or dashboard.
-Unibase PRs #49/#50 merged the reviewed shared seams and initialization correction.
-Exact import `98b77fd1926bc38cefa172a1c90e4735597ca6db` is in Unitale `2873e60`.
-Checks and two clean same-agent integrated reviews pass; continue 09 rather than recreating the seams.
-
-Continue through 11 when dependencies are satisfied. Each checkpoint needs two clean
-read-only reviews. Do not confuse storage tests with verified Dify/application recovery.
-No temporary tunnel. Defer actual MCP file conversion to the real staging endpoint in
-12. Scope C remains pending; its selected future US$3 provider ceiling is not current
-spending approval. Preserve historical US$1 probe accounting and shared plugins. Stop
-before staging deployment/publication/migrations/paid acceptance without C approval.
+Checkpoint 09.1-09.7 is Verified locally on `feature/10-dify-workflow-design`.
+The completed goal stops before implementing 10. On a new instruction to start 10,
+follow tasks 10.1-10.7 above, reuse delivered services and exact reviewed Unibase import
+`a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`, and report status/checks at each task.
+Follow AGENTS and the necessity/simplicity gate. No copied-core patch, new framework,
+scheduler, dependency or provider plugin. Scope B remains approved. Provider gaps
+requiring expansion are accepted limitations, not scope expansion. No temporary tunnel,
+deployments, paid calls or live activation. Scope C stays pending at 12; the selected
+future US$3 ceiling is not current spending approval. Keep 11 local integration and
+12 grouped manual/operator acceptance distinct from local implementation evidence.
 
 ## Foundation import
 

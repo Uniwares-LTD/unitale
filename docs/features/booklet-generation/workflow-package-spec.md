@@ -204,12 +204,13 @@ Required gates: accepted configured models/settings, native structured output, o
 originals and useful execution/usage observations. The user accepts the installed
 providers' automatic SDK retries, default network timeout and Sunburst alias; these
 no longer require a provider patch or replacement installation. Keep Dify node and
-Manager redispatch retries disabled in the current candidate. The accepted future
+unconditional Manager redispatch retries disabled. The accepted
 [action retry policy](implementation-plan.md#action-retries-and-automatic-reconciliation)
-adds bounded technical retries and automatic app reconciliation in 07-11, with fresh
-checks/reviews; it does not change current YAML or control provider SDK attempts. The
+is locally implemented through 09 with durable guarded attempts, a native technical
+wait and existing-worker reconciliation. Creator controls/admin defaults remain 10.
+These changes control application actions, not provider SDK attempts. The
 [accepted provider tradeoffs](workflow-package/integration-handoff.md#accepted-provider-tradeoffs)
-define admin evidence and unresolved liabilities. Planned app reconciliation checks
+define admin evidence and unresolved liabilities. The local app reconciliation checks
 existing Dify evidence automatically; direct provider status lookup remains a future
 capability-dependent improvement.
 SDK retry counts and total billing are unknown unless independently evidenced;
@@ -249,10 +250,11 @@ partial, with fixed bounded summaries and sanitized failure codes. Cards/images 
 empty and checkpoint null; owned booklet records/assets remain authoritative. The
 generic worker additionally requires native execution success. No shared normalizer
 or second result protocol is needed. This local 09 slice has pure-Code/Run-parser
-fixtures; its target Dify execution and v2 application wiring remain pending.
+fixtures; local v2 application wiring is verified through 09.6, while target Dify
+execution remains pending.
 
 Keep v1 semantics and records. Opt-in v2 storage is implemented at 07 and the generic
-shared-runtime seams are imported at 08; application wiring remains in progress at 09.
+shared-runtime seams are imported at 08; application wiring is Verified locally through 09.7.
 Do not design collections/indexes beyond demonstrated workflow needs. Reuse existing
 production/revision/original-media, consumption, execution and Run services. Human
 cards identify exact request/presentation/targets; authenticate and correlate submissions.

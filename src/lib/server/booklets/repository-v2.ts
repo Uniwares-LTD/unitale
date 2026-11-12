@@ -289,7 +289,7 @@ export function bookletRepositoryV2(
         artifact.kind === "style" || subject.kind === "style-sample";
       const reference =
         ["character", "location"].includes(subject.kind) &&
-        artifact.kind === "image-spec";
+        ["image-spec", "reference"].includes(artifact.kind);
       if (
         (story && p.stageLocks.story) ||
         (style && p.stageLocks.style) ||
@@ -943,16 +943,14 @@ export function bookletRepositoryV2(
               throw bookletConflict(
                 "Correction metadata required for an already attempted creative target.",
               );
-            if (
-              history.some(
-                (previous) =>
-                  previous.actionKey !== row.actionKey &&
-                  ["dispatching", "unknown"].includes(previous.status),
-              )
-            )
-              throw bookletConflict(
-                "Reconcile unresolved creative work before another attempt.",
-              );
+            const unresolved = await work.findOne({
+              _id: { $ne: row._id }, ownerId: actor.uid, productionId: p._id,
+              targetIds: { $in: row.targetIds }, status: { $in: ["dispatching", "unknown"] },
+              category: { $in: ["paidLlm", "paidImage"] },
+              service: { $nin: ["manager", "quality-reviewer"] },
+            }, { session, projection: { _id: 1 } });
+            if (unresolved)
+              throw bookletConflict("Reconcile unresolved creative work before another attempt.");
             if (row.correction) {
               for (const targetId of row.targetIds) {
                 const used = correctionActions(history, targetId);
@@ -966,6 +964,16 @@ export function bookletRepositoryV2(
           }
           if (row.retryNotBefore && row.retryNotBefore > now())
             throw bookletConflict("Retry backoff is still pending.");
+          if (row.service === "image-executor" && row.operation === "generate" && row.category === "paidImage") {
+            for (const subject of p.subjects.filter((subject) => subject.artifacts.some((artifact) => row.targetIds.includes(artifact.id)))) {
+              const stages: (keyof ProductionV2["stageLocks"])[] = subject.kind === "style-sample"
+                ? ["story"] : subject.kind === "page" ? ["story", "style", "references"] : ["story", "style"];
+              for (const stage of stages) p.stageLocks[stage] ??= {
+                operationId: row.callId, lockedAt: now(),
+                sourceRevisionIds: [...new Set(row.sources.map((source) => source.revisionId))],
+              };
+            }
+          }
           const result = await work.updateOne(
             {
               ownerId: actor.uid,

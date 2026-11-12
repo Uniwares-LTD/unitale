@@ -3,14 +3,15 @@
 The [workflow design](workflow-design.md) records the accepted issue #10 delivery
 and ownership decisions. It supersedes the earlier application-enforced human/quality
 gates for the target design. Existing T14-T17 code still implements those older guards;
-the design is not an application implementation claim. The DSL-first local candidate
-through 06 is implemented; current verification is in the candidate README.
-Application implementation remains behind the post-06 gate.
+v1 behavior remains unchanged. The DSL-first local candidate through 06 and local
+v2 storage/runtime integration through 09.7 are implemented and locally reviewed. Current verification is in the candidate README. Creator UI is 10,
+integrated validation 11 and authorized target acceptance 12.
 
 The [A01-A22 technical resolutions](workflow-package-spec.md#technical-resolutions-for-a01-a22)
 and [01-12 checkpoints](implementation-plan.md#issue-10-deliverables-and-dependency-map)
 record workflow-first delivery: complete the candidate package and application-change
 handoff at 06, then require explicit authorization before app implementation at 07.
+Scope B subsequently supplied that authorization; the active goal stops before 10.
 The first phase uses official Dify plugins and native YAML with essential inline code,
 without a custom plugin or Unitale/Unibase runtime changes.
 These checkpoints do not
@@ -122,7 +123,8 @@ still enforces ownership and allowed operations. Versioned tools read context, b
 operations, save revisions, record evidence, retain/read original assets, record quality,
 retrieve already-persisted human decisions, record Manager acceptance, inspect
 operations and complete structurally valid manifests. These are target capabilities;
-the current T17 catalog still follows its earlier approval contract.
+the preserved v1 T17 catalog follows its earlier approval contract; the opt-in v2
+Manager catalog implements the new boundary with local evidence through 09.6.
 Stable idempotency keys and expected revisions make identical retries return the first
 effect and changed payloads conflict. Keep secrets out of prompts, outputs and logs.
 

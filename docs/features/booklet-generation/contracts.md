@@ -4,10 +4,11 @@ This guide describes the existing v1 contract and implementation boundaries.
 The accepted [workflow design](workflow-design.md) changes the target ownership of
 human approvals, quality gates and Manager acceptance, and records the required
 versioned extensions. The 07.1 [v2 content/assessment/retry parsers](../../../src/project/booklets/contracts-v2.ts)
-are implemented. V2 production/checkpoint persistence has started with explicit
+are implemented. V2 production/checkpoint persistence is implemented with explicit
 readers/writers, draft immutable revisions and durable work/assessment/acceptance
 records. Correction counts derive from the same work history, separately from retry
-ordinals. Trusted runtime observation, tool integration and UI remain pending. Preserve v1 parsing and
+ordinals. Trusted observation and tool integration are locally verified through 09.6;
+public UI is checkpoint 10 and actual target execution remains checkpoint 12. Preserve v1 parsing and
 historical records. The [package specification](workflow-package-spec.md#concrete-runtime-record-and-ui-decisions)
 defines the planned v1/v2 compatibility boundary; minimal package boundaries are
 checked in the actual workflow YAML and runtime implementation follows 07 in the
@@ -40,11 +41,11 @@ admission/recovery, trusted observations, correction/revalidation and UI correla
 V1 quality uniqueness and parsing stay unchanged. Content, assessment and retry policy
 parsers now exist beside v1; they preserve exact text and creative JSON fields. Structural
 parsing grants no execution/quality/usage authority. New assessment storage, Manager acceptance
-and correction chains remain application proposals until 07-09; 01 may implement
-package-local contract fixtures without changing runtime schemas.
+and correction chains are implemented in 07-09 with local handler/repository/native
+Code evidence. Package fixtures do not establish target runtime execution.
 The model guide/example/Mermaid diagrams now distinguish unchanged v1 state from
-the implemented v2 production/checkpoint storage slice. Remaining records are not
-claimed as implemented.
+the implemented v2 records and relationships. Public application DTOs remain 10;
+target acceptance remains 12.
 
 ## Versioning
 

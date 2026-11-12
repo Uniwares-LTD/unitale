@@ -60,6 +60,8 @@ import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
 import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
+import { extensionProductTypes } from "../../src/lib/server/extensions";
+import { validateDefinition } from "../../src/lib/server/commerce/catalogs";
 import { resumeBookletRetryV2 } from "../../src/lib/server/booklets/retry-v2";
 import { bookletDomainV2 } from "../../src/project/booklets/domain";
 import { bookletMedia, type BookletAsset } from "../../src/lib/server/booklets/media";
@@ -108,6 +110,17 @@ function runNativeCode(role: string, id: string, args: Record<string, unknown>) 
   assert.equal(executed.status, 0, executed.stderr || String(executed.error));
   return JSON.parse(executed.stdout);
 }
+
+test("booklet catalog registration validates package fields and honors module admission", () => {
+  const fields = Object.fromEntries(Object.entries(example.collections.bookletProductions[0].creativeConfigSnapshot)
+    .filter(([key]) => !["id", "revision"].includes(key)));
+  const definition = { kind: "consumption", fields, terms: { identity: { id: "booklet-fixture", revision: 1, schemaVersion: 1 },
+    productType: "booklet", productSchemaVersion: 1, credits: 50, allowances: [], entitlementDays: null } };
+  const types = extensionProductTypes([bookletsServerExtension], () => true);
+  assert.deepEqual(validateDefinition(definition, types).kind, "consumption");
+  assert.throws(() => validateDefinition({ ...definition, fields: { ...fields, maxPanelsPerPage: 0 } }, types));
+  assert.throws(() => validateDefinition(definition, extensionProductTypes([bookletsServerExtension], () => false)), /Product type version/);
+});
 
 test("booklet MCP uses real transport, capabilities and repository transactions", async (t) => {
   const mongo = await MongoMemoryReplSet.create({
@@ -1234,6 +1247,9 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           reviewer: { id: "review-policy-v2", revision: 1, publicationId: configured.suite.children["quality-reviewer"].workflowId },
         };
         await db.collection("bookletWorkflowPolicies").insertOne(bindingRow);
+        await assert.rejects(db.collection("bookletWorkflowPolicies").insertOne({
+          ...bindingRow, _id: "duplicate-booklet-policy" as never,
+        }), /E11000/); // The existing unique index prevents ambiguous policy selection.
         const facts = await successful("context", {});
         assert.equal(facts.productionId, production._id);
         assert.equal(facts.fence, registered.fence);
@@ -3351,6 +3367,18 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             assert.notEqual(delivered.isError, true);
             const files = references.map((_, i) => ({ related_id: "fixture-" + i }));
             const bound = runNativeCode("manager", "bind-originals", { raw: delivered.structuredContent, request: ready.request, files });
+            if (service === "image-executor" && operation === "generate") {
+              const registered = await repo.getWork(productionId, callId);
+              const blockerId = fingerprint([callId, "unresolved-predecessor"]);
+              await db.collection("bookletWork").insertOne({ ...registered, _id: blockerId as never,
+                callId: callId + "-prior", actionKey: blockerId, correctionRootId: blockerId,
+                runId: "terminated-prior-manager", status: "unknown" });
+              const beforeBlocked = await repo.getProduction(productionId);
+              try {
+                assert.equal((await invoke("begin_work", JSON.parse(ready.dispatch), token)).isError, true);
+                assert.deepEqual(await repo.getProduction(productionId), beforeBlocked);
+              } finally { await db.collection("bookletWork").deleteOne({ _id: blockerId as never }); }
+            }
             await ok("begin_work", JSON.parse(ready.dispatch));
             let result;
             if (service === "image-executor") {
@@ -3445,6 +3473,9 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             const file = { type: "image", transfer_method: "tool_file", related_id,
               url: `https://offline.invalid/files/tools/${related_id}.png?timestamp=1&nonce=fixture&sign=fixture` };
             const generated = await child("image-executor", "generate", artifactId, subject, { prepared: preparation }, sources, [file], [], {}, revision);
+            const locks = (await repo.getProduction(productionId)).stageLocks;
+            assert.ok(locks.story);
+            if (kind === "page-image") { assert.ok(locks.style); assert.ok(locks.references); }
             const bytes = await sharp({ create: { width: canvas.width, height: canvas.height, channels: 3, background: "yellow" } }).png().toBuffer();
             const previousFetch = globalThis.fetch, previousMode = process.env.DIFY_MODE, previousBase = process.env.DIFY_BASE_URL;
             let original;
@@ -3472,23 +3503,28 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           await review(layout, "specification"); await accept(layout);
           const pages: Source[] = [];
           for (const [i, pageId] of pageIds.entries()) {
-            if (i === 2) {
+            if (i === 2 || i === 3) {
               const retained = await repo.getProduction(productionId);
               const savedCount = await db.collection("bookletRevisions").countDocuments({ productionId });
-              const predecessor = admitted.attemptId, oldToken = token;
+              const predecessor = admitted.attemptId, oldToken = token, previousLogicalId = admitted.id;
               // A synthetic confirmed terminal native window. Continue itself
               // must use the actual lifecycle/admission services and saved state.
+              const successfulStop = i === 3;
               await db.collection("aiJobs").updateOne({ _id: predecessor as never }, { $set: {
-                status: "failed", terminationEvidence: "provider-failed", "execution.status": "failed" } });
-              const workflowId = await lifecycle.continue(productionId, "connected-next-window");
-              assert.equal(await lifecycle.continue(productionId, "connected-next-window"), workflowId);
+                status: successfulStop ? "succeeded" : "failed",
+                terminationEvidence: successfulStop ? "provider-completed" : "provider-failed",
+                "execution.status": successfulStop ? "succeeded" : "failed" } });
+              const continuationKey = "connected-next-window-" + i;
+              const workflowId = await lifecycle.continue(productionId, continuationKey);
+              assert.equal(await lifecycle.continue(productionId, continuationKey), workflowId);
               const previousMode = process.env.DIFY_MODE;
               process.env.DIFY_MODE = "fake";
-              try { admitted = await enqueueBookletRun(db, actor, productionId, { key: "connected-successor", workflowId,
-                predecessorId: predecessor, orchestratorId: definition.id, configurationRevision: 1, inputs: {} }); }
+              try { admitted = await enqueueBookletRun(db, actor, productionId, { key: "connected-successor-" + i, workflowId,
+                ...(successfulStop ? {} : { predecessorId: predecessor }),
+                orchestratorId: definition.id, configurationRevision: 1, inputs: {} }); }
               finally { if (previousMode === undefined) delete process.env.DIFY_MODE; else process.env.DIFY_MODE = previousMode; }
-              nativeRunId = "connected-native-successor";
-              token = "d".repeat(43);
+              nativeRunId = "connected-native-successor-" + i;
+              token = (successfulStop ? "g" : "d").repeat(43);
               await db.collection("aiJobs").updateOne({ _id: admitted.attemptId as never }, { $set: { status: "running", runId: nativeRunId,
                 execution: { status: "running", workflowId: configured.workflowId }, lease: "connected-worker",
                 leaseUntil: new Date(Date.now() + 180000) } });
@@ -3500,7 +3536,9 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
               assert.deepEqual((await repo.getProduction(productionId)).retryPolicy, retained.retryPolicy);
               assert.equal(await db.collection("bookletRevisions").countDocuments({ productionId }), savedCount);
               assert.equal(await db.collection("consumptionCharges").countDocuments({ orderId }), 1);
-              assert.equal((await db.collection<AiJob>("aiJobs").findOne({ _id: admitted.attemptId }))!.run!.attempt, 2);
+              assert.equal((await db.collection<AiJob>("aiJobs").findOne({ _id: admitted.attemptId }))!.run!.attempt, successfulStop ? 1 : 2);
+              if (successfulStop) assert.notEqual(admitted.id, previousLogicalId);
+              else assert.equal(admitted.id, previousLogicalId);
             }
             const pageSpec = await publish("page-composer", "compose", pageArtifact(pageId, "spec"), pageId,
               { kind: "page-spec", pageId, panels: [{ ...panels[i], composition: "A light in the dark" }] }, [layout], { pageIds: [pageId] });

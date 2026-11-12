@@ -23,8 +23,8 @@ including workspace tags to apply during a future authorized import.
 The [specification](../workflow-package-spec.md) owns accepted behavior. The
 [integration handoff](integration-handoff.md) defines the proposed application boundary,
 configuration/bindings, failure handling and target probes. Application storage and
-shared-runtime integration are implemented separately in 07-08; v2 runtime registration
-remains 09. Existing Dify apps and shared plugins were preserved during disposable probes.
+shared-runtime integration are implemented in 07-08; v2 runtime registration and
+local connected journeys are verified through 09.6, with final 09.7 review complete locally. Existing Dify apps and shared plugins were preserved during disposable probes.
 
 ## Configuration and limits
 
@@ -40,8 +40,8 @@ No package hashes or installation identities are invented here.
 The installed shared text dev7/image dev3 providers are selected in the manifest.
 The user accepts their automatic SDK retries, existing network timeout and Sunburst
 alias under the [provider tradeoffs](integration-handoff.md#accepted-provider-tradeoffs).
-No provider patch/release/new installation is required. Dify node and Manager retries
-remain disabled; SDK attempt counts and complete costs are unknown unless evidenced.
+No provider patch/release/new installation is required. Blanket Dify node retries
+remain disabled; guarded application action retries are locally fixture-tested; SDK attempt counts and complete costs are unknown unless evidenced.
 The image candidates omit unsupported retry/timeout configuration fields.
 
 Historical patched-provider probes passed and their disposable resources were removed.
@@ -49,12 +49,12 @@ They do not establish execution of the revised shared-provider binding. [Shared-
 now passes for all seven disabled candidates; actual revised-binding execution and
 full application integration remain pending.
 Activation remains disabled. Scope B for minimal 07-11 implementation is approved;
-07 storage and 08 shared-runtime import are complete locally; 09-11 application integration remains. The [approval register](integration-handoff.md#approval-register)
+07-08 and 09.1-09.6 are locally verified; 09.7 is locally complete; 10 creator UI and 11 validation remain. The [approval register](integration-handoff.md#approval-register)
 records no tunnel, scope C pending and a future US$3 ceiling (not current spend approval).
 The [remaining T18-T21 plan](../implementation-plan.md#remaining-implementation-kickoff-and-ownership)
 is being executed under scope B. Its [retry/reconciliation policy](../implementation-plan.md#action-retries-and-automatic-reconciliation)
-requires future application and bounded YAML changes with fresh evidence; existing
-candidate retries remain disabled. The 09 Manager result-view slice below has fresh hashes.
+has local application/native-wait evidence described below. Target execution remains
+pending and all execution gates stay disabled. Current candidate hashes are below.
 The retained upstream patch and isolated-build proposal are optional historical evidence.
 
 Local capacities: child JSON 256 KiB; original 8 MiB; one to sixteen explicit creative
@@ -100,7 +100,7 @@ before 348 individually inventoried source/generated/test files were removed.
 
 ## Current integration slice
 
-Tasks 09.1-09.6 are locally Verified; 09.7 final review/handoff is In progress.
+Tasks 09.1-09.7 are Verified locally; checkpoint 10 is planned and unimplemented.
 The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
 owns exit conditions and application evidence. This summary supersedes earlier slice
 counts and pending claims; historical reviews below apply only to their recorded state.
@@ -121,19 +121,23 @@ without a creator question, paid polling, another scheduler or an automatic succ
 Creator questions remain separate. Unknown outcomes and unisolatable paid failures
 stop deterministically for reconciliation; successful siblings are preserved.
 
-Current checks: **46 compatibility tests** (11 preserved v1 and 35 native), **31 MCP**
-and **33 repository tests** pass, plus production build, post-build typecheck,
+Current checks: **46 compatibility tests** (11 preserved v1 and 35 native), **32 MCP**
+and **38 repository tests** pass, plus production build, post-build typecheck,
 scoped ESLint, model generation, docs/i18n/skills checks and hash/disabled-gate audit.
-A separate same-agent read-only slice review found no blocking issue. Checkpoint-wide
-reviews remain pending in 09.7. The preceding lifecycle/media slice passed 17 tests.
+Two consecutive clean same-agent read-only whole-package review passes found no
+blocking issue at their recorded state; the subsequent reference-funding correction has
+fresh focused checks and two read-only passes. Identities and scope are in the [09.7 exit evidence](../implementation-plan.md#097-exit-evidence). The final regression batch also passes 17 lifecycle/media, 31 commerce and 58
+generic Run/AI/Dify/MCP tests. Handbook readiness retains pre-existing advisory
+tracking/preferences warnings; configuration is unchanged.
 
 These are local handler/worker and isolated YAML Code boundaries with fake providers,
 not execution of a Dify graph. The connected Page Composer fixture now publishes
 pagination and composition from the retained large Unicode manuscript, and completion
 uses that published layout. A separate five-page journey now creates all artifacts
 through handlers, including style sample and page originals, then completes across
-two whole-book review windows. Its actual prepaid continuation preserves completed
-work and adds no charge. Checkout, native start/termination, specialist replies and
+two whole-book review windows. Its actual prepaid continuation after failed or successful Manager termination
+preserves completed work and adds no charge. Failed predecessors retain the logical
+Run chain; a successful Manager stop starts a new logical Run on the same production. Checkout, native start/termination, specialist replies and
 pixels are synthetic; no artifact/assessment/acceptance/completion state is staged in
 that journey. The older structural fixture still stages page metadata. Purchased
 revision now also passes through quote/consent, a new logical Run, scoped composition/
@@ -143,7 +147,7 @@ Predecessor reuse now passes the connected local journey through exact revalidat
 original storage attachments, inherited compatible body-review provenance and fresh
 whole-book coverage. Imported-image context revalidation preserves exact pixels
 without inventing producer work. Negative source/asset/canvas checks and the 09.6
-local exit audit pass. Checkpoint-wide review follows in 09.7.
+local exit audit and final 09.7 reviews pass.
 Safe technical failure evidence is explicit in fixtures, not inferred from a provider
 error. Hidden SDK attempts/costs and unproved target failure classification remain
 accepted limitations; no provider controls or telemetry framework is added. Revised
@@ -299,3 +303,9 @@ prepared tools and inspected Console/service upload APIs expose no file-delete a
 `1205f691-e853-4010-90db-fbc206aa9310` (original-b). Their physical removal is unverified;
 no host/storage mutation or shared-plugin change was attempted. Probe apps/runs were
 deleted after observation, so the run IDs above are historical evidence locators.
+
+Checkpoint 09 closure follow-up passes 38 repository and 32 MCP tests, including
+dispatch-established revision locks, unresolved-target protection across funding scopes
+and JSON-safe lock readback. The [prerequisite report](../implementation-plan.md#checkpoint-10-prerequisite-report)
+records readiness for local 10.1; no manual setup is currently required. Checkpoint 10
+is unimplemented; live acceptance remains gated at 12.
