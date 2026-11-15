@@ -1,6 +1,26 @@
 {
   "version": 1,
   "provider": "github",
-  "organization": null,
-  "repositories": []
+  "organization": "Uniwares-LTD",
+  "title": "Uniwares",
+  "scope": "organization",
+  "number": 2,
+  "url": "https://github.com/orgs/Uniwares-LTD/projects/2",
+  "repositories": [
+    "Uniwares-LTD/unitale"
+  ],
+  "policy": ".agents/repository-adapter.md",
+  "fieldNames": {
+    "status": "Status",
+    "priority": "Priority",
+    "blocked": "Blocked"
+  },
+  "statuses": {
+    "Backlog": "Backlog",
+    "Ready": "Ready",
+    "In progress": "In progress",
+    "In review": "In review",
+    "Done": "Done",
+    "Cancelled": "Cancelled"
+  }
 }
