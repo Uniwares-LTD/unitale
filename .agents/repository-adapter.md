@@ -64,10 +64,11 @@ Reuse recorded tracking choices; unconfigured tracking needs destination
 confirmation before tracking operations. Preserve human edits and inspect partial
 results before retrying; metadata does not prove live permissions or workflow state.
 
-Integrate through PRs. Prefer normal merge commits to retain commit identities
-and PR boundaries; squash/rebase requires an explicit request or repository policy.
-Report an unavailable preferred method before merging. Deployment promotions
-follow the recorded source branches and remain separately authorized.
+Integrate through PRs with normal merge commits only, which retain commit identities
+and PR boundaries. Squash and rebase merges are not used and are disabled in the
+repository settings. If a merge commit is unavailable, stop and report it instead
+of merging another way. Deployment promotions follow the recorded source branches
+and remain separately authorized.
 
 ## Validation and review
 
