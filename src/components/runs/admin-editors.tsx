@@ -3,16 +3,19 @@ import { DateLabel } from "@/components/localized-value";
 
 import { AdminStateLabel as StateLabel } from "@/components/admin-state-label";
 
+import { designStyleSchema } from "@/lib/design-styles";
+import { project } from "@/lib/project";
 import { adminFieldLabel } from "@/lib/admin-labels";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
 import type { settingsView } from "@/lib/server/settings";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { useLeaveGuard } from "@/components/leave-guard";
+import type { SaveResult } from "@/lib/design-helpers";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -22,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Notice } from "@/components/page-patterns";
+import { Notice, SubmitButton } from "@/components/page-patterns";
 
 type Json = z.infer<ReturnType<typeof z.json>>;
 function errorMessage(e: unknown) {
@@ -33,7 +36,7 @@ function errorMessage(e: unknown) {
       : "Could not confirm the request.";
 }
 const modes: Record<string, string[]> = {
-  defaultStyle: ["classic", "glass", "soft-blue"],
+  defaultStyle: designStyleSchema.options,
   failureCharging: ["success-only", "verified-usage"],
   mode: ["fixed", "tokens", "provider-cost", "hybrid"],
   basis: ["total", "split"],
@@ -75,10 +78,11 @@ export function SettingsField({
   const id = useId();
   const [invalid, setInvalid] = useState(false);
   const label = adminFieldLabel(name);
+  const projectControlsStyle = name === "defaultStyle" && project.theme;
   if (Array.isArray(value))
     return (
-      <div className="space-y-2">
-        <Label htmlFor={id}>{label}</Label>
+      <Field className="space-y-2">
+        <FieldLabel htmlFor={id}>{label}</FieldLabel>
         <Textarea
           id={id}
           className="font-mono text-xs"
@@ -111,7 +115,7 @@ export function SettingsField({
             ? "Enter a valid JSON list."
             : "Credit pack definitions: ID, label, credits, and optional payment product references."}
         </p>
-      </div>
+      </Field>
     );
   if (value !== null && typeof value === "object")
     return (
@@ -173,14 +177,23 @@ export function SettingsField({
             checked={value}
             onCheckedChange={(v) => onChange(v === true)}
           />
-          <Label htmlFor={id}>{label}</Label>
+          <FieldLabel htmlFor={id}>{label}</FieldLabel>
         </div>
       ) : (
         <>
-          <Label htmlFor={id}>{label}</Label>
+          <FieldLabel htmlFor={id}>{label}</FieldLabel>
           {modes[name] ? (
-            <Select value={String(value)} onValueChange={onChange}>
-              <SelectTrigger id={id}>
+            <Select
+              value={String(value)}
+              onValueChange={onChange}
+              disabled={projectControlsStyle}
+            >
+              <SelectTrigger
+                id={id}
+                aria-describedby={
+                  projectControlsStyle ? `${id}-theme` : undefined
+                }
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -209,6 +222,11 @@ export function SettingsField({
               }
             />
           )}
+          {projectControlsStyle && (
+            <p id={`${id}-theme`} className="text-sm text-muted-foreground">
+              This project uses its own theme. Preset selection is disabled.
+            </p>
+          )}
         </>
       )}
     </div>
@@ -220,6 +238,7 @@ export function BaseSettingsEditor({
   initial: Awaited<ReturnType<typeof settingsView>>;
 }) {
   const [settings, setSettings] = useState(initial.settings);
+  const [baseline, setBaseline] = useState(initial.settings);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState<{
     tone: "success" | "error";
@@ -227,7 +246,9 @@ export function BaseSettingsEditor({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
-  async function save() {
+  const formRef = useRef<HTMLFormElement>(null);
+  async function save(): Promise<SaveResult> {
+    if (busy || !formRef.current?.checkValidity()) return "failed";
     setBusy(true);
     setMessage(null);
     try {
@@ -236,29 +257,50 @@ export function BaseSettingsEditor({
         body: { revision: initial.revision, reason, settings },
       });
       setMessage({ tone: "success", text: "Settings saved." });
+      setBaseline(settings);
+      setReason("");
       router.refresh();
+      return "saved";
     } catch (e) {
       setMessage({ tone: "error", text: errorMessage(e) });
+      return e instanceof ApiError && e.code !== "INVALID_RESPONSE"
+        ? "failed"
+        : "unknown";
     } finally {
       setBusy(false);
     }
   }
+  useLeaveGuard({
+    dirty:
+      JSON.stringify(settings) !== JSON.stringify(baseline) || Boolean(reason),
+    save,
+  });
+
   return (
     <div className="space-y-5">
-      <SettingsField
-        name="settings"
-        value={settings}
-        onChange={(value) => setSettings(value as typeof settings)}
-      />
-      <Label htmlFor="settings-reason">Change reason (optional)</Label>
-      <Input
-        id="settings-reason"
-        value={reason}
-        onChange={(e) => setReason(e.target.value)}
-      />
-      <Button disabled={busy} onClick={() => void save()}>
-        Save settings
-      </Button>
+      <form
+        ref={formRef}
+        className="space-y-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void save();
+        }}
+      >
+        <SettingsField
+          name="settings"
+          value={settings}
+          onChange={(value) => setSettings(value as typeof settings)}
+        />
+        <FieldLabel htmlFor="settings-reason">
+          Change reason (optional)
+        </FieldLabel>
+        <Input
+          id="settings-reason"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+        <SubmitButton pending={busy}>Save settings</SubmitButton>
+      </form>
       {message && <Notice tone={message.tone} title={message.text} />}
       <Card>
         <CardHeader>

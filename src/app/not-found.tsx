@@ -19,7 +19,7 @@ export default function NotFound() {
       </p>
       <Button asChild className="mt-7 h-11">
         <Link href="/">
-          <ArrowLeft aria-hidden="true" />
+          <ArrowLeft aria-hidden="true" className="rtl:rotate-180" />
           {translate("m76c5505ff2e2")}
         </Link>
       </Button>

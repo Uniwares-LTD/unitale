@@ -12,7 +12,7 @@ import { getSession } from "@/lib/server/session";
 import { getMyProfile } from "@/lib/server/profiles";
 import { database } from "@/lib/server/mongo";
 import { notificationPreferences } from "@/lib/server/notifications";
-import { moduleEnabled } from "@/lib/project";
+import { moduleEnabled, project } from "@/lib/project";
 import {
   Card,
   CardContent,
@@ -51,7 +51,7 @@ export default async function PreferencesPage() {
               <AppearanceForm key={profile.uid} profile={profile} />
             ) : (
               <div className="space-y-8">
-                <StylePreference />
+                {!project.theme && <StylePreference />}
                 <ThemePreference />
               </div>
             )}

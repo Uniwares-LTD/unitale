@@ -4,7 +4,7 @@ import { StateLabel } from "@/components/localized-value";
 import { useTranslations } from "next-intl";
 
 import { useId, useState, type ComponentType } from "react";
-import Image from "next/image";
+import { ResultImage } from "@/components/media-fallback";
 import { createRegistry, type RegisteredValue } from "@/lib/runs/registry";
 import {
   cardRegistry,
@@ -20,7 +20,13 @@ import {
 } from "@/lib/runs/cards";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/page-patterns";
+import {
+  Field,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -131,10 +137,10 @@ function FormBody({ content, disabled, respond, rawResponse }: CardBodyProps) {
                 checked={values[field.id] === true}
                 onCheckedChange={(value) => change(field.id, value === true)}
               />
-              <Label htmlFor={id}>
+              <FieldLabel htmlFor={id}>
                 {field.label}
                 {field.required ? " (required)" : ""}
-              </Label>
+              </FieldLabel>
             </div>
           );
         if (field.kind === "choice") {
@@ -142,11 +148,11 @@ function FormBody({ content, disabled, respond, rawResponse }: CardBodyProps) {
             ? (values[field.id] as string[])
             : [values[field.id]];
           return (
-            <fieldset key={field.id} disabled={disabled} className="space-y-2">
-              <legend className="text-sm font-medium">
+            <FieldSet key={field.id} disabled={disabled} className="space-y-2">
+              <FieldLegend className="text-sm font-medium">
                 {field.label}
                 {field.required ? " (required)" : ""}
-              </legend>
+              </FieldLegend>
               <p className="text-xs text-muted-foreground">
                 {field.multiple
                   ? translate("m97169869b5b3")
@@ -185,15 +191,15 @@ function FormBody({ content, disabled, respond, rawResponse }: CardBodyProps) {
                   </Button>
                 ))}
               </div>
-            </fieldset>
+            </FieldSet>
           );
         }
         return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={id}>
+          <Field key={field.id}>
+            <FieldLabel htmlFor={id}>
               {field.label}
               {field.required ? " (required)" : ""}
-            </Label>
+            </FieldLabel>
             {field.kind === "text" && field.multiline ? (
               <Textarea
                 id={id}
@@ -223,7 +229,7 @@ function FormBody({ content, disabled, respond, rawResponse }: CardBodyProps) {
                   : { maxLength: field.maxLength })}
               />
             )}
-          </div>
+          </Field>
         );
       })}
       {error && (
@@ -231,7 +237,9 @@ function FormBody({ content, disabled, respond, rawResponse }: CardBodyProps) {
           {error}
         </p>
       )}
-      <Button disabled={disabled}>{translate("mf83d508047c9")}</Button>
+      <SubmitButton pending={false} disabled={disabled}>
+        {translate("mf83d508047c9")}
+      </SubmitButton>
     </form>
   );
 }
@@ -266,7 +274,8 @@ function GalleryBody({
       {data.items.map((item) => (
         <div key={item.assetId} className="space-y-2 rounded-md border p-3">
           {allowedAssetIds.includes(item.assetId) ? (
-            <Image
+            <ResultImage
+              aspectRatio="4 / 3"
               unoptimized
               src={`/api/run-assets/${item.assetId}?size=thumb`}
               width={400}

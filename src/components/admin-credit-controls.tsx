@@ -1,12 +1,12 @@
 "use client";
 
 import { formatAdminNumber } from "@/lib/admin-labels";
-import { Notice } from "./page-patterns";
+import { Notice, SubmitButton } from "./page-patterns";
 import { useActionState, useId, useRef, useState } from "react";
 import { adjustUserCredits } from "@/app/admin/users/credit-actions";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Field, FieldLabel, FieldLegend, FieldSet } from "./ui/field";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import {
@@ -53,8 +53,10 @@ export function AdminCreditControls({
         <form id={id} ref={formRef} action={action} className="space-y-5">
           <input type="hidden" name="key" value={key} />
           <input type="hidden" name="confirmed" value="yes" />
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Adjustment</legend>
+          <FieldSet className="space-y-2">
+            <FieldLegend className="text-sm font-medium">
+              Adjustment
+            </FieldLegend>
             <RadioGroup
               name="direction"
               value={direction}
@@ -67,13 +69,13 @@ export function AdminCreditControls({
               ].map(([value, label]) => (
                 <div key={value} className="flex items-center gap-2">
                   <RadioGroupItem value={value} id={`${id}-${value}`} />
-                  <Label htmlFor={`${id}-${value}`}>{label}</Label>
+                  <FieldLabel htmlFor={`${id}-${value}`}>{label}</FieldLabel>
                 </div>
               ))}
             </RadioGroup>
-          </fieldset>
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-amount`}>Credit amount</Label>
+          </FieldSet>
+          <Field className="space-y-2">
+            <FieldLabel htmlFor={`${id}-amount`}>Credit amount</FieldLabel>
             <Input
               type="number"
               id={`${id}-amount`}
@@ -84,9 +86,11 @@ export function AdminCreditControls({
               required
               disabled={pending}
             />
-          </div>
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Grant expiry</legend>
+          </Field>
+          <FieldSet className="space-y-2">
+            <FieldLegend className="text-sm font-medium">
+              Grant expiry
+            </FieldLegend>
             <RadioGroup
               name="expiry"
               value={expiry}
@@ -100,16 +104,16 @@ export function AdminCreditControls({
               ].map(([value, label]) => (
                 <div key={value} className="flex items-center gap-2">
                   <RadioGroupItem value={value} id={`${id}-${value}`} />
-                  <Label htmlFor={`${id}-${value}`}>{label}</Label>
+                  <FieldLabel htmlFor={`${id}-${value}`}>{label}</FieldLabel>
                 </div>
               ))}
             </RadioGroup>
-          </fieldset>
+          </FieldSet>
           {direction === "grant" && expiry === "custom" && (
-            <div className="space-y-2">
-              <Label htmlFor={`${id}-expires`}>
+            <Field className="space-y-2">
+              <FieldLabel htmlFor={`${id}-expires`}>
                 Expiry date and time (UTC)
-              </Label>
+              </FieldLabel>
               <Input
                 type="datetime-local"
                 id={`${id}-expires`}
@@ -117,12 +121,12 @@ export function AdminCreditControls({
                 required
                 disabled={pending}
               />
-            </div>
+            </Field>
           )}
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-reason`}>
+          <Field className="space-y-2">
+            <FieldLabel htmlFor={`${id}-reason`}>
               Credit adjustment reason (optional)
-            </Label>
+            </FieldLabel>
             <Input
               id={`${id}-reason`}
               name="reason"
@@ -134,7 +138,7 @@ export function AdminCreditControls({
               Recorded in the ledger and admin audit; visible to the account
               owner. Do not enter secrets.
             </p>
-          </div>
+          </Field>
           <p className="text-sm text-muted-foreground">
             Deductions cannot consume held credits or create debt. Grants cover
             existing debt first.
@@ -195,9 +199,9 @@ export function AdminCreditControls({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction asChild>
-                  <Button
-                    type="submit"
+                <AlertDialogAction asChild type="submit">
+                  <SubmitButton
+                    pending={pending}
                     form={id}
                     variant={direction === "deduct" ? "destructive" : "default"}
                     onClick={(event) => {
@@ -206,7 +210,7 @@ export function AdminCreditControls({
                     }}
                   >
                     Confirm adjustment
-                  </Button>
+                  </SubmitButton>
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -20,6 +20,41 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+None.
+
+### Upgrade notes
+
+None.
+
+## 0.5.0 — 2026-11-21
+
+### Changes
+
+- Allow derived projects to opt into a project-owned theme and self-hosted fonts.
+  Add the `build-ui` skill and the derived-project design guide.
+
+- Adopt the generated design foundation for Classic, Glass and Soft Blue.
+  Use the shared typography role for empty-state headings and the foundation
+  font and timing tokens for toasts.
+
+- Apply the shared fields, submit feedback, leave guards and media fallback in
+  the account, files, commerce, admin and Run screens. Add localized toast
+  confirmations with a production CSP allowlist for the pinned Sonner stylesheet.
+
+- Add shared design-system helpers (design-system adoption U2, #53): the shadcn
+  `Field` composition, an opt-in `size="lg"` on `Input`, `Textarea` and
+  `SelectTrigger`, `SubmitButton`, a leave guard for unsaved changes,
+  `MediaFallback`/`ResultImage`, `StatusBadge` and an optional `Notice` action,
+  with English and Arabic strings and showcase examples. Dialogs and alert
+  dialogs centre correctly in RTL, the sheet close button sits at the inline end,
+  directional arrows mirror in RTL, and coarse-pointer rules size icon buttons,
+  options and checkbox or radio labels. Feature screens adopt these later.
+
+- Add touch target size tokens (`--control-touch-sm` 2.75rem,
+  `--control-touch-md` 3.25rem, `--control-touch-lg` 3.75rem) in
+  `src/styles/tokens.css` for the coarse-pointer rules. Nothing consumes them
+  yet, so nothing renders differently (design-system adoption U1, #53).
+
 - Exclude Loop/Iteration child-cost aggregates from additive native node billing,
   while retaining step records and reported node durations in existing usage.
 
@@ -77,6 +112,23 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 - Add opt-in v1 commerce and execution-measurement contracts for immutable catalog terms, consumption orders, entitlements, subscriptions, promotions and provider evidence. Existing runtime behavior and records remain unchanged.
 
 ### Upgrade notes
+
+- The former Classic and Soft Blue preset files are removed. The two
+  `src/styles/design-system/` files are generated in the design package and
+  vendor updates replace them as a pair.
+- Set `theme: true` to enable `src/project/theme.css`. Scope overrides to
+  `data-project` and use the variable-backed type roles. Keep self-hosted fonts
+  in `public/fonts/`. See the [design extension guide](docs/design-system-extension.md).
+- Merge the local `build-ui` skill, agent guidance and skill integrity updates
+  with any project guidance. Keep the exact Sonner stylesheet hashes if using
+  the shared toast, and serve project fonts from the app origin.
+- Set the product's own theme color in the manifest and offline source and
+  regenerate the offline and icon assets. See [first steps](docs/template.md#first-steps-in-a-new-project).
+  If an upgrade from 0.4.0 stops on `public/offline.html`, first resolve any
+  edits to its source in `scripts/i18n-assets.mjs`. Run
+  `node scripts/i18n-assets.mjs` to regenerate the HTML for the project's slug
+  and locale, then `git add -- public/offline.html`. Finish the merge with
+  `git commit` after resolving any other conflicts.
 
 - Newly observed container usage has unknown node-level cost/tokens; parent totals
   remain authoritative. Existing accepted usage records are not rewritten.

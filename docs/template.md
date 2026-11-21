@@ -31,7 +31,10 @@ repository. The initializer:
    [source map](source-map.md) during adoption.
 4. Replace product copy and branding: the home page (set a component in `src/project/home.tsx`),
    icons (`npm run icons:generate`), theme colors in `src/app/manifest.ts` and
-   `public/offline.html`.
+   the offline source `scripts/i18n-assets.mjs` (regenerate the asset).
+   Use the [derived-project design guide](design-system-extension.md) for a theme.
+   Set the per-project theme color, offline background and text, and icon colors
+   to match your product.
 5. Write the project's first milestones in `docs/implementation-plan.md`.
 6. For deployment, follow [derived-project deployment initialization](deployment.md#derived-project-deployment-initialization).
    `deployment.imageRepository` must equal `ghcr.io/<owner>/<repository>` of the
@@ -65,6 +68,9 @@ destination Dify installation must allow the larger outputs. File size and quota
 limits are administrator settings; see [resumable uploads](services.md#resumable-uploads).
 
 ## Add a feature
+
+Compose existing UI primitives and register project behavior through the
+extension points below. See the [design extension guide](design-system-extension.md).
 
 Extend through the registries instead of editing core lists. The
 [notes sample](../src/samples/README.md) is a complete reference.

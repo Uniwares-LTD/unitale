@@ -6,6 +6,7 @@ import { moduleEnabled } from "@/lib/project";
 import { ChevronDown, LogIn, UserRound, ShieldCheck } from "lucide-react";
 import { useAccountRoutes } from "@/components/app-shell";
 import Link from "next/link";
+import { useGuardedNavigation } from "@/components/leave-guard";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -35,11 +36,12 @@ export function AccountMenuControls({
   const translate = useTranslations("ui");
   const routes = useAccountRoutes();
   const pathname = usePathname();
+  const guarded = useGuardedNavigation();
 
   if (!hasSession)
     return pathname === "/account" ? null : (
       <Button asChild className="h-11">
-        <Link href="/account">
+        <Link href="/account" onNavigate={guarded("/account")}>
           <LogIn aria-hidden="true" />
           {translate("mbfd402b2f6f3")}
         </Link>
@@ -53,6 +55,7 @@ export function AccountMenuControls({
           <Button
             variant="ghost"
             className="h-11 gap-2 rounded-full px-2"
+            data-leave-return="account"
             aria-label={translate("m04b5bfe665e3")}
           >
             <Avatar className="size-8">
@@ -91,7 +94,7 @@ export function AccountMenuControls({
           )}
           {routes.map(({ href, label, Icon }) => (
             <DropdownMenuItem key={href} asChild>
-              <Link href={href}>
+              <Link href={href} onNavigate={guarded(href)}>
                 <Icon aria-hidden="true" />
                 {label}
               </Link>
@@ -99,7 +102,7 @@ export function AccountMenuControls({
           ))}
           {isAdmin && (
             <DropdownMenuItem asChild>
-              <Link href="/admin">
+              <Link href="/admin" onNavigate={guarded("/admin")}>
                 <ShieldCheck aria-hidden="true" />
                 Administration
               </Link>

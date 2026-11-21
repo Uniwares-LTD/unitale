@@ -11,7 +11,7 @@ for (const [name, size] of [
   await sharp(svg).resize(size, size).png().toFile(`public/icons/${name}.png`);
 }
 await sharp({
-  create: { width: 512, height: 512, channels: 4, background: "#98492f" },
+  create: { width: 512, height: 512, channels: 4, background: "#c2410c" },
 })
   .composite([
     {

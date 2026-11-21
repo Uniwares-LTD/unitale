@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 
 import { useId } from "react";
 import type { personaChoices } from "@/lib/server/runs/personas";
-import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -28,7 +28,7 @@ export function AnswererSelect({
   const id = useId();
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{translate("mbe4cc95114f3")}</Label>
+      <FieldLabel htmlFor={id}>{translate("mbe4cc95114f3")}</FieldLabel>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger id={id}>
           <SelectValue />

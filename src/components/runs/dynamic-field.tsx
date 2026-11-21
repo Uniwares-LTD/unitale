@@ -6,7 +6,7 @@ import type { z } from "zod";
 import type { inputFieldSchema } from "@/lib/contracts/runs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -39,11 +39,11 @@ export function RunInputField({
   const translate = useTranslations("ui");
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>
+      <FieldLabel htmlFor={id}>
         {field.required
           ? translate("m4d2b5b2356c2", { label: field.label })
           : field.label}
-      </Label>
+      </FieldLabel>
       {field.kind === "paragraph" ? (
         <Textarea
           id={id}

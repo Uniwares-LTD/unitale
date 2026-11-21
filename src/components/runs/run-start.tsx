@@ -20,7 +20,8 @@ import type { runStartSchema } from "@/lib/contracts/runs";
 import { EmptyState, Notice } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/page-patterns";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -304,10 +305,10 @@ export function RunLanding({
                     onSelected={setDomainTarget}
                   />
                 )}
-                <div className="space-y-2">
-                  <Label htmlFor={`${prefix}-workflow`}>
+                <Field className="space-y-2">
+                  <FieldLabel htmlFor={`${prefix}-workflow`}>
                     {translate("m2e2d5c5649b7")}
-                  </Label>
+                  </FieldLabel>
                   <Select
                     value={selected}
                     disabled={frozen}
@@ -332,7 +333,7 @@ export function RunLanding({
                   <p className="text-sm text-muted-foreground">
                     {choice?.description}
                   </p>
-                </div>
+                </Field>
                 {choice?.inputs.map((field) => (
                   <RunInputField
                     key={field.name}
@@ -386,14 +387,14 @@ export function RunLanding({
                       aria-label={translate("m071149f031fd")}
                       className="grid gap-3 sm:grid-cols-2"
                     >
-                      <Label
+                      <FieldLabel
                         htmlFor={`${prefix}-new`}
                         className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-accent/50"
                       >
                         <RadioGroupItem id={`${prefix}-new`} value="new" />
                         {translate("m9b7560405862")}
-                      </Label>
-                      <Label
+                      </FieldLabel>
+                      <FieldLabel
                         htmlFor={`${prefix}-existing`}
                         className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-accent/50"
                       >
@@ -403,13 +404,13 @@ export function RunLanding({
                           disabled={!artifacts.length}
                         />
                         {translate("m3f1e4c236b23")}
-                      </Label>
+                      </FieldLabel>
                     </RadioGroup>
                     {artifactMode === "new" ? (
-                      <div className="space-y-2">
-                        <Label htmlFor={`${prefix}-title`}>
+                      <Field className="space-y-2">
+                        <FieldLabel htmlFor={`${prefix}-title`}>
                           {translate("m96ccf50319c0")}
-                        </Label>
+                        </FieldLabel>
                         <Input
                           id={`${prefix}-title`}
                           name="artifactTitle"
@@ -423,12 +424,12 @@ export function RunLanding({
                         <p className="text-sm text-muted-foreground">
                           {translate("mdb47707c45f4")}
                         </p>
-                      </div>
+                      </Field>
                     ) : (
-                      <div className="space-y-2">
-                        <Label htmlFor={`${prefix}-artifact-search`}>
+                      <Field className="space-y-2">
+                        <FieldLabel htmlFor={`${prefix}-artifact-search`}>
                           {translate("mc71436cce0eb")}
-                        </Label>
+                        </FieldLabel>
                         <Input
                           id={`${prefix}-artifact-search`}
                           disabled={artifactSearching}
@@ -463,9 +464,9 @@ export function RunLanding({
                             {translate("m17ef296818cd")}
                           </Button>
                         )}
-                        <Label htmlFor={`${prefix}-artifact`}>
+                        <FieldLabel htmlFor={`${prefix}-artifact`}>
                           {translate("ma4a34f6cfd5c")}
-                        </Label>
+                        </FieldLabel>
                         <Select
                           value={selectedArtifact}
                           disabled={frozen}
@@ -502,7 +503,7 @@ export function RunLanding({
                             .
                           </p>
                         )}
-                      </div>
+                      </Field>
                     )}
                     {!artifacts.length && (
                       <p className="text-sm text-muted-foreground">
@@ -588,9 +589,9 @@ export function RunLanding({
                   {translate("m4d0bdaa2f2b6")}
                 </p>
               )}
-              <Button
-                type="submit"
-                disabled={busy || !choice?.ready}
+              <SubmitButton
+                pending={busy}
+                disabled={!choice?.ready}
                 className="h-auto w-full whitespace-normal py-3"
               >
                 {phase === "artifact"
@@ -604,7 +605,7 @@ export function RunLanding({
                         : choice?.requiresArtifact && artifactMode === "new"
                           ? translate("mf6bc33eab003")
                           : translate("m0b01328f236c")}
-              </Button>
+              </SubmitButton>
             </CardContent>
           </Card>
         </form>

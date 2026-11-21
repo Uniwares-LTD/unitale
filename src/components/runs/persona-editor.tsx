@@ -1,9 +1,9 @@
 "use client";
 
 import { formatAdminNumber } from "@/lib/admin-labels";
-import { EmptyState, Notice } from "@/components/page-patterns";
+import { EmptyState, Notice, SubmitButton } from "@/components/page-patterns";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
 import type { PersonaFields } from "@/lib/contracts/personas";
@@ -13,7 +13,9 @@ import { SettingsField } from "./admin-editors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { useLeaveGuard } from "@/components/leave-guard";
+import type { SaveResult } from "@/lib/design-helpers";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +39,7 @@ function PersonaForm({
   onBusyChange: (busy: boolean) => void;
 }) {
   const prefix = useId();
+  const formRef = useRef<HTMLFormElement>(null);
   const [fields, setFields] = useState<PersonaFields>(() => ({
     name: initial.name,
     description: initial.description,
@@ -46,10 +49,12 @@ function PersonaForm({
     pricing: initial.pricing,
     maxCalls: initial.maxCalls,
   }));
+  const [baseline] = useState(() => JSON.stringify(fields));
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  async function save() {
+  async function save(): Promise<SaveResult> {
+    if (busy || !formRef.current?.checkValidity()) return "failed";
     setBusy(true);
     onBusyChange(true);
     setMessage("");
@@ -65,19 +70,30 @@ function PersonaForm({
         updatedAt: new Date().toISOString(),
       });
       setMessage("Saved.");
+      return "saved";
     } catch (e) {
       setMessage(
         e instanceof ApiError
           ? e.message
           : "Could not confirm the save. Reload before retrying.",
       );
+      return e instanceof ApiError && e.code !== "INVALID_RESPONSE"
+        ? "failed"
+        : "unknown";
     } finally {
       setBusy(false);
       onBusyChange(false);
     }
   }
+  useLeaveGuard({
+    dirty:
+      initial.revision > 0 &&
+      (JSON.stringify(fields) !== baseline || Boolean(reason)),
+    save,
+  });
   return (
     <form
+      ref={formRef}
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
@@ -85,14 +101,14 @@ function PersonaForm({
       }}
     >
       {(["name", "description", "instructions"] as const).map((name) => (
-        <div className="space-y-2" key={name}>
-          <Label htmlFor={`${prefix}-${name}`}>
+        <Field className="space-y-2" key={name}>
+          <FieldLabel htmlFor={`${prefix}-${name}`}>
             {name === "instructions"
               ? "Persona instructions"
               : name === "name"
                 ? "Name"
                 : "Description"}
-          </Label>
+          </FieldLabel>
           {name === "name" ? (
             <Input
               id={`${prefix}-${name}`}
@@ -110,7 +126,7 @@ function PersonaForm({
               onChange={(e) => setFields({ ...fields, [name]: e.target.value })}
             />
           )}
-        </div>
+        </Field>
       ))}
       {(["enabled", "archived"] as const).map((name) => (
         <div className="flex items-center gap-2" key={name}>
@@ -121,9 +137,9 @@ function PersonaForm({
               setFields({ ...fields, [name]: v === true })
             }
           />
-          <Label htmlFor={`${prefix}-${name}`}>
+          <FieldLabel htmlFor={`${prefix}-${name}`}>
             {name === "enabled" ? "Enabled" : "Archived"}
-          </Label>
+          </FieldLabel>
         </div>
       ))}
       <SettingsField
@@ -137,9 +153,9 @@ function PersonaForm({
           })
         }
       />
-      <Label htmlFor={`${prefix}-limit`}>
+      <FieldLabel htmlFor={`${prefix}-limit`}>
         Maximum answers per attempt (1–100)
-      </Label>
+      </FieldLabel>
       <Input
         id={`${prefix}-limit`}
         type="number"
@@ -150,16 +166,18 @@ function PersonaForm({
           setFields({ ...fields, maxCalls: Number(e.target.value) })
         }
       />
-      <Label htmlFor={`${prefix}-reason`}>Change reason (optional)</Label>
+      <FieldLabel htmlFor={`${prefix}-reason`}>
+        Change reason (optional)
+      </FieldLabel>
       <Input
         id={`${prefix}-reason`}
         value={reason}
         maxLength={500}
         onChange={(e) => setReason(e.target.value)}
       />
-      <Button type="submit" disabled={busy}>
+      <SubmitButton pending={busy}>
         {busy ? "Saving…" : "Save persona"}
-      </Button>
+      </SubmitButton>
       {message && <Notice title={message} />}
     </form>
   );

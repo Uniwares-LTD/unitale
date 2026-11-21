@@ -6,7 +6,7 @@ import { cache } from "react";
 import { AppError } from "@/lib/auth-policy";
 import { notFound } from "next/navigation";
 import { getSession, signInRedirect } from "@/lib/server/session";
-import Image from "next/image";
+import { ResultImage } from "@/components/media-fallback";
 import { uuidSchema } from "@/lib/contracts/runs";
 import { artifactDetail } from "@/lib/server/runs/artifacts";
 import { ArtifactControls } from "@/components/runs/artifact-controls";
@@ -121,7 +121,8 @@ export default async function Page({
                   {translate("mf8cecbf46477")}
                 </Link>
                 {r.assets.map((id, index) => (
-                  <Image
+                  <ResultImage
+                    aspectRatio="1 / 1"
                     key={id}
                     src={`/api/run-assets/${id}?size=thumb`}
                     alt={translate("m91bff16ba87b", {

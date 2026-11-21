@@ -1,18 +1,23 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
-import { api } from "@/lib/client/api";
+import { api, ApiError } from "@/lib/client/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SchemaFields, initialValue, type FormSchema } from "./schema-fields";
 import type { commerceAdminView } from "@/lib/server/commerce/admin";
+import { SubmitButton } from "@/components/page-patterns";
+import { useLeaveGuard } from "@/components/leave-guard";
+import type { SaveResult } from "@/lib/design-helpers";
 type View = Awaited<ReturnType<typeof commerceAdminView>>;
 const responseSchema = z.record(z.string(), z.unknown());
 export function AdminCommerce({ initial }: { initial: View }) {
   const [view, setView] = useState(initial);
   const [definition, setDefinition] = useState<unknown>(null);
+  const draftForm = useRef<HTMLFormElement>(null);
+  const [baseline, setBaseline] = useState("");
   const [expected, setExpected] = useState(0);
   const [selected, setSelected] = useState("");
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
@@ -47,24 +52,31 @@ export function AdminCommerce({ initial }: { initial: View }) {
   const run = async (
     command: unknown,
     next?: (result: Record<string, unknown>) => void,
-  ) => {
-    if (busy) return;
+  ): Promise<SaveResult> => {
+    if (busy) return "failed";
     setBusy(true);
     setMessage("");
+    let committed = false;
     try {
       const result = await api("/api/admin/commerce", responseSchema, {
         method: "POST",
         body: command,
       });
+      committed = true;
       next?.(result);
       setMessage("Saved and verified by the server.");
       await load();
+      return "saved";
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
           : "Request failed. Retry the same action to reconcile its outcome.",
       );
+      if (committed) return "saved";
+      return error instanceof ApiError && error.code !== "INVALID_RESPONSE"
+        ? "failed"
+        : "unknown";
     } finally {
       setBusy(false);
     }
@@ -75,6 +87,7 @@ export function AdminCommerce({ initial }: { initial: View }) {
     };
     draft.terms.identity.revision = Number(row.revision) + 1;
     setDefinition(draft);
+    setBaseline(JSON.stringify(draft));
     setExpected(Number(row.revision));
     setSelected(String(row._id));
     setPreview(null);
@@ -106,6 +119,26 @@ export function AdminCommerce({ initial }: { initial: View }) {
       t.id === draft?.terms?.productType &&
       t.schemaVersion === draft?.terms?.productSchemaVersion,
   );
+  const canSave = draft?.kind !== "consumption" || Boolean(productType);
+  function saveDraft(): Promise<SaveResult> {
+    if (!canSave || !draftForm.current?.checkValidity())
+      return Promise.resolve("failed");
+    return run(
+      { action: "save", definition, expectedRevision: expected },
+      (result) => {
+        setSelected(String(result.id));
+        setDefinition(null);
+        setPreview(null);
+      },
+    );
+  }
+  useLeaveGuard({
+    dirty:
+      expected > 0 &&
+      definition !== null &&
+      JSON.stringify(definition) !== baseline,
+    save: saveDraft,
+  });
   return (
     <div className="space-y-6" aria-busy={busy}>
       <nav aria-label="Commerce sections" className="flex flex-wrap gap-2">
@@ -134,19 +167,23 @@ export function AdminCommerce({ initial }: { initial: View }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void load().catch((e) => setMessage(String(e)));
+            if (busy) return;
+            setBusy(true);
+            void load()
+              .catch((e) => setMessage(String(e)))
+              .finally(() => setBusy(false));
           }}
           className="flex flex-wrap items-end gap-2"
         >
-          <div>
-            <Label htmlFor="commerce-uid">Account UID</Label>
+          <Field>
+            <FieldLabel htmlFor="commerce-uid">Account UID</FieldLabel>
             <Input
               id="commerce-uid"
               value={uid}
               onChange={(e) => setUid(e.target.value)}
             />
-          </div>
-          <Button disabled={busy}>Filter</Button>
+          </Field>
+          <SubmitButton pending={busy}>Filter</SubmitButton>
         </form>
       )}
       {view.section === "catalogs" && (
@@ -283,17 +320,11 @@ export function AdminCommerce({ initial }: { initial: View }) {
       )}
       {definition !== null && (
         <form
+          ref={draftForm}
           className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void run(
-              { action: "save", definition, expectedRevision: expected },
-              (result) => {
-                setSelected(String(result.id));
-                setDefinition(null);
-                setPreview(null);
-              },
-            );
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveDraft();
           }}
         >
           <h2 className="text-lg font-semibold">Catalog draft</h2>
@@ -313,7 +344,7 @@ export function AdminCommerce({ initial }: { initial: View }) {
           />
           {draft?.kind === "consumption" && (
             <fieldset disabled={busy} className="space-y-3">
-              <Label htmlFor="product-type">Product type</Label>
+              <FieldLabel htmlFor="product-type">Product type</FieldLabel>
               <select
                 id="product-type"
                 className="w-full rounded-md border bg-background p-2"
@@ -368,11 +399,9 @@ export function AdminCommerce({ initial }: { initial: View }) {
               .join(", ") ||
               "None. Register a trusted project extension before creating consumption products."}
           </p>
-          <Button
-            disabled={busy || (draft?.kind === "consumption" && !productType)}
-          >
+          <SubmitButton pending={busy} disabled={!canSave}>
             Save draft
-          </Button>
+          </SubmitButton>
         </form>
       )}
       {preview && (
@@ -467,7 +496,7 @@ export function AdminCommerce({ initial }: { initial: View }) {
           <h2 className="font-semibold">
             Refund consumption charge {refund.chargeId}
           </h2>
-          <Label htmlFor="refund-amount">Credits</Label>
+          <FieldLabel htmlFor="refund-amount">Credits</FieldLabel>
           <Input
             id="refund-amount"
             type="number"
@@ -477,7 +506,7 @@ export function AdminCommerce({ initial }: { initial: View }) {
               setRefund({ ...refund, amount: Number(e.target.value) })
             }
           />
-          <Label htmlFor="refund-reason">Audit reason</Label>
+          <FieldLabel htmlFor="refund-reason">Audit reason</FieldLabel>
           <Input
             required
             id="refund-reason"

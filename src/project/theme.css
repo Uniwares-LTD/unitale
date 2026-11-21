@@ -1,0 +1,16 @@
+/*
+ * Enable with "theme": true in project.config.json.
+ * Replace project-slug with the project's slug and remove this comment to start.
+ * See docs/design-system-extension.md for token pairs, fonts and type roles.
+ *
+ * html[data-project="project-slug"] {
+ *   --primary: #1e3a8a;
+ *   --primary-foreground: #ffffff;
+ *   --text-hero-size: 2.75rem;
+ * }
+ *
+ * html[data-project="project-slug"].dark {
+ *   --primary: #93c5fd;
+ *   --primary-foreground: #172554;
+ * }
+ */

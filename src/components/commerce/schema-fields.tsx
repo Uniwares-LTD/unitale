@@ -1,7 +1,7 @@
 "use client";
 import { useId } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 export type FormSchema = {
@@ -80,7 +80,7 @@ export function SchemaFields({
     return (
       <fieldset disabled={disabled} className="space-y-3 rounded-lg border p-3">
         <legend className="px-1 text-sm font-medium">{labelText(label)}</legend>
-        <Label htmlFor={id}>Variant</Label>
+        <FieldLabel htmlFor={id}>Variant</FieldLabel>
         <select
           id={id}
           className="h-10 w-full rounded-md border bg-background px-3"
@@ -178,7 +178,7 @@ export function SchemaFields({
   if (!schema.type || schema.type === "object" || schema.$ref)
     return (
       <div className="space-y-2">
-        <Label htmlFor={id}>{labelText(label)} (JSON)</Label>
+        <FieldLabel htmlFor={id}>{labelText(label)} (JSON)</FieldLabel>
         <Textarea
           id={id}
           disabled={disabled}
@@ -199,7 +199,7 @@ export function SchemaFields({
   if (schema.enum)
     return (
       <div className="space-y-2">
-        <Label htmlFor={id}>{labelText(label)}</Label>
+        <FieldLabel htmlFor={id}>{labelText(label)}</FieldLabel>
         <select
           id={id}
           disabled={disabled}
@@ -217,7 +217,7 @@ export function SchemaFields({
     );
   if (schema.type === "boolean")
     return (
-      <Label className="flex items-center gap-2" htmlFor={id}>
+      <FieldLabel className="flex items-center gap-2" htmlFor={id}>
         <input
           id={id}
           type="checkbox"
@@ -226,11 +226,11 @@ export function SchemaFields({
           onChange={(e) => onChange(e.target.checked)}
         />
         {labelText(label)}
-      </Label>
+      </FieldLabel>
     );
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{labelText(label)}</Label>
+      <FieldLabel htmlFor={id}>{labelText(label)}</FieldLabel>
       <Input
         id={id}
         disabled={disabled}

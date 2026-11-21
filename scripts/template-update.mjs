@@ -33,6 +33,8 @@ const registries = ["src/project/extensions.ts", "src/project/server.ts"];
 // project's version is kept; template changes to them arrive as upgrade notes.
 const projectOwned = [
   /^project\.config\.json$/,
+  /^src\/project\/theme\.css$/,
+  /^public\/fonts\//,
   /^deploy\/environments\/[^/]+\.json$/,
   /^\.agents\/(?:tracking\.json|repository\.md)$/,
   /^docs\/implementation-plan\.md$/,

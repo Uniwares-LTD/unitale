@@ -1,16 +1,10 @@
-/* Shared design contract. Presets override values, never application behavior. */
+/* Local defaults for effects, reading width and touch targets. */
 :root {
-  --type-heading: Georgia, "Times New Roman", serif;
-  --surface-blur: 0px;
   --surface-shadow: none;
-  --surface-edge: transparent;
   --canvas-art: none;
-  --card-solid: #ffffff;
-  --sidebar-solid: #f6f3ef;
-  --page-gap: 2rem;
   --reading-width: 65ch;
-}
-.dark {
-  --card-solid: #1b1917;
-  --sidebar-solid: #181716;
+  /* Touch target sizes (TCH-02), to be consumed by the coarse-pointer rules in globals.css. */
+  --control-touch-sm: 2.75rem;
+  --control-touch-md: 3.25rem;
+  --control-touch-lg: 3.75rem;
 }

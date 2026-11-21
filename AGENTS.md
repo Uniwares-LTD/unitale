@@ -42,6 +42,10 @@ contracts and run `npm run docs:booklet-model` followed by `npm run check:docs`.
   administration stays English/LTR without changing the public language preference.
   Preserve CSP nonces during navigation. Reuse shadcn primitives through the CLI
   and semantic theme variables. Follow the adapter's [UI checks](.agents/repository-adapter.md#ui-and-browser-verification).
+- For UI work use the local `build-ui` skill and the adopted
+  [design system](docs/design-system.md): existing primitives, `Field`, `SubmitButton`,
+  toast, leave guard and type roles first. New dependencies, CSP changes and visible
+  colour or typography changes to existing screens need explicit approval.
 - Before deployment/provider work, read the adapter's
   [operational boundaries](.agents/repository-adapter.md#deployment-and-provider-work)
   and [deployment guidance](docs/deployment.md#current-staging-release).

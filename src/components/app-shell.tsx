@@ -22,6 +22,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ComponentProps } from "react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { Button } from "@/components/ui/button";
+import { useGuardedNavigation } from "@/components/leave-guard";
 import {
   Sheet,
   SheetContent,
@@ -106,9 +107,11 @@ export function matchesRoute(pathname: string, href: string) {
 
 function Brand({ name }: { name: string }) {
   const common = useTranslations("common");
+  const guarded = useGuardedNavigation();
   return (
     <Link
       href="/"
+      onNavigate={guarded("/")}
       aria-label={common("home", { name })}
       className="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
     >
@@ -133,6 +136,7 @@ function Navigation({
 }) {
   const routes = useRoutes(signedIn);
   const pathname = usePathname();
+  const guarded = useGuardedNavigation();
   return (
     <nav aria-label={label} className="space-y-1.5">
       {routes.map(({ href, label: routeLabel, Icon }) => (
@@ -150,6 +154,7 @@ function Navigation({
             href={href}
             aria-current={matchesRoute(pathname, href) ? "page" : undefined}
             onClick={onNavigate}
+            onNavigate={guarded(href)}
           >
             <Icon aria-hidden="true" className="size-[18px]" />
             {routeLabel}
@@ -211,6 +216,7 @@ export function AppShell({
                   variant="ghost"
                   size="icon"
                   className="size-11 md:hidden"
+                  data-leave-return="menu"
                   aria-label={translate("m0ed77fd2619b")}
                 >
                   <Menu aria-hidden="true" />

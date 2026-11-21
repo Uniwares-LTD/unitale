@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { MongoClient, type Document } from "mongodb";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { AppError } from "../../src/lib/auth-policy";
+import { environmentMcpConfiguration } from "../../src/lib/server/runs/environment-binding";
 import {
   inspectDifyWorkflow,
   verifyMcpTools,
@@ -223,7 +224,7 @@ test("Formless registration: draft validation, publication, retries, authorizati
         data: {
           type: "tool",
           provider_type: "mcp",
-          provider_id: "unibase_managed_staging",
+          provider_id: environmentMcpConfiguration(env).binding.providerId,
           tool_name: "get_run_context_v1",
           tool_parameters: {
             runContext: {

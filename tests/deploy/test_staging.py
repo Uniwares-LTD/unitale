@@ -66,7 +66,7 @@ class StagingTests(unittest.TestCase):
     def test_existing_firebase_identity_and_runtime_are_validated(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary); config=environment_fixture(root)
-            credentials={'firebase':{'type':'service_account','project_id':config['google']['projectId'],'private_key':'synthetic-fixture'},'firebaseApiKey':'test-public-key','firebaseAppId':'test-public-app','mongodbUri':'mongodb+srv://unibase_staging:test-password@example.test'}
+            credentials={'firebase':{'type':'service_account','project_id':config['google']['projectId'],'private_key':'synthetic-fixture'},'firebaseApiKey':'test-public-key','firebaseAppId':'test-public-app','mongodbUri':f"mongodb+srv://{config['atlas']['mongoUser']}:test-password@example.test"}
             for bad in (False,True):
                 destination=root/('bad' if bad else 'valid'); destination.mkdir()
                 value=copy.deepcopy(credentials)

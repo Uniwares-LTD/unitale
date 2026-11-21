@@ -5,3 +5,6 @@ node_modules/
 output/
 package-lock.json
 skills-lock.json
+# Generated design package files retain the exact upstream bytes.
+src/styles/design-system/unibase.css
+src/styles/design-system/tailwind-theme.css

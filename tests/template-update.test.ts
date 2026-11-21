@@ -111,6 +111,8 @@ test("template updates merge releases, keep deliberate deletions and stop on con
     await removeSample(project, "demo", { generate: false });
     await write(project, {
       "src/feature.ts": "export const feature = 1;\n",
+      "src/project/theme.css": "/* project theme */\n",
+      "public/fonts/project-font.woff2": "project font content\n",
       // The project registers its own feature next to the removed sample.
       "src/project/extensions.ts":
         'import { feature } from "../feature";\nexport const extensions = [\n  feature,\n];\n',
@@ -121,6 +123,8 @@ test("template updates merge releases, keep deliberate deletions and stop on con
     await release("1.1.0", {
       "CHANGELOG.md": changelog(["1.1.0", "1.0.0"]),
       "README.md": "v2\n",
+      "src/project/theme.css": "/* template starter */\n",
+      "public/fonts/project-font.woff2": "template font content\n",
       "project.config.json": { modules: ["files", "demo", "extra"] },
       "android/project/build.gradle": "generated v2\n",
       "src/samples/demo/a.ts": "export const demo = 2;\n",
@@ -144,6 +148,13 @@ test("template updates merge releases, keep deliberate deletions and stop on con
     assert.ok(result.kept.includes("android/project/build.gradle"));
     // Project-owned installation files keep the project's version.
     assert.ok(result.projectVersions?.includes("project.config.json"));
+    for (const [file, content] of [
+      ["src/project/theme.css", "/* project theme */\n"],
+      ["public/fonts/project-font.woff2", "project font content\n"],
+    ]) {
+      assert.ok(result.projectVersions?.includes(file));
+      assert.equal(await readFile(path.join(project, file), "utf8"), content);
+    }
     assert.deepEqual(
       JSON.parse(
         await readFile(path.join(project, "project.config.json"), "utf8"),

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { designStyleSchema } from "./design-styles";
 import manifest from "../../project.config.json";
 import { extensions } from "../project/extensions";
 import {
@@ -38,7 +39,8 @@ export const projectSchema = z
       .min(1)
       .max(80)
       .regex(/^[^\r\n\0]+$/),
-    defaultStyle: z.enum(["classic", "glass", "soft-blue"]),
+    defaultStyle: designStyleSchema,
+    theme: z.boolean().default(false),
     modules: z
       .array(z.enum(moduleIds))
       .refine((v) => new Set(v).size === v.length),
