@@ -23,12 +23,13 @@ class ReleaseSettingsTests(unittest.TestCase):
         before['runtime'].pop('DIAGNOSTICS_ENABLED', None)
         digest = configuration_hash(before)
         self.assertEqual(digest, configuration_hash(self.config))
-        off = copy.deepcopy(self.config)
-        off['runtime']['DIAGNOSTICS_ENABLED'] = 'false'
-        self.assertEqual(digest, configuration_hash(off))
+        for flag in ('false', 'true'):
+            changed = copy.deepcopy(self.config)
+            changed['runtime']['DIAGNOSTICS_ENABLED'] = flag
+            self.assertEqual(digest, configuration_hash(changed))
         for section, key, value in [('runtime', 'APP_ORIGIN', 'https://other.test'),
                                     ('runtime', 'MONGODB_DATABASE', 'other_db'),
-                                    ('runtime', 'MCP_ENABLED', 'false'),
+                                    ('runtime', 'MCP_ENABLED', 'false' if self.config['runtime']['MCP_ENABLED'] == 'true' else 'true'),
                                     ('deployment', 'imageRepository', 'ghcr.io/other/app'),
                                     ('deployment', 'port', 32199)]:
             changed = copy.deepcopy(self.config)
@@ -57,21 +58,24 @@ class ReleaseSettingsTests(unittest.TestCase):
         self.assertNotIn('runtimeSettings', check)
 
     def test_host_projection_excludes_only_image_owned_settings(self):
+        original = copy.deepcopy(self.config)
         projected = host_configuration(self.config)
         self.assertNotIn('DIAGNOSTICS_ENABLED', projected['runtime'])
         for key, value in self.config['runtime'].items():
             if key != 'DIAGNOSTICS_ENABLED': self.assertEqual(projected['runtime'][key], value)
         self.assertEqual(projected['deployment'], self.config['deployment'])
-        self.assertEqual(self.config['runtime']['DIAGNOSTICS_ENABLED'], 'true')
+        self.assertEqual(self.config, original)
 
     def test_runtime_merge_preserves_private_values(self):
         with tempfile.TemporaryDirectory() as temporary:
             destination = Path(temporary) / 'runtime.env'
-            destination.write_text('MONGODB_URI=private-canary\nREDIS_URL=private-redis\nDIAGNOSTICS_ENABLED=false\n')
+            expected = self.config['runtime']['DIAGNOSTICS_ENABLED']
+            previous = 'false' if expected == 'true' else 'true'
+            destination.write_text(f'MONGODB_URI=private-canary\nREDIS_URL=private-redis\nDIAGNOSTICS_ENABLED={previous}\n')
             subprocess.check_call([sys.executable, str(REPO / 'scripts/deploy/render-runtime.py'),
                 'staging', str(destination)])
             values = dict(line.split('=', 1) for line in destination.read_text().splitlines())
-            self.assertEqual(values['DIAGNOSTICS_ENABLED'], 'true')
+            self.assertEqual(values['DIAGNOSTICS_ENABLED'], expected)
             self.assertEqual(values['MONGODB_URI'], 'private-canary')
 
     def test_host_validation_rejects_production_enablement(self):

@@ -49,6 +49,13 @@ Verification on 2026-11-21:
 
 Tests use installed Git 2.43 and the repository-cached MongoDB 8.2.6 binary.
 Python-backed fixtures use `PYTHONUTF8=1` and `PYTHONIOENCODING=utf-8` on Windows.
+PR verification also exposed inherited deployment fixtures that assumed Unibase's
+slug and activation defaults. They now derive project identity and establish their
+own synthetic MCP/settings scenarios. Portable deployment verification passes 63
+tests; 25 host tests require the CI runner's owned Linux container. Deployment
+configuration is unchanged. The client-message generator sorts normalized page
+paths so Windows and Linux produce the same inventory; message selections are
+unchanged and verification also passes with reversed directory enumeration.
 Two consecutive same-state, same-agent read-only review passes accompany the
 final handoff; no delegation was authorized. Local evidence is under ignored
 `output/unibase-import/`.

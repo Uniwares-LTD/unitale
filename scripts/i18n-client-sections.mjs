@@ -16,7 +16,8 @@ for (const file of fs
 const all = fs
   .readdirSync("src/app", { recursive: true })
   .filter((p) => p.endsWith("page.tsx"))
-  .map((p) => "src/app/" + p.replaceAll("\\", "/"));
+  .map((p) => "src/app/" + p.replaceAll("\\", "/"))
+  .sort();
 const normalize = (p) => path.relative(root, p).replaceAll("\\", "/");
 function resolve(from, id) {
   if (!id.startsWith(".") && !id.startsWith("@/")) return null;

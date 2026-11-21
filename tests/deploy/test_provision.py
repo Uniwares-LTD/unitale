@@ -223,7 +223,7 @@ class ProvisionTests(unittest.TestCase):
         self.assertEqual(before, (self.host.key_file.read_bytes(), self.host.state()["databasePassword"]))
 
     def test_existing_user_without_local_credentials_requires_recovery(self):
-        self.api.user = {"roles": [{"roleName": "readWrite", "databaseName": "unibase_staging"}],
+        self.api.user = {"roles": [{"roleName": "readWrite", "databaseName": self.config['runtime']['MONGODB_DATABASE']}],
                          "scopes": [{"name": "shared", "type": "CLUSTER"}]}
         with self.assertRaisesRegex(ValueError, "without saved credentials"):
             self.run_provision()
