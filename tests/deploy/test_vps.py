@@ -102,8 +102,10 @@ url=sys.argv[-1]
 if url.startswith('https://github.com/cloudflare/cloudflared/releases/'):
     Path(sys.argv[sys.argv.index('--output')+1]).write_text('#!/bin/sh\\nexit 0\\n')
     sys.exit(0)
-target='staging' if ('35101' in url or 'staging.' in url) else 'production'
-active=Path('/tmp/active-'+os.environ['DEPLOY_TEST_PROJECT']+'-'+target)
+slug=os.environ['DEPLOY_TEST_PROJECT']
+installed=json.loads((Path('/etc')/slug/'config.json').read_text())
+target='staging' if (':'+str(installed['staging']['port'])+'/' in url or 'staging.' in url) else 'production'
+active=Path('/tmp/active-'+slug+'-'+target)
 if not active.exists(): sys.exit(22)
 env=dict(x.split('=',1) for x in active.read_text().splitlines())
 commit=env['RELEASE_COMMIT']
@@ -228,9 +230,16 @@ sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging'
             (ROOT / target / "releases").mkdir()
             Path(f"/tmp/active-{SLUG}-" + target).unlink(missing_ok=True)
         installed=fixture(CONFIG)
+        for target in ('staging', 'production'):
+            public=json.loads((REPO / f'deploy/environments/{target}.json').read_text())
+            item=installed[target]
+            for key,value in {'origin':public['runtime']['APP_ORIGIN'],
+                              'firebaseProject':public['google']['projectId'],
+                              'mongoDatabase':public['runtime']['MONGODB_DATABASE'],
+                              'mongoUser':public['atlas']['mongoUser'],
+                              **{k:public['deployment'][k] for k in ('port','ingressSubnet','redisImage','nginxImage')}}.items():
+                if value is not None: item[key]=value
         item=installed['staging']
-        for key,value in {'origin':PUBLIC['runtime']['APP_ORIGIN'],'firebaseProject':PUBLIC['google']['projectId'],**{k:PUBLIC['deployment'][k] for k in ('ingressSubnet','redisImage','nginxImage')}}.items():
-            if value is not None: item[key]=value
         installed['imageRepository']=IMAGE
         (CONFIG/'config.json').write_text(json.dumps(installed))
         runtime=CONFIG/'staging/runtime.env'
