@@ -31,7 +31,7 @@ the project configuration. Application authorization is unchanged.
 Verification on 2026-11-21:
 
 - Clean lockfile installation, typecheck, lint, build and `check:env` pass.
-- Unit tests: 127 passed. Account tests: 351 passed, with the optional Redis
+- Unit tests: 128 passed. Account tests: 351 passed, with the optional Redis
   diagnostic-limiter test skipped because no disposable Redis was configured.
   Booklet compatibility: 11 passed. Handbook tests: 14 passed.
 - Docs, i18n, skills, template, samples, Handbook readiness and entrypoints pass;
@@ -54,8 +54,12 @@ slug and activation defaults. They now derive project identity and establish the
 own synthetic MCP/settings scenarios. Portable deployment verification passes 63
 tests; 25 host tests require the CI runner's owned Linux container. Deployment
 configuration is unchanged. The client-message generator sorts normalized page
-paths so Windows and Linux produce the same inventory; message selections are
-unchanged and verification also passes with reversed directory enumeration.
+paths, with literal routes before dynamic routes, so Windows and Linux produce
+the same inventory. All 24 route selections are preserved, including `/runs/new`;
+a runtime regression test checks its start action messages. Verification also
+passes with reversed directory enumeration. CI's disposable deployment container
+passes 86 tests; two tests requiring an Infrastructure checkout are skipped there
+and pass in the local portable suite against the available checkout.
 Two consecutive same-state, same-agent read-only review passes accompany the
 final handoff; no delegation was authorized. Local evidence is under ignored
 `output/unibase-import/`.

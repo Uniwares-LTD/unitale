@@ -17,7 +17,12 @@ const all = fs
   .readdirSync("src/app", { recursive: true })
   .filter((p) => p.endsWith("page.tsx"))
   .map((p) => "src/app/" + p.replaceAll("\\", "/"))
-  .sort();
+  // The consumer selects the first match: literal routes must precede dynamic ones.
+  .sort(
+    (a, b) =>
+      Number(a.includes("[")) - Number(b.includes("[")) ||
+      (a < b ? -1 : a > b ? 1 : 0),
+  );
 const normalize = (p) => path.relative(root, p).replaceAll("\\", "/");
 function resolve(from, id) {
   if (!id.startsWith(".") && !id.startsWith("@/")) return null;
