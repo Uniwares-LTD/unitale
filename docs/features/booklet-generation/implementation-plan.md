@@ -778,7 +778,7 @@ edit copied shared core or add a standalone workspace/listing page, scheduler or
 
 #### Refreshed baseline and design handoff (2026-11-21)
 
-This revision changes planning only. No model/schema/persistence, JSON example,
+The design-reference refresh changes planning only. No model/schema/persistence, JSON example,
 Mermaid diagram, workflow, application or configuration change is made.
 
 Issue branch refresh `dfa8d30` incorporates Unitale main `99cb6b5` and its Unibase
@@ -787,14 +787,10 @@ Issue branch refresh `dfa8d30` incorporates Unitale main `99cb6b5` and its Uniba
 remain historical checkpoint evidence. Shared booklet runtime seams and project slots
 are preserved. Handbook for this refresh is `c1b6166437ba729b59723a7dd4066c78e2f15185`.
 
-Before UI implementation, rerun the interrupted build, then typecheck sequentially,
-and lint. The merge review passed 38 repository, 46 compatibility and 20 shared UI-helper
-checks plus docs/i18n/skills/template checks; the first compatibility run had two Python
-startup timeouts and the unchanged rerun passed. Build/lint/typecheck were stopped
-without a result, so their earlier checkpoint 09 results do not validate this merge.
-Use the prepared tools; do not increase timeouts or change code absent a reproduced defect.
-This verification can run unattended and needs no live credentials or new approval.
-10.1's read-only service inspection can proceed independently; close these checks before UI implementation starts.
+The interrupted merge checks are superseded by the verified local-popup adoption
+below: production build, subsequent typecheck and full lint now pass on the refreshed
+issue branch. No checkpoint 10 implementation was started. Earlier checkpoint 09
+results remain historical evidence, not a substitute for these current checks.
 
 Use the adopted [design system](../../design-system.md),
 [project extension guide](../../design-system-extension.md) and local
@@ -841,7 +837,7 @@ Use the existing app and setup tools, not a new bootstrap framework.
 | Shared development/staging identity | Verified configuration | User confirmed real shared staging Firebase locally. Use `uniwares-base`, Unitale web registration `unitale-staging`, app ID `1:870391561828:web:ad66111854ba5233882971`, and `unitale_staging` for dev/staging. No demo auth or fixture simulation on shared data. |
 | Database provisioning | Verified | Created `unitale_staging` runtime user with only readWrite on `unitale_staging`, scoped to existing `kids-booklet` cluster in Atlas project `6a869d84e65675f845fa22eb`. Ping and transaction capability pass. No new cluster or network rule. Credentials retained outside Git. |
 | Local bindings and preparation | Verified | Ignored user-only `.env.local` selects APP_ENV local, https://localhost:3100, real Firebase, scoped Atlas DB and disabled payments/Dify/MCP/persona execution. Additive indexes pass; 3 earlier migration records retained and 7 remaining migrations applied successfully. Runtime secrets are outside Git. |
-| As-is local acceptance | Partial; human sign-in pending | Server starts on loopback 3100; latest readiness returns 200/ready with standard Atlas binding. Latest home also returns 200 with title Unitale; the earlier Account page renders. Anonymous Runs renders a sign-in error inside a streamed HTTP 200 and logs an authentication error; it is not a successful owned Run test. Real user sign-in/session and explicit administrator selection remain human acceptance, not simulated evidence. |
+| As-is local acceptance | Verified sign-in | The preserved HTTPS local app serves Account. On 2026-11-21 the user completed real Google popup sign-in and confirmed the Unitale account; the session endpoint returned 200. This does not establish owned Run, administrator or provider acceptance; checkpoint 10 remains unimplemented. |
 
 Shared database means local and staging writes affect the same Unitale records.
 Use the same authentication project and compatible encryption configuration when both
@@ -862,51 +858,48 @@ fallback remains a known local startup limitation, not a successful alternate la
 The existing migration lease is respected after interruption; never force-clear it or
 infer success from an index-preparation message. Confirm the final migration report.
 
-Use the [documented HTTPS launch](../../../README.md#unitale-local-app-with-shared-staging-data)
-for this real Firebase setup. Firebase forces HTTPS for its auth helper; plain HTTP at
-localhost:3100 causes ERR_SSL_PROTOCOL_ERROR. User approved the constrained Current User
-localhost CA after the initial non-CA trust approach failed validation; the invalid trust
-entry was removed. TLS certificate validation now passes with TLS 1.3. The Google
-provider is enabled and has a configured client; a read-only redirect check returns 302,
-which does not establish full sign-in. Browser navigation/snapshot checks timed out
-while local pages compiled, so Google page rendering and authenticated session creation
-remain unverified. Fresh HTTPS browser verification subsequently loads Account with Google sign-in enabled;
-clicking it reproduces Google's `400 redirect_uri_mismatch`. Error details confirm
-`https://localhost:3100/__/auth/handler`. The exact client and operator action are in
-[local setup](../../../README.md#local-google-sign-in-callback). Built-in browser bridge
-access is unavailable and its native-window capture timed out, so this finding comes
-from the separate fresh browser reproduction. The minimal popup change below is the preferred resolution; editing the shared OAuth
-callback remains an alternative only if local redirect is retained. Real sign-in/session
-acceptance remains a pre-10 setup gate. No shared OAuth provider settings were changed. No application code, SDK, CSP or shared OAuth setting changed.
-The generic npm dev wrapper still injects emulator defaults; use the direct existing
-Next CLI with the complete private environment and explicit TLS files instead.
+Use the [documented local launch](../../../README.md#unitale-local-app-with-shared-staging-data)
+with the complete private environment. The generic npm dev wrapper injects emulator
+defaults, so use the direct existing Next CLI. The approved local CA and its private
+files remain preserved. HTTPS remains supported; the hosted popup removes the local
+HTTPS/OAuth-callback requirement. No shared provider configuration is changed.
 
+#### Local Google popup adoption
 
-After setup, stop dev before the outstanding production build, then typecheck and lint;
-restart dev with the verified private environment. Preserve existing unrelated processes.
+This standalone setup task imports Unibase main
+`899785b93b7f6d0ebe02c62dbdd3ac80f27fe6a5` through `template:update` on the existing
+issue branch. Unibase [PR #64](https://github.com/Uniwares-LTD/unibase/pull/64) contains
+reviewed commit `c18d8b13f002afaefa8e567606f85438ca23c555`, tree
+`9d55ef9502288e4293a184998b19c87cf02bcba1`; its two consecutive same-agent reviews
+and verification are upstream evidence, not Unitale acceptance.
 
-#### Minimal local Google popup change (planning only)
+The import preserves project identity, deployment bindings, Booklet hooks and existing
+setup/planning work. The only runtime delta selects the hosted Google popup for local
+real Firebase and admits its exact validated helper origin in local `frame-src`.
+The existing session exchange and emulator/staging/production redirects are retained.
+Unitale verification passes: 133 unit/template tests; 46 compatibility, 38 repository,
+17 lifecycle/media and 32 MCP tests; 10 owned-auth integration tests plus bundled
+worker/readiness checks; production build, subsequent typecheck, full lint,
+model/docs/i18n/skills/template/samples and Handbook readiness. One initial combined
+Booklet run had a five-second Python subprocess timeout; the unchanged MCP-only
+rerun passes all 32 tests with the existing deadline. No source or timeout workaround
+was introduced. Lint retains the upstream CLI test function's advisory expression warning.
 
-This is a separate Unibase task, not part of checkpoint 10 implementation.
-The local execution handoff is
-`D:/misc/code/uniwares/unibase/output/local-google-popup-implementation-plan.md`.
-Execution uses the existing Unibase clone and branch `task/local-google-popup`, based on fetched main
-`2878df4474ecc2b93cbb0f292515c22b1f866a5d`. It is not yet published.
-The unrelated dirty deployment-data work is preserved. The existing clone must be
-clean and its deployment work paused before branch switching; do not silently stash
-active work. The handoff stays in ignored output until it can be added on the task branch.
+The adopted real form passes popup activation, duplicate/cancel/block/error handling,
+fresh-token CSRF/session exchange, appearance/return path, verified-user/stale-state
+guards and redirect recovery/initiation. EN/AR feedback/focus passes all 24
+preset/theme/width combinations, reduced motion and 200% zoom. An isolated production
+Unitale app reaches Google's ordinary sign-in page from plain localhost HTTP through
+the hosted helper, with quiet recovery on close. The final local app retains its
+existing HTTPS origin and approved CA; the private environment and TLS files are unchanged.
 
-Unibase owns configuration/form changes, tests and review. Unitale only consumes the
-exact reviewed upstream revision through `template:update` after preserving its current
-setup/docs and reaching a clean tree. Recheck local real sign-in and preserved booklet
-hooks; stop before 10. Local popup uses Firebase's hosted auth domain and existing
-session exchange; emulator and hosted redirect behavior stay unchanged. No shared OAuth
-edit or new auth framework is planned. Source review found the hosted helper iframe
-is blocked by current CSP; kickoff must explicitly approve the standalone plan's
-exact-host frame-src addition only for local real-Firebase mode. All other CSP and
-hosted/emulator behavior remain unchanged. Human sign-in and applicable publication/import
-approvals remain explicit end gates. Follow the standalone plan rather than duplicating
-its implementation queue here.
+On 2026-11-21 the user completed real Google sign-in at `https://localhost:3100/account`
+and confirmed that Unitale shows the signed-in account. This is real-account acceptance,
+separate from fixture and provider-page evidence. Two consecutive same-agent read-only
+reviews of the complete adoption are required before push; evidence accompanies the
+adoption commit and issue #10 update. No dependency, migration, provider edit, paid call,
+deployment or checkpoint 10 implementation is included. Booklet model/persistence,
+JSON example and both Mermaid schema versions are unaffected.
 
 #### Fixed scope and sequence
 

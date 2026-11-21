@@ -5,7 +5,8 @@ implementation without a new issue; add them here as they are agreed.
 
 ## Current state
 
-Created from template 0.4.0.
+Created from template 0.4.0; current exact template adoption is recorded in
+`project.source.json` (0.5.0).
 
 ## Unibase 0.5.0 candidate import
 
@@ -73,6 +74,19 @@ included.
 
 Handbook baseline: `D:\misc\code\uniwares\handbook` at
 `c1b6166437ba729b59723a7dd4066c78e2f15185`.
+
+## Local Google popup sign-in
+
+Unitale imports exact reviewed Unibase main `899785b93b7f6d0ebe02c62dbdd3ac80f27fe6a5`
+through `template:update`; [adoption evidence](features/booklet-generation/implementation-plan.md#local-google-popup-adoption)
+records its scope, verification and acceptance. Local real-Firebase uses the hosted popup;
+existing session handling and emulator/staging/production redirects are retained.
+The setup/planning baseline is preserved separately in `141eb33`. Automated Unitale
+verification passes, including the unchanged Booklet MCP rerun after one Python
+startup timeout. The user completed real Google popup sign-in and confirmed the
+Unitale account on 2026-11-21. The app retains the approved HTTPS origin/CA and private
+configuration. Two same-agent final reviews accompany the scoped adoption push.
+Checkpoint 10 remains unimplemented.
 
 ## Open work
 
@@ -153,6 +167,5 @@ On 2026-11-21 issue branch merge `dfa8d30` incorporated main `99cb6b5`.
 The [remaining Booklet plan](features/booklet-generation/implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
 now maps the pinned Unitale design reference to the existing 10.1-10.7 tasks and
 11/12 verification/approval gates. It reuses adopted UI helpers without enabling a
-project theme or implementing a new chat/product flow. Interrupted merge build,
-typecheck and lint need fresh results; completed checks and their limits are recorded
-there. This is a planning update; checkpoint 10 remains unimplemented.
+project theme or implementing a new chat/product flow. The local-popup adoption now supplies passing production build, subsequent
+typecheck and lint results; current checks and their limits are recorded there. This is a planning update; checkpoint 10 remains unimplemented.

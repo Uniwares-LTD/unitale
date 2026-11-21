@@ -53,6 +53,19 @@ Verify the selected commit at public readiness and run the separate Check workfl
 which checks web and both workers. Provider and user-journey acceptance are additional
 checks; neither a healthy workflow nor old acceptance evidence proves them for a new change.
 
+### Database migrations on existing staging
+
+The routine Release workflow deploys the image and checks readiness. The
+[database migration procedure](architecture.md#extension-conventions) runs
+separately under the staging operator's authority. Review the pending migration
+IDs for the target revision, take an operational backup, run indexes before
+migrations, then verify the ledger and affected flows. The runner applies all
+eligible pending migrations, including enabled module migrations.
+
+[#62](https://github.com/Uniwares-LTD/unibase/issues/62) owns the simpler
+deployment migration flow. Apply and record the currently pending staging
+migrations after that flow is ready.
+
 ### Follow-up recovery and consolidation
 
 Manual encrypted backup/restore support is implemented; destination configuration and

@@ -1176,7 +1176,9 @@ local 10.1 can start under B after instruction; no additional manual prerequisit
 identified. Scope C and target acceptance remain pending.
 
 The [2026-11-21 remaining-plan refresh](../implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
-records current Unibase 0.5.0 provenance, design-reference applicability and outstanding
-merge build/typecheck/lint evidence. Use adopted build-ui helpers for 10; keep proposed
+records current Unibase 0.5.0 provenance and design-reference applicability. The
+[local-popup adoption](../implementation-plan.md#local-google-popup-adoption) now
+supplies passing merge build/typecheck/lint and preserved Booklet regression evidence,
+plus user-confirmed real Google sign-in. Use adopted build-ui helpers for 10; keep proposed
 brand/voice/new-chat/reader capabilities outside its accepted scope. Unitale currently
 has no recorded deployment branches; resolve that operator input at 12 before promotion.
