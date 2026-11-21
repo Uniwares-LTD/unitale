@@ -58,3 +58,58 @@ test("document CSP follows only local loopback emulator ports and excludes untru
     else process.env.FIREBASE_AUTH_EMULATOR_HOST = previousHost;
   }
 });
+
+test("hosted Firebase frame admission is exact and restricted to local real Firebase", () => {
+  const keys = [
+    "APP_ENV",
+    "AUTH_MODE",
+    "FIREBASE_PROJECT_ID",
+    "FIREBASE_AUTH_EMULATOR_HOST",
+  ] as const;
+  const saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const policy = () =>
+    proxy(new NextRequest("http://localhost:3100/account"))!
+      .headers.get("content-security-policy")!
+      .replace(/nonce-[^']+/g, "nonce-fixture");
+  try {
+    process.env.APP_ENV = "local";
+    process.env.AUTH_MODE = "emulator";
+    process.env.FIREBASE_PROJECT_ID = "popup-fixture";
+    delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+    const baseline = policy();
+    process.env.AUTH_MODE = "firebase";
+    const popup = policy();
+    assert.equal(
+      popup,
+      baseline.replace(
+        /(frame-src[^;]*)/,
+        "$1 https://popup-fixture.firebaseapp.com",
+      ),
+    );
+    for (const environment of ["staging", "production"]) {
+      process.env.APP_ENV = environment;
+      assert.doesNotMatch(policy(), /firebaseapp\.com/);
+    }
+    delete process.env.APP_ENV;
+    assert.match(policy(), / https:\/\/popup-fixture\.firebaseapp\.com(?:;|$)/);
+    process.env.APP_ENV = "local";
+    for (const projectId of [
+      "bad.example",
+      "x/evil",
+      "bad https://evil.example",
+      "UPPERCASE",
+      "",
+      "a".repeat(64),
+    ]) {
+      process.env.FIREBASE_PROJECT_ID = projectId;
+      assert.throws(policy, /FIREBASE_PROJECT_ID/);
+    }
+    process.env.AUTH_MODE = "emulator";
+    assert.equal(policy(), baseline);
+  } finally {
+    for (const key of keys) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  }
+});

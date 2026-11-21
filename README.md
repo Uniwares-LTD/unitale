@@ -136,6 +136,68 @@ authorization as other publication.
 The initializer gives the new product an empty implementation plan; record its
 own accepted work there.
 
+## Unitale local app with shared staging data
+
+The optional operator-prepared `.env.local` selects real staging Firebase and
+`unitale_staging` on the existing Atlas cluster. It is ignored by Git and restricted
+to the workstation user. Runtime credentials are retained under
+`%USERPROFILE%\.config\unitale`; never copy Unibase database credentials or commit
+these files. Dev and future staging will write the same Unitale data. Use disposable
+fixture databases for automated tests.
+
+For this prepared configuration, from the repository root in PowerShell:
+
+```powershell
+Remove-Item Env:FIREBASE_AUTH_EMULATOR_HOST -ErrorAction SilentlyContinue
+node --import tsx scripts/check-env.ts
+$certificateDir = Join-Path $env:USERPROFILE '.config/unitale/tls'
+node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3100 --experimental-https --experimental-https-key "$certificateDir/localhost-key.pem" --experimental-https-cert "$certificateDir/localhost-signed.pem" --experimental-https-ca "$certificateDir/localhost-ca.pem"
+```
+
+Open https://localhost:3100 and sign in with your real shared staging account.
+Keep port 3000 and the existing Base emulator services untouched. The direct Next CLI
+is intentional: the generic `npm run dev` wrapper adds tracked emulator defaults,
+which conflict with real Firebase mode in a local environment. No app code change is
+needed for this launch. The default emulator-based quick start above remains available
+when the private staging environment file is not loaded.
+
+Payments, Dify, MCP and persona execution remain disabled in this prepared setup.
+Readiness at `/api/health/ready` verifies configuration/credential structure and database
+connectivity; it does not prove a real user sign-in, admin permission or provider run.
+Administrator appointment requires a selected verified Firebase user and explicit
+permission; shared Firebase membership does not grant Unitale administration.
+This setup does not deploy staging or complete Booklet checkpoint 10.
+
+The prepared HTTPS launch remains available with `APP_ORIGIN=https://localhost:3100`.
+Local Google now uses the hosted popup helper, so a localhost OAuth callback and
+local HTTPS are no longer authentication requirements. Keep the launch scheme aligned
+with the private `APP_ORIGIN`. The operator approved
+Current User trust for `Unitale localhost development CA`, constrained to localhost DNS
+names and 127.0.0.1, server authentication only, no subordinate CAs. It expires December
+21, 2026; renewal/trust needs explicit authorization. Its SHA-256 fingerprint is
+`AC23B09684DCBC048AF3941C6C20764272E6C36896276823DA55FAE5C2465D75` and Windows
+thumbprint is `E0C628354514E48B616273DD41ECC6358C04F565`. Keys stay in the protected
+workstation directory. The invalid first leaf trust entry was removed. Do not use the
+obsolete leaf files or disable browser/TLS validation. Trust is local, not a staging
+certificate or permission to change shared Firebase OAuth settings.
+
+### Local Google sign-in callback
+
+Unitale imports the reviewed local popup through Unibase main
+`899785b93b7f6d0ebe02c62dbdd3ac80f27fe6a5` ([PR #64](https://github.com/Uniwares-LTD/unibase/pull/64)).
+Local real-Firebase Google sign-in uses the project's hosted Firebase helper and the
+existing verified-token/CSRF session exchange. Emulator/staging/production continue
+using their existing redirect flow. No shared OAuth client edit is needed.
+
+Allow popups for the site or use a normal browser if blocked. Closing the popup
+returns to a usable form without automatic retry. Complete Google sign-in and confirm that Unitale shows your account. Readiness and
+merely reaching Google do not prove application-session acceptance. The [adoption record](docs/features/booklet-generation/implementation-plan.md#local-google-popup-adoption)
+tracks automated verification separately. This task stops before checkpoint 10.
+
+If an old tab displays the offline fallback, open the configured account URL directly.
+HTTP and HTTPS are different browser origins; keep the URL and private origin aligned.
+Preserve unrelated browser storage and the approved CA; never weaken TLS or CSP.
+
 ## Dify environment connections
 
 Each Dify app belongs to one project/environment. In Administration → Orchestrators,
@@ -348,7 +410,31 @@ Use the demo Firebase project and local MongoDB database defaults in [.env.examp
 
 For a real environment, configure the public Firebase project ID, API key and app ID, `AUTH_MODE=firebase`, the application's HTTPS origin, a scoped MongoDB URI/database, and Firebase Admin Application Default Credentials. Remove `FIREBASE_AUTH_EMULATOR_HOST`; startup rejects emulator configuration outside local demo projects. Keep service-account files outside Git and pass their path through `GOOGLE_APPLICATION_CREDENTIALS`.
 
-Enable Email/Password and Google in Firebase Authentication. Add the application hostname to authorized domains and `https://YOUR_HOST/__/auth/handler` as an authorized Google OAuth redirect URI. The browser receives the application hostname as `authDomain`; the narrow `/__/auth/` proxy forwards helper traffic to the configured project's Firebase Hosting domain without application cookies. Keep the default Firebase-hosted verification/reset email action handler and authorize the application return URL. Configure Firebase password policy and email-enumeration protection in the project console. Live Google OAuth, email delivery, and Atlas connectivity require verification with the intended environment's configuration; emulator results do not prove live activation.
+For staging/production, enable Email/Password and Google in Firebase Authentication. Add the application hostname to authorized domains and `https://YOUR_HOST/__/auth/handler` as an authorized Google OAuth redirect URI. The browser receives the application hostname as `authDomain`; the narrow `/__/auth/` proxy forwards helper traffic to the configured project's Firebase Hosting domain without application cookies. Keep the default Firebase-hosted verification/reset email action handler and authorize the application return URL. Configure Firebase password policy and email-enumeration protection in the project console. Live Google OAuth, email delivery, and Atlas connectivity require verification with the intended environment's configuration; emulator results do not prove live activation.
+
+### Local Google popup sign-in
+
+With `APP_ENV=local` and `AUTH_MODE=firebase`, Google sign-in opens the configured
+project's hosted Firebase popup helper. The browser uses
+`<FIREBASE_PROJECT_ID>.firebaseapp.com` as `authDomain`; only that validated HTTPS
+origin is added to local `frame-src`. A localhost OAuth callback is unnecessary.
+Local emulators and staging/production retain the existing redirect flow.
+
+Keep `FIREBASE_AUTH_EMULATOR_HOST` unset in real-Firebase mode. Use the direct
+Next CLI (`node node_modules/next/dist/bin/next dev --port 3100`) with a complete
+private `.env.local`: the generic local wrapper injects emulator defaults.
+Use the exact `APP_ORIGIN` configured there. Plain localhost HTTP is supported;
+existing local HTTPS and its approved CA can also be retained. Never weaken TLS
+validation. The Firebase hosted domain must already be authorized; changing
+shared provider settings requires its own operator authorization.
+
+Allow popups for the site or use a normal browser if the popup is blocked.
+Closing it leaves the form usable and does not retry or fall back to redirect.
+A verified user still exchanges a fresh ID token through the existing CSRF-protected
+session endpoint. Complete one real Google sign-in and confirm the application
+session; fixture results and merely reaching Google's page do not prove acceptance.
+The [implementation plan](docs/features/local-google-popup/implementation-plan.md)
+records verification and the exact-template handoff boundary.
 
 ## Administration
 

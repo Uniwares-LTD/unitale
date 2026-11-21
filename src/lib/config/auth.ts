@@ -1,9 +1,13 @@
 import { project } from "../project";
 import { z } from "zod";
+import {
+  firebaseProjectIdSchema,
+  localFirebaseAuthDomain,
+} from "./google-sign-in";
 
 const schema = z.object({
   mode: z.enum(["emulator", "firebase"]),
-  projectId: z.string().regex(/^[a-z][a-z0-9-]{4,62}$/),
+  projectId: firebaseProjectIdSchema,
   apiKey: z.string().min(1),
   appId: z.string().min(1),
   origin: z.url(),
@@ -64,12 +68,20 @@ export function parseAuthConfig(
   // are different sites even though they reach the same machine.
   if (browserEmulator && ["localhost", "127.0.0.1"].includes(appHost))
     browserEmulator.hostname = appHost;
+  const popupDomain = localFirebaseAuthDomain(
+    environment,
+    config.mode,
+    config.projectId,
+  );
   return {
     public: {
       apiKey: config.apiKey,
       projectId: config.projectId,
       appId: config.appId,
-      authDomain: new URL(origin).host,
+      authDomain: popupDomain ?? new URL(origin).host,
+      googleSignInMethod: popupDomain
+        ? ("popup" as const)
+        : ("redirect" as const),
       emulatorUrl: browserEmulator ? browserEmulator.origin : null,
     },
     server: {

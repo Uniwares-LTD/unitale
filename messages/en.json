@@ -466,7 +466,8 @@
     "m836cdc7d346b": "We could not confirm the save. Your draft is still here. Check the saved version before trying again.",
     "m7817cd065631": "Image unavailable",
     "m94d866bf22ae": "This image could not be loaded. The rest of the result is still available.",
-    "m5fc277959f9a": "Download failed. The file is still available, so you can try again."
+    "m5fc277959f9a": "Download failed. The file is still available, so you can try again.",
+    "m749038b5c762": "Allow popups for this site or use a normal browser to sign in with Google."
   },
   "locale": {
     "heading": "Language and region",
