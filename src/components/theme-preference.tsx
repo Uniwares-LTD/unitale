@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
+import { FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const subscribe = () => () => {};
@@ -40,10 +41,10 @@ export function ThemePreference() {
     serverSnapshot,
   );
   return (
-    <fieldset>
-      <legend className="mb-4 text-sm font-medium">
+    <FieldSet>
+      <FieldLegend className="mb-4 text-sm font-medium">
         {translate("m9f1e7d7d98b2")}
-      </legend>
+      </FieldLegend>
       <RadioGroup
         aria-label={translate("m9f1e7d7d98b2")}
         value={hydrated ? (theme ?? "system") : ""}
@@ -52,7 +53,7 @@ export function ThemePreference() {
         className="grid gap-3 sm:grid-cols-3"
       >
         {choices.map(({ value, label, description, Icon }) => (
-          <label
+          <FieldLabel
             key={value}
             htmlFor={`theme-${value}`}
             className="flex cursor-pointer flex-col gap-5 rounded-xl border bg-background p-5 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring motion-reduce:transition-none"
@@ -74,12 +75,12 @@ export function ThemePreference() {
                 {description}
               </span>
             </span>
-          </label>
+          </FieldLabel>
         ))}
       </RadioGroup>
       <p className="mt-5 text-sm text-muted-foreground" aria-live="polite">
         {hydrated ? translate("m77c9c9700543") : translate("mbd1b173b26a7")}
       </p>
-    </fieldset>
+    </FieldSet>
   );
 }

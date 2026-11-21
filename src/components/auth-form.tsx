@@ -23,7 +23,8 @@ import { sessionResultSchema } from "@/lib/contracts/profile";
 import { applyAccountAppearance } from "@/lib/client/appearance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/page-patterns";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function message(
@@ -219,8 +220,10 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
                 : translate("mbfd402b2f6f3")}
           </h2>
           <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{translate("m969ccbd3cf63")}</Label>
+            <Field>
+              <FieldLabel htmlFor="email">
+                {translate("m969ccbd3cf63")}
+              </FieldLabel>
               <Input
                 id="email"
                 name="email"
@@ -230,12 +233,17 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
                 maxLength={254}
                 disabled={pending}
               />
-            </div>
+            </Field>
             {mode !== "reset" && (
-              <div className="space-y-2">
-                <Label htmlFor="password">{translate("me7cf3ef4f17c")}</Label>
+              <Field>
+                <FieldLabel htmlFor="password">
+                  {translate("me7cf3ef4f17c")}
+                </FieldLabel>
                 <Input
                   id="password"
+                  aria-describedby={
+                    mode === "register" ? "password-description" : undefined
+                  }
                   name="password"
                   type="password"
                   autoComplete={
@@ -247,13 +255,13 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
                   disabled={pending}
                 />
                 {mode === "register" && (
-                  <p className="text-xs text-muted-foreground">
+                  <FieldDescription id="password-description">
                     {translate("m618b57689fc1")}
-                  </p>
+                  </FieldDescription>
                 )}
-              </div>
+              </Field>
             )}
-            <Button type="submit" disabled={pending}>
+            <SubmitButton pending={pending}>
               {pending
                 ? translate("m4660a983366f")
                 : mode === "register"
@@ -261,7 +269,7 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
                   : mode === "reset"
                     ? translate("m708c5d67ba8e")
                     : translate("mbfd402b2f6f3")}
-            </Button>
+            </SubmitButton>
           </form>
           {mode !== "reset" && (
             <Button

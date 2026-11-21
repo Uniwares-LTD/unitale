@@ -458,3 +458,185 @@ test("workflow retrieval preserves reported summary billing evidence", async () 
     source: "provider",
   });
 });
+
+test("opt-in private node observations retain retry identity and outputs without public-stage leakage", async () => {
+  const node = {
+    id: "child-execution",
+    node_id: "specialist",
+    node_type: "tool",
+    title: "Specialist",
+    status: "retry",
+    retry_index: 2,
+    iteration_id: "iteration-1",
+    loop_id: "loop-1",
+    outputs: {
+      result: "private exact output  \u{1f44b}\n",
+      requestId: "call-1",
+    },
+    outputs_truncated: false,
+    error: "private provider error",
+    execution_metadata: { total_tokens: 7 },
+    inputs: { credential: "must-not-observe" },
+  };
+  const fetcher: typeof fetch = async () =>
+    sse(
+      started,
+      { event: "node_retry", workflow_run_id: runId, data: node },
+      {
+        event: "node_finished",
+        workflow_run_id: runId,
+        data: { ...node, status: "exception", retry_index: undefined },
+      },
+      { event: "workflow_finished", workflow_run_id: runId, data: detail },
+    );
+  for (const enabled of [false, true]) {
+    const events: ProviderEvent[] = [];
+    const provider = createDifyWorkflow(
+      live,
+      live.bindings[0],
+      fetcher,
+      undefined,
+      enabled,
+    );
+    const result = await provider.start(input, async (event) => {
+      events.push(event);
+    });
+    assert.equal(result.kind, "ok");
+    const observations = events.filter(
+      (event) => event.type === "node-observation",
+    );
+    assert.equal(observations.length, enabled ? 2 : 0);
+    assert.equal(
+      events
+        .filter((event) => event.type === "stage")
+        .find((event) => event.nodeId === "specialist")?.status,
+      "failed",
+    );
+    if (enabled) {
+      assert.equal(observations[0].node.runId, runId);
+      assert.equal(observations[0].node.id, "child-execution");
+      assert.equal(observations[0].node.retryIndex, 2);
+      assert.equal(observations[0].node.iterationId, "iteration-1");
+      assert.equal(observations[0].node.loopId, "loop-1");
+      assert.deepEqual(observations[0].node.outputs, node.outputs);
+      assert.equal(observations[0].node.outputsTruncated, false);
+      assert.equal(observations[1].node.retryIndex, null);
+      assert(!JSON.stringify(observations).includes("must-not-observe"));
+    }
+    assert(
+      !JSON.stringify(
+        events.filter((event) => event.type !== "node-observation"),
+      ).includes("private"),
+    );
+  }
+  let dispatches = 0;
+  const failing = createDifyWorkflow(
+    live,
+    live.bindings[0],
+    async (...args) => {
+      dispatches++;
+      return fetcher(...args);
+    },
+    undefined,
+    true,
+  );
+  await assert.rejects(
+    failing.start(input, async (event) => {
+      if (event.type === "node-observation")
+        throw new Error("private observer unavailable");
+    }),
+    /observer unavailable/,
+  );
+  assert.equal(dispatches, 1);
+  const replay = createDifyWorkflow(
+    live,
+    live.bindings[0],
+    async (_url, options) => {
+      assert.equal(options?.method, "GET");
+      return fetcher(_url, options);
+    },
+    undefined,
+    true,
+  );
+  const seen: ProviderEvent[] = [];
+  await replay.stream!(runId, input.user, async (event) => {
+    seen.push(event);
+  });
+  assert.equal(
+    seen.filter((event) => event.type === "node-observation").length,
+    2,
+  );
+});
+
+test("opt-in starts retain actual publication before nodes without replaying historical starts", async () => {
+  const node = { id: "child-execution", node_id: "child", node_type: "tool", status: "succeeded",
+    outputs: { result: "retained body" }, outputs_truncated: false };
+  for (const enabled of [false, true]) {
+    const seen: ProviderEvent[] = [];
+    const provider = createDifyWorkflow(live, live.bindings[0], async () => sse(
+      { ...started, data: { id: runId, workflow_id: workflowId, inputs: { private: "private-input-canary" } } },
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: node },
+      { event: "workflow_finished", workflow_run_id: runId, task_id: taskId, data: detail },
+    ), undefined, enabled);
+    assert.equal((await provider.start(input, async (event) => { seen.push(event); })).kind, "ok");
+    const running = seen.findIndex((event) => event.type === "execution" && event.execution.status === "running");
+    assert.equal(running >= 0, enabled);
+    if (enabled) {
+      const event = seen[running];
+      assert.equal(event.type, "execution");
+      if (event.type === "execution") {
+        assert.equal(event.execution.workflowId, workflowId);
+        assert.equal(event.execution.outputs, null);
+        assert.equal(event.execution.usage.cost, null);
+      }
+      assert.ok(running < seen.findIndex((event) => event.type === "node-observation"));
+      seen.length = 0;
+      await provider.stream!(runId, input.user, async (event) => { seen.push(event); });
+      assert.equal(seen.some((event) => event.type === "execution" && event.execution.status === "running"), false);
+    }
+    assert.ok(!JSON.stringify(seen).includes("private-input-canary"));
+  }
+  let dispatches = 0;
+  const observed: ProviderEvent[] = [];
+  const foreign = createDifyWorkflow(live, live.bindings[0], async () => {
+    dispatches++;
+    return sse({ ...started, data: { id: runId, workflow_id: "00000000-0000-4000-8000-000000000099" } });
+  }, undefined, true);
+  assert.equal((await foreign.start(input, async (event) => { observed.push(event); })).kind, "unknown");
+  assert.equal(dispatches, 1);
+  assert.deepEqual(observed.map((event) => event.type), ["identity"]);
+});
+
+test("container aggregate usage is not another charge and native node duration stays reported", async () => {
+  for (const type of ["loop", "iteration"]) {
+    const seen: ProviderEvent[] = [];
+    const provider = createDifyWorkflow(live, live.bindings[0], async () => sse(started,
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: {
+        id: "00000000-0000-4000-8000-000000000011", node_id: "llm", node_type: "llm", status: "succeeded", elapsed_time: 0.25,
+        execution_metadata: { total_price: "0.1", currency: "USD", total_tokens: 10 },
+      } },
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: {
+        id: "00000000-0000-4000-8000-000000000013", node_id: "second-llm", node_type: "llm", status: "succeeded", elapsed_time: -1,
+        execution_metadata: { total_price: "0.2", currency: "USD", total_tokens: 2 },
+      } },
+      { event: "node_finished", workflow_run_id: runId, task_id: taskId, data: {
+        id: "00000000-0000-4000-8000-000000000012", node_id: "container", node_type: type, status: "succeeded", elapsed_time: 1,
+        execution_metadata: { total_price: "0.3", currency: "USD", total_tokens: 10 },
+        outputs: { usage: { total_price: "0.3", currency: "USD", total_tokens: 10 } },
+      } },
+      { event: "workflow_finished", workflow_run_id: runId, task_id: taskId, data: { ...detail, total_price: "0.3", currency: "USD" } },
+    ));
+    const outcome = await provider.start(input, async (event) => { seen.push(event); });
+    assert.equal(outcome.kind, "ok");
+    const usages = seen.filter((event) => event.type === "usage");
+    assert.equal(usages.length, 3);
+    assert.equal(usages[0].usage.cost?.amount, "0.1");
+    assert.equal(usages[0].usage.elapsedMs, 250);
+    assert.equal(usages[1].usage.cost?.amount, "0.2");
+    assert.equal(usages[1].usage.elapsedMs, null);
+    assert.equal(usages[2].usage.cost, null);
+    assert.equal(usages[2].usage.totalTokens, null);
+    assert.equal(usages[2].usage.elapsedMs, 1000);
+    if (outcome.kind === "ok") assert.equal(outcome.value.usage.cost?.amount, "0.3");
+  }
+});

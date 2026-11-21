@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { moduleEnabled, moduleForPath } from "./lib/project";
 
+// Sonner 2.0.8 inserts an empty style element before filling it with this stylesheet.
+export const sonnerStyleHashes = [
+  "'sha256-StEaX+se6YS7pqjzrzMIA0KaX9zF/8zAhvQXZAe5epY='",
+  "'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='",
+] as const;
+
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const feature = moduleForPath(path);
@@ -36,7 +42,7 @@ export function proxy(request: NextRequest) {
         : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     helper || path === "/offline.html" || dev
       ? "style-src 'self' 'unsafe-inline'"
-      : `style-src 'self' 'nonce-${nonce}'`,
+      : `style-src 'self' 'nonce-${nonce}' ${sonnerStyleHashes.join(" ")}`,
     "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self'",

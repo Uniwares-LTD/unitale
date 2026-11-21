@@ -1,4 +1,5 @@
 "use client";
+import { ProjectRunDetail } from "@/project/run-detail";
 import {
   CurrencyLabel,
   DateLabel,
@@ -9,7 +10,7 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { useEffect, useId, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { ResultImage } from "@/components/media-fallback";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
 import { PricingDescription } from "@/components/pricing-description";
@@ -451,6 +452,7 @@ export function RunDetail({ initial }: { initial: Detail }) {
   }
   return (
     <div className="space-y-6">
+      <ProjectRunDetail data={data} refresh={refresh} />
       <div className="flex flex-wrap items-center gap-3">
         <Badge>
           <StateLabel value={data.status} />
@@ -717,7 +719,8 @@ export function RunDetail({ initial }: { initial: Detail }) {
                       rel="noopener"
                       className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                     >
-                      <Image
+                      <ResultImage
+                        aspectRatio="3 / 2"
                         unoptimized
                         src={`/api/run-assets/${image.id}?size=preview`}
                         width={600}
@@ -725,7 +728,9 @@ export function RunDetail({ initial }: { initial: Detail }) {
                         alt={image.name}
                         className="max-h-96 w-full object-contain"
                       />
-                      <span className="sr-only">{translate("m1d1833565142")}</span>
+                      <span className="sr-only">
+                        {translate("m1d1833565142")}
+                      </span>
                     </a>
                   ),
                 )}

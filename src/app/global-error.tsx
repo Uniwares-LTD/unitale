@@ -1,4 +1,5 @@
 "use client";
+import { project } from "@/lib/project";
 import recovery from "../../messages/recovery.json";
 import { localeCookie, resolveLocale, presentationLocale } from "@/lib/locale";
 import { useEffect, useSyncExternalStore } from "react";
@@ -32,7 +33,11 @@ export default function GlobalError({
     diagnostics.record("global-error");
   }, []);
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
+    <html
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      data-project={project.theme ? project.slug : undefined}
+    >
       <body className="bg-background font-sans text-foreground">
         <main className="mx-auto flex min-h-svh max-w-lg flex-col justify-center px-6 py-12">
           <h1 className="font-heading text-3xl">{text.failure}</h1>

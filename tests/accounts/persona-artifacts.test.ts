@@ -1,3 +1,4 @@
+import { domains, jobTarget } from "../../src/lib/server/domains";
 import assert from "node:assert/strict";
 import { AppError } from "../../src/lib/auth-policy";
 import { test } from "node:test";
@@ -183,6 +184,13 @@ test("Personas, private callbacks and product assets use durable owned boundarie
         };
       },
       authorize: async () => true,
+      resumePaused: async (job) => {
+        const target = jobTarget(job);
+        if (target)
+          return domains
+            .get(target.adapter, target.version)
+            .resumePaused?.(db, job);
+      },
       validateOutput: (j, result) => {
         try {
           if (j.responder) responderAnswer(j, result.outputs);
@@ -335,6 +343,153 @@ test("Personas, private callbacks and product assets use durable owned boundarie
           await db.collection("aiUsage").countDocuments({ jobId: child._id }),
           1,
         );
+      },
+    );
+    await t.test(
+      "application waits resume the same execution without a persona or creator interruption",
+      async () => {
+        for (const droppedResponse of [false, true]) {
+          const adapter = domains.get("artifact", "1");
+          const previousNodes = adapter.applicationWaitNodes,
+            previousResume = adapter.resumePaused;
+          const artifactId = randomUUID();
+          const job = await parent(false, artifactId, true);
+          if (droppedResponse)
+            await aiJobs(db).updateOne(
+              { _id: job._id },
+              { $set: { "inputs.prompt": "decision lost" } },
+            );
+          const key = randomUUID();
+          let resumes = 0;
+          adapter.applicationWaitNodes = ["choice"];
+          adapter.resumePaused = async (_db, current) => {
+            resumes++;
+            assert.equal(current._id, job._id);
+            assert.equal(current.status, "paused");
+            assert(current.runId);
+            const decision = (await db
+              .collection<Decision>("runDecisions")
+              .findOne({ jobId: job._id }))!;
+            assert.equal(decision.applicationWait, true);
+            const command = { key, action: "continue", response: "eligible" };
+            for (const source of [
+              { type: "user" as const },
+              { type: "persona" as const },
+            ])
+              await assert.rejects(
+                submitAuthorizedDecision(
+                  db,
+                  { uid: actor.uid, auth_time: actor.authTime },
+                  current,
+                  decision,
+                  command,
+                  source,
+                ),
+                /managed by the application/,
+              );
+            await assert.rejects(
+              submitAuthorizedDecision(
+                db,
+                { uid: actor.uid, auth_time: actor.authTime },
+                current,
+                decision,
+                command,
+                {
+                  type: "application",
+                  adapterId: "foreign",
+                  adapterVersion: "1",
+                },
+              ),
+              /unavailable/,
+            );
+            const appSource = {
+              type: "application" as const,
+              adapterId: "artifact",
+              adapterVersion: "1",
+            };
+            await assert.rejects(
+              submitAuthorizedDecision(
+                db,
+                { uid: actor.uid, auth_time: actor.authTime },
+                { ...current, lease: "stale-worker" },
+                decision,
+                command,
+                appSource,
+              ),
+              /no longer accepts answers/,
+            );
+            await submitAuthorizedDecision(
+              db,
+              { uid: actor.uid, auth_time: actor.authTime },
+              current,
+              decision,
+              command,
+              {
+                type: "application",
+                adapterId: "artifact",
+                adapterVersion: "1",
+              },
+            );
+            const saved = (await db
+              .collection<Decision>("runDecisions")
+              .findOne({ _id: decision._id }))!;
+            assert.equal(saved.answerSource?.type, "application");
+            assert.equal(
+              saved.status,
+              droppedResponse ? "unknown" : "submitted",
+            );
+            await submitAuthorizedDecision(
+              db,
+              { uid: actor.uid, auth_time: actor.authTime },
+              current,
+              saved,
+              command,
+              {
+                type: "application",
+                adapterId: "artifact",
+                adapterVersion: "1",
+              },
+            ); // Journaled replay only.
+          };
+          try {
+            const notices = await db
+              .collection("notifications")
+              .countDocuments();
+            await worker();
+            const paused = (await aiJobs(db).findOne({ _id: job._id }))!;
+            assert.equal(resumes, 1);
+            assert.equal(paused.applicationWait, true);
+            assert.equal(
+              await db.collection("notifications").countDocuments(),
+              notices,
+            );
+            assert.equal(
+              await db
+                .collection("runEvents")
+                .countDocuments({ jobId: job._id, "event.type": "decision" }),
+              0,
+            );
+            assert.equal(
+              await aiJobs(db).countDocuments({
+                "responder.parentId": job._id,
+              }),
+              0,
+            );
+            await aiJobs(db).updateOne(
+              { _id: job._id },
+              { $set: { nextAttemptAt: new Date(0) } },
+            );
+            await worker();
+            const completed = (await aiJobs(db).findOne({ _id: job._id }))!;
+            assert.equal(completed.status, "succeeded");
+            assert.equal(completed.runId, paused.runId);
+            assert.equal(completed.run?.attempt, 1);
+            assert.equal(resumes, 1);
+          } finally {
+            adapter.applicationWaitNodes = previousNodes;
+            adapter.resumePaused = previousResume;
+          }
+        }
       },
     );
     await t.test(

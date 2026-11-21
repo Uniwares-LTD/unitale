@@ -1,3 +1,6 @@
+import { reconcileExtensions } from "../src/lib/server/extensions";
+import { serverExtensions } from "../src/project/server";
+import { domains, jobTarget } from "../src/lib/server/domains";
 import { loadEnvConfig } from "@next/env";
 import { MongoClient } from "mongodb";
 import { setTimeout as delay } from "node:timers/promises";
@@ -73,6 +76,20 @@ async function main() {
           const executed = await processOneAiJob(db, {
             provider: (job) => providerForRun(job, db),
             trace: tracingForRun,
+            resumePaused: async (job) => {
+              const target = jobTarget(job);
+              if (target)
+                return domains
+                  .get(target.adapter, target.version)
+                  .resumePaused?.(db, job);
+            },
+            observeNode: async (job, node, session) => {
+              const target = jobTarget(job);
+              if (target)
+                await domains
+                  .get(target.adapter, target.version)
+                  .observeNode?.(db, job, node, session);
+            },
             prepareInput: (job) =>
               job.responder
                 ? Promise.resolve(job.inputs)
@@ -105,6 +122,9 @@ async function main() {
           worked = executed;
           worked = (await processOneAutomaticDecision(db)) || worked;
           worked = (await processOneResultApplication(db)) || worked;
+          worked =
+            (await reconcileExtensions(serverExtensions, db, new Date())) ||
+            worked;
         } catch {
           status = 503;
           cycleState = "error";

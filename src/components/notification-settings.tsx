@@ -6,7 +6,7 @@ import { api } from "@/lib/client/api";
 import { notificationPreferencesSchema } from "@/lib/contracts/notifications";
 import { Notice } from "./page-patterns";
 import { Checkbox } from "./ui/checkbox";
-import { Label } from "./ui/label";
+import { FieldLabel } from "./ui/field";
 import {
   Card,
   CardContent,
@@ -64,9 +64,9 @@ export function NotificationSettings({ initial }: { initial: Preferences }) {
                   void save({ ...preferences, [category]: value === true })
                 }
               />
-              <Label htmlFor={`notifications-${category}`}>
+              <FieldLabel htmlFor={`notifications-${category}`}>
                 {labels[category]}
-              </Label>
+              </FieldLabel>
             </div>
           ))}
         </fieldset>

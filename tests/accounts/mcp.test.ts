@@ -231,6 +231,51 @@ test("MCP HTTP authorization, methods and input boundaries", async () => {
 
 test("MCP official client: real HTTP, discovery, calls and concurrent permission isolation", async () => {
   const events: unknown[] = [];
+  const originals = [
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jDxkAAAAASUVORK5CYII=",
+      "base64",
+    ),
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  ];
+  const imageTool: RegisteredTool = {
+    name: "original_images",
+    description: "Synthetic ordered images",
+    permission: "reference:read",
+    input: z.strictObject({
+      mode: z
+        .enum(["valid", "mime", "empty", "large", "aggregate"])
+        .default("valid"),
+    }),
+    // Strip the private binary carrier from both public JSON forms.
+    output: z.object({ assetIds: z.array(z.string()) }),
+    images: (result) =>
+      result.originals as { data: Uint8Array; mimeType: string }[],
+    async run(input) {
+      return {
+        assetIds: ["first", "second"],
+        originals: (input.mode === "aggregate"
+          ? [0, 1]
+          : input.mode === "valid"
+            ? [0, 1]
+            : [0]
+        ).map((i) => ({
+          data:
+            input.mode === "empty"
+              ? Buffer.alloc(0)
+              : input.mode === "large"
+                ? Buffer.alloc(32 * 1024)
+                : input.mode === "aggregate"
+                  ? Buffer.alloc(16 * 1024)
+                  : originals[i],
+          mimeType: input.mode === "mime" ? "text/html" : "image/png",
+        })),
+      };
+    },
+  };
   const broken: RegisteredTool[] = [
     {
       name: "slow",
@@ -275,7 +320,7 @@ test("MCP official client: real HTTP, discovery, calls and concurrent permission
       const response = await handleMcp(request, {
         config: parseMcpConfig(env, origin),
         appName: "Fixture",
-        registry: [...tools, ...broken],
+        registry: [...tools, ...broken, imageTool],
         timeoutMs: 25,
         log: (e) =>
           events.push(
@@ -384,6 +429,53 @@ test("MCP official client: real HTTP, discovery, calls and concurrent permission
       }),
       /not found/,
     );
+    const imageResult = await clients[0].client.callTool({
+      name: "original_images",
+      arguments: {},
+    });
+    assert.equal(imageResult.isError, undefined);
+    assert.deepEqual(imageResult.structuredContent, {
+      assetIds: ["first", "second"],
+    });
+    const imageBlocks = z
+      .array(
+        z.discriminatedUnion("type", [
+          z.object({ type: z.literal("text"), text: z.string() }),
+          z.object({
+            type: z.literal("image"),
+            data: z.string(),
+            mimeType: z.string(),
+          }),
+        ]),
+      )
+      .parse(imageResult.content);
+    assert.equal(imageBlocks.length, 3);
+    assert.deepEqual(imageBlocks[0], {
+      type: "text",
+      text: JSON.stringify(imageResult.structuredContent),
+    });
+    for (const [i, block] of imageBlocks.slice(1).entries()) {
+      assert.equal(block.type, "image");
+      if (block.type !== "image") throw new Error("Expected native image");
+      assert.equal(block.mimeType, "image/png");
+      assert.deepEqual(Buffer.from(block.data, "base64"), originals[i]);
+    }
+    assert(!limited.tools.some((tool) => tool.name === "original_images"));
+    await assert.rejects(
+      clients[1].client.callTool({ name: "original_images", arguments: {} }),
+      /not found/,
+    );
+    for (const mode of ["mime", "empty", "large", "aggregate"]) {
+      const failure = await clients[0].client.callTool({
+        name: "original_images",
+        arguments: { mode },
+      });
+      assert.equal(failure.isError, true, mode);
+      assert(
+        !JSON.stringify(failure).includes(originals[0].toString("base64")),
+      );
+    }
+    assert(!JSON.stringify(events).includes(originals[0].toString("base64")));
     const badInput = await clients[0].client.callTool({
       name: "get_reference_document_v1",
       arguments: { documentId: "../../.env.local" },
@@ -518,4 +610,65 @@ test("MCP supports legacy Streamable HTTP clients and cancellation", async () =>
   );
   assert(observedAbort);
   assert.equal((await response.json()).result.isError, true);
+});
+
+test("MCP native images obey the complete encoded response limit", async () => {
+  const tool: RegisteredTool = {
+    name: "response_budget",
+    description: "Synthetic budget fixture",
+    permission: "server:read",
+    input: z.strictObject({}),
+    output: z.object({ label: z.string() }),
+    run: async () => ({ label: "x".repeat(180), image: Buffer.alloc(512) }),
+    images: (result) => [
+      { data: result.image as Buffer, mimeType: "image/png" },
+    ],
+  };
+  let image = Buffer.alloc(512);
+  tool.run = async () => ({ label: "x".repeat(180), image });
+  const call = (responseBytes: number, toolResultBytes = 1000) =>
+    handleMcp(
+      new Request("http://localhost:3000/api/mcp", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/call",
+          params: { name: tool.name, arguments: {} },
+        }),
+      }),
+      {
+        config: parseMcpConfig(env, "http://localhost:3000"),
+        appName: "Fixture",
+        registry: [tool],
+        limits: {
+          requestBytes: 1024,
+          responseBytes,
+          toolResultBytes,
+          timeoutMs: 1000,
+        },
+        log() {},
+      },
+    );
+  const accepted = await call(2048);
+  assert.equal(accepted.status, 200);
+  const body = await accepted.text();
+  assert(Buffer.byteLength(body) > 1024);
+  assert.equal(JSON.parse(body).result.isError, undefined);
+  const rejected = await call(1024);
+  assert.equal(rejected.status, 500);
+  assert(!(await rejected.text()).includes("base64"));
+  // Practical encoded transport capacity: an 8 MiB original requires larger
+  // existing limits, not a different protocol or a thumbnail fallback.
+  image = Buffer.alloc(8 * 1024 * 1024, 127);
+  const original = await call(16 * 1024 * 1024, 12 * 1024 * 1024);
+  assert.equal(original.status, 200);
+  const result = (await original.json()).result;
+  assert.equal(result.isError, undefined);
+  assert.deepEqual(Buffer.from(result.content[1].data, "base64"), image);
 });

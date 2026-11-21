@@ -14,7 +14,7 @@ import {
   type GrantView,
 } from "@/lib/contracts/diagnostics";
 import { DateLabel } from "./localized-value";
-import { Notice } from "./page-patterns";
+import { Notice, SubmitButton } from "./page-patterns";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Copy, Check } from "lucide-react";
@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "./ui/dialog";
-import { Label } from "./ui/label";
+import { FieldLabel, FieldLegend, FieldSet } from "./ui/field";
 import { Checkbox } from "./ui/checkbox";
 import { Badge } from "./ui/badge";
 import {
@@ -240,9 +240,15 @@ export function DiagnosticAccess({
             grant store.
           </Notice>
         ) : (
-          <>
+          <form
+            className="space-y-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (valid && !busy) void create();
+            }}
+          >
             <div className="space-y-2">
-              <Label htmlFor={`${id}-duration`}>Expires after</Label>
+              <FieldLabel htmlFor={`${id}-duration`}>Expires after</FieldLabel>
               <Select
                 value={duration}
                 disabled={busy}
@@ -261,10 +267,10 @@ export function DiagnosticAccess({
                 </SelectContent>
               </Select>
             </div>
-            <fieldset className="space-y-3">
-              <legend className="text-sm font-medium">
+            <FieldSet className="space-y-3">
+              <FieldLegend className="text-sm font-medium">
                 Metadata capabilities
-              </legend>
+              </FieldLegend>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {metadataDefaults.map((name) => (
                   <div key={name} className="flex items-center gap-2">
@@ -274,20 +280,20 @@ export function DiagnosticAccess({
                       disabled={busy}
                       onCheckedChange={(value) => toggle(name, value === true)}
                     />
-                    <Label
+                    <FieldLabel
                       htmlFor={`${id}-${name}`}
                       className="font-mono text-xs"
                     >
                       {name}
-                    </Label>
+                    </FieldLabel>
                   </div>
                 ))}
               </div>
-            </fieldset>
-            <fieldset className="space-y-3">
-              <legend className="text-sm font-medium">
+            </FieldSet>
+            <FieldSet className="space-y-3">
+              <FieldLegend className="text-sm font-medium">
                 Content capabilities
-              </legend>
+              </FieldLegend>
               <p className="text-xs text-muted-foreground">
                 These return stored prompts, answers, outputs and saved text
                 from any account. Select them only when the investigation needs
@@ -302,24 +308,20 @@ export function DiagnosticAccess({
                       disabled={busy}
                       onCheckedChange={(value) => toggle(name, value === true)}
                     />
-                    <Label
+                    <FieldLabel
                       htmlFor={`${id}-${name}`}
                       className="font-mono text-xs"
                     >
                       {name}
-                    </Label>
+                    </FieldLabel>
                   </div>
                 ))}
               </div>
-            </fieldset>
-            <Button
-              ref={createButton}
-              disabled={busy || !valid}
-              onClick={() => void create()}
-            >
+            </FieldSet>
+            <SubmitButton ref={createButton} pending={busy} disabled={!valid}>
               Create access
-            </Button>
-          </>
+            </SubmitButton>
+          </form>
         )}
         {message && <Notice tone={message.tone} title={message.text} />}
         {created && (
@@ -333,7 +335,7 @@ export function DiagnosticAccess({
             }}
           >
             <DialogContent
-              className="sm:max-w-lg rtl:translate-x-1/2"
+              className="sm:max-w-lg"
               onCloseAutoFocus={(event) => {
                 event.preventDefault();
                 createButton.current?.focus();
@@ -346,7 +348,9 @@ export function DiagnosticAccess({
                   once. If you lose it, revoke this grant and create another.
                 </DialogDescription>
               </DialogHeader>
-              <Label htmlFor={`${id}-access`}>Diagnostic access details</Label>
+              <FieldLabel htmlFor={`${id}-access`}>
+                Diagnostic access details
+              </FieldLabel>
               <div className="flex items-start gap-2">
                 <Textarea
                   ref={copyInput}

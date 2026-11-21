@@ -170,7 +170,7 @@ test("Environment ownership, resumable provider setup, copying and registration 
           appId = randomUUID();
         const request: typeof difyJson = async () => ({
           name: "Example [staging]",
-          tags: [{ name: "app:unibase-staging" }],
+          tags: [{ name: `app:${project.slug}-staging` }],
         });
         await assert.rejects(
           verifyAppOwnership(appId, db, request, env),

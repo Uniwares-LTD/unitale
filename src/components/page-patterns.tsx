@@ -1,6 +1,8 @@
-import type { ReactNode } from "react";
-import { CircleCheck, Info, TriangleAlert } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
+import { CircleCheck, Info, LoaderCircle, TriangleAlert } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { noticeAction, type NoticeActionState } from "@/lib/design-helpers";
 import { Card, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { cn } from "@/lib/utils";
 
@@ -53,16 +55,27 @@ const tones = {
     Icon: TriangleAlert,
   },
 };
+/** Optional Notice action (spec §11): the feature owns the state; the notice never changes it. */
+export type NoticeAction = {
+  state: NoticeActionState;
+  labels: { available: string; pending: string; success: string };
+  receipt?: string;
+  onAction: () => void;
+};
+
 export function Notice({
   tone = "info",
   title,
   children,
+  action,
 }: {
   tone?: keyof typeof tones;
   title: string;
   children?: ReactNode;
+  action?: NoticeAction;
 }) {
   const { style, Icon } = tones[tone];
+  const control = action && noticeAction(action.state, action.labels);
   return (
     <Alert
       className={cn("p-4", style)}
@@ -73,7 +86,61 @@ export function Notice({
       {children && (
         <AlertDescription className="text-current">{children}</AlertDescription>
       )}
+      {action && control && (
+        <div className="col-start-2 mt-3 flex flex-col items-start gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            // aria-disabled keeps focus on the button while pending or done (P-18).
+            aria-disabled={control.ariaDisabled || undefined}
+            aria-busy={control.ariaBusy || undefined}
+            className="aria-disabled:pointer-events-none aria-disabled:opacity-60"
+            onClick={() => {
+              if (control.activatable) action.onAction();
+            }}
+          >
+            {control.ariaBusy && (
+              <LoaderCircle
+                aria-hidden="true"
+                data-icon="inline-start"
+                className="animate-spin motion-reduce:animate-none"
+              />
+            )}
+            {control.label}
+          </Button>
+          {/* Kept mounted so screen readers announce the first receipt. */}
+          <p role="status" className="text-sm empty:hidden">
+            {action.receipt}
+          </p>
+        </div>
+      )}
     </Alert>
+  );
+}
+
+/** Pending submit (spec §5): disabled and busy while pending; the label never changes. */
+export function SubmitButton({
+  pending,
+  children,
+  ...props
+}: Omit<ComponentProps<typeof Button>, "type"> & { pending: boolean }) {
+  return (
+    <Button
+      type="submit"
+      {...props}
+      disabled={pending || props.disabled}
+      aria-busy={pending || undefined}
+    >
+      {pending && (
+        <LoaderCircle
+          aria-hidden="true"
+          data-icon="inline-start"
+          className="animate-spin motion-reduce:animate-none"
+        />
+      )}
+      {children}
+    </Button>
   );
 }
 
@@ -87,7 +154,9 @@ export function EmptyState({
   return (
     <Card className="border-dashed bg-muted/30 shadow-none">
       <CardHeader className="py-8">
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle className="text-card-title! leading-(--text-card-title--line-height)! font-(number:--text-card-title--font-weight)!">
+          {title}
+        </CardTitle>
         <CardDescription className="reading-copy">
           {description}
         </CardDescription>

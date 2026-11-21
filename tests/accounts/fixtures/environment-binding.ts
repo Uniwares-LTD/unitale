@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { TestContext } from "node:test";
 import type { Db, Document } from "mongodb";
+import { project } from "../../../src/lib/project";
 import { tools } from "../../../src/lib/server/mcp/tools";
 import {
   environmentMcpConfiguration,
@@ -47,7 +48,7 @@ export function mockBindingProbe(t: TestContext, env: Env) {
             ? { tools: tools.map((tool) => ({ name: tool.name })) }
             : {
                 structuredContent: {
-                  project: "unibase",
+                  project: project.slug,
                   environment: env.APP_ENV,
                   origin: env.APP_ORIGIN,
                 },
@@ -113,7 +114,7 @@ export function environmentRequest(
       };
     }
     if (path === "/tags?type=app")
-      return [{ id: state.uuid, name: `app:unibase-${env.APP_ENV}` }];
+      return [{ id: state.uuid, name: `app:${project.slug}-${env.APP_ENV}` }];
     if (path === "/tag-bindings") return { result: "success" };
     const result = await original(path, options);
     if (/^\/apps\/[a-f0-9-]+$/.test(path)) {
@@ -121,7 +122,7 @@ export function environmentRequest(
       return {
         ...app,
         name: `${app.name?.replace(/\s*\[staging\]$/, "")} [${env.APP_ENV}]`,
-        tags: [{ name: `app:unibase-${env.APP_ENV}` }],
+        tags: [{ name: `app:${project.slug}-${env.APP_ENV}` }],
       };
     }
     if (path === "/workspaces/current/tools/mcp") {

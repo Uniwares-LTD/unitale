@@ -55,7 +55,10 @@ export default async function HomePage() {
                   <Button asChild className="mt-7 h-11">
                     <Link href="/runs/new">
                       {translate("mcdffd2693a0c")}
-                      <ArrowRight aria-hidden="true" />
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="rtl:rotate-180"
+                      />
                     </Link>
                   </Button>
                 )
@@ -64,7 +67,10 @@ export default async function HomePage() {
                   <Button asChild className="h-11">
                     <Link href="/account">
                       {translate("mbfd402b2f6f3")}
-                      <ArrowRight aria-hidden="true" />
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="rtl:rotate-180"
+                      />
                     </Link>
                   </Button>
                   <Button variant="outline" asChild className="h-11">
@@ -104,7 +110,10 @@ export default async function HomePage() {
                     <Button variant="outline" asChild className="h-10">
                       <Link href="/account">
                         {translate("m4071433234fe")}
-                        <ArrowRight aria-hidden="true" />
+                        <ArrowRight
+                          aria-hidden="true"
+                          className="rtl:rotate-180"
+                        />
                       </Link>
                     </Button>
                   </CardContent>
@@ -123,7 +132,10 @@ export default async function HomePage() {
                     <Button variant="outline" asChild className="h-10">
                       <Link href="/preferences">
                         {translate("m2521a1a3a4a5")}
-                        <ArrowRight aria-hidden="true" />
+                        <ArrowRight
+                          aria-hidden="true"
+                          className="rtl:rotate-180"
+                        />
                       </Link>
                     </Button>
                   </CardContent>

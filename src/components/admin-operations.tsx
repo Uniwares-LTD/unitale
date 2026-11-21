@@ -44,6 +44,7 @@ export function AdminCleanup({ defaultDays }: { defaultDays: number }) {
   const [limit, setLimit] = useState("50");
   const [scope, setScope] = useState("jobs");
   const [reason, setReason] = useState("");
+  const [downloadFailed, setDownloadFailed] = useState(false);
   const [report, setReport] = useState<CleanupReportView | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
@@ -199,20 +200,31 @@ export function AdminCleanup({ defaultDays }: { defaultDays: number }) {
           <Button
             variant="outline"
             onClick={() => {
-              const url = URL.createObjectURL(
-                new Blob([JSON.stringify(report, null, 2)], {
-                  type: "application/json",
-                }),
-              );
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = `cleanup-${report.id}.json`;
-              link.click();
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
+              setDownloadFailed(false);
+              try {
+                const url = URL.createObjectURL(
+                  new Blob([JSON.stringify(report, null, 2)], {
+                    type: "application/json",
+                  }),
+                );
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `cleanup-${report.id}.json`;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              } catch {
+                setDownloadFailed(true);
+              }
             }}
           >
             Download report
           </Button>
+          {downloadFailed && (
+            <Notice
+              tone="error"
+              title="Download failed. Try downloading the report again."
+            />
+          )}
           {report.state === "preview" && (
             <>
               <Label htmlFor="cleanup-reason">

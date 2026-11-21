@@ -1,15 +1,14 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { Notice } from "./page-patterns";
+import { Notice, SubmitButton } from "./page-patterns";
 import { DateLabel, StateLabel } from "./localized-value";
 import { useActionState, useId, useState } from "react";
 import { applySimulation, startSimulation } from "@/app/credits/actions";
 import type { PublicOrder, PublicPack } from "@/lib/contracts/credits";
-import { Button } from "./ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
-import { Label } from "./ui/label";
+import { FieldLabel, FieldLegend, FieldSet } from "./ui/field";
 
 function Order({ order, uid }: { order: PublicOrder; uid: string }) {
   const translate = useTranslations("ui");
@@ -48,16 +47,15 @@ function Order({ order, uid }: { order: PublicOrder; uid: string }) {
         </p>
         <form action={action} className="flex flex-wrap gap-2">
           {options.map(([event, label]) => (
-            <Button
+            <SubmitButton
               key={event}
               name="event"
               value={event}
-              type="submit"
+              pending={pending}
               variant="outline"
-              disabled={pending}
             >
               {label}
-            </Button>
+            </SubmitButton>
           ))}
         </form>
         {state.message && (
@@ -105,10 +103,10 @@ export function PurchaseSimulator({
         <CardContent className="py-6">
           <form action={action} className="space-y-4">
             <input type="hidden" name="key" value={key} />
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">
+            <FieldSet className="space-y-2">
+              <FieldLegend className="text-sm font-medium">
                 {translate("me15ea8da07f3")}
-              </legend>
+              </FieldLegend>
               <RadioGroup
                 name="packId"
                 defaultValue={packs[0]?.id}
@@ -117,16 +115,18 @@ export function PurchaseSimulator({
                 {packs.map((pack) => (
                   <div key={pack.id} className="flex items-center gap-2">
                     <RadioGroupItem value={pack.id} id={`${id}-${pack.id}`} />
-                    <Label htmlFor={`${id}-${pack.id}`}>{pack.label}</Label>
+                    <FieldLabel htmlFor={`${id}-${pack.id}`}>
+                      {pack.label}
+                    </FieldLabel>
                   </div>
                 ))}
               </RadioGroup>
-            </fieldset>
-            <Button type="submit" disabled={pending}>
+            </FieldSet>
+            <SubmitButton pending={pending}>
               {pending
                 ? translate("mc79ed9492e3c")
                 : translate("m89c54d05fbee")}
-            </Button>
+            </SubmitButton>
             {state.message && (
               <Notice
                 tone={state.saved ? "success" : "error"}

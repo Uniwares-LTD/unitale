@@ -113,6 +113,81 @@ images within MongoDB; unreferenced copies stay inaccessible through product rea
 Application failures retain an allowlisted code, phase and timestamp rather than
 raw exception text. Failed saves still require the owner's explicit retry.
 
+An optional `observeNode(db, job, node, session)` adapter hook receives bounded,
+private provider observations through the existing AI worker. Registering the hook
+opts that domain's accepted jobs into node-output/retry observations from live streams,
+reconnect and terminal tracing. Other domains retain metadata-only behavior. Node
+identity, retry index, parent iteration/loop identity, outputs, provider error and
+execution metadata are supplied only when reported; missing values stay null and
+`outputsTruncated` must be checked before treating output as complete. Inputs and
+process data are excluded. Each normalized observation is capped at 1 MiB; console
+readback retains its existing 1 MiB response and 1,000-row bounds.
+
+The hook runs in the same transaction as the worker lease fence and receives the
+fresh server-owned job identity. It must be idempotent, use the supplied session,
+perform no external I/O and retain/reconcile only accepted work. It grants no new
+dispatch or account-ownership authority. This allows restricted retention while
+cancellation is pending; ordinary publication/dispatch checks still apply. Hook
+failures roll back and propagate rather than becoming a successful observation.
+Private node observations are never written to public `runEvents` or usage summaries.
+
+Opt-in native node observers receive a running execution observation with the actual
+publication from `workflow_started` before node events. Missing legacy identities are
+not inferred; publication mismatches stop observation without retrying dispatch.
+Reconnect does not replay this historical running state over newer evidence. No
+provider inputs are included, and initial usage remains unknown until reported.
+
+Keep raw outputs/errors out of logs and user DTOs; use the existing redacted private
+evidence writer for diagnostic retention, passing the supplied session as the optional
+fourth `retainEvidence` argument so evidence and the hook transaction commit/roll back
+together. Existing callers retain their own transaction behavior. Derive immutable
+evidence identities from the accepted Run, native execution, status/retry identity
+and payload hash; Dify can reuse a native execution ID across retry observations.
+Loop/Iteration metadata repeats accumulated child usage; the adapter excludes those
+aggregates from additive node prices/tokens and retains their native identity and
+duration. Parent execution totals remain available. This follows the engine
+[Loop metadata](https://github.com/langgenius/graphon/blob/v0.7.0/src/graphon/graph_engine/loop_container_handler.py);
+existing ledger records are not rewritten. Reported node durations are retained in
+the existing usage field, including when activity logs are cleaned.
+
+Node retry indexes are Dify's reported values, not a count of hidden provider SDK attempts. This seam does not itself
+implement action retry policy, scheduling or recovery.
+
+For non-paid internal waits, a domain may declare fixed `applicationWaitNodes`
+(native Human Input node IDs) and `resumePaused(db, job)`. These declarations belong
+to that adapter version, not model output or browser configuration; retain accepted
+versions when changing node identities. The registry rejects duplicate/invalid IDs
+or declarations without a resume hook. The existing worker invokes the hook only for
+an application wait on a paused Run with a live lease, current account authorization,
+no cancellation and time remaining in the existing reconciliation window. Returning
+a future Date sets eligibility using the same worker queue; normal poll/reconciliation
+bounds remain in force. Do not sleep, dispatch paid work, create a successor or add a
+scheduler in this hook. Revalidate the actual owned action and its due time/counters
+before responding; declaration of a node alone is not business authorization.
+
+Internal waits retain the existing `runDecisions` submission journal but do not send
+creator notifications or appear in public decision pages/events or persona answering.
+The Run displays reconciliation progress instead of requesting user input. Genuine
+human decisions retain their normal behavior, including when another branch has an
+internal wait. Use `submitAuthorizedDecision` with application provenance, the matching
+adapter ID/version and current worker job. It checks the owned stored wait, active
+worker fence and existing account/admission guards; user/persona answers cannot resume
+an internal wait, and application answers cannot approve any approval form. A lost
+submission response stays unknown in the same journal and is reconciled by existing
+native event/readback; repeating the intent does not submit again. No provider-attempt
+count, automatic successor or creative policy is added by this generic seam.
+
+A server extension may supply `reconcile(db, now)` for one bounded pass over
+already accepted unresolved work, such as late child results after a parent Run
+terminates. The existing AI worker calls it after normal Run/decision/result work;
+its existing mode switch, heartbeat and cycle timing remain authoritative. Unlike
+new admission, this callback is not filtered by module visibility/enabled state.
+It must claim/fence its own existing work records, perform only bounded non-paid
+readback/retention, preserve current ownership for publication, and return whether
+it did work. Do not dispatch paid actions, create a successor, add a queue/scheduler,
+or keep a verified stopped Run active just to poll its unresolved children. Errors
+use the existing worker error path; raw evidence stays private and redacted.
+
 After reviewing the target database and taking the normal operational backup,
 `npm run db:migrate` applies the `runs:0001-domain-references` migration, which
 adds reference metadata idempotently. It does not rename or rewrite accounting

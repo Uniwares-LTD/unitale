@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { requireRecentLogin, requireSameOrigin } from "../src/lib/auth-policy";
 import { parseAuthConfig } from "../src/lib/config/auth";
 import { profileUpdateSchema } from "../src/lib/contracts/profile";
+import { project } from "../src/lib/project";
 
 test("session exchange requires recent authentication and issuance", () => {
   const now = 10000;
@@ -55,7 +56,7 @@ test("profile updates cannot submit ownership or private fields", () => {
 });
 test("emulator configuration cannot be enabled outside a local demo project", () => {
   const config = parseAuthConfig({}, "local", "http://localhost:3000");
-  assert.equal(config.public.projectId, "demo-unibase");
+  assert.equal(config.public.projectId, `demo-${project.slug}`);
   assert.ok(!("mongoUri" in config.public));
   assert.throws(() =>
     parseAuthConfig(

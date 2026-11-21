@@ -4,6 +4,18 @@
   "source": "karpishe-experiments/agentic-poc",
   "sourceRef": "4e1478355843e42e1b27fdc8e33212476a4d4fa3",
   "skills": {
+    "build-ui": {
+      "source": "karpishe-experiments/agentic-poc",
+      "sourceRef": "4e1478355843e42e1b27fdc8e33212476a4d4fa3",
+      "sourcePath": ".agents/skills/build-ui",
+      "upstream": {
+        "source": "karpishe-experiments/agentic-poc",
+        "sourceRef": "4e1478355843e42e1b27fdc8e33212476a4d4fa3"
+      },
+      "files": {
+        ".agents/skills/build-ui/SKILL.md": "dad8c2d7c555ada919e17074e903e85c45ddefdb2b26fa9a2aa43950ea741ddf"
+      }
+    },
     "capture-project-learnings": {
       "kind": "handbook-entrypoint",
       "source": "Uniwares-LTD/handbook",
@@ -123,6 +135,7 @@
   "supportFiles": {
     "CLAUDE.md": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
     ".agents/handbook.md": "a34e0188d668d7fd1109e2a62b6581ec3536a7099cc8564606c6f7be9a3fa288",
+    ".claude/skills/build-ui/SKILL.md": "46c8dcd9cb3c966bf5060da30f97eeccd5d900f0808cc6accaf2def4f3d6718c",
     ".claude/skills/capture-project-learnings/SKILL.md": "53569f9ce6ba678021d5ea9c6dbfd313c4051081155f3bcd0b51226909e6c2bd",
     ".claude/skills/compile-feature-spec/SKILL.md": "e9dba7a32d13cbd2a62ee2d7f96a5fdb5b6b122c3b7a251cbb7a840478b4686d",
     ".claude/skills/maintain-docs/SKILL.md": "7b77ce50dd49219346eb04292976b16486d3b6359c1d982cac317ba369321979",

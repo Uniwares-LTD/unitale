@@ -36,7 +36,23 @@ export type ProviderExecution = {
   failure?: string | null;
   usage: UsageObservation;
 };
+// Private server observation; never a public Run event or diagnostic payload.
+export type ProviderNodeObservation = {
+  runId: string;
+  id: string;
+  nodeId: string;
+  nodeType: string | null;
+  status: string;
+  retryIndex: number | null;
+  iterationId: string | null;
+  loopId: string | null;
+  outputs: Record<string, Json> | null;
+  outputsTruncated: boolean | null;
+  error: string | null;
+  executionMetadata: Record<string, Json> | null;
+};
 export type ProviderEvent =
+  | { type: "node-observation"; node: ProviderNodeObservation }
   | {
       type: "stage";
       id: string;

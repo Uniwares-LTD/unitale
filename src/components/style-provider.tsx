@@ -19,6 +19,7 @@ import { watchPageCover } from "@/lib/page-cover";
 const StyleContext = createContext<{
   preference: StylePreference;
   defaultStyle: DesignStyle;
+  projectTheme: string | null;
   setPreference: (value: StylePreference) => void;
 } | null>(null);
 
@@ -26,13 +27,15 @@ export function StyleProvider({
   children,
   initialPreference,
   defaultStyle,
+  projectTheme,
 }: {
   children: ReactNode;
   initialPreference: StylePreference;
   defaultStyle: DesignStyle;
+  projectTheme: string | null;
 }) {
   const [preference, setState] = useState(initialPreference);
-  const style = resolveStyle(preference, defaultStyle);
+  const style = projectTheme ? null : resolveStyle(preference, defaultStyle);
   useEffect(() => {
     if (style !== "glass") return;
     return watchPageCover(document, (url) => {
@@ -50,6 +53,7 @@ export function StyleProvider({
   }, [style]);
   const setPreference = useCallback(
     (value: StylePreference) => {
+      if (projectTheme) return;
       document.documentElement.dataset.style = resolveStyle(
         value,
         defaultStyle,
@@ -57,10 +61,12 @@ export function StyleProvider({
       writeStyleCookie(value);
       setState(value);
     },
-    [defaultStyle],
+    [defaultStyle, projectTheme],
   );
   return (
-    <StyleContext.Provider value={{ preference, defaultStyle, setPreference }}>
+    <StyleContext.Provider
+      value={{ preference, defaultStyle, projectTheme, setPreference }}
+    >
       {children}
     </StyleContext.Provider>
   );

@@ -28,6 +28,8 @@ import {
 import { ThemePreference } from "./theme-preference";
 import { StylePreference } from "./style-preference";
 import { EmptyState, Notice } from "./page-patterns";
+import { toast } from "./toast";
+import { HelperShowcase } from "./helper-showcase";
 import { CreditSummary } from "./credit-summary";
 
 const sampleWallet = {
@@ -60,6 +62,7 @@ export function DesignShowcase() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [toastError, setToastError] = useState(false);
   return (
     <div className="page-stack">
       <Notice title={translate("mbad95ad3aed2")}>
@@ -302,6 +305,22 @@ export function DesignShowcase() {
           </Card>
         </div>
       </section>
+      <HelperShowcase />
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => toast.confirm(translate("m0c8209e72ec8"))}>
+          {translate("m1624662d1977")}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setToastError(true);
+            toast.error(translate("m05d879f29687"));
+          }}
+        >
+          {translate("mf2ec9eadf023")}
+        </Button>
+      </div>
+      {toastError && <Notice tone="error" title={translate("m05d879f29687")} />}
     </div>
   );
 }

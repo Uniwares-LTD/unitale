@@ -1,3 +1,5 @@
+import { project } from "@/lib/project";
+import { AppToaster } from "@/components/toast";
 import { LocalizedValidation } from "@/components/localized-validation";
 import { getLocale, getTranslations } from "next-intl/server";
 import english from "../../messages/en.json";
@@ -18,12 +20,13 @@ import {
 import { viewerState } from "@/components/account-menu";
 import { AccountMenuControls } from "@/components/account-menu-controls";
 import { AppShell } from "@/components/app-shell";
+import { LeaveGuardProvider } from "@/components/leave-guard";
 import { ThemeProvider } from "@/components/theme-provider";
 import { publicSettings } from "@/lib/server/settings";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#98492f",
+  themeColor: "#c2410c",
   width: "device-width",
   initialScale: 1,
 };
@@ -66,7 +69,12 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={locale === "ar" ? "rtl" : "ltr"}
-      data-style={resolveStyle(preference, publicConfig.defaultStyle)}
+      data-project={project.theme ? project.slug : undefined}
+      data-style={
+        project.theme
+          ? undefined
+          : resolveStyle(preference, publicConfig.defaultStyle)
+      }
       suppressHydrationWarning
     >
       <body className="min-h-svh font-sans antialiased">
@@ -80,17 +88,21 @@ export default async function RootLayout({
             <StyleProvider
               initialPreference={preference}
               defaultStyle={publicConfig.defaultStyle}
+              projectTheme={project.theme ? project.slug : null}
             >
               <BrowserRuntime preferredLocale={preferenceLocale} />
               <LocalizedValidation />
+              <AppToaster />
               <SessionBoundary>
-                <AppShell
-                  appName={publicConfig.appName}
-                  signedIn={viewer.hasSession}
-                  accountMenu={<AccountMenuControls {...viewer} />}
-                >
-                  {children}
-                </AppShell>
+                <LeaveGuardProvider>
+                  <AppShell
+                    appName={publicConfig.appName}
+                    signedIn={viewer.hasSession}
+                    accountMenu={<AccountMenuControls {...viewer} />}
+                  >
+                    {children}
+                  </AppShell>
+                </LeaveGuardProvider>
               </SessionBoundary>
             </StyleProvider>
           </ThemeProvider>

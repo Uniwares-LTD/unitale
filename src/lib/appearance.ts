@@ -1,7 +1,8 @@
 import { namespace } from "@/lib/project";
 import { z } from "zod";
 
-export const designStyleSchema = z.enum(["classic", "glass", "soft-blue"]);
+import { designStyleSchema } from "./design-styles";
+export { designStyleSchema } from "./design-styles";
 export const stylePreferenceSchema = z.enum([
   "default",
   ...designStyleSchema.options,
