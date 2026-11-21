@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
 import { Button } from "./ui/button";
-import { Label } from "./ui/label";
+import { FieldLabel } from "./ui/field";
 import { Textarea } from "./ui/textarea";
 import { Notice } from "./page-patterns";
 import {
@@ -63,7 +63,7 @@ export function AiResolution({
   }
   return (
     <div className="space-y-3">
-      <Label htmlFor={id}>Resolution explanation (optional)</Label>
+      <FieldLabel htmlFor={id}>Resolution explanation (optional)</FieldLabel>
       <Textarea
         id={id}
         value={reason}
@@ -86,9 +86,9 @@ export function AiResolution({
                   Accept this result and charge the user?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  This settles the calculated charge from the user&apos;s reserved
-                  credits and closes the review. It is recorded in the audit
-                  log.
+                  This settles the calculated charge from the user&apos;s
+                  reserved credits and closes the review. It is recorded in the
+                  audit log.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

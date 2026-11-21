@@ -7,7 +7,7 @@ import Link from "next/link";
 import { listManagedUsers } from "@/lib/server/admin";
 import { adminPageSession } from "@/lib/server/admin-view";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -48,15 +48,17 @@ export default async function UsersPage({
           description="Find an account to review its profile, access and credit balance."
         />
         <form method="get" className="flex max-w-xl flex-wrap items-end gap-3">
-          <div className="min-w-0 flex-1 space-y-2">
-            <Label htmlFor="user-search">Exact email or Firebase UID</Label>
+          <Field className="min-w-0 flex-1 space-y-2">
+            <FieldLabel htmlFor="user-search">
+              Exact email or Firebase UID
+            </FieldLabel>
             <Input
               id="user-search"
               name="q"
               defaultValue={query}
               maxLength={320}
             />
-          </div>
+          </Field>
           <Button type="submit">Search</Button>
           <Button variant="outline" asChild>
             <Link href="/admin/users">Clear</Link>

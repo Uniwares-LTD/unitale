@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DifyConfig } from "@/lib/config/dify";
 import { readSse } from "./sse";
+import { nodeObservation } from "./node-observation";
 import { workflowFailure } from "./provider-errors";
 import type {
   ProviderEvent,
@@ -205,6 +206,7 @@ export function createDifyWorkflow(
   binding: Binding,
   fetcher: typeof fetch = fetch,
   reconnectRunId?: string,
+  nodeObservations = false,
 ): WorkflowProvider {
   if (binding.kind !== "workflow")
     throw new Error("A workflow binding is required.");
@@ -230,11 +232,13 @@ export function createDifyWorkflow(
               { ...options, method: "GET", body: undefined },
             )
           : fetcher(_url, options);
-      return createDifyWorkflow(config, binding, streamingFetch, runId).start(
-        { user, inputs: {} },
-        observe,
-        signal,
-      );
+      return createDifyWorkflow(
+        config,
+        binding,
+        streamingFetch,
+        runId,
+        nodeObservations,
+      ).start({ user, inputs: {} }, observe, signal);
     },
     async form(token) {
       if (!/^[A-Za-z0-9_-]{1,256}$/.test(token))
@@ -324,8 +328,35 @@ export function createDifyWorkflow(
               await emit({ type: "identity", runId, taskId });
             }
           }
+          if (
+            nodeObservations &&
+            !reconnectRunId &&
+            envelope.event === "workflow_started"
+          ) {
+            // Persist the actual publication before opt-in node observers run.
+            // Legacy events may omit it; never substitute the configured identity.
+            const started = z
+              .object({ id, workflow_id: id })
+              .safeParse(envelope.data);
+            if (started.success) {
+              await emit({
+                type: "execution",
+                execution: checked({ ...started.data, status: "running", outputs: null }, runId),
+              });
+            }
+          }
           if (envelope.event === "error")
             return { kind: "unknown", failure: "unavailable" };
+          if (
+            nodeObservations &&
+            ["node_finished", "node_retry"].includes(envelope.event)
+          ) {
+            if (!runId) throw new Error("Missing observation identity.");
+            await emit({
+              type: "node-observation",
+              node: nodeObservation(runId, envelope.data),
+            });
+          }
           if (["node_started", "node_finished"].includes(envelope.event)) {
             const node = z
               .object({
@@ -345,7 +376,7 @@ export function createDifyWorkflow(
                 status:
                   envelope.event === "node_started"
                     ? "running"
-                    : node.data.status === "failed"
+                    : ["failed", "exception"].includes(node.data.status ?? "")
                       ? "failed"
                       : "succeeded",
                 elapsedMs:
@@ -396,6 +427,8 @@ export function createDifyWorkflow(
             const node = z
               .object({
                 id,
+                node_type: z.string().nullish(),
+                elapsed_time: z.unknown().optional(),
                 execution_metadata: z
                   .record(z.string(), z.unknown())
                   .nullable()
@@ -407,11 +440,15 @@ export function createDifyWorkflow(
               })
               .safeParse(envelope.data);
             if (node.success) {
+              // Container metadata repeats child usage, not another billable call.
+              const container = ["loop", "iteration"].includes(node.data.node_type ?? "");
               const reported = parseUsage(
-                node.data.outputs?.usage ?? node.data.execution_metadata,
+                container ? undefined : node.data.outputs?.usage ?? node.data.execution_metadata,
                 "node",
                 node.data.id,
               );
+              const elapsed = z.number().finite().nonnegative().safeParse(node.data.elapsed_time).data;
+              reported.elapsedMs = elapsed === undefined ? null : Math.round(elapsed * 1000);
               await emit({ type: "usage", usage: reported });
             }
           }

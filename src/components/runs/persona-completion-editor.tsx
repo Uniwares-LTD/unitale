@@ -1,7 +1,7 @@
 "use client";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
-import { Notice } from "@/components/page-patterns";
+import { Notice, SubmitButton } from "@/components/page-patterns";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
 import {
@@ -11,7 +11,9 @@ import {
 import type { personaCompletionView } from "@/lib/server/runs/persona-completion-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { useLeaveGuard } from "@/components/leave-guard";
+import type { SaveResult } from "@/lib/design-helpers";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,17 +35,18 @@ export function CompletionEditor({
   onReady: (ready: boolean) => void;
 }) {
   const prefix = useId();
+  const formRef = useRef<HTMLFormElement>(null);
   const [settings, setSettings] = useState<PersonaCompletionSettings>(
     initial.settings,
   );
+  const [baseline, setBaseline] = useState(initial.settings);
   const [revision, setRevision] = useState(initial.revision);
   const [ready, setReady] = useState(initial.ready);
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
-    if (busy) return;
+  async function save(): Promise<SaveResult> {
+    if (busy || !formRef.current?.checkValidity()) return "failed";
     setBusy(true);
     setMessage("");
     try {
@@ -57,17 +60,29 @@ export function CompletionEditor({
         initial.connectionReady && settings.enabled && !!settings.model;
       setReady(available);
       onReady(available);
+      setBaseline(settings);
+      setReason("");
       setMessage("Saved.");
+      return "saved";
     } catch (error) {
       setMessage(
         error instanceof ApiError
           ? error.message
           : "Could not confirm the save. Reload before retrying.",
       );
+      return error instanceof ApiError && error.code !== "INVALID_RESPONSE"
+        ? "failed"
+        : "unknown";
     } finally {
       setBusy(false);
     }
   }
+  useLeaveGuard({
+    dirty:
+      JSON.stringify(settings) !== JSON.stringify(baseline) || Boolean(reason),
+    save,
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -91,7 +106,14 @@ export function CompletionEditor({
             connection.
           </p>
         )}
-        <form className="space-y-4" onSubmit={save}>
+        <form
+          ref={formRef}
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void save();
+          }}
+        >
           <fieldset disabled={busy} className="space-y-4">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -101,10 +123,10 @@ export function CompletionEditor({
                   setSettings({ ...settings, enabled: v === true })
                 }
               />
-              <Label htmlFor={`${prefix}-enabled`}>Enabled</Label>
+              <FieldLabel htmlFor={`${prefix}-enabled`}>Enabled</FieldLabel>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${prefix}-model`}>Model ID</Label>
+            <Field className="space-y-2">
+              <FieldLabel htmlFor={`${prefix}-model`}>Model ID</FieldLabel>
               <Input
                 id={`${prefix}-model`}
                 value={settings.model}
@@ -114,12 +136,12 @@ export function CompletionEditor({
                   setSettings({ ...settings, model: e.target.value })
                 }
               />
-            </div>
+            </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor={`${prefix}-temperature`}>
+              <Field className="space-y-2">
+                <FieldLabel htmlFor={`${prefix}-temperature`}>
                   Temperature (optional)
-                </Label>
+                </FieldLabel>
                 <Input
                   id={`${prefix}-temperature`}
                   type="number"
@@ -135,11 +157,11 @@ export function CompletionEditor({
                     })
                   }
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`${prefix}-tokens`}>
+              </Field>
+              <Field className="space-y-2">
+                <FieldLabel htmlFor={`${prefix}-tokens`}>
                   Maximum output tokens
-                </Label>
+                </FieldLabel>
                 <Input
                   id={`${prefix}-tokens`}
                   required
@@ -154,12 +176,12 @@ export function CompletionEditor({
                     })
                   }
                 />
-              </div>
+              </Field>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${prefix}-parameter`}>
+            <Field className="space-y-2">
+              <FieldLabel htmlFor={`${prefix}-parameter`}>
                 Token limit parameter
-              </Label>
+              </FieldLabel>
               <Select
                 value={settings.tokenParameter}
                 onValueChange={(v) =>
@@ -180,11 +202,11 @@ export function CompletionEditor({
                   <SelectItem value="max_tokens">max_tokens</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${prefix}-instructions`}>
+            </Field>
+            <Field className="space-y-2">
+              <FieldLabel htmlFor={`${prefix}-instructions`}>
                 Shared instructions
-              </Label>
+              </FieldLabel>
               <Textarea
                 id={`${prefix}-instructions`}
                 required
@@ -207,25 +229,25 @@ export function CompletionEditor({
               >
                 Reset to default
               </Button>
-            </div>
+            </Field>
             <p className="text-sm text-muted-foreground">
               Shared settings apply to future Runs. Each persona supplies its
               own role instructions.
             </p>
-            <div className="space-y-2">
-              <Label htmlFor={`${prefix}-reason`}>
+            <Field className="space-y-2">
+              <FieldLabel htmlFor={`${prefix}-reason`}>
                 Change reason (optional)
-              </Label>
+              </FieldLabel>
               <Input
                 id={`${prefix}-reason`}
                 maxLength={500}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
               />
-            </div>
-            <Button type="submit">
+            </Field>
+            <SubmitButton pending={busy}>
               {busy ? "Saving…" : "Save completion settings"}
-            </Button>
+            </SubmitButton>
           </fieldset>
           {message && <Notice title={message} />}
         </form>

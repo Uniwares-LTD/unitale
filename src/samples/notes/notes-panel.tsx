@@ -4,11 +4,11 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
-import { EmptyState, Notice } from "@/components/page-patterns";
+import { EmptyState, Notice, SubmitButton } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { noteSchema, type Note } from "./contract";
 
@@ -65,8 +65,10 @@ export function NotesPanel({ initial }: { initial: Note[] }) {
               void add();
             }}
           >
-            <div className="space-y-2">
-              <Label htmlFor="note-title">{translate("m7e8cd2056da7")}</Label>
+            <Field>
+              <FieldLabel htmlFor="note-title">
+                {translate("m7e8cd2056da7")}
+              </FieldLabel>
               <Input
                 id="note-title"
                 required
@@ -74,19 +76,21 @@ export function NotesPanel({ initial }: { initial: Note[] }) {
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="note-body">{translate("md8da2c49df39")}</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="note-body">
+                {translate("md8da2c49df39")}
+              </FieldLabel>
               <Textarea
                 id="note-body"
                 maxLength={5000}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
               />
-            </div>
-            <Button type="submit" disabled={busy || !title.trim()}>
+            </Field>
+            <SubmitButton pending={busy} disabled={!title.trim()}>
               {translate("m63565c0485fe")}
-            </Button>
+            </SubmitButton>
           </form>
         </CardContent>
       </Card>

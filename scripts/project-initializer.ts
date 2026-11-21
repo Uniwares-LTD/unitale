@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import {
@@ -307,6 +308,12 @@ export async function createProject(options: Options) {
       );
   }
   await json("project.config.json", manifest);
+  const theme = path.join(staging, "src/project/theme.css");
+  if (existsSync(theme)) {
+    const skeleton = await readFile(theme, "utf8");
+    await writeFile(theme, skeleton.replaceAll("project-slug", manifest.slug));
+    await mkdir(path.join(staging, "public/fonts"), { recursive: true });
+  }
   await writeFile(
     path.join(staging, ".npmrc"),
     "cache=.cache/npm\nsave-exact=true\n",

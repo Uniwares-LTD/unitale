@@ -23,6 +23,11 @@ import {
   readWallet,
   reversePurchase,
 } from "../../src/lib/server/store/credits";
+import {
+  retainEvidence,
+  readEvidence,
+} from "../../src/lib/server/execution/measurements";
+import { nodeObservation } from "../../src/lib/server/ai/node-observation";
 import { processOneAiJob } from "../../src/lib/server/ai/worker";
 import type {
   ProviderExecution,
@@ -86,6 +91,139 @@ test("durable AI jobs, credit boundaries and recovery", async (t) => {
     return db;
   }
   try {
+    await t.test(
+      "private observations are fenced, transactional and never public Run events",
+      async () => {
+        const db = await fixture();
+        await createAiJob(db, actor, "observations", request, start);
+        const job = await claimAiJob(db, start);
+        assert.ok(job);
+        await persistAiEvent(
+          db,
+          job,
+          { type: "identity", runId, taskId },
+          start,
+        );
+        const node = nodeObservation(runId, {
+          id: "child",
+          node_id: "child",
+          status: "succeeded",
+          outputs: { secret: "private" },
+        });
+        const event = { type: "node-observation" as const, node };
+        let seen = 0;
+        const observe = async (
+          current: typeof job,
+          value: typeof node,
+          session: import("mongodb").ClientSession,
+        ) => {
+          assert.equal(current.runId, runId);
+          assert.equal(current.uid, actor.uid);
+          assert.equal(value.outputs?.secret, "private");
+          seen++;
+          await retainEvidence(
+            db,
+            current.uid,
+            {
+              id: value.id,
+              runId: current.runId!,
+              operationId: "accepted-operation",
+              kind: "trace",
+              payload: value,
+              retentionDays: 1,
+            },
+            session,
+          );
+          await db
+            .collection("fixturePrivateObservations")
+            .updateOne(
+              { id: value.id },
+              { $set: { value } },
+              { upsert: true, session },
+            );
+        };
+        await persistAiEvent(db, job, event, start); // Default ignores private events.
+        assert.equal(
+          await db.collection("fixturePrivateObservations").countDocuments(),
+          0,
+        );
+        await persistAiEvent(db, job, event, start, observe);
+        await persistAiEvent(db, job, event, start, observe);
+        assert.equal(seen, 2);
+        assert.equal(
+          await db.collection("fixturePrivateObservations").countDocuments(),
+          1,
+        );
+        assert.equal(
+          JSON.stringify(await readEvidence(db, actor.uid, "child")).includes(
+            '"secret":"private"',
+          ),
+          false,
+        );
+        assert.equal(
+          await db.collection("executionEvidence").countDocuments(),
+          1,
+        );
+        assert.equal(await db.collection("runEvents").countDocuments(), 0);
+        assert.equal(await aiUsage(db).countDocuments(), 0);
+        await assert.rejects(
+          persistAiEvent(
+            db,
+            job,
+            { ...event, node: { ...node, runId: taskId } },
+            start,
+            observe,
+          ),
+        );
+        assert.equal(seen, 2);
+        await assert.rejects(
+          persistAiEvent(
+            db,
+            job,
+            { ...event, node: { ...node, id: "rollback" } },
+            start,
+            async (current, value, session) => {
+              await observe(current, value, session);
+              throw new Error("fixture retention failed");
+            },
+          ),
+          /retention failed/,
+        );
+        assert.equal(
+          await db.collection("fixturePrivateObservations").countDocuments(),
+          1,
+        );
+        await assert.rejects(readEvidence(db, actor.uid, "rollback"));
+        assert.equal(
+          await db.collection("executionEvidence").countDocuments(),
+          1,
+        );
+        const idleSession = client.startSession();
+        try {
+          await assert.rejects(
+            retainEvidence(
+              db,
+              actor.uid,
+              {
+                id: "idle",
+                runId,
+                operationId: "accepted-operation",
+                kind: "trace",
+                payload: {},
+                retentionDays: 1,
+              },
+              idleSession,
+            ),
+            /active caller transaction/,
+          );
+        } finally {
+          await idleSession.endSession();
+        }
+        const beforeExpired = seen;
+        await assert.rejects(persistAiEvent(db, job, event, at(4), observe));
+        assert.equal(seen, beforeExpired);
+      },
+    );
     await t.test(
       "concurrent duplicate submission creates one job/hold and changed inputs conflict",
       async () => {
@@ -258,6 +396,64 @@ test("durable AI jobs, credit boundaries and recovery", async (t) => {
         assert.equal(
           (await aiUsage(db).findOne({ scope: "node" }))?.cost?.amount,
           "0.000000000000001234",
+        );
+      },
+    );
+    await t.test(
+      "worker forwards private observations with the authoritative identity",
+      async () => {
+        const db = await fixture();
+        const saved = await createAiJob(
+          db,
+          actor,
+          "worker-observation",
+          request,
+          start,
+        );
+        let observed = 0;
+        const provider: WorkflowProvider = {
+          async start(_input, observe) {
+            await observe({ type: "identity", runId, taskId });
+            await observe({ type: "execution", execution: { ...execution, status: "running", outputs: null } });
+            await observe({
+              type: "node-observation",
+              node: nodeObservation(runId, {
+                id: "child",
+                node_id: "child",
+                status: "retry",
+                retry_index: 1,
+              }),
+            });
+            return { kind: "ok", value: execution };
+          },
+          async retrieve() {
+            throw new Error("Unexpected retrieve");
+          },
+          async stop() {
+            return { kind: "ok", value: undefined };
+          },
+        };
+        await processOneAiJob(db, {
+          provider: () => provider,
+          authorize: async () => true,
+          validateOutput: () => true,
+          now: () => start,
+          observeNode: async (job, node, session) => {
+            assert.equal(job._id, saved._id);
+            assert.equal(job.runId, runId);
+            assert.equal(job.execution?.workflowId, execution.workflowId);
+            assert.equal(job.execution?.status, "running");
+            assert.equal(job.uid, actor.uid);
+            assert.equal(node.retryIndex, 1);
+            assert(session.inTransaction());
+            observed++;
+          },
+        });
+        assert.equal(observed, 1);
+        assert.equal(await db.collection("runEvents").countDocuments(), 0);
+        assert.equal(
+          (await aiJobs(db).findOne({ _id: saved._id }))?.status,
+          "succeeded",
         );
       },
     );

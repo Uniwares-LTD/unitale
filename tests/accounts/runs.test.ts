@@ -1,3 +1,4 @@
+import { domains } from "../../src/lib/server/domains";
 import assert from "node:assert/strict";
 import { processOneAiJob } from "../../src/lib/server/ai/worker";
 import { test } from "node:test";
@@ -87,6 +88,199 @@ test("Runs: frozen policies, normalized decisions, media ownership and linked re
       runId,
       taskId: randomUUID(),
     });
+    await t.test(
+      "internal waits preserve genuine human questions across parallel decision events",
+      async () => {
+        const waitKey = randomUUID();
+        const saved = await createAiJob(db, actor, waitKey, {
+          ...request,
+          credits: 0,
+          pricing: { mode: "fixed", credits: 0 },
+          run: {
+            ...request.run,
+            logicalId: fingerprint([actor.uid, waitKey]),
+            artifactId: "fixture",
+          },
+        });
+        const claimed = await claimAiJob(db, new Date());
+        assert.equal(claimed?._id, saved._id);
+        assert.ok(claimed);
+        const adapter = domains.get("artifact", "1");
+        const previousNodes = adapter.applicationWaitNodes,
+          previousResume = adapter.resumePaused;
+        adapter.applicationWaitNodes = ["internal-wait"];
+        adapter.resumePaused = async () => {};
+        try {
+          await persistAiEvent(db, claimed, {
+            type: "identity",
+            runId: randomUUID(),
+            taskId: randomUUID(),
+          });
+          await persistAiEvent(db, claimed, {
+            type: "decision",
+            nodeId: "internal-wait",
+            title: "Internal wait",
+            token: "internal",
+          });
+          assert.equal(
+            (await aiJobs(db).findOne({ _id: saved._id }))?.applicationWait,
+            true,
+          );
+          await persistAiEvent(db, claimed, {
+            type: "decision",
+            nodeId: "human-wait",
+            title: "Real question",
+            token: "human",
+          });
+          assert.equal(
+            (await aiJobs(db).findOne({ _id: saved._id }))?.applicationWait,
+            false,
+          );
+          await persistAiEvent(db, claimed, {
+            type: "decision-filled",
+            nodeId: "human-wait",
+            action: "continue",
+            inputs: { response: "human answer" },
+          });
+          assert.equal(
+            (await aiJobs(db).findOne({ _id: saved._id }))?.applicationWait,
+            true,
+          );
+          await persistAiEvent(db, claimed, {
+            type: "decision-expired",
+            nodeId: "internal-wait",
+          });
+          assert.equal(
+            (await aiJobs(db).findOne({ _id: saved._id }))?.applicationWait,
+            false,
+          );
+          assert.equal(
+            await db.collection("runEvents").countDocuments({
+              jobId: saved._id,
+              "event.nodeId": "internal-wait",
+            }),
+            0,
+          );
+          assert.equal(
+            await db
+              .collection("runEvents")
+              .countDocuments({ jobId: saved._id, "event.type": "decision" }),
+            1,
+          );
+          await settleAiJob(db, claimed, "failed");
+        } finally {
+          adapter.applicationWaitNodes = previousNodes;
+          adapter.resumePaused = previousResume;
+        }
+      },
+    );
+    await t.test(
+      "application wait eligibility uses the existing worker and never starts another execution",
+      async () => {
+        const waitKey = randomUUID();
+        const saved = await createAiJob(db, actor, waitKey, {
+          ...request,
+          credits: 0,
+          pricing: { mode: "fixed", credits: 0 },
+          run: { ...request.run, logicalId: fingerprint([actor.uid, waitKey]) },
+        });
+        await aiJobs(db).updateOne(
+          { _id: saved._id },
+          { $set: { applicationWait: true } },
+        );
+        const startedAt = new Date();
+        let clock = startedAt,
+          starts = 0,
+          retrieves = 0,
+          resumes = 0;
+        const due = new Date(clock.getTime() + 30000);
+        const nativeId = randomUUID();
+        const value: ProviderExecution = {
+          runId: nativeId,
+          workflowId: randomUUID(),
+          status: "paused",
+          outputs: null,
+          usage: {
+            scope: "execution",
+            id: nativeId,
+            inputTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+            cost: null,
+            elapsedMs: 1,
+          },
+        };
+        const deps = {
+          provider: () => ({
+            async start(
+              _input: unknown,
+              observe: (
+                event: import("../../src/lib/server/ai/types").ProviderEvent,
+              ) => Promise<void>,
+            ) {
+              starts++;
+              await observe({
+                type: "identity",
+                runId: nativeId,
+                taskId: randomUUID(),
+              });
+              return {
+                kind: "ok" as const,
+                value: { ...value, status: "running" as const },
+              };
+            },
+            async retrieve() {
+              retrieves++;
+              return {
+                kind: "ok" as const,
+                value: {
+                  ...value,
+                  status:
+                    resumes >= 2 ? ("succeeded" as const) : ("paused" as const),
+                },
+              };
+            },
+            async stop() {
+              return { kind: "ok" as const, value: undefined };
+            },
+          }),
+          authorize: async () => true,
+          validateOutput: () => true,
+          now: () => clock,
+          resumePaused: async (current: typeof saved) => {
+            assert.equal(current._id, saved._id);
+            assert.equal(current.runId, nativeId);
+            resumes++;
+            return resumes === 1 ? due : undefined;
+          },
+        };
+        await processOneAiJob(db, deps);
+        assert.equal(resumes, 0);
+        assert.equal(
+          (await aiJobs(db).findOne({ _id: saved._id }))?.applicationWait,
+          true,
+        );
+        clock = new Date(
+          startedAt.getTime() + settings.runs.pollSeconds * 1000,
+        );
+        await processOneAiJob(db, deps); // Running -> paused without a replayed decision event.
+        const waiting = (await aiJobs(db).findOne({ _id: saved._id }))!;
+        assert.equal(waiting.status, "paused");
+        assert.equal(waiting.nextAttemptAt.getTime(), due.getTime());
+        clock = new Date(due.getTime() - 1);
+        assert.equal(await processOneAiJob(db, deps), false);
+        clock = due;
+        await processOneAiJob(db, deps);
+        clock = new Date(due.getTime() + settings.runs.pollSeconds * 1000);
+        await processOneAiJob(db, deps);
+        const completed = (await aiJobs(db).findOne({ _id: saved._id }))!;
+        assert.equal(completed.status, "succeeded");
+        assert.equal(completed.runId, nativeId);
+        assert.equal(starts, 1);
+        assert.equal(retrieves, 3);
+        assert.equal(completed.run?.attempt, 1);
+      },
+    );
     await t.test(
       "native images are retained privately and replay does not depend on expired provider links",
       async () => {

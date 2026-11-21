@@ -5,15 +5,21 @@ import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
+import { sessionRequestSignal } from "@/lib/client/session-lifecycle";
 import {
   filePageSchema,
   privateFileSchema,
   uploadStatusSchema,
 } from "@/lib/contracts/files";
-import { EmptyState, Notice, PageHeader } from "@/components/page-patterns";
+import {
+  EmptyState,
+  Notice,
+  PageHeader,
+  SubmitButton,
+} from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +69,27 @@ export function Files({
       setError(e instanceof ApiError ? e.message : translate("me6c5c7ec5c6b"));
     } finally {
       setBusy(false);
+    }
+  }
+  async function download(file: z.infer<typeof privateFileSchema>) {
+    setError("");
+    const session = sessionRequestSignal();
+    try {
+      const response = await fetch(`/api/files/${file.id}/content`, {
+        signal: AbortSignal.any([session, AbortSignal.timeout(60_000)]),
+      });
+      if (!response.ok) throw new Error("Download request failed");
+      const data = await response.blob();
+      session.throwIfAborted();
+      if (data.size !== file.bytes) throw new Error("Incomplete download");
+      const url = URL.createObjectURL(data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      if (!session.aborted) setError(translate("m5fc277959f9a"));
     }
   }
   async function resumableUpload(file: File) {
@@ -162,28 +189,32 @@ export function Files({
         }}
         className="space-y-3"
       >
-        <Label htmlFor="private-file">{translate("m6d684ec42aa9")}</Label>
-        <div className="flex flex-wrap gap-3">
-          <Input
-            id="private-file"
-            name="file"
-            type="file"
-            className="max-w-md"
-            onChange={() => {
-              uploadKey.current = null;
-            }}
-            required
-            disabled={busy}
-            accept=".txt,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.mp4"
-          />
-          <Button disabled={busy}>
-            {uploading
-              ? progress === null
-                ? translate("m7cdfb59cd1d3")
-                : translate("ma505610c7e5b", { percent: progress })
-              : translate("m865e89de78d9")}
-          </Button>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="private-file">
+            {translate("m6d684ec42aa9")}
+          </FieldLabel>
+          <div className="flex flex-wrap gap-3">
+            <Input
+              id="private-file"
+              name="file"
+              type="file"
+              className="max-w-md"
+              onChange={() => {
+                uploadKey.current = null;
+              }}
+              required
+              disabled={busy}
+              accept=".txt,.pdf,.png,.jpg,.jpeg,.webp,.mp3,.wav,.mp4"
+            />
+            <SubmitButton pending={uploading} disabled={busy}>
+              {uploading
+                ? progress === null
+                  ? translate("m7cdfb59cd1d3")
+                  : translate("ma505610c7e5b", { percent: progress })
+                : translate("m865e89de78d9")}
+            </SubmitButton>
+          </div>
+        </Field>
       </form>
       {error && <Notice tone="error" title={error} />}
       {page.rows.length ? (
@@ -216,13 +247,22 @@ export function Files({
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-2">
-                    {file.state === "ready" && (
-                      <Button asChild size="sm" variant="outline">
-                        <a href={`/api/files/${file.id}/content`} download>
+                    {file.state === "ready" &&
+                      (file.bytes <= RESUMABLE_BYTES ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => void download(file)}
+                        >
                           {translate("md6eafe823591")}
-                        </a>
-                      </Button>
-                    )}
+                        </Button>
+                      ) : (
+                        <Button asChild size="sm" variant="outline">
+                          <a href={`/api/files/${file.id}/content`} download>
+                            {translate("md6eafe823591")}
+                          </a>
+                        </Button>
+                      ))}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button

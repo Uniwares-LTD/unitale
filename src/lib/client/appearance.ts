@@ -1,5 +1,5 @@
 import { STYLE_COOKIE, type StylePreference } from "@/lib/appearance";
-import { namespace } from "@/lib/project";
+import { namespace, project } from "@/lib/project";
 
 // This public appearance cookie is read by the server before rendering.
 // No credentials or account authority are stored here.
@@ -22,5 +22,5 @@ export function applyAccountAppearance(appearance: {
   } catch {
     /* The next document falls back to the system theme. */
   }
-  writeStyleCookie(appearance.style);
+  if (!project.theme) writeStyleCookie(appearance.style);
 }

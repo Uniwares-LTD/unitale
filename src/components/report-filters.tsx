@@ -5,7 +5,7 @@ import { events } from "@/lib/diagnostics";
 import { auditEvents, type ReportFilters } from "@/lib/contracts/reports";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Field, FieldLabel } from "./ui/field";
 import {
   Select,
   SelectTrigger,
@@ -23,8 +23,8 @@ export function ReportFiltersForm({ filters }: { filters: ReportFilters }) {
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
       <input type="hidden" name="kind" value={filters.kind} />
-      <div className="space-y-2">
-        <Label htmlFor="report-event">Event</Label>
+      <Field className="space-y-2">
+        <FieldLabel htmlFor="report-event">Event</FieldLabel>
         <Select name="event" defaultValue={filters.event ?? "any"}>
           <SelectTrigger id="report-event" className="w-full">
             <SelectValue />
@@ -38,11 +38,11 @@ export function ReportFiltersForm({ filters }: { filters: ReportFilters }) {
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </Field>
       {filters.kind === "runtime" ? (
         <>
-          <div className="space-y-2">
-            <Label htmlFor="report-severity">Severity</Label>
+          <Field className="space-y-2">
+            <FieldLabel htmlFor="report-severity">Severity</FieldLabel>
             <Select name="severity" defaultValue={filters.severity ?? "any"}>
               <SelectTrigger id="report-severity" className="w-full">
                 <SelectValue />
@@ -56,52 +56,52 @@ export function ReportFiltersForm({ filters }: { filters: ReportFilters }) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="report-request">Request ID</Label>
+          </Field>
+          <Field className="space-y-2">
+            <FieldLabel htmlFor="report-request">Request ID</FieldLabel>
             <Input
               id="report-request"
               name="requestId"
               defaultValue={filters.requestId}
               maxLength={36}
             />
-          </div>
+          </Field>
         </>
       ) : (
         <>
-          <div className="space-y-2">
-            <Label htmlFor="report-actor">Actor UID</Label>
+          <Field className="space-y-2">
+            <FieldLabel htmlFor="report-actor">Actor UID</FieldLabel>
             <Input
               id="report-actor"
               name="actorUid"
               defaultValue={filters.actorUid}
               maxLength={128}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="report-target">Target UID</Label>
+          </Field>
+          <Field className="space-y-2">
+            <FieldLabel htmlFor="report-target">Target UID</FieldLabel>
             <Input
               id="report-target"
               name="targetUid"
               defaultValue={filters.targetUid}
               maxLength={128}
             />
-          </div>
+          </Field>
         </>
       )}
-      <div className="space-y-2">
-        <Label htmlFor="report-from">From (UTC)</Label>
+      <Field className="space-y-2">
+        <FieldLabel htmlFor="report-from">From (UTC)</FieldLabel>
         <Input
           id="report-from"
           name="from"
           type="date"
           defaultValue={filters.from}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="report-to">Through (UTC)</Label>
+      </Field>
+      <Field className="space-y-2">
+        <FieldLabel htmlFor="report-to">Through (UTC)</FieldLabel>
         <Input id="report-to" name="to" type="date" defaultValue={filters.to} />
-      </div>
+      </Field>
       <div className="flex flex-wrap items-end gap-2">
         <Button type="submit">Apply filters</Button>
         <Button variant="outline" asChild>

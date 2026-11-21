@@ -2,12 +2,12 @@
 import { AdminStateLabel as StateLabel } from "./admin-state-label";
 import { adminStateLabel } from "@/lib/admin-labels";
 
-import { Notice } from "./page-patterns";
+import { Notice, SubmitButton } from "./page-patterns";
 import { useActionState, useId, useRef, useState } from "react";
 import { changeUser } from "@/app/admin/users/actions";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Field, FieldLabel, FieldLegend, FieldSet } from "./ui/field";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import {
@@ -55,8 +55,8 @@ function ChangeForm({
         <form id={id} ref={form} action={action} className="space-y-5">
           <input type="hidden" name="confirmed" value="yes" />
           {kind === "profile" ? (
-            <div className="space-y-2">
-              <Label htmlFor={`${id}-name`}>Display name</Label>
+            <Field className="space-y-2">
+              <FieldLabel htmlFor={`${id}-name`}>Display name</FieldLabel>
               <Input
                 id={`${id}-name`}
                 name="displayName"
@@ -66,7 +66,7 @@ function ChangeForm({
                 maxLength={80}
                 disabled={pending}
               />
-            </div>
+            </Field>
           ) : (
             <>
               {(
@@ -75,10 +75,10 @@ function ChangeForm({
                   { name: "status", options: ["active", "suspended"] },
                 ] as const
               ).map((group) => (
-                <fieldset key={group.name} className="space-y-2">
-                  <legend className="text-sm font-medium">
+                <FieldSet key={group.name} className="space-y-2">
+                  <FieldLegend className="text-sm font-medium">
                     <StateLabel value={group.name} />
-                  </legend>
+                  </FieldLegend>
                   <RadioGroup
                     name={group.name}
                     defaultValue={user[group.name]}
@@ -87,18 +87,18 @@ function ChangeForm({
                     {group.options.map((option) => (
                       <div key={option} className="flex items-center gap-2">
                         <RadioGroupItem id={`${id}-${option}`} value={option} />
-                        <Label htmlFor={`${id}-${option}`}>
+                        <FieldLabel htmlFor={`${id}-${option}`}>
                           <StateLabel value={option} />
-                        </Label>
+                        </FieldLabel>
                       </div>
                     ))}
                   </RadioGroup>
-                </fieldset>
+                </FieldSet>
               ))}
             </>
           )}
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-reason`}>Reason (optional)</Label>
+          <Field className="space-y-2">
+            <FieldLabel htmlFor={`${id}-reason`}>Reason (optional)</FieldLabel>
             <Input
               id={`${id}-reason`}
               name="reason"
@@ -110,7 +110,7 @@ function ChangeForm({
               Recorded in the administrator audit history. Do not enter
               passwords or other secrets.
             </p>
-          </div>
+          </Field>
           <AlertDialog
             onOpenChange={(open) => {
               if (!open || !form.current) return;
@@ -167,9 +167,9 @@ function ChangeForm({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction asChild>
-                  <Button
-                    type="submit"
+                <AlertDialogAction asChild type="submit">
+                  <SubmitButton
+                    pending={pending}
                     form={id}
                     variant={change.risky ? "destructive" : "default"}
                     onClick={(event) => {
@@ -178,7 +178,7 @@ function ChangeForm({
                     }}
                   >
                     Confirm change
-                  </Button>
+                  </SubmitButton>
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

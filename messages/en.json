@@ -1,5 +1,9 @@
 {
   "ui": {
+    "m48845bff334a": "Dismiss",
+    "m1624662d1977": "Show confirmation",
+    "mf2ec9eadf023": "Show error",
+    "m05d879f29687": "The sample could not be saved.",
     "m7d9eb7acb13e": "Close",
     "m9f1e7d7d98b2": "Color mode",
     "mf0702a028b19": "Design style",
@@ -452,7 +456,17 @@
     "mca000000001b": "Active",
     "mca000000001c": "Payment overdue",
     "mca000000001d": "Ended",
-    "mca000000001e": "Revoked"
+    "mca000000001e": "Revoked",
+    "mf558f0afb8ac": "Leave this draft?",
+    "m0d91424ab791": "Your unsaved changes will be lost unless you save them.",
+    "me76fd2add010": "Keep editing",
+    "m0bd63bf3d32e": "Save & exit",
+    "m815c05bc9215": "Discard & exit",
+    "m708a1a4872eb": "Could not save. Your draft is still here.",
+    "m836cdc7d346b": "We could not confirm the save. Your draft is still here. Check the saved version before trying again.",
+    "m7817cd065631": "Image unavailable",
+    "m94d866bf22ae": "This image could not be loaded. The rest of the result is still available.",
+    "m5fc277959f9a": "Download failed. The file is still available, so you can try again."
   },
   "locale": {
     "heading": "Language and region",

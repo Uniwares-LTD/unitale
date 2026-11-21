@@ -164,9 +164,36 @@ export async function handleMcp(
             throw new Error();
           if (Buffer.byteLength(text) > limits.toolResultBytes)
             throw new Error(); // Output appears in both result forms.
+          let resultBytes = Buffer.byteLength(text);
+          const images = (tool.images?.(result) ?? []).map((image) => {
+            if (
+              !(image.data instanceof Uint8Array) ||
+              !image.data.byteLength ||
+              !/^image\/(png|jpeg|webp|gif|avif)$/.test(image.mimeType) ||
+              4 * Math.ceil(image.data.byteLength / 3) >
+                limits.toolResultBytes - resultBytes
+            )
+              throw new Error();
+            const bytes = Buffer.from(
+              image.data.buffer,
+              image.data.byteOffset,
+              image.data.byteLength,
+            );
+            if (tool.runContext && bytes.includes(String(input.runContext)))
+              throw new Error();
+            const block = {
+              type: "image" as const,
+              data: bytes.toString("base64"),
+              mimeType: image.mimeType,
+            };
+            resultBytes += Buffer.byteLength(JSON.stringify(block));
+            if (resultBytes > limits.toolResultBytes) throw new Error();
+            return block;
+          });
+          signal.throwIfAborted();
           return {
             structuredContent: output,
-            content: [{ type: "text" as const, text }],
+            content: [{ type: "text" as const, text }, ...images],
           };
         } catch {
           status = outcome === "timeout" ? 504 : 500;

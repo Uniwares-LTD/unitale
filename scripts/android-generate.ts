@@ -48,7 +48,7 @@ async function main() {
       name: project.displayName,
       launcherName: project.displayName,
       display: "standalone",
-      themeColor: "#98492f",
+      themeColor: "#c2410c",
       navigationColor: "#fff9f3",
       backgroundColor: "#fff9f3",
       enableNotifications: true,

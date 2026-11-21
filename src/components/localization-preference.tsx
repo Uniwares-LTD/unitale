@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Label } from "./ui/label";
+import { Field, FieldLabel } from "./ui/field";
 import {
   Card,
   CardContent,
@@ -64,8 +64,8 @@ export function LocalizationPreference({ canSave }: { canSave: boolean }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="locale-choice">{t("language")}</Label>
+        <Field>
+          <FieldLabel htmlFor="locale-choice">{t("language")}</FieldLabel>
           <Select
             value={locale}
             disabled={busy}
@@ -82,10 +82,10 @@ export function LocalizationPreference({ canSave }: { canSave: boolean }) {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </Field>
         {canSave ? (
-          <div className="space-y-2">
-            <Label htmlFor="time-zone">{t("timeZone")}</Label>
+          <Field>
+            <FieldLabel htmlFor="time-zone">{t("timeZone")}</FieldLabel>
             <Select
               value={zone}
               disabled={busy}
@@ -102,7 +102,7 @@ export function LocalizationPreference({ canSave }: { canSave: boolean }) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Field>
         ) : (
           <p className="text-sm text-muted-foreground">{t("signIn")}</p>
         )}

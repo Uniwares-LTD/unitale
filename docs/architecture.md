@@ -28,9 +28,11 @@ an environment's name. Internal cookie, database and deployment identifiers now 
 
 ## Design system
 
-`src/styles/tokens.css` owns shared typography/effect defaults and page/reading
-spacing; `src/styles/presets/classic.css`, `glass.css` and `soft-blue.css` supply appearance palettes. `src/app/globals.css` maps these into Tailwind and defines
-fonts, page typography, focus and motion/touch rules. `page-patterns.tsx` composes
+The vendored stylesheets in `src/styles/design-system/` supply palettes, font
+hooks and Tailwind typography roles. `src/styles/tokens.css` retains local effect,
+reading-width and touch defaults, and `src/styles/presets/glass.css` supplies
+Glass effects and reduced-transparency fallbacks. `src/app/globals.css` loads these
+and defines local semantic mappings, page typography, focus and motion/touch rules. `page-patterns.tsx` composes
 existing shadcn Alert/Card primitives into headers, notices and empty states used
 by account, credits and administrator screens. Navigation remains responsive and
 uses the existing shadcn Sheet and DropdownMenu.
@@ -56,6 +58,11 @@ See [design-system maintenance and testing](design-system.md).
 The server-only reader explicitly selects APP_NAME, APP_STYLE, APP_ENV, and APP_ORIGIN. It returns separate public and server configuration objects. The application name crosses into the shell and the validated default style goes to the appearance provider. The client-safe public schema reads no environment variables and strips unknown properties. Server validation rejects malformed origins, credentials in URLs, path/query/fragment suffixes, and HTTP in staging/production. Error messages identify settings without reflecting supplied values.
 
 The Next.js instrumentation hook checks application, database, authentication and payment configuration at startup. The command-line validator loads Next.js environment files and uses the same pure parsers. `src/lib/config/database.ts` validates MONGODB_URI/MONGODB_DATABASE independently of Firebase; `src/lib/server/database-config.ts` reads only those private settings, and `mongo.ts` reuses the connection pool. Index setup uses the database parser directly; bootstrap and maintenance validate their required database/auth settings separately. Local development defaults to demo Firebase authentication and loopback MongoDB. The authentication form receives only the Firebase browser allowlist (project ID, app ID, public API key, same-origin auth domain, and local emulator URL); database configuration and Admin credentials stay server-only.
+
+## Project extensions
+
+For a derived application's palette, typography and self-hosted fonts, start
+with the [design extension guide](design-system-extension.md).
 
 ## Extension conventions
 
@@ -842,7 +849,6 @@ and its Terraform writes the complete route list. The application verifies its o
 route; it does not install a route controller or use Booklet's deployment workflow.
 The [ownership follow-ups](deployment.md#shared-ownership-follow-ups) require an
 explicit migration before authority changes.
-
 
 ## Operational documentation ownership
 

@@ -2,8 +2,9 @@
 import { useTranslations } from "next-intl";
 
 import { namespace } from "@/lib/project";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { diagnostics } from "@/lib/client/diagnostics";
+import { Notice } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,15 +28,21 @@ export function DiagnosticsPanel() {
     () => diagnostics.entries().length,
     () => 0,
   );
+  const [downloadFailed, setDownloadFailed] = useState(false);
   function download() {
-    const url = URL.createObjectURL(
-      new Blob([diagnostics.export()], { type: "application/json" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = namespace("diagnostics.json");
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setDownloadFailed(false);
+    try {
+      const url = URL.createObjectURL(
+        new Blob([diagnostics.export()], { type: "application/json" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = namespace("diagnostics.json");
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setDownloadFailed(true);
+    }
   }
   return (
     <Card className="shadow-none">
@@ -65,6 +72,9 @@ export function DiagnosticsPanel() {
             {translate("mb4205182f0eb")}
           </Button>
         </div>
+        {downloadFailed && (
+          <Notice tone="error" title={translate("m5fc277959f9a")} />
+        )}
       </CardContent>
     </Card>
   );

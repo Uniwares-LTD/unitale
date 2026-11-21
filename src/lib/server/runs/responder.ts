@@ -91,6 +91,7 @@ export async function processOneAutomaticDecision(
           jobId: parent._id,
           status: "pending",
           automaticError: { $exists: false },
+          applicationWait: { $ne: true },
         },
         { sort: { createdAt: 1 } },
       );

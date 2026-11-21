@@ -1,0 +1,54 @@
+/* Source: Uniwares-LTD/unitale-design 6d86be7bffc2c8aa0e506489bfc05f8cea05f623 docs/design-system/unibase/tokens/tailwind-theme.css */
+/* Generated from Unibase DTCG typography tokens. Do not edit. */
+@theme inline {
+  --text-display: var(--text-display-size, 3rem);
+  --text-display--line-height: var(--text-display-leading, 1.12);
+  --text-display--font-weight: var(--text-display-weight, 600);
+  --text-display--letter-spacing: var(--text-display-tracking, 0em);
+  --text-hero: var(--text-hero-size, 2.5rem);
+  --text-hero--line-height: var(--text-hero-leading, 1.15);
+  --text-hero--font-weight: var(--text-hero-weight, 600);
+  --text-hero--letter-spacing: var(--text-hero-tracking, 0em);
+  --text-page-title: var(--text-page-title-size, 2.25rem);
+  --text-page-title--line-height: var(--text-page-title-leading, 1.2);
+  --text-page-title--font-weight: var(--text-page-title-weight, 600);
+  --text-page-title--letter-spacing: var(--text-page-title-tracking, 0em);
+  --text-dialog-title: var(--text-dialog-title-size, 2rem);
+  --text-dialog-title--line-height: var(--text-dialog-title-leading, 1.2);
+  --text-dialog-title--font-weight: var(--text-dialog-title-weight, 600);
+  --text-dialog-title--letter-spacing: var(--text-dialog-title-tracking, 0em);
+  --text-section-title: var(--text-section-title-size, 1.5rem);
+  --text-section-title--line-height: var(--text-section-title-leading, 1.25);
+  --text-section-title--font-weight: var(--text-section-title-weight, 600);
+  --text-section-title--letter-spacing: var(--text-section-title-tracking, 0em);
+  --text-card-title: var(--text-card-title-size, 1.25rem);
+  --text-card-title--line-height: var(--text-card-title-leading, 1.3);
+  --text-card-title--font-weight: var(--text-card-title-weight, 600);
+  --text-card-title--letter-spacing: var(--text-card-title-tracking, 0em);
+  --text-reading: var(--text-reading-size, 1.125rem);
+  --text-reading--line-height: var(--text-reading-leading, 1.75);
+  --text-reading--font-weight: var(--text-reading-weight, 400);
+  --text-reading--letter-spacing: var(--text-reading-tracking, 0em);
+  --text-field: var(--text-field-size, 1rem);
+  --text-field--line-height: var(--text-field-leading, 1.5);
+  --text-field--font-weight: var(--text-field-weight, 400);
+  --text-field--letter-spacing: var(--text-field-tracking, 0em);
+  --text-body: var(--text-body-size, 0.875rem);
+  --text-body--line-height: var(--text-body-leading, 1.6);
+  --text-body--font-weight: var(--text-body-weight, 400);
+  --text-body--letter-spacing: var(--text-body-tracking, 0em);
+  --text-supporting: var(--text-supporting-size, 0.8125rem);
+  --text-supporting--line-height: var(--text-supporting-leading, 1.7);
+  --text-supporting--font-weight: var(--text-supporting-weight, 400);
+  --text-supporting--letter-spacing: var(--text-supporting-tracking, 0em);
+  --text-label: var(--text-label-size, 0.75rem);
+  --text-label--line-height: var(--text-label-leading, 1.5);
+  --text-label--font-weight: var(--text-label-weight, 400);
+  --text-label--letter-spacing: var(--text-label-tracking, 0em);
+  --text-caption: var(--text-caption-size, 0.6875rem);
+  --text-caption--line-height: var(--text-caption-leading, 1.6);
+  --text-caption--font-weight: var(--text-caption-weight, 400);
+  --text-caption--letter-spacing: var(--text-caption-tracking, 0em);
+  --font-heading: var(--type-heading);
+  --font-sans: var(--type-body);
+}

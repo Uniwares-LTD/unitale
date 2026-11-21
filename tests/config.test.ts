@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseConfig } from "../src/lib/config/schema";
 import { parsePublicConfig } from "../src/lib/config/public";
-import { project } from "../src/lib/project";
+import manifest from "../project.config.json";
+import { project, projectSchema } from "../src/lib/project";
 import { validateEnvironmentNames } from "../src/lib/config/environment";
 
 test("local development needs no cloud credentials", () => {
@@ -92,5 +93,15 @@ test("declared tooling names pass while unknown application names fail", () => {
   assert.throws(
     () => validateEnvironmentNames({ MCP_UNKNOWN_SETTING: "x" }),
     /Invalid application environment setting name/,
+  );
+});
+
+test("project themes default off, accept boolean opt-in, and stay outside runtime settings", () => {
+  const legacy = { ...manifest, theme: undefined };
+  assert.equal(projectSchema.parse(legacy).theme, false);
+  assert.equal(projectSchema.parse({ ...manifest, theme: true }).theme, true);
+  assert.ok(!projectSchema.safeParse({ ...manifest, theme: "true" }).success);
+  assert.ok(
+    !("theme" in parsePublicConfig({ appName: "Unibase", theme: true })),
   );
 });

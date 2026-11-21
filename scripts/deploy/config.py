@@ -122,6 +122,7 @@ def validate(root, target, runtime_file=None):
         type(v) is not int or not 1 <= v <= 100000 for k, v in limits.items()):
         raise ValueError("Invalid request limits")
 
+    # Deployment allowlist mirrors src/lib/design-styles.ts.
     if env.get("APP_STYLE", "classic") not in ("classic", "glass", "soft-blue"):
         raise ValueError("Invalid APP_STYLE")
     if env.get("ASSET_STORE", "mongo") not in ("mongo", "s3"):

@@ -5,6 +5,7 @@ import { limitRequest } from "@/lib/server/rate-limit";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { AppError, requireSameOrigin } from "@/lib/auth-policy";
+import { project } from "@/lib/project";
 import { getConfig } from "@/lib/server/config";
 import { requireSession } from "@/lib/server/session";
 import {
@@ -36,7 +37,7 @@ export async function saveAppearance(
     () =>
       updateMyAppearance({
         theme: form.get("theme"),
-        style: form.get("style"),
+        ...(project.theme ? {} : { style: form.get("style") }),
       }),
     (await getTranslations("actions"))("m60d6766a9e62"),
   );

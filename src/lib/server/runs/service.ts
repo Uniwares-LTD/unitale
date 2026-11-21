@@ -53,11 +53,14 @@ import { executionBinding, providerForRun } from "./provider";
 
 export type Decision = {
   responderId?: string;
-  answerSource?: {
-    type: "user" | "persona";
-    personaId?: string;
-    personaRevision?: number;
-  };
+  answerSource?:
+    | {
+        type: "user" | "persona";
+        personaId?: string;
+        personaRevision?: number;
+      }
+    | { type: "application"; adapterId: string; adapterVersion: string };
+  applicationWait?: boolean;
   automaticError?: string;
   approval?: ReturnType<typeof parseUiForm>["approval"];
   _id: string;
@@ -321,6 +324,7 @@ export async function startRun(input: unknown) {
   return createAttempt(parseInput(runStartSchema, input));
 }
 function status(job: AiJob, result?: unknown): RunStatus {
+  if (job.status === "paused" && job.applicationWait) return "reconciling";
   if (job.status === "succeeded") return "succeeded";
   if (
     job.status === "failed" &&
@@ -618,6 +622,7 @@ export async function runDetail(id: string, pages: RunPages = {}) {
       .find({
         uid: actor.uid,
         logicalId: id,
+        applicationWait: { $ne: true },
         status: actionable
           ? { $in: actionableStates }
           : { $nin: actionableStates },
@@ -715,9 +720,18 @@ export async function runDetail(id: string, pages: RunPages = {}) {
     .limit(100)
     .toArray();
   const choice = configs.find((d) => d.id === current.run!.orchestrator.id);
+  const target = jobTarget(current);
   return {
     id,
     name: current.run!.orchestrator.name,
+    target: target
+      ? {
+          adapter: target.adapter,
+          version: target.version,
+          kind: target.kind,
+          id: target.id,
+        }
+      : null,
     status: status(current, results.find((r) => r._id === current._id)?.result),
     pollSeconds: current.run!.pollSeconds,
     isAdmin: (await accountAccess(database(), actor.uid)).role === "admin",
@@ -775,7 +789,11 @@ export async function runDetail(id: string, pages: RunPages = {}) {
         (d) => !actionable.rows.some((a) => a.id === d.id),
       ),
     ],
-    canRestart: canStartNewAttempt(current) && !current.runSuccessorId,
+    // Prepaid work must continue through its product admission, which preserves funding.
+    canRestart:
+      canStartNewAttempt(current) &&
+      !current.runSuccessorId &&
+      !current.consumption,
     configuration: choice ?? null,
     personas: await personaChoices(),
     responders: responderExecutions.map((j) => ({
@@ -927,20 +945,53 @@ export async function submitAuthorizedDecision(
   input: unknown,
   source: NonNullable<Decision["answerSource"]>,
 ) {
+  const collection = db.collection<Decision>("runDecisions");
+  const stored = await collection.findOne({
+    _id: decision._id,
+    uid: job.uid,
+    jobId: job._id,
+  });
+  if (!stored || actor.uid !== job.uid)
+    throw new AppError("DECISION_NOT_FOUND", "Decision unavailable.", 404);
+  const target = jobTarget(job);
+  if (source.type === "application") {
+    if (
+      !job.lease ||
+      !stored.applicationWait ||
+      !target ||
+      target.adapter !== source.adapterId ||
+      target.version !== source.adapterVersion ||
+      !domains
+        .get(target.adapter, target.version)
+        .applicationWaitNodes?.includes(stored.nodeId)
+    )
+      throw new AppError(
+        "DECISION_UNAVAILABLE",
+        "This application wait is unavailable.",
+        409,
+      );
+  } else if (stored.applicationWait)
+    throw new AppError(
+      "DECISION_UNAVAILABLE",
+      "This wait is managed by the application.",
+      409,
+    );
   const parsed =
     job.run?.orchestrator.responseMode === "raw-v1"
       ? parseInput(rawDecisionSubmitSchema, input)
       : parseInput(decisionSubmitSchema, input);
   const id = decision._id;
-  const collection = db.collection<Decision>("runDecisions");
-  const view = await decisionView(decision, job, db);
+  const view = await decisionView(stored, job, db);
   const refreshed = await collection.findOne({ _id: id });
   const form = refreshed?.form;
   if (!form || ["invalid", "expired", "unavailable"].includes(view.status))
     throw new AppError("DECISION_UNAVAILABLE", "Decision is unavailable.", 409);
   if (!form.user_actions.some((action) => action.id === parsed.action))
     throw new AppError("INVALID_ACTION", "Choose an offered action.");
-  if (source.type === "persona" && refreshed?.approval?.requireHuman)
+  if (
+    (source.type === "persona" && refreshed?.approval?.requireHuman) ||
+    (source.type === "application" && refreshed?.approval)
+  )
     throw new AppError(
       "APPROVAL_REQUIRED",
       "This approval requires a user.",
@@ -1089,6 +1140,9 @@ export async function submitAuthorizedDecision(
           uid: actor.uid,
           status: { $in: ["running", "paused"] },
           cancelRequested: false,
+          ...(source.type === "application"
+            ? { lease: job.lease, leaseUntil: { $gt: new Date() } }
+            : {}),
           ...(source.type === "persona"
             ? { "run.takenOver": { $ne: true } }
             : {}),

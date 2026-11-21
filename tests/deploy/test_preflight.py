@@ -105,6 +105,11 @@ class PreflightTests(unittest.TestCase):
         spec.loader.exec_module(dispatcher)
         from release_settings import host_configuration, configuration_hash
         candidate = json.loads((SCRIPTS.parents[1] / 'deploy/environments/staging.json').read_text(encoding='utf-8'))
+        # This scenario needs enabled MCP and an explicit synthetic permission change,
+        # independently of the consuming project's activation defaults.
+        candidate['runtime']['MCP_ENABLED'] = 'true'
+        candidate['runtime']['MCP_CLIENTS_JSON'] = json.dumps([{'id':'fixture', 'tokenEnv':'MCP_TOKEN_FIXTURE',
+            'permissions':['server:read', 'run:read', 'artifact:read', 'artifact:write']}])
         installed = host_configuration(candidate)
         clients = json.loads(installed['runtime']['MCP_CLIENTS_JSON'])
         for client in clients:

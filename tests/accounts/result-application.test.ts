@@ -1,3 +1,11 @@
+import {
+  reconcileExtensions,
+  type ServerExtension,
+} from "../../src/lib/server/extensions";
+import {
+  retainEvidence,
+  readEvidence,
+} from "../../src/lib/server/execution/measurements";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -86,6 +94,59 @@ test("artifact publication stages payloads before its owned metadata transaction
     return { db, uid, jobId, artifactId, job, images };
   }
   try {
+    await t.test(
+      "an extension retains late evidence without reopening a stopped Run or publishing assets",
+      async () => {
+        const { db, uid, jobId } = await fixture(1);
+        await db
+          .collection<AiJob>("aiJobs")
+          .updateOne({ _id: jobId }, { $set: { status: "cancelled" } });
+        await db
+          .collection("fixtureAcceptedWork")
+          .insertOne({ id: "late-call", uid, jobId, status: "unknown" });
+        const extension: ServerExtension = {
+          module: "notes",
+          async reconcile(database, now) {
+            const work = await database
+              .collection("fixtureAcceptedWork")
+              .findOneAndUpdate(
+                { id: "late-call", status: "unknown" },
+                { $set: { status: "retaining", observedAt: now } },
+                { returnDocument: "after" },
+              );
+            if (!work) return false;
+            // A project owns the bounded non-paid readback and its accepted-work fence.
+            await retainEvidence(database, work.uid, {
+              id: "late-evidence",
+              runId: work.jobId,
+              operationId: work.id,
+              kind: "provider-receipt",
+              payload: { status: "succeeded", result: "late result" },
+              retentionDays: 1,
+            });
+            await database
+              .collection("fixtureAcceptedWork")
+              .updateOne({ id: work.id }, { $set: { status: "retained" } });
+            return true;
+          },
+        };
+        const now = new Date();
+        assert.equal(await reconcileExtensions([], db, now), false);
+        assert.equal(await reconcileExtensions([extension], db, now), true);
+        assert.equal(await reconcileExtensions([extension], db, now), false);
+        assert.equal(
+          (await db.collection<AiJob>("aiJobs").findOne({ _id: jobId }))
+            ?.status,
+          "cancelled",
+        );
+        assert.equal(await db.collection<AiJob>("aiJobs").countDocuments(), 1);
+        assert.equal(await db.collection("productAssets").countDocuments(), 0);
+        assert.deepEqual(await readEvidence(db, uid, "late-evidence"), {
+          status: "succeeded",
+          result: "late result",
+        });
+      },
+    );
     await t.test(
       "nine large image copies stay on MongoDB's server; transaction wire messages contain metadata only",
       async () => {

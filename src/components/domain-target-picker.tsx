@@ -6,7 +6,7 @@ import { z } from "zod";
 import { api } from "@/lib/client/api";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { FieldLabel } from "./ui/field";
 const pageSchema = z.object({
   rows: z.array(z.object({ id: z.string(), title: z.string() })),
   next: z.string().nullable(),
@@ -40,7 +40,7 @@ export function DomainTargetPicker({
   }
   return (
     <div className="space-y-2">
-      <Label htmlFor="domain-target-search">{metadata.label}</Label>
+      <FieldLabel htmlFor="domain-target-search">{metadata.label}</FieldLabel>
       <div className="flex gap-2">
         <Input
           id="domain-target-search"

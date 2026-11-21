@@ -2,14 +2,20 @@
 import { StateLabel } from "./localized-value";
 import { useTranslations } from "next-intl";
 
-import { useActionState, useSyncExternalStore } from "react";
+import { useActionState, useRef, useState, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { saveAppearance } from "@/app/account/actions";
 import type { Profile } from "@/lib/contracts/profile";
-import { Notice } from "./page-patterns";
+import { Notice, SubmitButton } from "./page-patterns";
+import { useLeaveGuard } from "./leave-guard";
+import { useStyle } from "./style-provider";
 import { StylePreference } from "./style-preference";
-import { Button } from "./ui/button";
-import { Label } from "./ui/label";
+import {
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "./ui/field";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const subscribe = () => () => {};
@@ -17,10 +23,6 @@ const subscribe = () => () => {};
 export function AppearanceForm({ profile }: { profile: Profile }) {
   const translate = useTranslations("ui");
 
-  const [state, action, pending] = useActionState(
-    saveAppearance.bind(null, profile.uid),
-    { message: "", saved: false },
-  );
   // Show and save this browser's current look; the account look is applied at
   // sign-in, so opening this page never overrides a choice made here.
   const { theme, setTheme } = useTheme();
@@ -29,8 +31,47 @@ export function AppearanceForm({ profile }: { profile: Profile }) {
     () => true,
     () => false,
   );
+  const { preference, projectTheme } = useStyle();
+  const currentTheme = theme ?? profile.theme;
+  const formRef = useRef<HTMLFormElement>(null);
+  const [baseline, setBaseline] = useState<{ theme: string; style: string }>();
+  const dirty = Boolean(
+    baseline &&
+    (baseline.theme !== currentTheme || baseline.style !== preference),
+  );
+  function markEdit() {
+    setBaseline(
+      (previous) => previous ?? { theme: currentTheme, style: preference },
+    );
+  }
+
+  const [state, action, pending] = useActionState(
+    async (previous: { message: string; saved: boolean }, form: FormData) => {
+      const result = await saveAppearance(profile.uid, previous, form);
+      if (result.saved) setBaseline(undefined);
+      return result;
+    },
+    { message: "", saved: false },
+  );
+  useLeaveGuard({
+    dirty,
+    save: async () => {
+      const form = formRef.current;
+      if (!form || pending || !hydrated || !form.checkValidity())
+        return "failed";
+      const result = await saveAppearance(
+        profile.uid,
+        state,
+        new FormData(form),
+      );
+      if (result.saved) setBaseline(undefined);
+      return result.saved ? "saved" : "failed";
+    },
+  });
+
   return (
     <form
+      ref={formRef}
       action={action}
       className="space-y-6"
       onResetCapture={(event) => {
@@ -39,33 +80,43 @@ export function AppearanceForm({ profile }: { profile: Profile }) {
         event.stopPropagation();
       }}
     >
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-medium">
+      <FieldSet className="space-y-3">
+        <FieldLegend className="text-sm font-medium">
           {translate("m9f1e7d7d98b2")}
-        </legend>
+        </FieldLegend>
         <RadioGroup
           name="theme"
-          value={hydrated ? (theme ?? profile.theme) : ""}
-          onValueChange={setTheme}
+          value={hydrated ? currentTheme : ""}
+          onValueChange={(next) => {
+            markEdit();
+            setTheme(next);
+          }}
+          aria-describedby="profile-theme-help"
           disabled={pending || !hydrated}
         >
           {["light", "dark", "system"].map((theme) => (
             <div key={theme} className="flex items-center gap-2">
               <RadioGroupItem id={`profile-${theme}`} value={theme} />
-              <Label htmlFor={`profile-${theme}`}>
+              <FieldLabel htmlFor={`profile-${theme}`}>
                 <StateLabel value={theme} />
-              </Label>
+              </FieldLabel>
             </div>
           ))}
         </RadioGroup>
-        <p className="text-sm text-muted-foreground">
+        <FieldDescription id="profile-theme-help">
           {translate("m64c7a3da6a24")}
-        </p>
-      </fieldset>
-      <StylePreference account disabled={pending} />
-      <Button type="submit" disabled={pending}>
+        </FieldDescription>
+      </FieldSet>
+      {!projectTheme && (
+        <StylePreference
+          account
+          disabled={pending}
+          onPreferenceChange={markEdit}
+        />
+      )}
+      <SubmitButton pending={pending} disabled={!hydrated}>
         {pending ? translate("m23e39291d613") : translate("m089e57e38f93")}
-      </Button>
+      </SubmitButton>
       {state.message && (
         <Notice
           tone={state.saved ? "success" : "error"}

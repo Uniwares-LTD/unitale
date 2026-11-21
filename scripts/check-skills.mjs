@@ -19,6 +19,7 @@ const root = process.cwd();
 const source = "karpishe-experiments/agentic-poc";
 const sourceRef = "4e1478355843e42e1b27fdc8e33212476a4d4fa3";
 const names = [
+  "build-ui",
   "capture-project-learnings",
   "compile-feature-spec",
   "maintain-docs",

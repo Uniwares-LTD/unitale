@@ -31,7 +31,10 @@ repository. The initializer:
    [source map](source-map.md) during adoption.
 4. Replace product copy and branding: the home page (set a component in `src/project/home.tsx`),
    icons (`npm run icons:generate`), theme colors in `src/app/manifest.ts` and
-   `public/offline.html`.
+   the offline source `scripts/i18n-assets.mjs` (regenerate the asset).
+   Use the [derived-project design guide](design-system-extension.md) for a theme.
+   Set the per-project theme color, offline background and text, and icon colors
+   to match your product.
 5. Write the project's first milestones in `docs/implementation-plan.md`.
 6. For deployment, follow [derived-project deployment initialization](deployment.md#derived-project-deployment-initialization).
    `deployment.imageRepository` must equal `ghcr.io/<owner>/<repository>` of the
@@ -66,6 +69,9 @@ limits are administrator settings; see [resumable uploads](services.md#resumable
 
 ## Add a feature
 
+Compose existing UI primitives and register project behavior through the
+extension points below. See the [design extension guide](design-system-extension.md).
+
 Extend through the registries instead of editing core lists. The
 [notes sample](../src/samples/README.md) is a complete reference.
 
@@ -83,6 +89,15 @@ Extend through the registries instead of editing core lists. The
    `npm run db:migrate`; see [migrations](architecture.md#extension-conventions).
 6. Tests, then `npm run typecheck`, `npm run lint`, the affected test suites and
    `npm run build`.
+
+Project-specific Run controls belong in `src/project/run-start.tsx` and
+`src/project/run-detail.tsx`: compose `ProjectRunStart` with the existing
+`RunLanding` for package/quote admission, and render additional owned controls through `ProjectRunDetail`. The detail slot receives
+the same allowlisted DTO (including the owned target identity) and refresh function
+as the existing polling UI; do not add a second Run poller or copy shared controls. Defaults preserve generic Run behavior.
+Keep these components client-safe, use the page's typed message scope and put all
+ownership, financial consent and mutation authorization in server services. Prepaid
+Runs omit generic restart controls; their product admission owns continuation.
 
 ## Receive template updates
 

@@ -124,12 +124,18 @@ page-scoped dictionaries and logical layout. Admin copy, shared controls and
 administrative errors are English-only, outside locale catalogs. Preserve user/
 model content and the user's public language/timezone/offline preferences.
 Reuse shadcn primitives through the CLI and semantic CSS theme variables.
+Build UI with the local `build-ui` skill. The design system owns interaction
+rules and type roles. Derived projects start from the
+[design extension guide](../docs/design-system-extension.md).
 
 Verify desktop and 390px public English/Arabic layouts, English/LTR admin with
 an Arabic public preference, and preference restoration when leaving admin.
 Check navigation, Radix direction, bidirectional identifiers, keyboard focus,
 recovery copy, hydration and document nonces. CSP evidence requires injection
 into a served document; privileged Playwright evaluation does not prove CSP permits it.
+Verify the toast stylesheet in a production build with `npm run build` and
+`npm start`. In Arabic, check dialog centring, sheet close-button placement
+and directional arrows.
 
 Use named headless Playwright sessions unless an interactive window is requested.
 On Windows use `npm.cmd` / `npx.cmd` with a workspace-local npm cache, or the
