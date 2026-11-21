@@ -28,7 +28,9 @@ and the adapter; the table does not require unrelated suites for every task.
   [delivery plan](features/booklet-generation/implementation-plan.md) own the accepted
   product contract and cross-repository dependencies. Its
   [remaining 07-12 plan](features/booklet-generation/implementation-plan.md#remaining-implementation-kickoff-and-ownership)
-  maps T18-T21, Unitale/Unibase ownership and approval gates; its
+  maps T18-T21, Unitale/Unibase ownership and approval gates. Its
+  [post-import design mapping](features/booklet-generation/implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
+  bounds design-reference adoption within 10-12 and records outstanding merge checks; its
   [retry/reconciliation policy](features/booklet-generation/implementation-plan.md#action-retries-and-automatic-reconciliation)
   owns accepted defaults and recovery semantics. Storage and reviewed shared seams are
   delivered in 07-08; local gateway/recovery tasks 09.1-09.7 are Verified, and the sequenced 10 plan covers creator UI/admin settings.

@@ -7,7 +7,7 @@
     "APP_STYLE": "classic",
     "APP_ORIGIN": null,
     "AUTH_MODE": "firebase",
-    "FIREBASE_PROJECT_ID": null,
+    "FIREBASE_PROJECT_ID": "uniwares-base",
     "MONGODB_DATABASE": "unitale_staging",
     "DIFY_MODE": "disabled",
     "PAYMENTS_MODE": "disabled",
@@ -31,15 +31,15 @@
     "transport": null
   },
   "google": {
-    "projectId": null,
+    "projectId": "uniwares-base",
     "parent": null,
     "workloadIdentityProvider": null,
     "provisionerServiceAccount": null,
     "oauthClientId": null
   },
   "atlas": {
-    "projectId": null,
-    "clusterName": null,
+    "projectId": "6a869d84e65675f845fa22eb",
+    "clusterName": "kids-booklet",
     "mongoUser": "unitale_staging",
     "vpsEgressCidr": null
   },

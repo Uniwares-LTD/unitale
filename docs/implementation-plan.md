@@ -146,3 +146,13 @@ production activation remains disabled.
 
 Manager controls paid dispatch; per-production usage ceilings remain app safeguards,
 with labelled estimates and independent progress during unresolved child calls.
+
+## Booklet plan refresh after Unibase 0.5.0 merge
+
+On 2026-11-21 issue branch merge `dfa8d30` incorporated main `99cb6b5`.
+The [remaining Booklet plan](features/booklet-generation/implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
+now maps the pinned Unitale design reference to the existing 10.1-10.7 tasks and
+11/12 verification/approval gates. It reuses adopted UI helpers without enabling a
+project theme or implementing a new chat/product flow. Interrupted merge build,
+typecheck and lint need fresh results; completed checks and their limits are recorded
+there. This is a planning update; checkpoint 10 remains unimplemented.

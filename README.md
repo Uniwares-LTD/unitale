@@ -136,6 +136,65 @@ authorization as other publication.
 The initializer gives the new product an empty implementation plan; record its
 own accepted work there.
 
+## Unitale local app with shared staging data
+
+The optional operator-prepared `.env.local` selects real staging Firebase and
+`unitale_staging` on the existing Atlas cluster. It is ignored by Git and restricted
+to the workstation user. Runtime credentials are retained under
+`%USERPROFILE%\.config\unitale`; never copy Unibase database credentials or commit
+these files. Dev and future staging will write the same Unitale data. Use disposable
+fixture databases for automated tests.
+
+For this prepared configuration, from the repository root in PowerShell:
+
+```powershell
+Remove-Item Env:FIREBASE_AUTH_EMULATOR_HOST -ErrorAction SilentlyContinue
+node --import tsx scripts/check-env.ts
+$certificateDir = Join-Path $env:USERPROFILE '.config/unitale/tls'
+node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3100 --experimental-https --experimental-https-key "$certificateDir/localhost-key.pem" --experimental-https-cert "$certificateDir/localhost-signed.pem" --experimental-https-ca "$certificateDir/localhost-ca.pem"
+```
+
+Open https://localhost:3100 and sign in with your real shared staging account.
+Keep port 3000 and the existing Base emulator services untouched. The direct Next CLI
+is intentional: the generic `npm run dev` wrapper adds tracked emulator defaults,
+which conflict with real Firebase mode in a local environment. No app code change is
+needed for this launch. The default emulator-based quick start above remains available
+when the private staging environment file is not loaded.
+
+Payments, Dify, MCP and persona execution remain disabled in this prepared setup.
+Readiness at `/api/health/ready` verifies configuration/credential structure and database
+connectivity; it does not prove a real user sign-in, admin permission or provider run.
+Administrator appointment requires a selected verified Firebase user and explicit
+permission; shared Firebase membership does not grant Unitale administration.
+This setup does not deploy staging or complete Booklet checkpoint 10.
+
+Local HTTPS is required because Firebase opens its same-origin auth helper over HTTPS.
+The private environment origin must be `https://localhost:3100`. The operator approved
+Current User trust for `Unitale localhost development CA`, constrained to localhost DNS
+names and 127.0.0.1, server authentication only, no subordinate CAs. It expires December
+21, 2026; renewal/trust needs explicit authorization. Its SHA-256 fingerprint is
+`AC23B09684DCBC048AF3941C6C20764272E6C36896276823DA55FAE5C2465D75` and Windows
+thumbprint is `E0C628354514E48B616273DD41ECC6358C04F565`. Keys stay in the protected
+workstation directory. The invalid first leaf trust entry was removed. Do not use the
+obsolete leaf files or disable browser/TLS validation. Trust is local, not a staging
+certificate or permission to change shared Firebase OAuth settings.
+
+### Local Google sign-in callback
+
+The HTTPS account page loads in a fresh browser. Google sign-in currently reaches
+Google but returns `400 redirect_uri_mismatch`. The existing provider client is
+`870391561828-3v6jf50et3lnoelk85rlmfk5kttverq5.apps.googleusercontent.com` in project
+`uniwares-base`. The [planned local popup change](docs/features/booklet-generation/implementation-plan.md#minimal-local-google-popup-change-planning-only) is the preferred resolution without changing this shared client. If retaining local redirect instead, an authorized operator must add `https://localhost:3100/__/auth/handler`
+to that client's Authorized redirect URIs and `https://localhost:3100` to Authorized
+JavaScript origins, preserving every existing entry. No shared OAuth setting was
+changed during diagnosis. Retry after provider propagation; full sign-in/session
+acceptance remains pending until actually completed.
+
+If an old tab displays the offline fallback, open the HTTPS account URL directly.
+HTTP and HTTPS are separate browser origins, and port 3100 now serves TLS. Direct
+HTTPS readiness and Account requests return 200. Do not clear unrelated browser
+storage or weaken service-worker/CSP protections to repair an OAuth allowlist error.
+
 ## Dify environment connections
 
 Each Dify app belongs to one project/environment. In Administration → Orchestrators,

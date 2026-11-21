@@ -752,7 +752,7 @@ No Unibase changes, imports, dependencies, migration, UI, deployment or paid cal
 | Later evidence | Broader local integration in 11; live publication/bindings, MCP image conversion and paid acceptance in 12. | Implementer, then operator under C |
 | Later manual gate | Scope C, exact release/configuration, credentials, test package/account and finite spending approval remain deferred. The selected US$3 ceiling grants no current spending. | User/operator at 12 |
 
-**Ready to start checkpoint 10 locally.** No prerequisite user decision or manual
+**Historical readiness at the 2026-11-12 source state:** ready to start checkpoint 10 locally. No prerequisite user decision or manual
 setup remains identified. The next task is **10.1 Private application facade** after
 a subsequent start instruction. No additional pre-10 interface, configuration field
 or shared-runtime change is proposed.
@@ -776,6 +776,138 @@ no repeated approval. Live inputs/actions stay grouped in 12. Default Unibase wo
 none. Reuse the imported project slots, domain picker and existing decision UI. Do not
 edit copied shared core or add a standalone workspace/listing page, scheduler or plugin.
 
+#### Refreshed baseline and design handoff (2026-11-21)
+
+This revision changes planning only. No model/schema/persistence, JSON example,
+Mermaid diagram, workflow, application or configuration change is made.
+
+Issue branch refresh `dfa8d30` incorporates Unitale main `99cb6b5` and its Unibase
+0.5.0 candidate import `2c13d814c02f512edd9acbd3a27a41f530b0aec5`.
+`project.source.json` owns the current import identity; earlier 0.4.0 identities above
+remain historical checkpoint evidence. Shared booklet runtime seams and project slots
+are preserved. Handbook for this refresh is `c1b6166437ba729b59723a7dd4066c78e2f15185`.
+
+Before UI implementation, rerun the interrupted build, then typecheck sequentially,
+and lint. The merge review passed 38 repository, 46 compatibility and 20 shared UI-helper
+checks plus docs/i18n/skills/template checks; the first compatibility run had two Python
+startup timeouts and the unchanged rerun passed. Build/lint/typecheck were stopped
+without a result, so their earlier checkpoint 09 results do not validate this merge.
+Use the prepared tools; do not increase timeouts or change code absent a reproduced defect.
+This verification can run unattended and needs no live credentials or new approval.
+10.1's read-only service inspection can proceed independently; close these checks before UI implementation starts.
+
+Use the adopted [design system](../../design-system.md),
+[project extension guide](../../design-system-extension.md) and local
+[build-ui skill](../../../.agents/skills/build-ui/SKILL.md).
+The additional [Unitale handoff](https://github.com/Uniwares-LTD/unitale-design/blob/c95973a138947e1ce9da7165bd562a08643ba2a2/docs/design-system/projects/unitale/README.md)
+is pinned to `c95973a138947e1ce9da7165bd562a08643ba2a2`; its product layer is marked
+proposed/not accepted. Its specimens are reference HTML/local demonstration state,
+not a React API, backend capability or replacement product contract. The IDE's
+`docs/features/design-handoff/unibase-prd.md` is absent from this checkout and is not
+an executable source for this revision. Replace this reference only after the actual
+package is identified and reconciled, rather than inferring missing requirements.
+
+| Remaining task | Apply now within accepted scope | Keep outside this implementation |
+| --- | --- | --- |
+| 10.1 facade | Existing product ownership, catalog/quote journals, durable action state and allowlisted DTOs stay authoritative. | No specimen localStorage persistence, new conversation protocol or inferred commercial defaults. |
+| 10.2 start/consent | Compose existing Field/help/error, SubmitButton and paid confirmation. Retain entered data on failure/unknown outcome and focus the first invalid field. | No hardcoded welcome credits, first-book free access, fixed style catalog or mandatory prototype stage sequence. |
+| 10.3 progress/decisions/media | Existing Run controls, semantic StatusBadge/Notice, ResultImage fallback and enlarged owned-original view with clear close/focus restoration. Preserve decision drafts; do not force-scroll history. Show actual activity without invented percent/ETA. | No replacement chat workspace, voice/photo capture, transcription, mascot engine or timed prose-reveal controller. |
+| 10.4 recovery/revisions | Existing target-scoped controls retain successful output until replacement; retain unsent feedback for its target, warn before discarding it, and distinguish retry from continuation. | No automatic retry of an unknown paid operation, mandatory human approval or restarting an entire workflow. |
+| 10.5 history / 10.6 admin | Existing owned paginated history and English/LTR admin; shared empty/loading/error helpers and meaningful dirty-form leave guard. | No new Library/storefront, public reader/PDF/share/Explore surface or operations dashboard. |
+| 10.7 / 11 verification | Test these real states and services; specimen animations/storage never establish successful save, approval, billing or completion. | No migration of the static specimen controllers into production. |
+
+The [handoff decisions](https://github.com/Uniwares-LTD/unitale-design/blob/c95973a138947e1ce9da7165bd562a08643ba2a2/docs/design-system/projects/unitale/decisions.md)
+confirm that the journey is representative: Manager chooses when to request human input.
+Keep public en/ar and authenticated native Run responses despite the design package's
+English-only examples. Use one existing response control per active decision; preserve
+its draft until acknowledgement, never add another feedback field for that decision.
+Target-specific revision feedback remains tied to its own quoted request and financial consent.
+
+Current `theme: false` stays in place. Reuse the installed semantic tokens/type roles
+and primitives; do not activate Unitale's theme, import fonts/assets, change existing
+screen colours/typography, add dependencies or alter CSP under this plan. Those require
+an explicit bounded adoption decision, not implied approval from the reference package.
+Optional welcome access, attachments/voice and later reader/PDF/sharing remain separately
+scoped work; their absence does not block the accepted T21 Run integration.
+
+#### Pre-checkpoint 10 local setup
+
+Added by user instruction on 2026-11-21; do this before 10 implementation.
+Use the existing app and setup tools, not a new bootstrap framework.
+
+| Step | Status | Outcome / verification |
+| --- | --- | --- |
+| Local environment inspection | Verified | Default configuration validates. Existing Base app/auth/MongoDB services are preserved. Unitale dev server starts on loopback port 3100; this is startup evidence, not connected database/auth acceptance. |
+| Shared development/staging identity | Verified configuration | User confirmed real shared staging Firebase locally. Use `uniwares-base`, Unitale web registration `unitale-staging`, app ID `1:870391561828:web:ad66111854ba5233882971`, and `unitale_staging` for dev/staging. No demo auth or fixture simulation on shared data. |
+| Database provisioning | Verified | Created `unitale_staging` runtime user with only readWrite on `unitale_staging`, scoped to existing `kids-booklet` cluster in Atlas project `6a869d84e65675f845fa22eb`. Ping and transaction capability pass. No new cluster or network rule. Credentials retained outside Git. |
+| Local bindings and preparation | Verified | Ignored user-only `.env.local` selects APP_ENV local, https://localhost:3100, real Firebase, scoped Atlas DB and disabled payments/Dify/MCP/persona execution. Additive indexes pass; 3 earlier migration records retained and 7 remaining migrations applied successfully. Runtime secrets are outside Git. |
+| As-is local acceptance | Partial; human sign-in pending | Server starts on loopback 3100; latest readiness returns 200/ready with standard Atlas binding. Latest home also returns 200 with title Unitale; the earlier Account page renders. Anonymous Runs renders a sign-in error inside a streamed HTTP 200 and logs an authentication error; it is not a successful owned Run test. Real user sign-in/session and explicit administrator selection remain human acceptance, not simulated evidence. |
+
+Shared database means local and staging writes affect the same Unitale records.
+Use the same authentication project and compatible encryption configuration when both
+runtimes are connected. Never run destructive/disposable test suites against the shared
+database; those suites keep their isolated fixtures. Local startup does not deploy staging
+or authorize scope C. Missing access, identity or capability blocks only its dependent step.
+Local DNS SRV lookup timed out on fresh Atlas connections. The local ignored environment
+uses the Atlas-provided standard TLS/replica-set URI; the protected staging SRV record
+is retained. No system DNS, Atlas network rule or application code was changed.
+Post-restart Turbopack requests exceeded the probe deadline while Next reported slow
+filesystem compilation. A supported webpack CLI fallback was tried but fails because
+instrumentation pulls Node MongoDB modules into the Edge bundle (`net` unresolved).
+Default Turbopack launch is retained; no dependency or source fix was attempted.
+After returning to default Turbopack, the latest restart returns 200/ready with the
+standard Atlas URI. Latest home also returns 200 with title Unitale; real-user journeys remain pending. The failed webpack
+fallback remains a known local startup limitation, not a successful alternate launch.
+
+The existing migration lease is respected after interruption; never force-clear it or
+infer success from an index-preparation message. Confirm the final migration report.
+
+Use the [documented HTTPS launch](../../../README.md#unitale-local-app-with-shared-staging-data)
+for this real Firebase setup. Firebase forces HTTPS for its auth helper; plain HTTP at
+localhost:3100 causes ERR_SSL_PROTOCOL_ERROR. User approved the constrained Current User
+localhost CA after the initial non-CA trust approach failed validation; the invalid trust
+entry was removed. TLS certificate validation now passes with TLS 1.3. The Google
+provider is enabled and has a configured client; a read-only redirect check returns 302,
+which does not establish full sign-in. Browser navigation/snapshot checks timed out
+while local pages compiled, so Google page rendering and authenticated session creation
+remain unverified. Fresh HTTPS browser verification subsequently loads Account with Google sign-in enabled;
+clicking it reproduces Google's `400 redirect_uri_mismatch`. Error details confirm
+`https://localhost:3100/__/auth/handler`. The exact client and operator action are in
+[local setup](../../../README.md#local-google-sign-in-callback). Built-in browser bridge
+access is unavailable and its native-window capture timed out, so this finding comes
+from the separate fresh browser reproduction. The minimal popup change below is the preferred resolution; editing the shared OAuth
+callback remains an alternative only if local redirect is retained. Real sign-in/session
+acceptance remains a pre-10 setup gate. No shared OAuth provider settings were changed. No application code, SDK, CSP or shared OAuth setting changed.
+The generic npm dev wrapper still injects emulator defaults; use the direct existing
+Next CLI with the complete private environment and explicit TLS files instead.
+
+
+After setup, stop dev before the outstanding production build, then typecheck and lint;
+restart dev with the verified private environment. Preserve existing unrelated processes.
+
+#### Minimal local Google popup change (planning only)
+
+This is a separate Unibase task, not part of checkpoint 10 implementation.
+The local execution handoff is
+`D:/misc/code/uniwares/unibase/output/local-google-popup-implementation-plan.md`.
+Execution uses the existing Unibase clone and branch `task/local-google-popup`, based on fetched main
+`2878df4474ecc2b93cbb0f292515c22b1f866a5d`. It is not yet published.
+The unrelated dirty deployment-data work is preserved. The existing clone must be
+clean and its deployment work paused before branch switching; do not silently stash
+active work. The handoff stays in ignored output until it can be added on the task branch.
+
+Unibase owns configuration/form changes, tests and review. Unitale only consumes the
+exact reviewed upstream revision through `template:update` after preserving its current
+setup/docs and reaching a clean tree. Recheck local real sign-in and preserved booklet
+hooks; stop before 10. Local popup uses Firebase's hosted auth domain and existing
+session exchange; emulator and hosted redirect behavior stay unchanged. No shared OAuth
+edit or new auth framework is planned. Source review found the hosted helper iframe
+is blocked by current CSP; kickoff must explicitly approve the standalone plan's
+exact-host frame-src addition only for local real-Firebase mode. All other CSP and
+hosted/emulator behavior remain unchanged. Human sign-in and applicable publication/import
+approvals remain explicit end gates. Follow the standalone plan rather than duplicating
+its implementation queue here.
+
 #### Fixed scope and sequence
 
 | Task | State | Smallest change and exit evidence |
@@ -790,6 +922,8 @@ edit copied shared core or add a standalone workspace/listing page, scheduler or
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.
+For each slice report the task, required behavior, existing primitive/service used,
+actual checks and remaining gaps. No new public API is authorized by the design reference.
 
 #### Application boundary and financial ordering
 
@@ -834,7 +968,10 @@ Replace the project Run start/detail stubs through their existing slots, keyed b
 `target.adapter`, `target.version` and `kind`; unrelated Runs retain existing behavior.
 Show the six T21 outcomes: package/brief/audience/preferences, quote/consent, progress/
 results, authentic decisions, scoped revisions and owned accessible history.
-Reuse shadcn primitives and typed page-scoped en/ar catalogs with logical RTL styles.
+Use `build-ui` and the adopted shared compositions: Field, SubmitButton, Notice,
+StatusBadge, toast confirmation and meaningful leave guards. Persistent errors and
+required actions stay inline; a toast alone cannot explain an unresolved paid action.
+Use semantic type roles/tokens and typed page-scoped en/ar catalogs with logical RTL styles.
 No technical call/provider IDs in public copy; show clear saved progress and uncertainty.
 
 Public projections allowlist status, selected result metadata, retry eligibility/time,
@@ -924,7 +1061,14 @@ fixtures using prepared npm. Run typecheck, scoped ESLint, build for runtime inp
 and applicable check:env, check:docs, check:i18n, check:skills. Persistence changes run
 `docs:booklet-model` before `check:docs`; shared changes add template and initialized-
 project checks. Browser proof covers desktop/390px en/ar, keyboard, admin language
-isolation, media ownership and served-document CSP. No paid calls for local checks.
+isolation, media ownership and served-document CSP. Use a production build for toast
+stylesheet/CSP evidence, stop dev before building, and run typecheck after build. For
+affected surfaces follow build-ui's three presets, light/dark, 390px/1440px, public Arabic,
+keyboard, 200% zoom and reduced-motion checks. Include draft preservation on known/unknown
+failure, invalid-field focus, leave/return behavior, enlarged-media close/focus restoration
+and non-disruptive history updates. Physical-device/screen-reader and final visual
+acceptance are explicitly recorded as pending where not actually exercised; do not claim
+specimen parity from unit tests. No paid calls for local checks.
 
 Every checkpoint requires two consecutive clean read-only reviews on the same state;
 fixes reset the affected count. Slices require affected checks, not extra review pairs.
@@ -943,6 +1087,11 @@ Scope C is pending; that ceiling is not permission to spend before approval. Pri
 US$1 probe approval is historical and not reusable. Verify live MCP image conversion
 through this staging endpoint; no preliminary tunnel is planned.
 Human account/financial-consent steps remain human actions. No production activation.
+Before choosing a staging destination, record Unitale's approved environment/branches:
+repository preferences currently declare no deployment branches. Inherited `_staging`/
+`_prod` conventions and the Unibase operator runbook do not authorize Unitale promotion.
+Design brand activation or expanded product capabilities, if desired, require separate
+bounded approval; they are not silent prerequisites of the accepted 10-12 scope.
 
 After authorization, publish specialists before Manager, verify exact bindings and tags,
 then run bounded application-connected T18-T21 journeys. Preserve existing apps/shared
