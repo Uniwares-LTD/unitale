@@ -3,7 +3,7 @@
   "slug": "unitale",
   "displayName": "Unitale",
   "defaultStyle": "classic",
-  "theme": false,
+  "theme": true,
   "modules": [
     "credits",
     "payments",

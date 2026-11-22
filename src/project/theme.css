@@ -1,16 +1,195 @@
-/*
- * Enable with "theme": true in project.config.json.
- * Replace project-slug with the project's slug and remove this comment to start.
- * See docs/design-system-extension.md for token pairs, fonts and type roles.
- *
- * html[data-project="project-slug"] {
- *   --primary: #1e3a8a;
- *   --primary-foreground: #ffffff;
- *   --text-hero-size: 2.75rem;
- * }
- *
- * html[data-project="project-slug"].dark {
- *   --primary: #93c5fd;
- *   --primary-foreground: #172554;
- * }
+/* Unitale handoff c95973a138947e1ce9da7165bd562a08643ba2a2.
+ * Adapted to Unibase project hooks; see docs/design-system-extension.md.
  */
+@font-face {
+  font-family: "DM Sans";
+  src: url("/fonts/DMSans-Variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fraunces";
+  src: url("/fonts/Fraunces-Variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+html[data-project="unitale"] {
+  --type-heading: "Fraunces", Georgia, serif;
+  --type-body: "DM Sans", system-ui, sans-serif;
+  --radius: 0.75rem;
+  --page-gap: 2rem;
+  --surface-blur: 0rem;
+  --surface-edge: transparent;
+  --surface-shadow: 0 4px 16px #00000012;
+  --x-unitale-radius-card: 1.25rem;
+  --x-unitale-radius-dialog: 1.5rem;
+  --x-unitale-radius-media: 1rem;
+  --x-unitale-radius-pill: 62.4375rem;
+  --x-unitale-border-selected: 0.125rem;
+  --x-unitale-focus-width: 0.1875rem;
+  --x-unitale-focus-offset: 0.1875rem;
+  --x-unitale-duration-feedback: 150ms;
+  --x-unitale-duration-reveal: 250ms;
+  --x-unitale-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --x-unitale-shadow-raised: 0 4px 16px #00000012;
+  --x-unitale-shadow-floating: 0 10px 40px #0003;
+  --control-touch-sm: 2.75rem;
+  --x-unitale-icon-sm: 1rem;
+  --control-touch-md: 3.25rem;
+  --x-unitale-icon-md: 1.25rem;
+  --control-touch-lg: 3.75rem;
+  --x-unitale-icon-lg: 1.5rem;
+  --background: #faf5ff;
+  --foreground: #23103d;
+  --card: #ffffff;
+  --card-foreground: #23103d;
+  --popover: #ffffff;
+  --popover-foreground: #23103d;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #ddd6fe;
+  --secondary-foreground: #23103d;
+  --muted: #ddd6fe;
+  --muted-foreground: #655078;
+  --accent: #fbbf24;
+  --accent-foreground: #451a03;
+  --destructive: #b91c1c;
+  --border: #c4b5fd;
+  --input: #8b5cf6;
+  --ring: #7c3aed;
+  --success: #d1fae5;
+  --success-foreground: #047857;
+  --warning: #fff7ed;
+  --warning-foreground: #c2410c;
+  --info: #e0f2fe;
+  --info-foreground: #0369a1;
+  --sidebar: #faf5ff;
+  --sidebar-solid: #faf5ff;
+  --sidebar-foreground: #23103d;
+  --sidebar-primary: #7c3aed;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ddd6fe;
+  --sidebar-accent-foreground: #4c1d95;
+  --sidebar-border: #c4b5fd;
+  --sidebar-ring: #7c3aed;
+  --card-solid: #ffffff;
+  --reading-surface: #ffffff;
+  --form-surface: #ffffff;
+  --chart-1: #c4b5fd;
+  --chart-2: #a78bfa;
+  --chart-3: #8b5cf6;
+  --chart-4: #7c3aed;
+  --chart-5: #6d28d9;
+  --x-unitale-destructive-foreground: #fef2f2;
+  --x-unitale-selected: #ddd6fe;
+  --x-unitale-selected-foreground: #4c1d95;
+  --reading-width: 65ch;
+  --canvas-art: none;
+  --surface-sheen: none;
+  --cover-wash: none;
+}
+html[data-project="unitale"].dark {
+  --background: #160d25;
+  --foreground: #faf5ff;
+  --card: #26153d;
+  --card-foreground: #faf5ff;
+  --popover: #26153d;
+  --popover-foreground: #faf5ff;
+  --primary: #a78bfa;
+  --primary-foreground: #2e1065;
+  --secondary: #4c1d95;
+  --secondary-foreground: #faf5ff;
+  --muted: #4c1d95;
+  --muted-foreground: #d6bdea;
+  --accent: #fbbf24;
+  --accent-foreground: #451a03;
+  --destructive: #f87171;
+  --border: #7c3aed;
+  --input: #a78bfa;
+  --ring: #a78bfa;
+  --success: #022c22;
+  --success-foreground: #34d399;
+  --warning: #431407;
+  --warning-foreground: #fb923c;
+  --info: #082f49;
+  --info-foreground: #38bdf8;
+  --sidebar: #160d25;
+  --sidebar-solid: #160d25;
+  --sidebar-foreground: #faf5ff;
+  --sidebar-primary: #a78bfa;
+  --sidebar-primary-foreground: #2e1065;
+  --sidebar-accent: #4c1d95;
+  --sidebar-accent-foreground: #ede9fe;
+  --sidebar-border: #7c3aed;
+  --sidebar-ring: #a78bfa;
+  --card-solid: #26153d;
+  --reading-surface: #26153d;
+  --form-surface: #26153d;
+  --chart-1: #ddd6fe;
+  --chart-2: #c4b5fd;
+  --chart-3: #a78bfa;
+  --chart-4: #8b5cf6;
+  --chart-5: #7c3aed;
+  --x-unitale-destructive-foreground: #450a0a;
+  --x-unitale-selected: #4c1d95;
+  --x-unitale-selected-foreground: #ede9fe;
+}
+html[data-project="unitale"] {
+  --text-display-size: 3rem;
+  --text-display-leading: 1.12;
+  --text-display-weight: 450;
+  --text-display-tracking: 0em;
+  --text-hero-size: 2.6875rem;
+  --text-hero-leading: 1.15;
+  --text-hero-weight: 450;
+  --text-hero-tracking: 0em;
+  --text-page-title-size: 2.25rem;
+  --text-page-title-leading: 1.2;
+  --text-page-title-weight: 450;
+  --text-page-title-tracking: 0em;
+  --text-dialog-title-size: 1.9375rem;
+  --text-dialog-title-leading: 1.2;
+  --text-dialog-title-weight: 450;
+  --text-dialog-title-tracking: 0em;
+  --text-section-title-size: 1.5rem;
+  --text-section-title-leading: 1.25;
+  --text-section-title-weight: 450;
+  --text-section-title-tracking: 0em;
+  --text-card-title-size: 1.25rem;
+  --text-card-title-leading: 1.3;
+  --text-card-title-weight: 450;
+  --text-card-title-tracking: 0em;
+  --text-reading-size: 1.125rem;
+  --text-reading-leading: 1.75;
+  --text-reading-weight: 400;
+  --text-reading-tracking: 0em;
+  --text-field-size: 1rem;
+  --text-field-leading: 1.5;
+  --text-field-weight: 400;
+  --text-field-tracking: 0em;
+  --text-body-size: 0.875rem;
+  --text-body-leading: 1.6;
+  --text-body-weight: 400;
+  --text-body-tracking: 0em;
+  --text-supporting-size: 0.8125rem;
+  --text-supporting-leading: 1.7;
+  --text-supporting-weight: 400;
+  --text-supporting-tracking: 0em;
+  --text-label-size: 0.75rem;
+  --text-label-leading: 1.5;
+  --text-label-weight: 500;
+  --text-label-tracking: 0em;
+  --text-caption-size: 0.6875rem;
+  --text-caption-leading: 1.6;
+  --text-caption-weight: 400;
+  --text-caption-tracking: 0em;
+}
+html[data-project="unitale"] [data-slot="card"] {
+  border-radius: var(--x-unitale-radius-card);
+}
+html[data-project="unitale"]
+  :is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
+  border-radius: var(--x-unitale-radius-dialog);
+}

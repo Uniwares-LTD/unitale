@@ -19,7 +19,9 @@ Unitale `main`. Preserve the separate Booklet work branch.
 The local import includes the optional runtime/MCP extension seams, generated
 design foundation, shared UI helpers, Sonner 2.0.8 and its exact stylesheet CSP
 hashes. Unitale identity, modules, tracking and deployment bindings are retained;
-project theming remains disabled. The offline page is regenerated from its source.
+project theming was disabled at import. The separately authorized 2026-11-22
+[Unitale theme adoption](design-system-extension.md#unitale-adoption-before-checkpoint-10)
+enables its project-owned theme before checkpoint 10. The offline page is regenerated from its source.
 No Booklet model, schema, storage or persistence contract changes, so its model
 guide, JSON example and Mermaid diagrams are unaffected. No new migration or
 provider activation is required by this delta.
@@ -165,6 +167,7 @@ with labelled estimates and independent progress during unresolved child calls.
 On 2026-11-21 issue branch merge `dfa8d30` incorporated main `99cb6b5`.
 The [remaining Booklet plan](features/booklet-generation/implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
 now maps the pinned Unitale design reference to the existing 10.1-10.7 tasks and
-11/12 verification/approval gates. It reuses adopted UI helpers without enabling a
-project theme or implementing a new chat/product flow. The local-popup adoption now supplies passing production build, subsequent
+11/12 verification/approval gates. That planning refresh reused adopted UI helpers
+without enabling a project theme. The separately authorized 2026-11-22 theme adoption
+is recorded in the project extension guide; no new chat/product flow is implemented. The local-popup adoption now supplies passing production build, subsequent
 typecheck and lint results; current checks and their limits are recorded there. This is a planning update; checkpoint 10 remains unimplemented.

@@ -819,10 +819,12 @@ English-only examples. Use one existing response control per active decision; pr
 its draft until acknowledgement, never add another feedback field for that decision.
 Target-specific revision feedback remains tied to its own quoted request and financial consent.
 
-Current `theme: false` stays in place. Reuse the installed semantic tokens/type roles
-and primitives; do not activate Unitale's theme, import fonts/assets, change existing
-screen colours/typography, add dependencies or alter CSP under this plan. Those require
-an explicit bounded adoption decision, not implied approval from the reference package.
+The original planning-only restriction on brand activation is superseded by the user's
+2026-11-22 explicit pre-10 theme adoption request. Unitale now enables the existing
+project theme extension, with handoff colours/type roles and self-hosted licensed fonts.
+See [the adoption and component inventory](../../design-system-extension.md#unitale-adoption-before-checkpoint-10).
+Unibase shared components remain unchanged. This authorizes theme assets only, not
+specimen controllers, new dependencies, CSP changes or checkpoint 10 behavior.
 Optional welcome access, attachments/voice and later reader/PDF/sharing remain separately
 scoped work; their absence does not block the accepted T21 Run integration.
 
@@ -838,6 +840,7 @@ Use the existing app and setup tools, not a new bootstrap framework.
 | Database provisioning | Verified | Created `unitale_staging` runtime user with only readWrite on `unitale_staging`, scoped to existing `kids-booklet` cluster in Atlas project `6a869d84e65675f845fa22eb`. Ping and transaction capability pass. No new cluster or network rule. Credentials retained outside Git. |
 | Local bindings and preparation | Verified | Ignored user-only `.env.local` selects APP_ENV local, https://localhost:3100, real Firebase, scoped Atlas DB and disabled payments/Dify/MCP/persona execution. Additive indexes pass; 3 earlier migration records retained and 7 remaining migrations applied successfully. Runtime secrets are outside Git. |
 | As-is local acceptance | Verified sign-in | The preserved HTTPS local app serves Account. On 2026-11-21 the user completed real Google popup sign-in and confirmed the Unitale account; the session endpoint returned 200. This does not establish owned Run, administrator or provider acceptance; checkpoint 10 remains unimplemented. |
+| Unitale theme and component readiness | Verified locally, 2026-11-22 | Unibase foundation/helpers already adopted; project-owned light/dark tokens, fonts and type roles now enabled. Build, typecheck, 133 unit tests, contrast and public browser checks pass. [Inventory and verification limits](../../design-system-extension.md#unitale-adoption-before-checkpoint-10). No checkpoint 10 behavior implemented. |
 
 Shared database means local and staging writes affect the same Unitale records.
 Use the same authentication project and compatible encryption configuration when both
@@ -1087,8 +1090,9 @@ Human account/financial-consent steps remain human actions. No production activa
 Before choosing a staging destination, record Unitale's approved environment/branches:
 repository preferences currently declare no deployment branches. Inherited `_staging`/
 `_prod` conventions and the Unibase operator runbook do not authorize Unitale promotion.
-Design brand activation or expanded product capabilities, if desired, require separate
-bounded approval; they are not silent prerequisites of the accepted 10-12 scope.
+Additional design assets or expanded product capabilities require separate bounded
+approval; they are not silent prerequisites of the accepted 10-12 scope. The
+2026-11-22 pre-10 token/font adoption is already authorized and recorded above.
 
 After authorization, publish specialists before Manager, verify exact bindings and tags,
 then run bounded application-connected T18-T21 journeys. Preserve existing apps/shared
