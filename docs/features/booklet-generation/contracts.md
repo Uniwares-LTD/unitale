@@ -44,8 +44,10 @@ parsing grants no execution/quality/usage authority. New assessment storage, Man
 and correction chains are implemented in 07-09 with local handler/repository/native
 Code evidence. Package fixtures do not establish target runtime execution.
 The model guide/example/Mermaid diagrams now distinguish unchanged v1 state from
-the implemented v2 records and relationships. Public application DTOs remain 10;
-target acceptance remains 12.
+the implemented v2 records and relationships. Checkpoint 10 implements the public
+application contract (`src/project/booklets/application-contract.ts`): strict command
+schemas and allowlisted response DTOs, version 1 of that contract; a breaking public
+shape needs explicit versioning. Target acceptance remains 12.
 
 ## Versioning
 

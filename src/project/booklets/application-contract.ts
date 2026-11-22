@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { bookletIdSchema, briefSchema } from "./contracts";
 
-// Client-safe public booklet commands and DTOs (schemaVersion 1). Server records,
+// Client-safe public booklet commands and DTOs (version 1 of the public contract;
+// a breaking shape needs explicit versioning, see contracts.md). Server records,
 // policy rows, provider bindings and execution evidence never cross this boundary.
 const id = bookletIdSchema;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
