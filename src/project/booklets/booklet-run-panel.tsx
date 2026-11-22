@@ -19,6 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { bookletViewSchema, type BookletView } from "./application-contract";
 import { BookletActions } from "./booklet-actions";
+import { BookletHistoryPanel } from "./booklet-history";
 
 // Public Run statuses (runStatuses) whose outcome is not yet known; saved work
 // stays visible. Unknown/settlement-blocked attempts map to these.
@@ -231,6 +232,11 @@ export function BookletRunPanel({
                 void retry();
                 void refreshRun();
               }}
+            />
+            <BookletHistoryPanel
+              view={view}
+              currentRunId={runId}
+              kindLabel={(kind) => kinds[kind] ?? kind}
             />
           </>
         )}

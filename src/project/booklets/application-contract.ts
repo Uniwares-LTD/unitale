@@ -155,6 +155,56 @@ export const bookletViewSchema = z.object({
   ),
 });
 export type BookletView = z.infer<typeof bookletViewSchema>;
+
+export const bookletHistoryKinds = ["runs", "versions", "revisions"] as const;
+// Owned history pages. Runs link to their Run pages (where decision history
+// lives); no provider/native IDs, requests, results or evidence are included.
+export const bookletHistorySchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("runs"),
+    items: z.array(
+      z.object({
+        runId: z.string(),
+        status: z.enum([
+          "active",
+          "confirming",
+          "succeeded",
+          "failed",
+          "cancelled",
+        ]),
+        createdAt: z.string().nullable(),
+      }),
+    ),
+    next: z.string().nullable(),
+  }),
+  z.object({
+    kind: z.literal("versions"),
+    items: z.array(
+      z.object({
+        productionId: z.string(),
+        state: z.string(),
+        current: z.boolean(),
+        predecessor: z.boolean(),
+        createdAt: z.string().nullable(),
+      }),
+    ),
+    next: z.string().nullable(),
+  }),
+  z.object({
+    kind: z.literal("revisions"),
+    items: z.array(
+      z.object({
+        revisionId: z.string(),
+        ordinal: z.number(),
+        selected: z.boolean(),
+        current: z.boolean(),
+        createdAt: z.string(),
+      }),
+    ),
+    next: z.string().nullable(),
+  }),
+]);
+export type BookletHistory = z.infer<typeof bookletHistorySchema>;
 export type BookletPackageSummary = z.infer<typeof bookletPackageSummarySchema>;
 export type BookletPackagePage = z.infer<typeof bookletPackagePageSchema>;
 export type BookletRunReference = z.infer<typeof bookletRunReferenceSchema>;

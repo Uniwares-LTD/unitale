@@ -600,6 +600,137 @@ test("booklet application facade", async (t) => {
     );
 
     await t.test(
+      "owned history pages beyond one page and rejects foreign cursors",
+      async () => {
+        const { db, catalog, app } = await fixture();
+        const { productionId } = await app.start(start(catalog));
+        const other = await app.start(start(catalog));
+        const at = (i: number) => new Date(Date.UTC(2026, 0, 1, 0, i));
+        await db.collection("aiJobs").insertMany(
+          Array.from({ length: 21 }, (_, i) => ({
+            _id: `job-${String(i).padStart(2, "0")}` as never,
+            uid: owner.uid,
+            runId: "native-secret",
+            status: i === 0 ? "unknown" : "failed",
+            createdAt: at(i),
+            run: {
+              logicalId: `run-${i}`,
+              target: { adapter: "booklet", version: "2", id: productionId },
+            },
+          })),
+        );
+        const first = await app.history(productionId, { kind: "runs" });
+        assert.equal(first.kind, "runs");
+        assert.equal(first.items.length, 20);
+        assert.ok(first.next);
+        assert.equal(JSON.stringify(first).includes("native-secret"), false);
+        assert.ok(first.items.some((item) => item.status === "confirming"));
+        const second = await app.history(productionId, {
+          kind: "runs",
+          cursor: first.next,
+        });
+        assert.equal(second.items.length, 2);
+        assert.equal(second.next, null);
+        // Cursors are owner/production/query scoped; malformed text is input.
+        await assert.rejects(
+          app.history(other.productionId, { kind: "runs", cursor: first.next }),
+          /cursor belongs to another query/,
+        );
+        await assert.rejects(
+          app.history(productionId, { kind: "runs", cursor: "%%%" }),
+          (error: unknown) => (error as { status?: number }).status === 400,
+        );
+        await assert.rejects(
+          app.history(productionId, { kind: "secrets" }),
+          (error: unknown) => (error as { status?: number }).status === 400,
+        );
+        await assert.rejects(
+          bookletApplication(db, stranger, { types }).history(productionId, {
+            kind: "runs",
+          }),
+          /not found/,
+        );
+        await assert.rejects(app.view("../bad id"), /not found/);
+
+        // Artifact revisions: selected and current versus historical.
+        await db.collection("bookletProductions").updateOne(
+          { _id: productionId as never },
+          {
+            $set: {
+              subjects: [
+                {
+                  id: "book",
+                  kind: "book",
+                  label: "Book",
+                  pageRole: null,
+                  artifacts: [
+                    {
+                      id: "outline",
+                      kind: "outline",
+                      currentRevisionId: "rev-21",
+                      acceptedRevisionId: "rev-20",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        );
+        await db.collection("bookletRevisions").insertMany(
+          Array.from({ length: 21 }, (_, i) => ({
+            _id: `rev-${i + 1}` as never,
+            ownerId: owner.uid,
+            productionId,
+            artifactId: "outline",
+            documentVersion: 2,
+            ordinal: i + 1,
+            kind: "outline",
+            contentHash: "a".repeat(64),
+            createdAt: at(i),
+          })),
+        );
+        const revisions = await app.history(productionId, {
+          kind: "revisions",
+          artifactId: "outline",
+        });
+        assert.equal(revisions.items.length, 20);
+        assert.ok(revisions.next);
+        const rest = await app.history(productionId, {
+          kind: "revisions",
+          artifactId: "outline",
+          cursor: revisions.next,
+        });
+        assert.deepEqual(
+          rest.kind === "revisions" &&
+            rest.items.map((item) => [
+              item.revisionId,
+              item.selected,
+              item.current,
+            ]),
+          [["rev-21", false, true]],
+        );
+        assert.equal(
+          revisions.kind === "revisions" &&
+            revisions.items.find((item) => item.revisionId === "rev-20")
+              ?.selected,
+          true,
+        );
+        await assert.rejects(
+          app.history(productionId, {
+            kind: "revisions",
+            artifactId: "missing",
+          }),
+          /not found/,
+        );
+        const versions = await app.history(productionId, { kind: "versions" });
+        assert.deepEqual(
+          versions.items.map((item) => (item as { current: boolean }).current),
+          [true],
+        );
+      },
+    );
+
+    await t.test(
       "explicit consent, changed catalog and brief bounds",
       async () => {
         const { db, catalog, app } = await fixture();

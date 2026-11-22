@@ -25,6 +25,8 @@ import {
   type BookletRevisionQuote,
   type BookletRunReference,
   type BookletView,
+  type BookletHistory,
+  bookletHistoryKinds,
 } from "../../../project/booklets/application-contract";
 import { AppError } from "../../auth-policy";
 import { bookletConflict, bookletMissing } from "./context";
@@ -34,6 +36,7 @@ import { bookletRepositoryV2 } from "./repository-v2";
 import { bookletLifecycleV2 } from "./lifecycle-v2";
 import { enqueueBookletRun } from "./runs";
 import { bookletMedia } from "./media";
+import { readBookletDocumentV2 } from "./read-v2";
 import { readSettings } from "../settings";
 import { accessPermitsSession, accountAccess } from "../store/access";
 import { readWallet } from "../store/credits";
@@ -60,6 +63,20 @@ const unavailable = () =>
     409,
   );
 const pageLimit = 20;
+// Path and query values: malformed input is a 404/400, never a service error.
+function pathId(value: string) {
+  if (!id.safeParse(value).success) throw bookletMissing();
+}
+function input<T>(schema: z.ZodType<T>, value: unknown): T {
+  const parsed = schema.safeParse(value);
+  if (!parsed.success)
+    throw new AppError(
+      "BOOKLET_INVALID",
+      "Check the request and try again.",
+      400,
+    );
+  return parsed.data;
+}
 
 /** Rebuilds the frozen package exactly as production creation validates it. */
 export function bookletPackageFrom(
@@ -465,11 +482,7 @@ export function bookletApplication(
         )
       )
         throw new AppError("FORBIDDEN", "Account access is unavailable.", 403);
-      const search = z
-        .string()
-        .trim()
-        .max(80)
-        .parse(raw.search ?? "");
+      const search = input(z.string().trim().max(80), raw.search ?? "");
       const scope = fingerprint([actor.uid, "booklet-picker", search]);
       const after = decodeCursor(raw.cursor, scope);
       const books = await db
@@ -714,7 +727,7 @@ export function bookletApplication(
     /** Allowlisted owned view: saved progress and selected (accepted) results. */
     async view(productionId: string): Promise<BookletView> {
       requireModule("booklets");
-      id.parse(productionId);
+      pathId(productionId);
       const p = await repo.getProduction(productionId);
       const book = await db
         .collection<{ _id: string; title: string }>("bookletBooks")
@@ -802,11 +815,124 @@ export function bookletApplication(
       };
     },
 
+    /** Owned, bounded history pages over the delivered readers' scoped cursors. */
+    async history(
+      productionId: string,
+      raw: {
+        kind?: string | null;
+        artifactId?: string | null;
+        cursor?: string | null;
+      },
+    ): Promise<BookletHistory> {
+      requireModule("booklets");
+      pathId(productionId);
+      const kind = input(z.enum(bookletHistoryKinds), raw.kind);
+      const cursor = raw.cursor
+        ? input(z.string().max(16384), raw.cursor)
+        : undefined;
+      const p = await repo.getProduction(productionId);
+      async function read(request: { kind: string; id: string }) {
+        try {
+          return await readBookletDocumentV2(db, actor, productionId, {
+            ...request,
+            ...(cursor ? { cursor } : {}),
+          });
+        } catch (error) {
+          // Malformed cursor text is an input error, never a service failure.
+          if (cursor && !(error instanceof AppError))
+            throw new AppError(
+              "BOOKLET_INVALID",
+              "Invalid pagination cursor.",
+              400,
+            );
+          throw error;
+        }
+      }
+      if (kind === "runs") {
+        const page = (await read({
+          kind: "execution_history",
+          id: productionId,
+        })) as {
+          items: {
+            logicalId: string | null;
+            status: string;
+            createdAt: string | null;
+          }[];
+          cursor: string | null;
+        };
+        const status = (value: string) =>
+          value === "succeeded" || value === "failed" || value === "cancelled"
+            ? value
+            : ["unknown", "needs-review", "settlement-blocked"].includes(value)
+              ? ("confirming" as const)
+              : ("active" as const);
+        return {
+          kind,
+          items: page.items.flatMap((item) =>
+            item.logicalId
+              ? [
+                  {
+                    runId: item.logicalId,
+                    status: status(item.status),
+                    createdAt: item.createdAt,
+                  },
+                ]
+              : [],
+          ),
+          next: page.cursor,
+        };
+      }
+      if (kind === "versions") {
+        const page = (await read({
+          kind: "production_history",
+          id: p.bookletId,
+        })) as {
+          items: {
+            productionId: string;
+            state: string;
+            createdAt: string | null;
+          }[];
+          cursor: string | null;
+        };
+        return {
+          kind,
+          items: page.items.map((item) => ({
+            productionId: item.productionId,
+            state: item.state,
+            current: item.productionId === productionId,
+            predecessor: item.productionId === p.sourceProductionId,
+            createdAt: item.createdAt,
+          })),
+          next: page.cursor,
+        };
+      }
+      const artifactId = input(id, raw.artifactId);
+      const artifact = p.subjects
+        .flatMap((s) => s.artifacts)
+        .find((a) => a.id === artifactId);
+      if (!artifact) throw bookletMissing();
+      const page = (await read({ kind: "history", id: artifactId })) as {
+        items: { revisionId: string; ordinal: number; createdAt: string }[];
+        cursor: string | null;
+      };
+      return {
+        kind,
+        items: page.items.map((item) => ({
+          revisionId: item.revisionId,
+          ordinal: item.ordinal,
+          selected: item.revisionId === artifact.acceptedRevisionId,
+          current: item.revisionId === artifact.currentRevisionId,
+          createdAt: item.createdAt,
+        })),
+        next: page.cursor,
+      };
+    },
+
     /** Owned original bytes; fresh ownership and attachment checks per read. */
     async original(productionId: string, assetId: string) {
       requireModule("booklets");
-      id.parse(productionId);
-      id.parse(assetId);
+      pathId(productionId);
+      pathId(assetId);
       const { asset, bytes } = await bookletMedia(db, actor, {
         documentVersion: 2,
       }).read(productionId, assetId);
@@ -822,7 +948,7 @@ export function bookletApplication(
       BookletRevisionQuote | BookletRunReference | BookletRetryResult
     > {
       requireModule("booklets");
-      id.parse(productionId);
+      pathId(productionId);
       const command = bookletProductionCommandSchema.parse(raw);
       // Fresh ownership and v2 shape before any Run, order or quote lookup.
       await repo.getProduction(productionId);

@@ -123,6 +123,19 @@ async (page) => {
     assert(!(await page.getByRole("group", { name: "Request changes" }).isVisible()), "no revision while running");
   results.push("next steps follow server eligibility (" + (working ? "active Run" : "continue offered") + ")");
 
+  // 10.5: on-demand history inside the Run page.
+  await page.getByText("Runs for this book", { exact: true }).click();
+  await page.getByText(/This run ·/).waitFor();
+  await page.getByText("Versions of this book", { exact: true }).click();
+  await page.getByText("Current version", { exact: true }).waitFor();
+  const malformed = await page.evaluate(
+    async (id) => (await fetch(`/api/booklets/${id}?section=history&kind=runs&cursor=%25%25`)).status,
+    productionLink,
+  );
+  assert(malformed === 400, "malformed cursor is a 400: " + malformed);
+  await noOverflow("history en 1440");
+  results.push("history lists this run and current version; malformed cursor is 400");
+
   // Editing after a shown price invalidates it. (The dirty form is left in place;
   // the caller verifies the leave warning with a CLI goto afterwards.)
   await page.goto(origin + "/runs/new");

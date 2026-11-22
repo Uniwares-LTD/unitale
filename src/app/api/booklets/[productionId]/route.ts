@@ -5,7 +5,7 @@ import { requireSession, requireVerified } from "@/lib/server/session";
 
 export const dynamic = "force-dynamic";
 
-// GET: the owned, allowlisted production view.
+// GET: the owned, allowlisted production view, or `section=history` pages.
 export async function GET(
   request: Request,
   context: { params: Promise<{ productionId: string }> },
@@ -13,7 +13,17 @@ export async function GET(
   return endpoint(request, async (actor) => {
     const session = requireVerified(actor);
     const { productionId } = await context.params;
-    return json(await requestBookletApplication(session).view(productionId));
+    const query = new URL(request.url).searchParams;
+    const app = requestBookletApplication(session);
+    return json(
+      query.get("section") === "history"
+        ? await app.history(productionId, {
+            kind: query.get("kind"),
+            artifactId: query.get("artifactId"),
+            cursor: query.get("cursor"),
+          })
+        : await app.view(productionId),
+    );
   });
 }
 

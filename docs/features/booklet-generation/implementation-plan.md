@@ -948,7 +948,7 @@ JSON example and both Mermaid schema versions are unaffected.
 | 10.2 Package and financial consent | Verified locally (2026-11-22; see 10.2 decisions) | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Also replace the generic home through the existing `projectHome` hook (`src/project/home.tsx`; no Unibase or core change): signed out, Sign in returning to `/runs/new`; signed in, **Create a book** (`/runs/new`) and **Continue your books** (`/runs`) plus the existing account/appearance cards; booklet copy; links only. Published package snapshots and changed-price/input tests pass; no production seeds. |
 | 10.3 Progress, decisions and originals | Verified locally (2026-11-22; see 10.3 decisions) | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
 | 10.4 Revision and recovery controls | Verified locally (2026-11-22; see 10.4 decisions) | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
-| 10.5 Accessible history | Pending | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
+| 10.5 Accessible history | Verified locally (2026-11-22; see 10.5 decisions) | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
 | 10.6 Minimal administration | Pending | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
 | 10.7 Verification and handoff | Pending | Run affected service/UI checks, desktop/390px en/ar browser journeys, English/LTR admin with Arabic public preference and restoration, keyboard and served-document CSP checks. Two clean same-state read-only reviews; update evidence and remaining 11/12 steps. |
 
@@ -1078,6 +1078,27 @@ JSON example and both Mermaid schema versions are unaffected.
   against seeded terminal states is part of the 10.7 matrix.
 - Local note: account suites stop MongoDB memory-server processes during forced
   cleanup; do not run them while a browser fixture is running.
+
+#### 10.5 history decisions (2026-11-22)
+
+- `history(productionId, {kind, artifactId?, cursor?})` (`GET
+  /api/booklets/[productionId]?section=history&kind=…`) wraps the delivered bounded
+  readers and their owner/production/query-scoped cursors (a changed history
+  invalidates them; the UI offers Start again). Allowlisted items only:
+  `runs` (logical Run ID, public status active/confirming/succeeded/failed/cancelled,
+  time; no native/provider IDs), `versions` (productions of this book, marked current or
+  predecessor) and `revisions` (an artifact's revisions, marked selected, latest draft or
+  earlier). Decision history stays in each Run page's existing decision history; the
+  booklet history links every Run.
+- Malformed path/query input (IDs, kind, cursor text, picker search) is a 404/400
+  application error, never a 503; foreign cursors conflict.
+- The panel's **History** uses native disclosures loaded on open (not on each poll),
+  "Show more" pagination and localized result names.
+- Evidence: `test:booklet-application` 10/10 (adds more than one page of runs and
+  revisions, selected/current/historical flags, no native IDs, foreign and malformed
+  cursors, invalid kind, stranger and invalid path). Build then typecheck, scoped lint,
+  `check:i18n`. Browser: history lists this run and the current version; a malformed
+  cursor returns 400.
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.
