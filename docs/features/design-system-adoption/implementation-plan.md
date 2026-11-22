@@ -1,19 +1,26 @@
 # Design-system adoption implementation plan
 
-Issue: [unibase#53](https://github.com/Uniwares-LTD/unibase/issues/53). This plan covers the
-**whole** Unibase adoption of the design handoff package, not only the visible foundation.
-Every delta row is assigned to a checkpoint in the [delta ledger](delta-ledger.md) (143 rows,
-none unassigned), and every open question the package leaves "to confirm at adoption" is
-assigned to a checkpoint below. When this plan is done, Unibase has adopted the package and is released as a template that
-derived projects can build on. Derived-project adoption and UI work (the next step, the Unitale
-UI implementation) is a separate issue and is not part of this plan.
+[Issue #53](https://github.com/Uniwares-LTD/unibase/issues/53) delivered the Unibase
+design handoff. The [delta ledger](delta-ledger.md) maps all 143 package rows to
+checkpoints. Derived-product UI work is separate.
 
-Plan state: **approved and in progress** (P0 to U2 done). **Simplified on 2026-11-21** at the issue
-owner's request: the remaining work is three steps with smoke tests only and no manual approval stops
-except the release tag. Where the detailed checkpoint sections below ask for more (capture matrices,
-pixel comparisons, contrast recomputation, per-PR approvals, physical-device checks), the
-[simplified remaining work](#simplified-remaining-work) section governs; the detailed sections remain
-the reference for _what_ to build.
+**Closeout.** P0 through R3 are complete. The adoption reached staging through
+[PR #61](https://github.com/Uniwares-LTD/unibase/pull/61) at `b54562d`.
+[Release](https://github.com/Uniwares-LTD/unibase/actions/runs/44891787149) and
+[Check deployment](https://github.com/Uniwares-LTD/unibase/actions/runs/44892105878)
+passed, and the issue owner reported completing member and admin smoke tests.
+Local checkpoint evidence and known limitations are under
+[Verified progress](#verified-progress-and-resume).
+
+Template 0.5.0 is prepared and its upgrade rehearsal passed. Publication of
+`template-v0.5.0` remains a separate release decision. Pending staging database
+migrations are deferred until the operator flow in
+[#62](https://github.com/Uniwares-LTD/unibase/issues/62) is complete. See the
+[deployment guide](../../deployment.md#database-migrations-on-existing-staging).
+
+The sections below preserve the approved plan and checkpoint evidence. The
+[simplified remaining work](#simplified-remaining-work) section governed R1 to
+R3 when it differed from the detailed checkpoint reference.
 
 ## Contract and decisions
 
@@ -720,7 +727,7 @@ Each row follows the [simplified remaining work](#simplified-remaining-work). In
 - 2026-11-21: **plan simplified** at the issue owner's request: smoke tests only, no per-PR approval stops, remaining work in three steps (R1 toast and rollout, R2 foundation, R3 guidance, readiness and release), with the committed smoke script `smoke.mjs`. The release tag stays the one human step.
 - 2026-11-21: **plan made lightweight**: per step only `npm test` and the browser smoke script; coding rules written down instead of rerunning lint, format and type checks; one final gate at the end of R3 runs and applies them. Deferred: Lucide bump, the guide's docs-consistency test, and the seam's initializer and integration tests.
 - 2026-11-21: **U2 review applied.** A separate review found one blocker, now fixed: the coarse-pointer rules were unlayered and overrode larger Tailwind minimums on touch devices (lg fields fell to 44px). They now sit in `@layer components`, and a touch check asserts lg input at least 48px, lg textarea at least 96px and default textarea at least 64px. Also fixed: the leave guard handles each navigation once and ignores a save result after Keep editing; Save & exit uses `SubmitButton`; `beforeunload` sets `returnValue`; the Notice receipt region stays mounted; `ResultImage` resets when `src` changes. Checks: typecheck, lint, test 112/112; U2 browser checks 28/28; committed smoke script 38/38.
-- 2026-11-21: **R1 candidate verified locally.** Shared form and media controls are applied across the four rollout areas. Existing-record editors use the leave guard, which tracks each mounted editor separately. Large private downloads keep native streaming. The scoped download Notice covers bounded browser downloads and local report exports. Unit tests passed (114/114 with Git 2.43 on PATH), the public browser smoke passed (38/38), and nine admin and six member routes returned 200 in local emulator sessions. Production build and start passed. With a signed-in local profile, Keep editing retained the draft, Discard and exit left the saved value unchanged, and Save and exit persisted the new value before navigation. A profile save showed a styled Sonner 2.0.8 toast with no additional CSP event. Chromium reported one Zod eval capability probe during sign-in, before the save. No CSP directive was relaxed for that probe. Separate same-agent review checked the candidate against the R1 inventory and verification evidence. R1 PR integration is pending, then R2 starts from updated main.
-- 2026-11-21: **R2 verified locally.** The two generated stylesheets match the accepted design revision byte-for-byte below their source headers. The Glass effects and fallbacks are retained, the legacy palettes are removed, and toast timing and font now use foundation tokens. Checks: 117 unit tests, 38 browser smoke checks, the rendered EmptyState role (20px / 26px / 600), and the docs check. A separate same-agent review verified the vendor and local CSS diff. R3 starts from main after the R2 merge.
+- 2026-11-21: **R1 candidate verified locally.** Shared form and media controls are applied across the four rollout areas. Existing-record editors use the leave guard, which tracks each mounted editor separately. Large private downloads keep native streaming. The scoped download Notice covers bounded browser downloads and local report exports. Unit tests passed (114/114 with Git 2.43 on PATH), the public browser smoke passed (38/38), and nine admin and six member routes returned 200 in local emulator sessions. Production build and start passed. With a signed-in local profile, Keep editing retained the draft, Discard and exit left the saved value unchanged, and Save and exit persisted the new value before navigation. A profile save showed a styled Sonner 2.0.8 toast with no additional CSP event. Chromium reported one Zod eval capability probe during sign-in, before the save. No CSP directive was relaxed for that probe. Separate same-agent review checked the candidate against the R1 inventory and verification evidence.
+- 2026-11-21: **R2 verified locally.** The two generated stylesheets match the accepted design revision byte-for-byte below their source headers. The Glass effects and fallbacks are retained, the legacy palettes are removed, and toast timing and font now use foundation tokens. Checks: 117 unit tests, 38 browser smoke checks, the rendered EmptyState role (20px / 26px / 600), and the docs check. A separate same-agent review verified the vendor and local CSS diff.
 - 2026-11-21: **R1 and R2 merged.** R1 landed in [#58](https://github.com/Uniwares-LTD/unibase/pull/58) at `894bd97` and R2 in [#59](https://github.com/Uniwares-LTD/unibase/pull/59) at `35dab7a`.
 - 2026-11-21: **R3 verified and ready for the release gate.** The final gate passed 118 unit tests, 38 browser smoke checks, 14 Handbook tests, lint, typecheck, production build, and the docs, i18n, skills, template and Handbook checks. The nine format findings are on files unchanged since U2. Two fresh initialized projects built offline. A project initialized from template 0.4.0 upgraded to the 0.5.0 candidate while preserving its slug. Regenerating the localized offline page resolved the rehearsal's only merge conflict using the documented command. The production theme check passed at 1440 px in English light mode and 390 px in Arabic dark mode. Both rendered the 44 px hero role and loaded the same-origin font. Contrast was 10.36:1 and 8.15:1 respectively. Both had one blocked Zod eval probe, with no font or stylesheet CSP violations. A separate read-only review reconciled the delta ledger with the accepted design revision. Template 0.5.0 is prepared for the owner's release-tag decision.

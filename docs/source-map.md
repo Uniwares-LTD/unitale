@@ -15,7 +15,7 @@ revision; these links provide context, not additional authority.
 | Diagnostics                          | [Diagnostics API](diagnostics-api.md)                                                                                                                | [Diagnostic server](../src/lib/server/diagnostics), service read-only boundaries                                              | Affected diagnostics tests and inventories                                                     |
 | Deployment or provider activation    | [Deployment guidance](deployment.md#choose-an-operation)                                                                                             | Infrastructure owner guidance/inventory linked there; adapter operational boundaries                                          | Impact classification and affected deployment checks; live actions need separate authorization |
 | Add a project feature                | [Using the template](template.md#add-a-feature), [project extensions](architecture.md#project-extensions)                                            | [Notes sample](../src/samples/README.md), [project registries](../src/project)                                                | typecheck, lint, check:samples, affected tests, build                                          |
-| Data migration                       | [Migrations](architecture.md#extension-conventions)                                                                                                  | [Core migrations](../src/lib/server/core-migrations.ts), server extension `migrations`                                        | Disposable-database tests; db:migrate locally                                                  |
+| Data migration                       | [Migrations](architecture.md#extension-conventions)                                                                                                  | [Core migrations](../src/lib/server/core-migrations.ts), server extension `migrations`                                        | Disposable-database tests; [staging operator flow](deployment.md#database-migrations-on-existing-staging) |
 | Template updates or releases         | [Using the template](template.md#receive-template-updates), [changelog](../CHANGELOG.md)                                                             | [Update command](../scripts/template-update.mjs), [initializer](../scripts/project-initializer.ts)                            | check:template, test:initializer, test:initialized-projects                                    |
 | New documentation or templates       | [Canonical documents](#documentation)                                                                                                                | Selected maintain-docs skill and [local starters](templates)                                                                  | check:docs; opt-in template replacement                                                        |
 
@@ -94,6 +94,16 @@ and the adapter; the table does not require unrelated suites for every task.
 - [Diagnostic grants](../src/lib/server/diagnostics/grant-store.ts) own durable
   MongoDB verifiers and per-issuer issuance fences; Redis owns only shared counters.
   The [diagnostics API](diagnostics-api.md) owns one-time credential delivery and rollout.
+
+- [Local Google popup plan](features/local-google-popup/implementation-plan.md) owns
+  the bounded local auth change and verification; [README](../README.md#local-google-popup-sign-in)
+  owns launch and acceptance instructions. The shared pure policy is
+  `src/lib/config/google-sign-in.ts`; the existing auth form and session endpoint
+  retain their ownership.
+
+- [Unitale popup adoption](features/local-google-popup/adoption.md) owns the project
+  import route, prepared local launch and acceptance; the adjacent upstream plan
+  retains Unibase implementation history.
 
 ## Documentation
 

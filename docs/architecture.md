@@ -1,5 +1,11 @@
 # Base application architecture
 
+Local real-Firebase Google sign-in selects the hosted popup helper through the public
+`googleSignInMethod` enum. The same validated project-domain policy controls local
+`frame-src`; other CSP directives and hosted/emulator redirect behavior are unchanged.
+Popup users pass through the existing verified-token/CSRF session exchange. See
+[local setup](../README.md#local-google-popup-sign-in).
+
 ## Dify environment ownership
 
 Each managed Dify app belongs to the current project and one environment. A journaled

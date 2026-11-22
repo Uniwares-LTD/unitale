@@ -20,7 +20,7 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
-None.
+- Local real-Firebase Google sign-in uses the hosted popup helper and existing session exchange; emulator and hosted environments retain redirect sign-in. Only the exact local Firebase helper origin is added to the frame policy.
 
 ### Upgrade notes
 
