@@ -1179,6 +1179,9 @@ The [2026-11-21 remaining-plan refresh](../implementation-plan.md#refreshed-base
 records current Unibase 0.5.0 provenance and design-reference applicability. The
 [local-popup adoption](../implementation-plan.md#local-google-popup-adoption) now
 supplies passing merge build/typecheck/lint and preserved Booklet regression evidence,
-plus user-confirmed real Google sign-in. Use adopted build-ui helpers for 10; keep proposed
-brand/voice/new-chat/reader capabilities outside its accepted scope. Unitale currently
-has no recorded deployment branches; resolve that operator input at 12 before promotion.
+plus user-confirmed real Google sign-in. Unitale brand tokens/fonts are now adopted;
+see the [pre-10 readiness closeout](../implementation-plan.md#pre-10-readiness-closeout-2026-11-22)
+for the current source and authenticated theme evidence. Use adopted build-ui helpers
+for 10; voice/new-chat/reader capabilities remain outside its accepted scope.
+Unitale currently has no recorded deployment branches; resolve that operator input
+at 12 before promotion.

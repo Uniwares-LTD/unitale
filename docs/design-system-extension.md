@@ -181,9 +181,11 @@ Working candidate based on Unitale `59a7d3a`, branch
   The generic `npm start` loader still reintroduces that documented local default;
   this theme change does not fix the unrelated loader. No shared database mutations.
 - Same-agent separate read-only review: no blocking finding. Shared Unibase core,
-  providers, models and checkpoint 10 behavior are unchanged. Authenticated admin,
-  owned Run journeys and cross-admin preference restoration were not re-exercised;
-  these remain in 10.7, using disposable fixtures rather than shared staging data.
+  providers, models and checkpoint 10 behavior are unchanged. The subsequent
+  [pre-10 closeout](features/booklet-generation/implementation-plan.md#pre-10-readiness-closeout-2026-11-22)
+  adds 20/20 authenticated admin/settings, public preference restoration and native
+  Run decision checks with disposable fixtures. Booklet-specific journeys remain
+  in 10.7/11; generic UI readiness does not establish those unimplemented behaviors.
 
 Local captures and browser probe output are under ignored `output/playwright/`;
 they are supporting local evidence, not a new application test harness. The

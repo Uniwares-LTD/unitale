@@ -309,3 +309,7 @@ dispatch-established revision locks, unresolved-target protection across funding
 and JSON-safe lock readback. The [prerequisite report](../implementation-plan.md#checkpoint-10-prerequisite-report)
 records readiness for local 10.1; no manual setup is currently required. Checkpoint 10
 is unimplemented; live acceptance remains gated at 12.
+
+Current pre-10 readiness and authenticated theme evidence are consolidated in the
+[2026-11-22 closeout](../implementation-plan.md#pre-10-readiness-closeout-2026-11-22).
+Local 10.1 needs only a subsequent start instruction; live operator inputs remain at 12.

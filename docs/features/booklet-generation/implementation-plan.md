@@ -151,8 +151,9 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 Planning amendment accepted 2026-11-10. **Scope B execution started.** The user requested committing the current changes
 and executing 07-11. Candidate/planning baseline committed as `2dc7b8c`; checkpoint 07
-is complete through `867759c`. The latest reviewed 08 import is Unibase
-`a7eda79b0f7c77732913e3a6b82a6eab3f6485fe` (PRs #49/#50/#52);
+is complete through `867759c`. The original reviewed 08 import was Unibase
+`a7eda79b0f7c77732913e3a6b82a6eab3f6485fe` (PRs #49/#50/#52). The current exact
+import is recorded in `project.source.json` and the [local-popup adoption](#local-google-popup-adoption);
 09.1-09.7 are Verified locally; checkpoint 10 remains unimplemented. Scope C and paid/live operations remain pending. The plan targets unattended
 Sol Medium work under the recorded approval.
 
@@ -747,7 +748,7 @@ No Unibase changes, imports, dependencies, migration, UI, deployment or paid cal
 | --- | --- | --- |
 | Local foundations | Prepaid admission, lifecycle/recovery, owned history/media, authentic decisions and existing Run start/detail project slots are available. | Unitale; reusable locally |
 | Remaining pre-10 work | None identified after the final connected MCP regression and focused review pair. | No manual setup needed |
-| Work belonging to 10 | Execute 10.1 facade, then 10.2-10.7 in their existing order. Configuration parsing/defaults belong to 10.1; its editor follows in 10.6. | Unitale; unattended local implementation under B |
+| Work belonging to 10 | Execute 10.1 facade, then 10.2-10.7 in their existing order. Configuration parsing/defaults belong to 10.1; only retry-default editing follows in 10.6, while capacity stays bound to its immutable profile revision. | Unitale; unattended local implementation under B |
 | User decisions/manual inputs before local 10 | None identified. Scope B is approved. A subsequent instruction starts 10; this task stops before it. | User starts next task |
 | Later evidence | Broader local integration in 11; live publication/bindings, MCP image conversion and paid acceptance in 12. | Implementer, then operator under C |
 | Later manual gate | Scope C, exact release/configuration, credentials, test package/account and finite spending approval remain deferred. The selected US$3 ceiling grants no current spending. | User/operator at 12 |
@@ -867,6 +868,37 @@ defaults, so use the direct existing Next CLI. The approved local CA and its pri
 files remain preserved. HTTPS remains supported; the hosted popup removes the local
 HTTPS/OAuth-callback requirement. No shared provider configuration is changed.
 
+#### Pre-10 readiness closeout (2026-11-22)
+
+**Ready to start checkpoint 10 locally after a subsequent instruction.** No new
+user decision or manual action is required first. This closeout stops before 10.1.
+Source: Unitale `6b775cf9df16f5f66ca7d7a5d74a57fcd142b4de` on
+`feature/10-dify-workflow-design`; Unibase import remains
+`02517797c9ecd1d8e9696cd1b68c9b976f2105db`. Handbook baseline remains
+`c1b6166437ba729b59723a7dd4066c78e2f15185`.
+
+| Pre-10 item | Disposition and evidence |
+| --- | --- |
+| Design foundation and Unitale brand | Complete: imported Unibase helpers and project-owned theme/fonts are committed in `6b775cf`; component inventory identifies no missing shared primitive. |
+| Authenticated theme evidence | Closed using the existing `--owned-auth --browser --raw-responses --ai` fixture: 20/20 production-browser checks pass across 1440px/390px and light/dark. Admin and settings are English/LTR; returning to public Preferences restores Arabic/RTL without changing the saved preference. Native Run decisions render in en/ar with no body overflow or page errors. Mobile admin and Arabic Run captures were visually reviewed. |
+| Safe local operation | HTTPS liveness on port 3100 returned 200. The documented direct Next launch remains the supported shared-staging setup; generic wrapper/emulator-default and webpack limitations remain documented, with a verified launch path; no shared-core patch is needed before 10. |
+| Plan/source consistency | Resume prompt now uses the current manifest import. The immutable profile capacity is validated in 10.1; only retry defaults receive the minimal editor in 10.6. Existing product decisions and scope are preserved. |
+| Later evidence and approvals | Booklet-specific facade/media/recovery/history/admin behavior belongs to 10, broader integration to 11, and application-connected Dify/MCP image and paid acceptance to 12 under pending scope C. These are not pre-10 blockers. |
+
+The fixture used its own ephemeral Auth Emulator, MongoDB replica set, synthetic
+admin and fake-provider Runs. It made no shared-staging data or access changes and
+no external provider calls. Its generic Run checks establish reusable UI readiness,
+not completed booklet journeys or durable recovery acceptance. Disposable services
+and session state were cleaned up; the HTTPS developer app remains intact.
+
+No application, shared-runtime, schema, model, workflow, provider, dependency or
+execution-gate change was needed. Model guide/JSON/Mermaid remain unaffected.
+Existing build/typecheck/unit/theme evidence remains applicable to unchanged code;
+this closeout adds authenticated evidence, 46/46 workflow compatibility tests
+(including unchanged hash/gate checks), docs/i18n/skills checks, a clean whitespace
+check and two consecutive same-agent read-only documentation/evidence reviews. The first next task remains
+**10.1 Private application facade**.
+
 #### Local Google popup adoption
 
 The initial standalone setup task imported Unibase main
@@ -912,7 +944,7 @@ JSON example and both Mermaid schema versions are unaffected.
 
 | Task | State | Smallest change and exit evidence |
 | --- | --- | --- |
-| 10.1 Private application facade | Pending | Define/validate the existing policy row's capacity and retry-default fields here (the editor follows in 10.6); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
+| 10.1 Private application facade | Pending | Define/validate the existing policy row's capacity and retry-default fields here (only retry-default editing follows in 10.6; capacity stays bound to its immutable profile revision); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
 | 10.2 Package and financial consent | Pending | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Published package snapshots and changed-price/input tests pass; no production seeds. |
 | 10.3 Progress, decisions and originals | Pending | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
 | 10.4 Revision and recovery controls | Pending | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
@@ -1189,10 +1221,35 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
+**Session handoff (2026-11-22):** checkpoints 01-09 and the pre-10 setup/theme
+prerequisites are locally complete. Checkpoint 10 is unstarted; the user's latest
+instruction is to record progress and stop for another chat. Read the current
+[pre-10 closeout](#pre-10-readiness-closeout-2026-11-22), fixed 10.1-10.7 sequence and
+[component inventory](../../design-system-extension.md#checkpoint-10-component-inventory).
+Do not start implementation until a subsequent instruction activates it.
+
+The baseline homepage remains the themed generic welcome: signed-out Sign in and
+appearance actions; signed-in Start run plus account/preferences cards. Book creation
+uses `/runs/new`. A small Unitale-owned homepage with **Create a book** and **Continue
+your books**, sign-in return routing and booklet-specific start copy was recommended
+in conversation, but is **not approved or added to 10's scope**. It is an optional
+follow-up decision before implementing that surface, not a blocker for baseline 10.1.
+Do not silently implement a new landing page, workspace, reader or storefront.
+
+Repository ownership remains governed by [preferences](../../../.agents/repository.md)
+and [template updates](../../template.md#receive-template-updates): reusable fixes
+originate in the existing Unibase clone on a separate branch, then enter Unitale main
+through reviewed adoption before normal merges into feature branches. Unitale owns
+booklet services/workflows, theme and product compositions through existing project
+extensions. The existing `src/project/home.tsx` hook can support a future approved
+homepage without editing shared core. No new Unibase change is planned for 10.
+
 Checkpoint 09.1-09.7 is Verified locally on `feature/10-dify-workflow-design`.
 The completed goal stops before implementing 10. On a new instruction to start 10,
-follow tasks 10.1-10.7 above, reuse delivered services and exact reviewed Unibase import
-`a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`, and report status/checks at each task.
+follow tasks 10.1-10.7 above and reuse delivered services and the current reviewed
+Unibase import in `project.source.json` (`02517797c9ecd1d8e9696cd1b68c9b976f2105db`
+at this closeout). Do not restore the historical checkpoint 08 import. Report
+status/checks at each task; the [pre-10 closeout](#pre-10-readiness-closeout-2026-11-22) records current readiness.
 Follow AGENTS and the necessity/simplicity gate. No copied-core patch, new framework,
 scheduler, dependency or provider plugin. Scope B remains approved. Provider gaps
 requiring expansion are accepted limitations, not scope expansion. No temporary tunnel,
