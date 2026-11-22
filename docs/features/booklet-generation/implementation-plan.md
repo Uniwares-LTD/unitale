@@ -1123,9 +1123,21 @@ JSON example and both Mermaid schema versions are unaffected.
 
 #### Checkpoint 10 review record (2026-11-22)
 
-Two consecutive separate same-agent read-only passes (cold-review fallback) review the
-final checkpoint 10 state; their scope, findings and verdicts are recorded here by an
-evidence-only commit that names the reviewed commit.
+Separate same-agent read-only passes (cold-review fallback; no independent review is
+claimed). Fixes reset the clean count.
+
+| Pass | State | Scope | Result |
+| --- | --- | --- | --- |
+| 1 | pre-`97844a3` | Full checkpoint diff | Two defects (post-charge admission refusal not resumable by key; empty package page hiding later pages); fixed in `97844a3` and retested |
+| A | `97844a3` | Facade, routes, admin module, start/actions UI read in full | Clean for code; informational: an editable refusal after the draft exists (Runs disabled, balance race) can leave an unpaid unstarted draft; advisory actions can be offered while an unbound committed flow exists (commands refuse safely); a malformed stored `retryDefaults` cannot be repaired from the UI; policy row IDs are assumed to be ObjectIds |
+| B | `cf88bfe` | Exit criteria against evidence; docs against code | Two documentation defects (stale "Public application DTOs remain 10"; contract comment implying a `schemaVersion` field); fixed in `36f2c91`. Informational: module-disabled path and the `reconciling` notice are not browser-exercised |
+| C | `36f2c91` | Client/server boundary, secrets, public-contract allowlist, route session/CSRF/module guards, stable keys | Clean |
+| D | `36f2c91` | Recorded evidence against actual results and files; evidence currency | Clean |
+
+Passes C and D are two consecutive clean reviews of the same state (`36f2c91`). Checks on
+that state: full suites, build and checks on `cf88bfe` (code identical except one
+comment) plus typecheck, lint, Prettier and `check:docs` on `36f2c91`; browser evidence
+ran on a production build containing all code changes.
 
 #### Checkpoint 10 closure (2026-11-22)
 
