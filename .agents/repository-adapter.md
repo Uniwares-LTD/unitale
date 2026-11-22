@@ -35,6 +35,11 @@ Read the generated [bootstrap](handbook.md) for shared guidance access and
   [CHANGELOG.md](../CHANGELOG.md), with upgrade notes when projects must act.
   Projects never edit `CHANGELOG.md` or `template.json`; `npm run template:update`
   owns them.
+- Derived-project template imports follow [the integration-first route](../docs/template.md#receive-template-updates):
+  import on a clean branch from the project's integration branch, merge the scoped
+  PR there, then merge integration into active issue branches. Current checkout
+  location alone does not select the import destination. An exception needs explicit
+  user approval.
 - Tagging a template release (`template-v<version>`) is publication and needs
   explicit authorization.
 

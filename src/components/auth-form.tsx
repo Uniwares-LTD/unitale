@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -10,6 +10,8 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithRedirect,
+  signInWithPopup,
+  type Auth,
   signOut,
   type User,
 } from "firebase/auth";
@@ -33,6 +35,12 @@ function message(
 ) {
   if (error instanceof ApiError) return error.message;
   const code = (error as { code?: string })?.code;
+  if (
+    code === "auth/popup-closed-by-user" ||
+    code === "auth/cancelled-popup-request"
+  )
+    return "";
+  if (code === "auth/popup-blocked") return translate("m749038b5c762");
   if (code === "auth/weak-password") return translate("m3288a64ea288");
   if (code === "auth/too-many-requests") return translate("md1de3635fd27");
   if (code === "auth/network-request-failed") return translate("mc05785000a88");
@@ -44,6 +52,8 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
 
   const [mode, setMode] = useState<"login" | "register" | "reset">("login");
   const [pending, setPending] = useState(true);
+  const [initializedAuth, setInitializedAuth] = useState<Auth | null>(null);
+  const busy = useRef(true);
   const [notice, setNotice] = useState("");
   const [unverified, setUnverified] = useState<User | null>(null);
 
@@ -70,18 +80,21 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
     async function initialize() {
       try {
         const auth = await browserAuth(config);
-        const result = await redirectCredential(config);
+        const redirect = config.googleSignInMethod === "redirect";
+        const result = redirect ? await redirectCredential(config) : null;
         if (!active) return;
-        const startedAt = sessionStorage.getItem(GOOGLE_REDIRECT_KEY);
-        const user = redirectUser(
-          result?.user ?? null,
-          auth.currentUser,
-          startedAt,
-        );
+        const startedAt = redirect
+          ? sessionStorage.getItem(GOOGLE_REDIRECT_KEY)
+          : null;
+        if (!redirect) sessionStorage.removeItem(GOOGLE_REDIRECT_KEY);
+        const user = redirect
+          ? redirectUser(result?.user ?? null, auth.currentUser, startedAt)
+          : null;
         if (user) await finish(user);
         else if (
-          startedAt ||
-          new URL(location.href).searchParams.get("auth") === "google"
+          redirect &&
+          (startedAt ||
+            new URL(location.href).searchParams.get("auth") === "google")
         ) {
           sessionStorage.removeItem(GOOGLE_REDIRECT_KEY);
           if (auth.currentUser) await signOut(auth);
@@ -89,10 +102,14 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
         } else if (auth.currentUser && !auth.currentUser.emailVerified)
           setUnverified(auth.currentUser);
         else if (auth.currentUser) await signOut(auth);
+        if (active) setInitializedAuth(auth);
       } catch (error) {
         if (active) setNotice(message(error, translate));
       } finally {
-        if (active) setPending(false);
+        if (active) {
+          busy.current = false;
+          setPending(false);
+        }
       }
     }
     void initialize();
@@ -104,6 +121,8 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
   }, [config]);
 
   async function perform(action: () => Promise<void>) {
+    if (busy.current) return;
+    busy.current = true;
     setPending(true);
     setNotice("");
     try {
@@ -111,6 +130,7 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
     } catch (error) {
       setNotice(message(error, translate));
     } finally {
+      busy.current = false;
       setPending(false);
     }
   }
@@ -274,13 +294,21 @@ export function AuthForm({ config }: { config: FirebaseBrowserConfig }) {
           {mode !== "reset" && (
             <Button
               variant="outline"
-              disabled={pending}
+              disabled={pending || !initializedAuth}
               onClick={() =>
                 perform(async () => {
-                  const auth = await browserAuth(config);
-                  await signOut(auth);
                   const provider = new GoogleAuthProvider();
                   provider.setCustomParameters({ prompt: "select_account" });
+                  if (config.googleSignInMethod === "popup") {
+                    const result = await signInWithPopup(
+                      initializedAuth!,
+                      provider,
+                    );
+                    await finish(result.user);
+                    return;
+                  }
+                  const auth = await browserAuth(config);
+                  await signOut(auth);
                   sessionStorage.setItem(
                     GOOGLE_REDIRECT_KEY,
                     String(Date.now()),

@@ -74,6 +74,15 @@ included.
 Handbook baseline: `D:\misc\code\uniwares\handbook` at
 `c1b6166437ba729b59723a7dd4066c78e2f15185`.
 
+## Local Google popup sign-in
+
+The [Unitale adoption record](features/local-google-popup/adoption.md) owns the
+main-first import of exact reviewed Unibase `02517797c9ecd1d8e9696cd1b68c9b976f2105db`,
+local setup and acceptance. The popup runtime retains existing session handling and
+emulator/staging/production redirects. Upstream implementation evidence remains in
+the adjacent Unibase plan. Active issue branches receive the import by merging
+Unitale `main`; their Booklet implementation is outside this import.
+
 ## Open work
 
 Booklet generation is accepted for implementation. The [PRD](features/booklet-generation/prd.md)
