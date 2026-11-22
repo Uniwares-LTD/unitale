@@ -339,7 +339,7 @@ export function BookletStart() {
               {t("md8b8392e2c54")}
             </Button>
           </Notice>
-        ) : !packages?.length ? (
+        ) : !packages?.length && !next ? (
           <EmptyState
             title={t("m95f146e16f56")}
             description={t("mf671fc825ac0")}
@@ -366,7 +366,7 @@ export function BookletStart() {
                 }
                 className="grid gap-3 sm:grid-cols-2"
               >
-                {packages.map((pack, index) => (
+                {(packages ?? []).map((pack, index) => (
                   <FieldLabel
                     key={pack.catalogId}
                     htmlFor={id("package-" + index)}

@@ -771,8 +771,8 @@ revision and continuation. No live execution or exact hidden-provider retry coun
 
 ### 10 - Existing Run UI and complete T21
 
-**Planning only; not started.** Begin only after 09 exits and an instruction activates
-this next checkpoint. Scope B is already approved; routine local implementation needs
+**Verified locally (2026-11-22).** See the per-task decisions and the
+[checkpoint 10 closure](#checkpoint-10-closure-2026-11-22) below. Scope B is already approved; routine local implementation needs
 no repeated approval. Live inputs/actions stay grouped in 12. Default Unibase work:
 none. Reuse the imported project slots, domain picker and existing decision UI. Do not
 edit copied shared core or add a standalone workspace/listing page, scheduler or plugin.
@@ -950,7 +950,7 @@ JSON example and both Mermaid schema versions are unaffected.
 | 10.4 Revision and recovery controls | Verified locally (2026-11-22; see 10.4 decisions) | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
 | 10.5 Accessible history | Verified locally (2026-11-22; see 10.5 decisions) | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
 | 10.6 Minimal administration | Verified locally (2026-11-22; see 10.6 decisions) | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
-| 10.7 Verification and handoff | Pending | Run affected service/UI checks, desktop/390px en/ar browser journeys, English/LTR admin with Arabic public preference and restoration, keyboard and served-document CSP checks. Two clean same-state read-only reviews; update evidence and remaining 11/12 steps. |
+| 10.7 Verification and handoff | Verified locally (2026-11-22; see checkpoint 10 closure) | Run affected service/UI checks, desktop/390px en/ar browser journeys, English/LTR admin with Arabic public preference and restoration, keyboard and served-document CSP checks. Two clean same-state read-only reviews; update evidence and remaining 11/12 steps. |
 
 #### 10.1 facade decisions (2026-11-22)
 
@@ -1120,6 +1120,45 @@ JSON example and both Mermaid schema versions are unaffected.
   typecheck, scoped lint. Browser: admin is English/LTR with an Arabic public
   preference, focuses an invalid value, saves and confirms; returning to `/` restores
   Arabic/RTL. Captured and reviewed.
+
+#### Checkpoint 10 closure (2026-11-22)
+
+**Checkpoint 10 is verified locally** on `feature/10-dify-workflow-design`; T21's six
+outcomes (package/brief, quote/consent, progress/results, authentic decisions, scoped
+revisions, owned history) are delivered through existing Run surfaces. Not live
+acceptance: no Dify graph, provider call, deployment or spending occurred.
+
+- Review fixes at closure: a committed continuation/revision/start refused at Run
+  admission (including a configuration lookup after the charge) is now reported as
+  `BOOKLET_START_PENDING` everywhere, so only a same-key retry resumes it; the start form
+  offers more packages when a page holds only non-booklet products.
+- Checks after the last change: `test:booklet-application` 12/12 (adds pending
+  continuation resumable only by key), `test:booklet-repositories` 38/38,
+  `test:booklet-lifecycle-media` 17/17, `test:booklet-mcp` 32/32, `test:booklet-compat`
+  46/46 (with `BOOKLET_PYTHON`), `test:commerce` 31/31, unit 133/133; typecheck, lint
+  (0 errors; 5 advisory expression warnings in run-code browser scripts, one existing),
+  `check:docs`, `check:i18n`, `check:skills`, `check:env`; production build then
+  typecheck.
+- Browser (production build, owned fixture seeded by `booklet-fixture-seed.ts`):
+  `booklet-browser-checks.js` (signed-out return, home/start en/ar 1440/390 without
+  overflow, validation focus, quote, consent, single start, Run panel, media 404,
+  next steps, history, malformed cursor, admin English/LTR with Arabic restoration,
+  leave warning); `booklet-browser-matrix.js` (dark mode with reduced motion en 1440 /
+  ar 390, 200% zoom as 640/720px CSS viewports en/ar plus admin, keyboard order with
+  visible focus, served-document CSP: an un-nonced inline script and style injected into
+  the served HTML are refused with violations reported); after `seed … settle failed`,
+  `booklet-browser-recovery.js` (Continue booklet chains attempt 2 with one request);
+  after `settle succeeded`, `booklet-browser-revision.js` (included story revision with
+  explicit consent opens a new Run). Captures reviewed. CSS-viewport zoom is not native
+  zoom-control evidence; physical devices, screen readers and final visual acceptance
+  remain pending.
+- Reviews: pass 1 over the full checkpoint diff found the two defects above (fixed and
+  retested); passes 2 and 3 on the same final state were clean. Separate same-agent
+  read-only passes (cold-review fallback); no independent review is claimed.
+- Remaining: **11** integrated local verification (actual YAML boundaries with real
+  handlers, all six review modes, crash/lease/race matrices, Human Input continuation,
+  preserved v1 and disabled-hook behavior); **12** grouped approvals and staging
+  acceptance under pending scope C (US$3 ceiling is not spending authorization).
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.
@@ -1378,7 +1417,7 @@ candidate import/readback, native child/files/control and Human Input resume; th
 README records exact scope, remaining gates and cleanup. Actual paid provider probes
 are recorded in the handoff; no integrated application journey is claimed.
 The initial stop before 07 was superseded by scope B. Checkpoints 07-08 and tasks
-09.1-09.6 are locally verified; 09.7 is now Verified locally; checkpoint 10 remains unimplemented. All eight historical disposable
+09.1-09.6 are locally verified; 09.7 is now Verified locally; checkpoint 10 is Verified locally (2026-11-22). All eight historical disposable
 apps and both test plugins were removed, with original apps/shared plugins preserved. Future changes reset affected
 checks/reviews; do not inherit the superseded framework evidence.
 The [compatibility procedure](workflow-package/integration-handoff.md#difyprovider-compatibility-procedure)
@@ -1390,12 +1429,12 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
-**Session handoff (2026-11-22):** checkpoints 01-09 and the pre-10 setup/theme
-prerequisites are locally complete. Checkpoint 10 is unstarted; the user's latest
-instruction is to record progress and stop for another chat. Read the current
-[pre-10 closeout](#pre-10-readiness-closeout-2026-11-22), fixed 10.1-10.7 sequence and
-[component inventory](../../design-system-extension.md#checkpoint-10-component-inventory).
-Do not start implementation until a subsequent instruction activates it.
+**Session handoff (2026-11-22, after checkpoint 10):** checkpoints 01-10 are locally
+complete; see the [checkpoint 10 closure](#checkpoint-10-closure-2026-11-22). The next
+checkpoint is **11 Integrated verification and handoff**; start it only on a new
+instruction. Booklet browser checks reuse `tests/integration/booklet-fixture-seed.ts`
+and the `booklet-browser-*.js` scripts; set `BOOKLET_PYTHON` where `python3` is a
+Store alias, and never run account suites while a browser fixture is running.
 
 **Homepage (approved 2026-11-22):** the Unitale-owned homepage with **Create a book**,
 **Continue your books**, sign-in return routing and booklet copy is part of 10.2 on this
@@ -1410,12 +1449,11 @@ booklet services/workflows, theme and product compositions through existing proj
 extensions. The existing `src/project/home.tsx` hook can support a future approved
 homepage without editing shared core. No new Unibase change is planned for 10.
 
-Checkpoint 09.1-09.7 is Verified locally on `feature/10-dify-workflow-design`.
-The completed goal stops before implementing 10. On a new instruction to start 10,
-follow tasks 10.1-10.7 above and reuse delivered services and the current reviewed
-Unibase import in `project.source.json` (`02517797c9ecd1d8e9696cd1b68c9b976f2105db`
-at this closeout). Do not restore the historical checkpoint 08 import. Report
-status/checks at each task; the [pre-10 closeout](#pre-10-readiness-closeout-2026-11-22) records current readiness.
+Checkpoints 09 and 10 are Verified locally on `feature/10-dify-workflow-design`.
+On a new instruction to start 11, follow its scope above and reuse delivered services,
+the checkpoint 10 facade/routes/fixtures and the current reviewed Unibase import in
+`project.source.json` (`02517797c9ecd1d8e9696cd1b68c9b976f2105db`). Do not restore the
+historical checkpoint 08 import. Report status/checks at each step.
 Follow AGENTS and the necessity/simplicity gate. No copied-core patch, new framework,
 scheduler, dependency or provider plugin. Scope B remains approved. Provider gaps
 requiring expansion are accepted limitations, not scope expansion. No temporary tunnel,

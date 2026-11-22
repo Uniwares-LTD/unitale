@@ -827,6 +827,48 @@ test("booklet application facade", async (t) => {
     );
 
     await t.test(
+      "a committed continuation refused at Run admission resumes only by key",
+      async () => {
+        const { db, catalog, app } = await fixture();
+        const started = await app.start(start(catalog));
+        await settle(db, started.runId, "failed");
+        const runs = (enabled: boolean) =>
+          db
+            .collection("baseSettings")
+            .updateOne(
+              { _id: "base" as never },
+              { $set: { "settings.runs.enabled": enabled } },
+            );
+        await runs(false);
+        const key = randomUUID();
+        await assert.rejects(
+          app.command(started.productionId, { action: "continue", key }),
+          (error: unknown) =>
+            (error as { code?: string }).code === "BOOKLET_START_PENDING",
+        );
+        await runs(true);
+        // A different key is refused while the committed flow is unbound.
+        await assert.rejects(
+          app.command(started.productionId, {
+            action: "continue",
+            key: randomUUID(),
+          }),
+        );
+        const before = await jobs(db);
+        const resumed = await app.command(started.productionId, {
+          action: "continue",
+          key,
+        });
+        assert.deepEqual(resumed, {
+          productionId: started.productionId,
+          runId: started.runId,
+        });
+        assert.equal(await jobs(db), before + 1);
+        assert.equal(await charges(db), 1);
+      },
+    );
+
+    await t.test(
       "explicit consent, changed catalog and brief bounds",
       async () => {
         const { db, catalog, app } = await fixture();

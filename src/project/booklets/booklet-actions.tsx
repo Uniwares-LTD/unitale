@@ -131,7 +131,11 @@ export function BookletActions({
       setNotice({
         tone: "warning",
         title: t("mc0cbfcd14937"),
-        message: t("m3b35fbc959af"),
+        // Saved but not started: the server says so; otherwise the outcome is unknown.
+        message:
+          known?.code === "BOOKLET_START_PENDING"
+            ? known.message
+            : t("m3b35fbc959af"),
       });
     }
   }

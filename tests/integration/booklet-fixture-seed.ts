@@ -85,6 +85,40 @@ async function main() {
       .collection<{ _id: string }>("accountAccess")
       .findOne({ role: "admin" });
     if (!admin) throw new Error("Fixture administrator not found.");
+    // `settle failed|succeeded`: give the newest booklet attempt a verified
+    // terminal outcome (as the worker would) so recovery controls can be checked.
+    const settle = process.argv[3] === "settle" ? process.argv[4] : null;
+    if (settle) {
+      if (settle !== "failed" && settle !== "succeeded")
+        throw new Error("Use settle failed|succeeded.");
+      const job = await db
+        .collection("aiJobs")
+        .findOne(
+          { uid: admin._id, "run.target.adapter": "booklet" },
+          { sort: { createdAt: -1 } },
+        );
+      if (!job) throw new Error("No booklet attempt to settle.");
+      await db
+        .collection("consumptionWorkflows")
+        .updateOne(
+          { _id: job.consumption.workflowId },
+          { $set: { jobId: job._id } },
+        );
+      await db.collection("aiJobs").updateOne(
+        { _id: job._id },
+        {
+          $set: {
+            status: settle,
+            lease: null,
+            terminationEvidence:
+              settle === "succeeded" ? "provider-completed" : "provider-failed",
+            updatedAt: new Date(),
+          },
+        },
+      );
+      console.log(`Settled ${String(job._id).slice(0, 12)} as ${settle}`);
+      return;
+    }
     const actor = { uid: admin._id, auth_time: Math.floor(Date.now() / 1000) };
     // Profile revision 2 has no policy row: shown as an unavailable package.
     for (const definition of [

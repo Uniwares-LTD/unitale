@@ -285,20 +285,32 @@ export function bookletApplication(
     workflowId: string,
     predecessorId: string | null,
   ): Promise<BookletRunReference> {
-    const p = await repo.getProduction(productionId);
-    const config = await configuration(
-      p.creativeConfigSnapshot.executionProfileId,
-      p.creativeConfigSnapshot.executionProfileRevision,
-    );
-    const run = await enqueueBookletRun(db, actor, productionId, {
-      key: runKey,
-      workflowId,
-      orchestratorId: config.orchestratorId,
-      configurationRevision: config.configurationRevision,
-      inputs: {},
-      predecessorId,
-    });
-    return { productionId, runId: run.id };
+    try {
+      const p = await repo.getProduction(productionId);
+      const config = await configuration(
+        p.creativeConfigSnapshot.executionProfileId,
+        p.creativeConfigSnapshot.executionProfileRevision,
+      );
+      const run = await enqueueBookletRun(db, actor, productionId, {
+        key: runKey,
+        workflowId,
+        orchestratorId: config.orchestratorId,
+        configurationRevision: config.configurationRevision,
+        inputs: {},
+        predecessorId,
+      });
+      return { productionId, runId: run.id };
+    } catch (error) {
+      // The flow (and any charge) is committed: only a same-key retry may
+      // resume it. A new key would be refused while this flow stays active.
+      if (error instanceof AppError && error.status < 500)
+        throw new AppError(
+          "BOOKLET_START_PENDING",
+          "This step is saved, but it couldn’t start yet. Try again.",
+          409,
+        );
+      throw error;
+    }
   }
 
   /** Predecessor chaining for an eligible failed/cancelled attempt; a fresh
@@ -709,19 +721,8 @@ export function bookletApplication(
       )
         throw bookletConflict("Runs are disabled.");
       const { workflowId } = await lifecycle.start(productionId);
-      try {
-        return await enqueue(productionId, runKey, workflowId, null);
-      } catch (error) {
-        // Paid and saved: the browser must retry this exact request, never edit
-        // it into a new key (which would be a second booklet and charge).
-        if (error instanceof AppError && error.status < 500)
-          throw new AppError(
-            "BOOKLET_START_PENDING",
-            "Your book is paid and saved, but it couldn’t start yet. Try again.",
-            409,
-          );
-        throw error;
-      }
+      // Paid and saved: enqueue reports a refusal as BOOKLET_START_PENDING.
+      return enqueue(productionId, runKey, workflowId, null);
     },
 
     /** Allowlisted owned view: saved progress and selected (accepted) results. */
