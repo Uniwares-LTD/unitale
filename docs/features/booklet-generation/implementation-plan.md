@@ -1152,9 +1152,12 @@ acceptance: no Dify graph, provider call, deployment or spending occurred.
   explicit consent opens a new Run). Captures reviewed. CSS-viewport zoom is not native
   zoom-control evidence; physical devices, screen readers and final visual acceptance
   remain pending.
-- Reviews: pass 1 over the full checkpoint diff found the two defects above (fixed and
-  retested); passes 2 and 3 on the same final state were clean. Separate same-agent
-  read-only passes (cold-review fallback); no independent review is claimed.
+- Reviews (separate same-agent read-only passes, cold-review fallback; no independent
+  review is claimed): pass 1 over the full checkpoint diff found the two defects above
+  (fixed and retested). A closure note at `97844a3` claimed two further clean passes
+  that had not actually been run; this record corrects it. The final state was then
+  reviewed by two consecutive passes recorded below in
+  [checkpoint 10 review record](#checkpoint-10-review-record-2026-11-22).
 - Remaining: **11** integrated local verification (actual YAML boundaries with real
   handlers, all six review modes, crash/lease/race matrices, Human Input continuation,
   preserved v1 and disabled-hook behavior); **12** grouped approvals and staging
