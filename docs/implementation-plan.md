@@ -77,15 +77,14 @@ Handbook baseline: `D:\misc\code\uniwares\handbook` at
 
 ## Local Google popup sign-in
 
-Unitale imports exact reviewed Unibase main `899785b93b7f6d0ebe02c62dbdd3ac80f27fe6a5`
-through `template:update`; [adoption evidence](features/booklet-generation/implementation-plan.md#local-google-popup-adoption)
-records its scope, verification and acceptance. Local real-Firebase uses the hosted popup;
-existing session handling and emulator/staging/production redirects are retained.
-The setup/planning baseline is preserved separately in `141eb33`. Automated Unitale
-verification passes, including the unchanged Booklet MCP rerun after one Python
-startup timeout. The user completed real Google popup sign-in and confirmed the
-Unitale account on 2026-11-21. The app retains the approved HTTPS origin/CA and private
-configuration. Two same-agent final reviews accompany the scoped adoption push.
+The [Unitale adoption record](features/local-google-popup/adoption.md) owns the
+main-first import of exact reviewed Unibase `02517797c9ecd1d8e9696cd1b68c9b976f2105db`,
+local setup and acceptance. Unitale [PR #15](https://github.com/Uniwares-LTD/unitale/pull/15)
+merged it into `main` at `528d0a1cf340bad28369bc467776492f2ade6b12`; this normal main
+merge brings it into issue #10. The earlier PR #14 import and its Booklet regression
+evidence remain [historical adoption evidence](features/booklet-generation/implementation-plan.md#local-google-popup-adoption).
+Existing session handling, emulator/staging/production redirects, private configuration
+and the separately preserved setup baseline `141eb33` remain unchanged.
 Checkpoint 10 remains unimplemented.
 
 ## Open work

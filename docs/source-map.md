@@ -166,6 +166,10 @@ and the adapter; the table does not require unrelated suites for every task.
   `src/lib/config/google-sign-in.ts`; the existing auth form and session endpoint
   retain their ownership.
 
+- [Unitale popup adoption](features/local-google-popup/adoption.md) owns the project
+  import route, prepared local launch and acceptance; the adjacent upstream plan
+  retains Unibase implementation history.
+
 ## Documentation
 
 Administration uses English source copy and `src/lib/admin-labels.ts` for data labels.

@@ -866,9 +866,13 @@ HTTPS/OAuth-callback requirement. No shared provider configuration is changed.
 
 #### Local Google popup adoption
 
-This standalone setup task imports Unibase main
-`899785b93b7f6d0ebe02c62dbdd3ac80f27fe6a5` through `template:update` on the existing
-issue branch. Unibase [PR #64](https://github.com/Uniwares-LTD/unibase/pull/64) contains
+The initial standalone setup task imported Unibase main
+`899785b93b7f6d0ebe02c62dbdd3ac80f27fe6a5` through `template:update` on the issue
+branch (Unitale PR #14). That route is historical. The current import is exact
+`02517797c9ecd1d8e9696cd1b68c9b976f2105db`, received by normal merge from Unitale
+`main` after [PR #15](https://github.com/Uniwares-LTD/unitale/pull/15), main revision
+`528d0a1cf340bad28369bc467776492f2ade6b12`. The [project adoption guide](../local-google-popup/adoption.md)
+owns current setup and route; the evidence below describes the original runtime adoption. Unibase [PR #64](https://github.com/Uniwares-LTD/unibase/pull/64) contains
 reviewed commit `c18d8b13f002afaefa8e567606f85438ca23c555`, tree
 `9d55ef9502288e4293a184998b19c87cf02bcba1`; its two consecutive same-agent reviews
 and verification are upstream evidence, not Unitale acceptance.
