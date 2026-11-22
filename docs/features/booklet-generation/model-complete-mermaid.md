@@ -51,7 +51,7 @@ flowchart TB
   MCP_transfer["MCP transfer<br/>I: T17 bookletMcpTransfers<br/>_id / ownerId / productionId / key / kind / createdAt<br/>bytes / sha256 / fence / evidenceInputHash?<br/>completedEvidence? {inputHash, result}"]
   MCP_transfer_part["MCP transfer part<br/>I: T17 bookletMcpTransferParts<br/>_id / transferId / index / sha256<br/>data? (BSON Binary, at most 8 KiB)<br/>Evidence completion removes raw data; retry hashes remain"]
   MCP_transfer_budget["MCP transfer budget<br/>I: T17 bookletMcpTransferBudgets<br/>_id / ownerId / productionId / bytes<br/>Cumulative reservation; transactionally enforced"]
-  Workflow_policy_binding["Workflow policy binding<br/>I: T17 bookletWorkflowPolicies; provisioning T19/T20<br/>profileId / profileRevision<br/>orchestratorId / configurationRevision<br/>reviewer {id, revision, publicationId}<br/>Server-owned immutable publication binding"]
+  Workflow_policy_binding["Workflow policy binding<br/>I: T17 bookletWorkflowPolicies; provisioning T19/T20<br/>profileId / profileRevision<br/>orchestratorId / configurationRevision<br/>reviewer {id, revision, publicationId}<br/>capacity (immutable per profile revision)<br/>retryDefaults {paidLlm, paidImage, nonPaid}<br/>Server-owned immutable publication binding"]
   Work_attempt -->|"productionId; frozen retry/correction scope"| Production
   Scoped_assessment -->|"observed callId and exact review scope"| Work_attempt
   Manager_acceptance -->|"exact owned revision and contentHash"| Artifact_revision

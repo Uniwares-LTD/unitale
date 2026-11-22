@@ -500,6 +500,8 @@ documents.push(
       "profileId / profileRevision",
       "orchestratorId / configurationRevision",
       "reviewer {id, revision, publicationId}",
+      "capacity (immutable per profile revision)",
+      "retryDefaults {paidLlm, paidImage, nonPaid}",
       "Server-owned immutable publication binding",
     ],
   },

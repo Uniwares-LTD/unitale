@@ -390,7 +390,20 @@
         "id": "visual-review",
         "revision": 1,
         "publicationId": "example-only-not-published"
-      }
+      },
+      "capacity": {
+        "id": "profile_demo",
+        "revision": 1,
+        "maxStoryPages": 12,
+        "coverSupported": true,
+        "maxCharacters": 4,
+        "maxLocations": 4,
+        "maxPanelsPerPage": 4,
+        "maxStyleSamples": 3,
+        "canvases": [{ "width": 1024, "height": 1024, "mime": "image/png" }],
+        "languages": [{ "tag": "en", "direction": "ltr" }]
+      },
+      "retryDefaults": { "paidLlm": 2, "paidImage": 0, "nonPaid": 3 }
     },
     "bookletReviewRequests": {
       "_id": "12345678-1234-4234-9234-123456789abc",

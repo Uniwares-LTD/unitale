@@ -944,13 +944,55 @@ JSON example and both Mermaid schema versions are unaffected.
 
 | Task | State | Smallest change and exit evidence |
 | --- | --- | --- |
-| 10.1 Private application facade | Pending | Define/validate the existing policy row's capacity and retry-default fields here (only retry-default editing follows in 10.6; capacity stays bound to its immutable profile revision); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
-| 10.2 Package and financial consent | Pending | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Published package snapshots and changed-price/input tests pass; no production seeds. |
+| 10.1 Private application facade | Verified locally (2026-11-22; see 10.1 facade decisions) | Define/validate the existing policy row's capacity and retry-default fields here (only retry-default editing follows in 10.6; capacity stays bound to its immutable profile revision); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
+| 10.2 Package and financial consent | Pending | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Also replace the generic home through the existing `projectHome` hook (`src/project/home.tsx`; no Unibase or core change): signed out, Sign in returning to `/runs/new`; signed in, **Create a book** (`/runs/new`) and **Continue your books** (`/runs`) plus the existing account/appearance cards; booklet copy; links only. Published package snapshots and changed-price/input tests pass; no production seeds. |
 | 10.3 Progress, decisions and originals | Pending | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
 | 10.4 Revision and recovery controls | Pending | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
 | 10.5 Accessible history | Pending | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
 | 10.6 Minimal administration | Pending | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
 | 10.7 Verification and handoff | Pending | Run affected service/UI checks, desktop/390px en/ar browser journeys, English/LTR admin with Arabic public preference and restoration, keyboard and served-document CSP checks. Two clean same-state read-only reviews; update evidence and remaining 11/12 steps. |
+
+#### 10.1 facade decisions (2026-11-22)
+
+- `src/lib/server/booklets/application.ts` (`server-only`) adapts delivered services; the
+  client-safe `src/project/booklets/application-contract.ts` holds only strict
+  schemaVersion-1 commands and DTOs. Routes and the `module.routes` entry land with
+  their consuming slices (10.2-10.4); 10.1 is the service boundary.
+- Configuration is resolved, never inferred: exactly one enabled, validated booklet v2
+  orchestrator at its current revision must have a `bookletWorkflowPolicies` row for
+  the frozen profile, carrying valid `capacity` and `retryDefaults`. Otherwise the
+  package is shown as unavailable and cannot be quoted or started. Older rows for
+  earlier configuration revisions keep serving in-flight Runs.
+- Start uses one browser key: owned book, then the queued order (its admission validates
+  ownership, accepted credits, capacity and brief), then the v2 production (snapshots
+  `retryDefaults`), the existing paid start, and the zero-credit Run. Booklet/production
+  IDs derive from the key, so each committed effect resumes; an existing Run returns
+  first, so a later orchestrator upgrade cannot break exact replay. Changed title, brief,
+  price or catalog revision conflicts and needs a fresh quote and consent. A first
+  attempt validates quote, price and brief before creating the book (refusals leave no
+  empty booklet), configuration mirrors Run admission (native `raw-v1`, no legacy or
+  required browser inputs) and disabled Runs refuse before the paid start.
+- Continue chains a verified failed/cancelled predecessor, starts a fresh logical Run
+  after verified success and refuses active or uncertain work. Retry authorizes the
+  existing single extra grant and continues only after verified termination; otherwise
+  the active Manager resumes from its own wait. Revision commands bind scope only
+  (category and subjects); creative instructions stay with Manager's authentic Run
+  decisions, so no new persistence is added.
+- Catalog terms have no package label, so the package DTO describes size, languages,
+  allowances and price; no package name or profile/execution identity is exposed.
+- Evidence: `test:booklet-application` 7/7 (package allowlist and owner-bound cursors;
+  exact replay with one charge; consent/price/catalog/brief refusal without an empty
+  booklet; resume after queued order, after production creation and after the paid
+  start; absent/duplicate/mismatched/stale/non-native policy rejection; foreign
+  ownership, predecessor chaining, fresh logical continuation, revision consent and
+  replay). Also `test:booklet-mcp` 32/32, `test:booklet-compat` 46/46,
+  `test:booklet-lifecycle-media` 17/17, `test:booklet-repositories` 38/38,
+  `test:commerce` 31/31, unit 133/133, typecheck, scoped ESLint/Prettier and
+  `check:docs`. Python suites need `BOOKLET_PYTHON` where `python3` resolves to the
+  Windows Store alias. Not yet covered: an authorized retry of a real failed work row
+  (exercised by existing MCP retry tests), and route/UI use (10.2-10.4). Two separate
+  same-agent read-only passes; the first found two Medium defects (charge before
+  predictable Run refusal; empty booklet on refused first start), both fixed and retested.
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.
@@ -1228,13 +1270,10 @@ instruction is to record progress and stop for another chat. Read the current
 [component inventory](../../design-system-extension.md#checkpoint-10-component-inventory).
 Do not start implementation until a subsequent instruction activates it.
 
-The baseline homepage remains the themed generic welcome: signed-out Sign in and
-appearance actions; signed-in Start run plus account/preferences cards. Book creation
-uses `/runs/new`. A small Unitale-owned homepage with **Create a book** and **Continue
-your books**, sign-in return routing and booklet-specific start copy was recommended
-in conversation, but is **not approved or added to 10's scope**. It is an optional
-follow-up decision before implementing that surface, not a blocker for baseline 10.1.
-Do not silently implement a new landing page, workspace, reader or storefront.
+**Homepage (approved 2026-11-22):** the Unitale-owned homepage with **Create a book**,
+**Continue your books**, sign-in return routing and booklet copy is part of 10.2 on this
+issue branch, using the existing `projectHome` hook. No Unibase change and no separate
+prerequisite branch. Do not implement a workspace, reader or storefront.
 
 Repository ownership remains governed by [preferences](../../../.agents/repository.md)
 and [template updates](../../template.md#receive-template-updates): reusable fixes

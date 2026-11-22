@@ -588,7 +588,16 @@ also shows these internal collections:
 - `bookletWorkflowPolicies`: a unique execution profile/revision and orchestrator/
   configuration-revision binding to `reviewer {id, revision, publicationId}`.
   Trusted T19/T20 integration owns publication verification and immutable provisioning;
-  no workflow tool may edit it.
+  no workflow tool may edit it. Checkpoint 10.1 adds two application settings read only
+  by the private booklet facade (`src/lib/server/booklets/application.ts`):
+  `capacity` (an `executionCapacitySchema` value whose `id/revision` must equal
+  `profileId/profileRevision`; immutable per profile revision) and `retryDefaults
+  {paidLlm, paidImage, nonPaid}` (integers 0-10, all required). Creation resolves
+  exactly one enabled, validated booklet v2 orchestrator at its current revision with
+  a row for the frozen profile; absent, duplicate or mismatched rows make the package
+  unavailable, and nothing is inferred. New productions snapshot `retryDefaults` into
+  `retryPolicy`; existing productions keep their snapshot. Existing MCP readers ignore
+  these fields, so earlier rows stay readable but cannot admit new productions.
 
 These records are not customer orders, creative revisions or provider measurements.
 Interrupted transfers survive continuation; no TTL erases unresolved work. Image and
