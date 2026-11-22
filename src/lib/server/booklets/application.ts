@@ -24,6 +24,7 @@ import {
   type BookletRetryResult,
   type BookletRevisionQuote,
   type BookletRunReference,
+  type BookletView,
 } from "../../../project/booklets/application-contract";
 import { AppError } from "../../auth-policy";
 import { bookletConflict, bookletMissing } from "./context";
@@ -32,6 +33,7 @@ import { bookletRepository } from "./repository";
 import { bookletRepositoryV2 } from "./repository-v2";
 import { bookletLifecycleV2 } from "./lifecycle-v2";
 import { enqueueBookletRun } from "./runs";
+import { bookletMedia } from "./media";
 import { readSettings } from "../settings";
 import { accessPermitsSession, accountAccess } from "../store/access";
 import { readWallet } from "../store/credits";
@@ -597,6 +599,108 @@ export function bookletApplication(
           );
         throw error;
       }
+    },
+
+    /** Allowlisted owned view: saved progress and selected (accepted) results. */
+    async view(productionId: string): Promise<BookletView> {
+      requireModule("booklets");
+      id.parse(productionId);
+      const p = await repo.getProduction(productionId);
+      const book = await db
+        .collection<{ _id: string; title: string }>("bookletBooks")
+        .findOne(
+          { _id: p.bookletId, ownerId: actor.uid, "deletion.deletedAt": null },
+          { projection: { title: 1 } },
+        );
+      if (!book) throw bookletMissing();
+      const accepted = p.subjects.flatMap((s) =>
+        s.artifacts.flatMap((a) =>
+          a.acceptedRevisionId ? [a.acceptedRevisionId] : [],
+        ),
+      );
+      const revisions = accepted.length
+        ? await db
+            .collection<{
+              _id: string;
+              artifactId: string;
+              assets: { assetId: string; sha256: string }[];
+            }>("bookletRevisions")
+            .find(
+              { ownerId: actor.uid, productionId, _id: { $in: accepted } },
+              { projection: { artifactId: 1, assets: 1 } },
+            )
+            .toArray()
+        : [];
+      const assetsOf = new Map(
+        revisions.map((r) => [
+          r._id,
+          z
+            .array(z.object({ assetId: id }))
+            .parse(r.assets ?? [])
+            .map((a) => a.assetId),
+        ]),
+      );
+      const url = (assetId: string) =>
+        `/api/booklets/${encodeURIComponent(productionId)}/assets/${encodeURIComponent(assetId)}`;
+      const config = p.creativeConfigSnapshot;
+      const pages = p.subjects.filter((s) => s.kind === "page");
+      return {
+        productionId,
+        bookletId: p.bookletId,
+        title: book.title,
+        state: p.lifecycleState,
+        version: p.version,
+        expiresAt: p.expiresAt?.toISOString() ?? null,
+        completed: p.currentManifestRevisionId !== null,
+        predecessorId: p.sourceProductionId,
+        stages: {
+          story: Boolean(p.stageLocks.story),
+          style: Boolean(p.stageLocks.style),
+          references: Boolean(p.stageLocks.references),
+        },
+        pages: {
+          accepted: pages.filter((s) =>
+            s.artifacts.some(
+              (a) => a.kind === "page-image" && a.acceptedRevisionId,
+            ),
+          ).length,
+          total: config.storyPages + Number(config.includeCover),
+        },
+        subjects: p.subjects.map((s) => ({
+          id: s.id,
+          kind: s.kind,
+          label: s.label,
+          pageRole: s.pageRole,
+          artifacts: s.artifacts.map((a) => ({
+            id: a.id,
+            kind: a.kind,
+            status: a.acceptedRevisionId
+              ? ("selected" as const)
+              : a.currentRevisionId
+                ? ("in-progress" as const)
+                : ("not-started" as const),
+            images: a.acceptedRevisionId
+              ? (assetsOf.get(a.acceptedRevisionId) ?? []).map((assetId) => ({
+                  assetId,
+                  url: url(assetId),
+                }))
+              : [],
+          })),
+        })),
+      };
+    },
+
+    /** Owned original bytes; fresh ownership and attachment checks per read. */
+    async original(productionId: string, assetId: string) {
+      requireModule("booklets");
+      id.parse(productionId);
+      id.parse(assetId);
+      const { asset, bytes } = await bookletMedia(db, actor, {
+        documentVersion: 2,
+      }).read(productionId, assetId);
+      if (!["image/png", "image/jpeg", "image/webp"].includes(asset.mime))
+        throw bookletMissing();
+      return { mime: asset.mime, sha256: asset.sha256, bytes };
     },
 
     async command(

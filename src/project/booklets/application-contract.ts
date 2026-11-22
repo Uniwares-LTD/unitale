@@ -99,6 +99,41 @@ export const bookletRetryResultSchema = z.object({
   // Null when the active Manager resumes from its own retry wait.
   continued: bookletRunReferenceSchema.nullable(),
 });
+// Owned production view: status, saved progress, selected (accepted) results and
+// owned original URLs only. No brief, prompts, work, checkpoints or audit data.
+export const bookletViewSchema = z.object({
+  productionId: z.string(),
+  bookletId: z.string(),
+  title: z.string(),
+  state: z.enum(["draft", "in-progress", "completed", "closed"]),
+  version: z.number(),
+  expiresAt: z.string().nullable(),
+  completed: z.boolean(),
+  predecessorId: z.string().nullable(),
+  stages: z.object({
+    story: z.boolean(),
+    style: z.boolean(),
+    references: z.boolean(),
+  }),
+  pages: z.object({ accepted: z.number(), total: z.number() }),
+  subjects: z.array(
+    z.object({
+      id: z.string(),
+      kind: z.enum(["book", "character", "location", "style-sample", "page"]),
+      label: z.string(),
+      pageRole: z.enum(["cover", "story"]).nullable(),
+      artifacts: z.array(
+        z.object({
+          id: z.string(),
+          kind: z.string(),
+          status: z.enum(["not-started", "in-progress", "selected"]),
+          images: z.array(z.object({ assetId: z.string(), url: z.string() })),
+        }),
+      ),
+    }),
+  ),
+});
+export type BookletView = z.infer<typeof bookletViewSchema>;
 export type BookletPackageSummary = z.infer<typeof bookletPackageSummarySchema>;
 export type BookletPackagePage = z.infer<typeof bookletPackagePageSchema>;
 export type BookletRunReference = z.infer<typeof bookletRunReferenceSchema>;

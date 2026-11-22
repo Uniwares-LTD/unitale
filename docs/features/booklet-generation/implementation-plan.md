@@ -946,7 +946,7 @@ JSON example and both Mermaid schema versions are unaffected.
 | --- | --- | --- |
 | 10.1 Private application facade | Verified locally (2026-11-22; see 10.1 facade decisions) | Define/validate the existing policy row's capacity and retry-default fields here (only retry-default editing follows in 10.6; capacity stays bound to its immutable profile revision); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
 | 10.2 Package and financial consent | Verified locally (2026-11-22; see 10.2 decisions) | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Also replace the generic home through the existing `projectHome` hook (`src/project/home.tsx`; no Unibase or core change): signed out, Sign in returning to `/runs/new`; signed in, **Create a book** (`/runs/new`) and **Continue your books** (`/runs`) plus the existing account/appearance cards; booklet copy; links only. Published package snapshots and changed-price/input tests pass; no production seeds. |
-| 10.3 Progress, decisions and originals | Pending | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
+| 10.3 Progress, decisions and originals | Verified locally (2026-11-22; see 10.3 decisions) | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
 | 10.4 Revision and recovery controls | Pending | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
 | 10.5 Accessible history | Pending | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
 | 10.6 Minimal administration | Pending | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
@@ -1026,6 +1026,31 @@ JSON example and both Mermaid schema versions are unaffected.
   the Run; edits clear a quote; leaving a dirty form raises the browser warning.
   Captures were reviewed. Dark mode, keyboard-only traversal, 200% zoom, reduced motion
   and served-document CSP remain for the 10.7 matrix.
+
+#### 10.3 progress and originals decisions (2026-11-22)
+
+- `view(productionId)` (`GET /api/booklets/[productionId]`, verified session) is an
+  allowlisted projection: book title, lifecycle state, version, expiry, completion,
+  predecessor ID, stage locks, page progress (accepted page images of story pages plus
+  cover) and per-subject artifact status (`not-started`, `in-progress`, `selected`). Only
+  accepted revisions are "selected"; a current draft is never shown as a result. Images
+  are owned URLs of accepted revisions; brief, prompts, work, checkpoints, evidence and
+  audit data are not returned. Text artifacts show status, not content (Manager presents
+  content through authentic Run decisions).
+- `GET /api/booklets/[productionId]/assets/[assetId]` serves original bytes through
+  `bookletMedia.read` (fresh ownership, ready state, verified predecessor attachment),
+  with an allowlisted image MIME, `private, no-store`, `nosniff` and inline disposition.
+  Booklet IDs are never sent to generic Run asset routes.
+- `ProjectRunDetail` renders the booklet panel only for `booklet@2` targets, refreshing
+  when the polled Run changes; other Runs are unchanged. `reconciling`/`needs-review`
+  Runs show that saved work is kept and nothing is repeated or recharged while the
+  outcome is confirmed. Decisions stay in the existing first-wins Run controls.
+- Facade construction for routes is `src/lib/server/booklets/application-request.ts`.
+- Evidence: `test:booklet-application` 8/8 (adds allowlisted view, selected versus
+  draft, partial progress, stranger/other-production/staging/missing media refusals);
+  build then typecheck; scoped lint; `check:i18n`. Browser: the Run page shows the
+  panel with title, state, `0 of 5 pages selected`, stage states and the empty saved
+  state; an unowned asset URL returns 404. Captured and reviewed.
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.

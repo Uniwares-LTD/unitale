@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { MongoClient, type Db } from "mongodb";
+import { Binary, MongoClient, type Db } from "mongodb";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import {
   createCatalogIndexes,
@@ -329,6 +329,170 @@ test("booklet application facade", async (t) => {
         await assert.rejects(
           app.picker({ cursor: "bm90LWEtY3Vyc29y" }),
           /Invalid pagination cursor/,
+        );
+      },
+    );
+
+    await t.test(
+      "owned view shows only selected results and media never leaks",
+      async () => {
+        const { db, catalog, app } = await fixture();
+        const { productionId } = await app.start(start(catalog));
+        const other = await app.start(start(catalog));
+        // Synthetic saved state (Manager writes are covered by MCP suites).
+        const png = Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+          "base64",
+        );
+        const sha256 = createHash("sha256").update(png).digest("hex");
+        const art = (
+          id: string,
+          kind: string,
+          current: string | null,
+          accepted: string | null,
+        ) => ({
+          id,
+          kind,
+          currentRevisionId: current,
+          acceptedRevisionId: accepted,
+        });
+        await db.collection("bookletProductions").updateOne(
+          { _id: productionId as never },
+          {
+            $set: {
+              subjects: [
+                {
+                  id: "cover",
+                  kind: "page",
+                  label: "Cover",
+                  pageRole: "cover",
+                  artifacts: [
+                    art("cover-image", "page-image", "rev-cover", "rev-cover"),
+                  ],
+                },
+                {
+                  id: "page-1",
+                  kind: "page",
+                  label: "Page 1",
+                  pageRole: "story",
+                  artifacts: [
+                    art("page-1-image", "page-image", "rev-draft", null),
+                  ],
+                },
+              ],
+            },
+          },
+        );
+        await db.collection("bookletRevisions").insertMany([
+          {
+            _id: "rev-cover" as never,
+            ownerId: owner.uid,
+            productionId,
+            artifactId: "cover-image",
+            documentVersion: 2,
+            assets: [{ assetId: "asset-cover", sha256 }],
+          },
+          {
+            _id: "rev-draft" as never,
+            ownerId: owner.uid,
+            productionId,
+            artifactId: "page-1-image",
+            documentVersion: 2,
+            assets: [{ assetId: "asset-draft", sha256 }],
+          },
+        ]);
+        const asset = (
+          id: string,
+          state: string,
+          production = productionId,
+        ) => ({
+          _id: id as never,
+          documentVersion: 1,
+          ownerId: owner.uid,
+          productionId: production,
+          operationId: "op",
+          outputKey: id,
+          inputHash: sha256,
+          sha256,
+          bytes: png.length,
+          mime: "image/png",
+          width: 1,
+          height: 1,
+          state,
+          storage: { kind: "mongo" },
+          sourceRevisions: [],
+          originalAssetId: null,
+          attachments: [],
+          fence: 1,
+          createdAt: new Date(),
+        });
+        await db
+          .collection("bookletAssets")
+          .insertMany([
+            asset("asset-cover", "ready"),
+            asset("asset-draft", "ready"),
+            asset("asset-staging", "staging"),
+          ]);
+        await db.collection("bookletAssetBytes").insertMany(
+          ["asset-cover", "asset-draft", "asset-staging"].map((assetId) => ({
+            _id: (assetId + ":0") as never,
+            assetId,
+            index: 0,
+            sha256,
+            bytes: new Binary(png),
+          })),
+        );
+
+        const view = await app.view(productionId);
+        assert.deepEqual(Object.keys(view).sort(), [
+          "bookletId",
+          "completed",
+          "expiresAt",
+          "pages",
+          "predecessorId",
+          "productionId",
+          "stages",
+          "state",
+          "subjects",
+          "title",
+          "version",
+        ]);
+        assert.equal(JSON.stringify(view).includes("lantern learns"), false);
+        assert.deepEqual(view.pages, { accepted: 1, total: 5 });
+        assert.equal(view.state, "in-progress");
+        const [cover, page] = view.subjects;
+        assert.equal(cover.artifacts[0].status, "selected");
+        assert.deepEqual(cover.artifacts[0].images, [
+          {
+            assetId: "asset-cover",
+            url: `/api/booklets/${productionId}/assets/asset-cover`,
+          },
+        ]);
+        // A current draft is in progress, never presented as a selected result.
+        assert.equal(page.artifacts[0].status, "in-progress");
+        assert.deepEqual(page.artifacts[0].images, []);
+
+        const original = await app.original(productionId, "asset-cover");
+        assert.equal(original.mime, "image/png");
+        assert.ok(original.bytes.equals(png));
+        const strangerApp = bookletApplication(db, stranger, { types });
+        await assert.rejects(strangerApp.view(productionId), /not found/);
+        await assert.rejects(
+          strangerApp.original(productionId, "asset-cover"),
+          /not found/,
+        );
+        // Another owned production cannot read this production's media.
+        await assert.rejects(
+          app.original(other.productionId, "asset-cover"),
+          /not found/,
+        );
+        await assert.rejects(
+          app.original(productionId, "asset-staging"),
+          /not found/,
+        );
+        await assert.rejects(
+          app.original(productionId, "missing"),
+          /not found/,
         );
       },
     );

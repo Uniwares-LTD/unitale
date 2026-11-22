@@ -95,6 +95,24 @@ async (page) => {
   assert(starts === 1, "exactly one start request");
   results.push("consent dialog, single start and Run navigation: " + new URL(page.url()).pathname);
 
+  // 10.3: the booklet panel inside the existing Run page.
+  await page.getByRole("heading", { name: "The lantern", level: 2 }).waitFor({ timeout: 30000 });
+  await page.getByText(/^0 of 5 pages selected$/).waitFor();
+  assert(await page.getByText("Nothing has been saved yet. Results appear here as each step finishes.").isVisible(), "empty saved state");
+  const productionLink = await page.evaluate(async () => {
+    const response = await fetch(location.pathname.replace("/runs/", "/api/runs/"));
+    return (await response.json()).target?.id ?? null;
+  });
+  assert(productionLink, "run target present");
+  const leak = await page.evaluate(
+    async (id) => (await fetch(`/api/booklets/${id}/assets/not-owned`)).status,
+    productionLink,
+  );
+  assert(leak === 404, "unowned asset is not served: " + leak);
+  await noOverflow("run panel en 1440");
+  await page.screenshot({ path: "output/playwright/booklet-run-en-1440.png", fullPage: true });
+  results.push("run panel shows saved progress; unowned asset returns 404");
+
   // Editing after a shown price invalidates it. (The dirty form is left in place;
   // the caller verifies the leave warning with a CLI goto afterwards.)
   await page.goto(origin + "/runs/new");
