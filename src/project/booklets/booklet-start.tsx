@@ -494,6 +494,9 @@ export function BookletStart() {
                       id={id("language")}
                       data-booklet-field="language"
                       aria-invalid={Boolean(errors.language)}
+                      aria-describedby={
+                        errors.language ? id("language-error") : undefined
+                      }
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -509,7 +512,9 @@ export function BookletStart() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FieldError>{errors.language}</FieldError>
+                  <FieldError id={id("language-error")}>
+                    {errors.language}
+                  </FieldError>
                 </Field>
               )}
               {selected && selected.maxCharacters > 0 && (
