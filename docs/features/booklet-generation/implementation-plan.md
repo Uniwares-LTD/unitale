@@ -1134,10 +1134,25 @@ claimed). Fixes reset the clean count.
 | C | `36f2c91` | Client/server boundary, secrets, public-contract allowlist, route session/CSRF/module guards, stable keys | Clean |
 | D | `36f2c91` | Recorded evidence against actual results and files; evidence currency | Clean |
 
-Passes C and D are two consecutive clean reviews of the same state (`36f2c91`). Checks on
-that state: full suites, build and checks on `cf88bfe` (code identical except one
-comment) plus typecheck, lint, Prettier and `check:docs` on `36f2c91`; browser evidence
-ran on a production build containing all code changes.
+Per-sub-checkpoint reviews of the final code (each slice's files read in full):
+
+| Slice | Files | Result |
+| --- | --- | --- |
+| 10.1 | `application.ts` policy/quote/start/enqueue, contract | Clean (pass A); two earlier Medium defects fixed during 10.1 |
+| 10.2 | `/api/booklets`, `booklet-start.tsx`, `run-start.tsx`, `home.tsx` | 10.2-F1 (Low): language error not linked to its control; fixed in `b02ead8`; re-review clean (all seven errors have IDs, all eight controls `aria-describedby`) |
+| 10.3 | view/asset routes, `booklet-run-panel.tsx`, `run-detail.tsx` | Clean |
+| 10.4 | production POST route, `booklet-actions.tsx`, action eligibility | Clean |
+| 10.5 | history facade, `booklet-history.tsx` | Clean |
+| 10.6 | `admin.ts`, admin route/page, `admin-booklets.tsx`, extension | Clean |
+| 10.7 | fixture seeder, browser scripts, evidence record | Clean (passes C-F) |
+
+Passes C and D were clean on `36f2c91`; the 10.2-F1 fix reset the count. **Passes E and
+F were clean on `b02ead8`** (E: delta and boundary/secret/contract invariants; F:
+evidence currency). These are the two consecutive clean reviews of the final state.
+Checks on that state: full suites on `cf88bfe` (code since differs only by a comment and
+one ARIA attribute); production build then typecheck, lint, Prettier, `check:i18n`,
+`check:docs`, `check:skills` and the full browser sequence (checks, matrix, recovery,
+revision) on `b02ead8`.
 
 #### Checkpoint 10 closure (2026-11-22)
 
