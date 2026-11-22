@@ -16,4 +16,11 @@ export const bookletsExtension = defineExtension({
       "bookletAcceptances",
     ],
   },
+  adminSections: [
+    {
+      href: "/admin/booklets",
+      label: "Booklets",
+      description: "Action retry defaults for new booklet productions.",
+    },
+  ],
 });

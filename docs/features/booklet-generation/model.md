@@ -598,6 +598,9 @@ also shows these internal collections:
   unavailable, and nothing is inferred. New productions snapshot `retryDefaults` into
   `retryPolicy`; existing productions keep their snapshot. Existing MCP readers ignore
   these fields, so earlier rows stay readable but cannot admit new productions.
+  Checkpoint 10.6's `/admin/booklets` edits only `retryDefaults` (field-wise conflict check
+  against the values read, `booklet-retry-defaults-updated` audit event); capacity, suite,
+  provider and reviewer fields are never changed there.
 
 These records are not customer orders, creative revisions or provider measurements.
 Interrupted transfers survive continuation; no TTL erases unresolved work. Image and

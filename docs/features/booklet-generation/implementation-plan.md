@@ -949,7 +949,7 @@ JSON example and both Mermaid schema versions are unaffected.
 | 10.3 Progress, decisions and originals | Verified locally (2026-11-22; see 10.3 decisions) | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
 | 10.4 Revision and recovery controls | Verified locally (2026-11-22; see 10.4 decisions) | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
 | 10.5 Accessible history | Verified locally (2026-11-22; see 10.5 decisions) | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
-| 10.6 Minimal administration | Pending | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
+| 10.6 Minimal administration | Verified locally (2026-11-22; see 10.6 decisions) | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
 | 10.7 Verification and handoff | Pending | Run affected service/UI checks, desktop/390px en/ar browser journeys, English/LTR admin with Arabic public preference and restoration, keyboard and served-document CSP checks. Two clean same-state read-only reviews; update evidence and remaining 11/12 steps. |
 
 #### 10.1 facade decisions (2026-11-22)
@@ -1099,6 +1099,27 @@ JSON example and both Mermaid schema versions are unaffected.
   cursors, invalid kind, stranger and invalid path). Build then typecheck, scoped lint,
   `check:i18n`. Browser: history lists this run and the current version; a malformed
   cursor returns 400.
+
+#### 10.6 administration decisions (2026-11-22)
+
+- `/admin/booklets` is added through `adminSections` (no shared settings change);
+  `/api/admin/booklets` has an explicit booklets module guard because core `/admin` and
+  `/api/admin` are not module routes. Both are English/LTR and use the existing admin
+  shell and admin-checked access transactions (`src/lib/server/booklets/admin.ts`).
+- The view lists up to 50 bindings with identity, current-configuration status, a
+  read-only capacity summary, reviewer ID/revision (no publication ID, suite or provider
+  data) and saved retry defaults; sanitized evidence lists the 20 most recent
+  customer retry authorizations.
+- Only `retryDefaults` (three integers 0-10) can be edited. The update matches the
+  previously read values field by field (stale edits conflict with 409), writes a
+  `booklet-retry-defaults-updated` audit event and preserves every other field. New
+  productions snapshot the new defaults; existing productions keep theirs.
+- Evidence: `test:booklet-application` 11/11 (adds non-admin refusal for read and
+  update, out-of-range 400, stale 409, preserved suite/capacity, audit event, no leaked
+  provider/publication data, and existing versus new production snapshots). Build then
+  typecheck, scoped lint. Browser: admin is English/LTR with an Arabic public
+  preference, focuses an invalid value, saves and confirms; returning to `/` restores
+  Arabic/RTL. Captured and reviewed.
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.

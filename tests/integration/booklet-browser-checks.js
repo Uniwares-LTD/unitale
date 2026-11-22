@@ -12,8 +12,11 @@ async (page) => {
   const context = page.context();
   const errors = [];
   page.on("pageerror", (error) => errors.push(String(error)));
-  const locale = async (value) =>
-    context.addCookies([{ name: "unitale-locale", value, domain: "127.0.0.1", path: "/" }]);
+  // The app may also set this cookie; replace every copy so one value applies.
+  const locale = async (value) => {
+    await context.clearCookies({ name: "unitale-locale" });
+    await context.addCookies([{ name: "unitale-locale", value, domain: "127.0.0.1", path: "/" }]);
+  };
   const noOverflow = async (label) => {
     const wide = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1,
@@ -136,8 +139,29 @@ async (page) => {
   await noOverflow("history en 1440");
   results.push("history lists this run and current version; malformed cursor is 400");
 
+  // 10.6: admin stays English/LTR with an Arabic public preference, then restores it.
+  await locale("ar");
+  await page.goto(origin + "/admin/booklets");
+  assert((await page.locator("html").getAttribute("dir")) === "ltr", "admin is LTR");
+  await page.getByRole("heading", { name: "Booklets", level: 1 }).waitFor();
+  const llm = page.getByRole("textbox", { name: "Paid LLM actions" }).first();
+  await llm.fill("11");
+  await page.getByRole("button", { name: "Save retry defaults" }).first().click();
+  await page.getByText("Enter a whole number from 0 to 10.").first().waitFor();
+  assert(await llm.evaluate((el) => el === document.activeElement), "focus on invalid admin field");
+  await llm.fill("3");
+  await page.getByRole("button", { name: "Save retry defaults" }).first().click();
+  await page.getByText("Retry defaults saved for new productions.").waitFor();
+  await page.getByText("3 / 0 / 3").waitFor();
+  await noOverflow("admin 1440");
+  await page.screenshot({ path: "output/playwright/booklet-admin-1440.png", fullPage: true });
+  await page.goto(origin + "/");
+  assert((await page.locator("html").getAttribute("dir")) === "rtl", "public Arabic restored");
+  results.push("admin English/LTR edit with validation and save; Arabic restored after admin");
+
   // Editing after a shown price invalidates it. (The dirty form is left in place;
   // the caller verifies the leave warning with a CLI goto afterwards.)
+  await locale("en");
   await page.goto(origin + "/runs/new");
   await page.getByRole("radio").first().waitFor();
   await page.getByRole("radio", { name: /^4 story pages/ }).check();

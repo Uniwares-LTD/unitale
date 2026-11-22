@@ -24,6 +24,10 @@ import { creativeFieldsSchema } from "../../src/lib/server/booklets/documents";
 import { bookletApplication } from "../../src/lib/server/booklets/application";
 import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
+import {
+  bookletAdminView,
+  updateBookletRetryDefaults,
+} from "../../src/lib/server/booklets/admin";
 import { bookletsServerExtension } from "../../src/project/booklets/server";
 
 const admin = { uid: "admin", auth_time: 1 };
@@ -726,6 +730,98 @@ test("booklet application facade", async (t) => {
         assert.deepEqual(
           versions.items.map((item) => (item as { current: boolean }).current),
           [true],
+        );
+      },
+    );
+
+    await t.test(
+      "administration edits only retry defaults for new productions",
+      async () => {
+        const { db, catalog, app } = await fixture();
+        const before = await app.start(start(catalog));
+        await db.collection("bookletWorkflowPolicies").updateOne(
+          {},
+          {
+            $set: {
+              suite: { managerWorkflowId: "provider-secret-suite" },
+              reviewer: {
+                id: "reviewer",
+                revision: 2,
+                publicationId: "11111111-1111-4111-8111-111111111111",
+              },
+            },
+          },
+        );
+        const adminActor = { uid: admin.uid, auth_time: 1 };
+        await assert.rejects(
+          bookletAdminView(db, { uid: owner.uid, auth_time: 1 }),
+          /Administrator access is required/,
+        );
+        const view = await bookletAdminView(db, adminActor);
+        assert.equal(view.policies.length, 1);
+        const [row] = view.policies;
+        assert.deepEqual(row.retryDefaults, retryDefaults);
+        assert.equal(row.current, true);
+        assert.deepEqual(row.reviewer, { id: "reviewer", revision: 2 });
+        for (const secret of ["provider-secret-suite", "11111111-1111"])
+          assert.equal(JSON.stringify(view).includes(secret), false);
+        const next = { paidLlm: 4, paidImage: 1, nonPaid: 5 };
+        await assert.rejects(
+          updateBookletRetryDefaults(db, adminActor, {
+            policyId: row.id,
+            expected: retryDefaults,
+            next: { ...next, paidLlm: 11 },
+          }),
+          (error: unknown) => (error as { status?: number }).status === 400,
+        );
+        await assert.rejects(
+          updateBookletRetryDefaults(
+            db,
+            { uid: owner.uid, auth_time: 1 },
+            {
+              policyId: row.id,
+              expected: retryDefaults,
+              next,
+            },
+          ),
+          /Administrator access is required/,
+        );
+        await updateBookletRetryDefaults(db, adminActor, {
+          policyId: row.id,
+          expected: retryDefaults,
+          next,
+        });
+        // A stale second edit (based on the old values) conflicts.
+        await assert.rejects(
+          updateBookletRetryDefaults(db, adminActor, {
+            policyId: row.id,
+            expected: retryDefaults,
+            next: { paidLlm: 0, paidImage: 0, nonPaid: 0 },
+          }),
+          (error: unknown) => (error as { status?: number }).status === 409,
+        );
+        const stored = await db
+          .collection("bookletWorkflowPolicies")
+          .findOne({});
+        assert.deepEqual(stored!.retryDefaults, next);
+        assert.equal(stored!.suite.managerWorkflowId, "provider-secret-suite");
+        assert.deepEqual(stored!.capacity, capacity);
+        assert.equal(
+          await db
+            .collection("auditEvents")
+            .countDocuments({ event: "booklet-retry-defaults-updated" }),
+          1,
+        );
+        // Existing productions keep their snapshot; new ones take the new defaults.
+        const repo = bookletRepositoryV2(db, owner);
+        assert.deepEqual(
+          (await repo.getProduction(before.productionId)).retryPolicy,
+          retryDefaults,
+        );
+        const after = await app.start(start(catalog));
+        assert.deepEqual(
+          (await repo.getProduction(after.productionId)).retryPolicy,
+          next,
         );
       },
     );

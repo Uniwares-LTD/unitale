@@ -77,7 +77,9 @@ and the adapter; the table does not require unrelated suites for every task.
   (tested by `npm run test:booklet-application`); its client-safe commands/DTOs are
   `src/project/booklets/application-contract.ts`, served by `src/app/api/booklets`
   (routes build the facade through `application-request.ts`). The Run detail panel is
-  `src/project/run-detail.tsx` with `booklets/booklet-run-panel.tsx`.
+  `src/project/run-detail.tsx` with `booklets/booklet-run-panel.tsx` (actions and history in
+  `booklet-actions.tsx`/`booklet-history.tsx`). Booklet administration is
+  `src/app/admin/booklets`, `src/app/api/admin/booklets` and `src/lib/server/booklets/admin.ts`.
   The project Run start (`src/project/run-start.tsx`, `booklets/booklet-start.tsx`) and
   home (`src/project/home.tsx`) use existing project slots. Browser checks seed the
   disposable fixture with `tests/integration/booklet-fixture-seed.ts` and run
