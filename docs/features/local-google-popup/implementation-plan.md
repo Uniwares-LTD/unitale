@@ -60,8 +60,8 @@ popup files to the active deployment-data change. At kickoff:
 | P0 existing clone      | Complete                    | Preserve deployment work, switch to the task branch and obtain the local-only CSP approval above.                                                          |
 | P1 configuration       | Implemented                 | Add the public enum below; test mode/domain selection.                                                                                                     |
 | P2 Google button       | Implemented                 | Reuse the current form and finish/session exchange; test success, cancellation and blocking.                                                               |
-| P3 verification/review | Checks pass | Run affected checks and two clean same-state read-only passes; prepare exact revision handoff.                                                             |
-| P4 Unitale consumption | Pending external dependency | After reviewed upstream integration, import exact main revision from a clean Unitale issue branch, then verify local popup and preserved booklet behavior. |
+| P3 verification/review | Complete | Two consecutive clean same-agent reviews of tree `9d55ef9502288e4293a184998b19c87cf02bcba1`; merged through Unibase PR #64. |
+| P4 Unitale consumption | Complete | Exact reviewed main imported through `template:update`; Unitale PR #14 merged into its existing issue branch; user completed real sign-in. |
 
 ### P1 - one public configuration field
 
@@ -155,11 +155,33 @@ npx.cmd --yes --package @playwright/cli playwright-cli -s=popup-form open http:/
 npx.cmd --yes --package @playwright/cli playwright-cli -s=popup-form run-code --filename=tests/integration/auth-form-browser-checks.js
 ```
 
-An isolated production app with disposable MongoDB and the approved public Firebase
-registration reached Google's ordinary sign-in page from plain localhost HTTP via
-the hosted Firebase helper. The exact hosted iframe origin is admitted by served
-CSP; closing the real popup restores the unchanged account page quietly. No account
-was signed in. Publication requires two consecutive clean same-agent read-only reviews of
-the final diff. Unitale exact adoption follows integration; real-account session acceptance
-remains a final manual action. No provider settings, dependencies, credentials,
-deployment or Booklet checkpoint 10 implementation are included.
+The implementation was reviewed in two consecutive same-agent read-only passes at
+commit `c18d8b13f002afaefa8e567606f85438ca23c555`, tree
+`9d55ef9502288e4293a184998b19c87cf02bcba1`, and merged normally in
+[Unibase PR #64](https://github.com/Uniwares-LTD/unibase/pull/64) as
+`899785b93b7f6d0ebe02c62dbdd3ac80f27fe6a5`.
+
+The initial Unitale adoption below targeted its existing issue branch. Later imports
+follow the [integration-first procedure](../../template.md#receive-template-updates),
+with project integration preceding propagation to active issue branches. The initial
+issue PR remains historical implementation/acceptance evidence.
+
+Unitale consumed that exact merge through `template:update`, preserving project
+identity, Booklet code/hooks/model, existing setup work and private configuration.
+[Unitale PR #14](https://github.com/Uniwares-LTD/unitale/pull/14) merged adoption commit
+`d5c24f25e8810373985a314400e22053ba241f6c` normally into its existing issue #10 branch
+as `7f84cd371a0e2516a60ced7ffa5aba59f567d0e0`. The adoption received two consecutive
+clean same-agent read-only reviews. Its canonical
+[adoption/acceptance record](https://github.com/Uniwares-LTD/unitale/blob/7f84cd371a0e2516a60ced7ffa5aba59f567d0e0/docs/features/booklet-generation/implementation-plan.md#local-google-popup-adoption)
+owns Unitale verification, including preserved Booklet behavior and the unchanged
+MCP rerun after one Python subprocess timeout. CI quality and disposable deployment
+jobs pass; formatting and dependency-audit reports remain advisory.
+
+Both isolated production apps reached Google's ordinary sign-in page from plain
+localhost HTTP through the real hosted helper; closing the popup restores the account
+form quietly. On 2026-11-21 the user completed real Google sign-in in Unitale and
+confirmed the signed-in account; the existing session endpoint returned 200.
+Unitale retains its prepared HTTPS origin and approved CA. Its private environment
+and TLS file identities are unchanged. No provider configuration, dependency,
+new environment setting, migration, deployment, paid call or Booklet checkpoint 10
+implementation is included.
