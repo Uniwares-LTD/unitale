@@ -315,6 +315,21 @@ test("booklet application facade", async (t) => {
           /different input/,
         );
         assert.equal(await charges(db), 1);
+        // Domain picker: owned live books with a current production only.
+        assert.deepEqual(await app.picker(), {
+          rows: [{ id: result.productionId, title: "The lantern" }],
+          next: null,
+        });
+        assert.deepEqual((await app.picker({ search: "lant" })).rows.length, 1);
+        assert.deepEqual((await app.picker({ search: "(.*" })).rows, []);
+        assert.deepEqual(
+          (await bookletApplication(db, stranger, { types }).picker()).rows,
+          [],
+        );
+        await assert.rejects(
+          app.picker({ cursor: "bm90LWEtY3Vyc29y" }),
+          /Invalid pagination cursor/,
+        );
       },
     );
 
@@ -403,15 +418,12 @@ test("booklet application facade", async (t) => {
           assert.equal(result.productionId, productionId);
           assert.equal(await charges(db), 1);
         }
-        // After production creation: the paid start fails for lack of credits, then resumes.
+        // Insufficient credits refuse before any book exists; the same key then starts.
         {
           const { db, catalog, app } = await fixture(0);
           const command = start(catalog);
-          await assert.rejects(app.start(command));
-          assert.equal(
-            await db.collection("bookletProductions").countDocuments(),
-            1,
-          );
+          await assert.rejects(app.start(command), /not enough available/);
+          assert.equal(await db.collection("bookletBooks").countDocuments(), 0);
           assert.equal(await charges(db), 0);
           await grantCredits(db, owner.uid, "late", {
             amount: 50,
@@ -421,25 +433,27 @@ test("booklet application facade", async (t) => {
           assert.ok(await app.start(command));
           assert.equal(await charges(db), 1);
         }
-        // Disabled Runs refuse before the paid start, so nothing is charged.
-        // Then a simulated interruption after the paid start resumes to one Run.
+        // After production creation: disabled Runs refuse before the paid start
+        // (nothing charged). After a simulated interruption following the paid
+        // start, a refusal is START_PENDING (retry, never edit), then resumes.
         {
           const { db, catalog, app } = await fixture();
           const command = start(catalog);
-          await db
-            .collection("baseSettings")
-            .updateOne(
-              { _id: "base" as never },
-              { $set: { "settings.runs.enabled": false } },
-            );
+          const runs = (enabled: boolean) =>
+            db
+              .collection("baseSettings")
+              .updateOne(
+                { _id: "base" as never },
+                { $set: { "settings.runs.enabled": enabled } },
+              );
+          await runs(false);
           await assert.rejects(app.start(command), /Runs are disabled/);
+          assert.equal(
+            await db.collection("bookletProductions").countDocuments(),
+            1,
+          );
           assert.equal(await charges(db), 0);
-          await db
-            .collection("baseSettings")
-            .updateOne(
-              { _id: "base" as never },
-              { $set: { "settings.runs.enabled": true } },
-            );
+          await runs(true);
           const productionId = fingerprint([
             owner.uid,
             "booklet-start-production",
@@ -448,6 +462,15 @@ test("booklet application facade", async (t) => {
           await bookletLifecycleV2(db, owner).start(productionId);
           assert.equal(await charges(db), 1);
           assert.equal(await jobs(db), 0);
+          await runs(false);
+          await assert.rejects(app.start(command), (error: unknown) => {
+            assert.equal(
+              (error as { code?: string }).code,
+              "BOOKLET_START_PENDING",
+            );
+            return true;
+          });
+          await runs(true);
           const result = await app.start(command);
           assert.equal(await charges(db), 1);
           assert.equal(await jobs(db), 1);

@@ -33,6 +33,8 @@ import { bookletRepositoryV2 } from "./repository-v2";
 import { bookletLifecycleV2 } from "./lifecycle-v2";
 import { enqueueBookletRun } from "./runs";
 import { readSettings } from "../settings";
+import { accessPermitsSession, accountAccess } from "../store/access";
+import { readWallet } from "../store/credits";
 
 // Trusted application settings on the existing `bookletWorkflowPolicies` row.
 // Capacity is immutable per execution profile revision; retry defaults affect
@@ -323,32 +325,85 @@ export function bookletApplication(
     };
   }
 
+  function encodeCursor(scope: string, after: string) {
+    return Buffer.from(JSON.stringify({ scope, after })).toString("base64url");
+  }
+  function decodeCursor(raw: string | null | undefined, scope: string) {
+    if (!raw) return undefined;
+    try {
+      return z
+        .strictObject({ scope: z.literal(scope), after: z.string().max(160) })
+        .parse(JSON.parse(Buffer.from(raw, "base64url").toString("utf8")))
+        .after;
+    } catch {
+      throw new AppError("BOOKLET_INVALID", "Invalid pagination cursor.", 400);
+    }
+  }
+
   return {
+    /** Domain picker rows: owned live books with a current production. */
+    async picker(
+      raw: { search?: string | null; cursor?: string | null } = {},
+    ): Promise<{ rows: { id: string; title: string }[]; next: string | null }> {
+      requireModule("booklets");
+      if (
+        !accessPermitsSession(
+          await accountAccess(db, actor.uid),
+          actor.authTime,
+        )
+      )
+        throw new AppError("FORBIDDEN", "Account access is unavailable.", 403);
+      const search = z
+        .string()
+        .trim()
+        .max(80)
+        .parse(raw.search ?? "");
+      const scope = fingerprint([actor.uid, "booklet-picker", search]);
+      const after = decodeCursor(raw.cursor, scope);
+      const books = await db
+        .collection<{
+          _id: string;
+          title: string;
+          currentProductionId: string | null;
+        }>("bookletBooks")
+        .find(
+          {
+            ownerId: actor.uid,
+            "deletion.deletedAt": null,
+            currentProductionId: { $ne: null },
+            ...(search
+              ? {
+                  title: {
+                    $regex: search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                    $options: "i",
+                  },
+                }
+              : {}),
+            ...(after ? { _id: { $gt: after } } : {}),
+          },
+          {
+            projection: { title: 1, currentProductionId: 1 },
+            sort: { _id: 1 },
+            limit: pageLimit + 1,
+          },
+        )
+        .toArray();
+      const page = books.slice(0, pageLimit);
+      return {
+        rows: page.map((b) => ({ id: b.currentProductionId!, title: b.title })),
+        next:
+          books.length > pageLimit
+            ? encodeCursor(scope, page.at(-1)!._id)
+            : null,
+      };
+    },
+
     async packages(
       raw: { cursor?: string | null } = {},
     ): Promise<BookletPackagePage> {
       requireModule("booklets");
       const scope = fingerprint([actor.uid, "booklet-packages"]);
-      let after: string | undefined;
-      if (raw.cursor) {
-        try {
-          const value = z
-            .strictObject({
-              scope: z.literal(scope),
-              after: z.string().max(160),
-            })
-            .parse(
-              JSON.parse(Buffer.from(raw.cursor, "base64url").toString("utf8")),
-            );
-          after = value.after;
-        } catch {
-          throw new AppError(
-            "BOOKLET_INVALID",
-            "Invalid pagination cursor.",
-            400,
-          );
-        }
-      }
+      const after = decodeCursor(raw.cursor, scope);
       const heads = await db
         .collection<{ _id: string; publishedRevision: number | null }>(
           "commerceCatalogs",
@@ -373,9 +428,7 @@ export function bookletApplication(
         rows,
         next:
           heads.length > pageLimit
-            ? Buffer.from(
-                JSON.stringify({ scope, after: page.at(-1)!._id }),
-              ).toString("base64url")
+            ? encodeCursor(scope, page.at(-1)!._id)
             : null,
       };
     },
@@ -432,6 +485,16 @@ export function bookletApplication(
           ),
           input.brief,
         );
+        // The paid start rechecks atomically; this only avoids an unpaid draft.
+        if (
+          (await readWallet(db, actor.uid, { actor })).available <
+          input.acceptedCredits
+        )
+          throw new AppError(
+            "INSUFFICIENT_CREDITS",
+            "There are not enough available credits.",
+            409,
+          );
       }
       await base.createBook({
         id: bookletId,
@@ -479,12 +542,17 @@ export function bookletApplication(
       );
       const prior = await existingRun(runKey, productionId);
       if (prior) return prior;
-      const existing = await db
-        .collection("bookletProductions")
-        .findOne(
-          { _id: productionId as never, ownerId: actor.uid },
-          { projection: { documentVersion: 1, bookletId: 1, orderId: 1 } },
-        );
+      const existing = await db.collection("bookletProductions").findOne(
+        { _id: productionId as never, ownerId: actor.uid },
+        {
+          projection: {
+            documentVersion: 1,
+            bookletId: 1,
+            orderId: 1,
+            lifecycleState: 1,
+          },
+        },
+      );
       if (!existing) {
         const pack = bookletPackageFrom(order.fields, order.value.terms);
         const config = await configuration(
@@ -508,12 +576,27 @@ export function bookletApplication(
         existing.orderId !== order.value.id
       )
         throw bookletConflict("Production creation changed.");
-      // Run admission rechecks this; refusing here avoids charging for a Run
-      // that cannot be admitted. A charged start always resumes to its Run.
-      if (!(await readSettings(db)).settings.runs.enabled)
+      // Before charging only: refusing here avoids paying for a Run that cannot
+      // be admitted. Once charged, a refusal is reported as START_PENDING below.
+      if (
+        (existing?.lifecycleState ?? "draft") === "draft" &&
+        !(await readSettings(db)).settings.runs.enabled
+      )
         throw bookletConflict("Runs are disabled.");
       const { workflowId } = await lifecycle.start(productionId);
-      return enqueue(productionId, runKey, workflowId, null);
+      try {
+        return await enqueue(productionId, runKey, workflowId, null);
+      } catch (error) {
+        // Paid and saved: the browser must retry this exact request, never edit
+        // it into a new key (which would be a second booklet and charge).
+        if (error instanceof AppError && error.status < 500)
+          throw new AppError(
+            "BOOKLET_START_PENDING",
+            "Your book is paid and saved, but it couldn’t start yet. Try again.",
+            409,
+          );
+        throw error;
+      }
     },
 
     async command(

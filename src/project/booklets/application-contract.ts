@@ -54,40 +54,67 @@ export type BookletProductionCommand = z.infer<
   typeof bookletProductionCommandSchema
 >;
 
-export type BookletPackageSummary = {
-  catalogId: string;
-  revision: number;
-  quoteHash: string;
-  credits: number;
-  entitlementDays: number | null;
-  storyPages: number;
-  includeCover: boolean;
-  maxCharacters: number;
-  maxLocations: number;
-  maxPanelsPerPage: number;
-  styleSamples: number;
-  languages: { tag: string; direction: "ltr" | "rtl" }[];
-  allowances: {
-    category: string;
-    unit: "request" | "subject";
-    included: number;
-    // Null means additional revisions cannot be purchased.
-    extraCredits: number | null;
-  }[];
-  available: boolean;
-};
-export type BookletPackagePage = {
-  rows: BookletPackageSummary[];
-  next: string | null;
-};
-export type BookletRunReference = { productionId: string; runId: string };
-export type BookletRevisionQuote = {
-  quoteHash: string;
-  credits: number;
-  units: number;
-};
-export type BookletRetryResult = {
-  authorized: true;
+// Response schemas: the browser parses with these; the server returns their types.
+export const bookletPackageSummarySchema = z.object({
+  catalogId: z.string(),
+  revision: z.number(),
+  quoteHash: z.string(),
+  credits: z.number(),
+  entitlementDays: z.number().nullable(),
+  storyPages: z.number(),
+  includeCover: z.boolean(),
+  maxCharacters: z.number(),
+  maxLocations: z.number(),
+  maxPanelsPerPage: z.number(),
+  styleSamples: z.number(),
+  languages: z.array(
+    z.object({ tag: z.string(), direction: z.enum(["ltr", "rtl"]) }),
+  ),
+  allowances: z.array(
+    z.object({
+      category: z.string(),
+      unit: z.enum(["request", "subject"]),
+      included: z.number(),
+      // Null means additional revisions cannot be purchased.
+      extraCredits: z.number().nullable(),
+    }),
+  ),
+  available: z.boolean(),
+});
+export const bookletPackagePageSchema = z.object({
+  rows: z.array(bookletPackageSummarySchema),
+  next: z.string().nullable(),
+});
+export const bookletRunReferenceSchema = z.object({
+  productionId: z.string(),
+  runId: z.string(),
+});
+export const bookletRevisionQuoteSchema = z.object({
+  quoteHash: z.string(),
+  credits: z.number(),
+  units: z.number(),
+});
+export const bookletRetryResultSchema = z.object({
+  authorized: z.literal(true),
   // Null when the active Manager resumes from its own retry wait.
-  continued: BookletRunReference | null;
-};
+  continued: bookletRunReferenceSchema.nullable(),
+});
+export type BookletPackageSummary = z.infer<typeof bookletPackageSummarySchema>;
+export type BookletPackagePage = z.infer<typeof bookletPackagePageSchema>;
+export type BookletRunReference = z.infer<typeof bookletRunReferenceSchema>;
+export type BookletRevisionQuote = z.infer<typeof bookletRevisionQuoteSchema>;
+export type BookletRetryResult = z.infer<typeof bookletRetryResultSchema>;
+// Refusals that happen before any charge: the browser may unlock editing.
+// Everything else (including BOOKLET_START_PENDING and transport failures)
+// keeps the exact request for a same-key retry.
+export const bookletEditableErrors: readonly string[] = [
+  "INVALID_INPUT",
+  "INVALID_CSRF",
+  "BOOKLET_CONFLICT",
+  "BOOKLET_UNAVAILABLE",
+  "BOOKLET_INVALID",
+  "CONSUMPTION_CONFLICT",
+  "INSUFFICIENT_CREDITS",
+  "MODULE_UNAVAILABLE",
+  "RATE_LIMITED",
+];

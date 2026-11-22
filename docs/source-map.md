@@ -73,6 +73,13 @@ and the adapter; the table does not require unrelated suites for every task.
   acceptance use project-owned collections and the index-only 0004 migration; trusted
   runtime/tool wiring is locally verified through 09.6; target execution remains pending.
   `src/project/booklets/extension.ts` and `server.ts` own registration.
+  Checkpoint 10's private application facade is `src/lib/server/booklets/application.ts`
+  (tested by `npm run test:booklet-application`); its client-safe commands/DTOs are
+  `src/project/booklets/application-contract.ts`, served by `src/app/api/booklets`.
+  The project Run start (`src/project/run-start.tsx`, `booklets/booklet-start.tsx`) and
+  home (`src/project/home.tsx`) use existing project slots. Browser checks seed the
+  disposable fixture with `tests/integration/booklet-fixture-seed.ts` and run
+  `tests/integration/booklet-browser-checks.js` through playwright-cli.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
   `mcp-tools-v2.ts` its v2 checkpoint/index/creative-registration handlers and typed-read wrapper;

@@ -945,7 +945,7 @@ JSON example and both Mermaid schema versions are unaffected.
 | Task | State | Smallest change and exit evidence |
 | --- | --- | --- |
 | 10.1 Private application facade | Verified locally (2026-11-22; see 10.1 facade decisions) | Define/validate the existing policy row's capacity and retry-default fields here (only retry-default editing follows in 10.6; capacity stays bound to its immutable profile revision); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
-| 10.2 Package and financial consent | Pending | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Also replace the generic home through the existing `projectHome` hook (`src/project/home.tsx`; no Unibase or core change): signed out, Sign in returning to `/runs/new`; signed in, **Create a book** (`/runs/new`) and **Continue your books** (`/runs`) plus the existing account/appearance cards; booklet copy; links only. Published package snapshots and changed-price/input tests pass; no production seeds. |
+| 10.2 Package and financial consent | Verified locally (2026-11-22; see 10.2 decisions) | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Also replace the generic home through the existing `projectHome` hook (`src/project/home.tsx`; no Unibase or core change): signed out, Sign in returning to `/runs/new`; signed in, **Create a book** (`/runs/new`) and **Continue your books** (`/runs`) plus the existing account/appearance cards; booklet copy; links only. Published package snapshots and changed-price/input tests pass; no production seeds. |
 | 10.3 Progress, decisions and originals | Pending | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
 | 10.4 Revision and recovery controls | Pending | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
 | 10.5 Accessible history | Pending | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
@@ -993,6 +993,39 @@ JSON example and both Mermaid schema versions are unaffected.
   (exercised by existing MCP retry tests), and route/UI use (10.2-10.4). Two separate
   same-agent read-only passes; the first found two Medium defects (charge before
   predictable Run refusal; empty booklet on refused first start), both fixed and retested.
+
+#### 10.2 start and consent decisions (2026-11-22)
+
+- `/api/booklets` (registered as a booklets module route, so the module guard applies):
+  GET returns picker rows `{rows:[{id,title}],next}` (owned live books with a current
+  production, escaped title search, owner/search-scoped cursors) or, with
+  `section=packages`, allowlisted package summaries; POST takes `quote`/`start`, with a
+  verified session and existing CSRF/origin/rate-limit checks.
+- `ProjectRunStart` composes **Create a book** above the unchanged generic landing and
+  omits booklet orchestrators from it (generic admission always refuses them). Flow:
+  form, inline validation with first-invalid focus, **Review price** (quote), an
+  `AlertDialog` naming the exact credits, then start and navigation to the Run. Any edit
+  after a quote clears it. One key per confirmed request; known pre-charge refusals
+  unlock editing; transport/unknown outcomes and `BOOKLET_START_PENDING` keep the exact
+  request locked for a same-key retry. A leave guard protects typed work.
+- `BOOKLET_START_PENDING`: once charged, a Run-admission refusal is reported with this
+  code so the browser never edits into a new key (a second booklet and charge). A first
+  attempt also checks available credits before creating the book, so an underfunded
+  attempt leaves no draft.
+- Homepage through `projectHome`: booklet copy; signed out, Sign in returning to
+  `/runs/new`; signed in, Create a book and Continue your books plus the existing
+  account/appearance cards; links only.
+- Evidence: `test:booklet-application` 7/7 (adds picker ownership/search/cursor and
+  START_PENDING cases); production build then typecheck; lint (0 errors; the browser
+  script carries the same advisory expression warning as the existing auth-form
+  script); `check:i18n`, `check:docs`. Browser: `tests/integration/booklet-browser-checks.js`
+  against the owned fixture seeded by `tests/integration/booklet-fixture-seed.ts`
+  passes: signed-out return path; home and start in en/ar at 1440px/390px with correct
+  direction and no horizontal overflow; unavailable package disabled; first-invalid
+  focus; quote; consent cancel sends nothing; confirm sends exactly one start and opens
+  the Run; edits clear a quote; leaving a dirty form raises the browser warning.
+  Captures were reviewed. Dark mode, keyboard-only traversal, 200% zoom, reduced motion
+  and served-document CSP remain for the 10.7 matrix.
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.

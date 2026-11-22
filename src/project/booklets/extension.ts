@@ -4,7 +4,7 @@ export const bookletsExtension = defineExtension({
   module: {
     requires: ["credits", "runs"],
     configuration: [],
-    routes: [],
+    routes: ["/api/booklets"],
     workers: [],
     collections: [
       "bookletBooks",
