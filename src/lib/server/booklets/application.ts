@@ -295,6 +295,116 @@ export function bookletApplication(
     );
   }
 
+  /** Advisory eligibility for the UI. Commands remain authoritative. */
+  async function availableActions(
+    p: Awaited<ReturnType<typeof repo.getProduction>>,
+  ): Promise<BookletView["actions"]> {
+    const latest = await latestRun(p._id);
+    const terminal =
+      latest !== null &&
+      (latest.status === "succeeded" || canStartNewAttempt(latest));
+    const running = latest !== null && !terminal;
+    const live =
+      p.lifecycleState === "in-progress" &&
+      !(p.expiresAt && p.expiresAt <= new Date());
+    let retry: BookletView["actions"]["retry"] = null;
+    if (live) {
+      const failed = await db
+        .collection<{
+          callId: string;
+          actionKey: string;
+          category: "paidLlm" | "paidImage" | "nonPaid";
+          retryOrdinal: number;
+        }>("bookletWork")
+        .find(
+          {
+            ownerId: actor.uid,
+            productionId: p._id,
+            status: "failed",
+            retryable: true,
+            retryAuthorization: { $exists: false },
+          },
+          {
+            projection: {
+              callId: 1,
+              actionKey: 1,
+              category: 1,
+              retryOrdinal: 1,
+            },
+            sort: { updatedAt: -1 },
+            limit: 5,
+          },
+        )
+        .toArray();
+      for (const row of failed) {
+        const newest = await db
+          .collection<{ callId: string }>("bookletWork")
+          .findOne(
+            {
+              ownerId: actor.uid,
+              productionId: p._id,
+              actionKey: row.actionKey,
+            },
+            { sort: { retryOrdinal: -1 }, projection: { callId: 1 } },
+          );
+        if (
+          newest?.callId === row.callId &&
+          row.retryOrdinal >= p.retryPolicy[row.category]
+        ) {
+          retry = { callId: row.callId };
+          break;
+        }
+      }
+    }
+    const revisions: BookletView["actions"]["revisions"] = [];
+    if (
+      !running &&
+      (p.lifecycleState === "in-progress" ||
+        p.lifecycleState === "completed") &&
+      !(p.expiresAt && p.expiresAt <= new Date())
+    ) {
+      const order = await db
+        .collection<{
+          _id: string;
+          value: { state: string; terms: ConsumptionTerms };
+          locks: string[];
+        }>("consumptionOrders")
+        .findOne({ _id: p.orderId, "value.ownerId": actor.uid });
+      const kinds = {
+        story: [],
+        style: ["style-sample"],
+        reference: ["character", "location"],
+        page: ["page"],
+      } as const;
+      for (const allowance of order?.value.state === "started"
+        ? order.value.terms.allowances
+        : []) {
+        const category = allowance.category as keyof typeof kinds;
+        if (!(category in kinds) || order!.locks.includes(category)) continue;
+        const lock = category === "reference" ? "references" : category;
+        if (lock !== "page" && p.stageLocks[lock]) continue;
+        const subjects = p.subjects
+          .filter((s) =>
+            (kinds[category] as readonly string[]).includes(s.kind),
+          )
+          .map((s) => ({ id: s.id, label: s.label, pageRole: s.pageRole }));
+        if (allowance.unit === "subject" && !subjects.length) continue;
+        revisions.push({
+          category,
+          unit: allowance.unit,
+          allSubjectsRequired: category === "style",
+          subjects: allowance.unit === "subject" ? subjects : [],
+        });
+      }
+    }
+    return {
+      running,
+      continue: live && terminal,
+      retry,
+      revisions,
+    };
+  }
+
   async function continueWith(
     productionId: string,
     key: string,
@@ -644,6 +754,7 @@ export function bookletApplication(
         `/api/booklets/${encodeURIComponent(productionId)}/assets/${encodeURIComponent(assetId)}`;
       const config = p.creativeConfigSnapshot;
       const pages = p.subjects.filter((s) => s.kind === "page");
+      const actions = await availableActions(p);
       return {
         productionId,
         bookletId: p.bookletId,
@@ -666,6 +777,7 @@ export function bookletApplication(
           ).length,
           total: config.storyPages + Number(config.includeCover),
         },
+        actions,
         subjects: p.subjects.map((s) => ({
           id: s.id,
           kind: s.kind,

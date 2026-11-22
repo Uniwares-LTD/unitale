@@ -947,7 +947,7 @@ JSON example and both Mermaid schema versions are unaffected.
 | 10.1 Private application facade | Verified locally (2026-11-22; see 10.1 facade decisions) | Define/validate the existing policy row's capacity and retry-default fields here (only retry-default editing follows in 10.6; capacity stays bound to its immutable profile revision); adapt delivered services into owned public DTOs and bounded quote/start/revision/recovery commands. Tests prove changed-key rejection, fresh ownership/module admission and resumption after each committed financial/admission effect. |
 | 10.2 Package and financial consent | Verified locally (2026-11-22; see 10.2 decisions) | Use `ProjectRunStart` on `/runs/new` for package, brief, audience/preferences, quote and explicit consent. Also replace the generic home through the existing `projectHome` hook (`src/project/home.tsx`; no Unibase or core change): signed out, Sign in returning to `/runs/new`; signed in, **Create a book** (`/runs/new`) and **Continue your books** (`/runs`) plus the existing account/appearance cards; booklet copy; links only. Published package snapshots and changed-price/input tests pass; no production seeds. |
 | 10.3 Progress, decisions and originals | Verified locally (2026-11-22; see 10.3 decisions) | Use `ProjectRunDetail` for booklet target data, saved progress, selected results and owned original URLs. Keep authentic decisions in existing Run UI. Unauthorized/media-leak and partial/unknown-state tests pass. |
-| 10.4 Revision and recovery controls | Pending | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
+| 10.4 Revision and recovery controls | Verified locally (2026-11-22; see 10.4 decisions) | Add target-scoped revision quote/consent, Retry failed step, Continue booklet and existing Stop. Double-click/reload and terminal-state tests prove no successful-work replay, duplicate charge or dispatch during uncertainty. |
 | 10.5 Accessible history | Pending | Add owner-bound paginated production, artifact revision, decision and execution history inside existing Run surfaces; show current/selected versus historical state. Test more than one page and foreign/malformed cursors. |
 | 10.6 Minimal administration | Pending | Reuse the admin shell for three action-retry defaults and sanitized evidence. New productions snapshot defaults; existing productions keep theirs. Admin authentication, validation/conflict and language isolation tests pass. |
 | 10.7 Verification and handoff | Pending | Run affected service/UI checks, desktop/390px en/ar browser journeys, English/LTR admin with Arabic public preference and restoration, keyboard and served-document CSP checks. Two clean same-state read-only reviews; update evidence and remaining 11/12 steps. |
@@ -1051,6 +1051,33 @@ JSON example and both Mermaid schema versions are unaffected.
   build then typecheck; scoped lint; `check:i18n`. Browser: the Run page shows the
   panel with title, state, `0 of 5 pages selected`, stage states and the empty saved
   state; an unowned asset URL returns 404. Captured and reviewed.
+
+#### 10.4 recovery and revision decisions (2026-11-22)
+
+- `POST /api/booklets/[productionId]` serves `quote-revision`, `start-revision`, `retry`
+  and `continue` (strict schema, verified session, CSRF/origin, fresh ownership).
+- The view adds advisory `actions` (commands stay authoritative): `running`; `continue`
+  only for an unfinished, unexpired production whose latest Run is verified terminal;
+  `retry` for the newest failed retriable call of its action after its automatic
+  allowance (`authorizeRetry` still checks correction roots and entitlement); and
+  `revisions` only when no Run is active, from the order's allowances minus order and
+  stage locks, with eligible subjects (style requires every style sample).
+- The panel's **Next steps**: Retry failed step, Continue booklet, and Request changes
+  (category, subjects, quote, an `AlertDialog` naming the credits or the included
+  revision, then start). A new logical Run opens on its own page; the same Run refreshes.
+  Uncertain outcomes keep the exact command for a same-key Check again; known refusals
+  show a Notice and re-read eligibility. While a Run is active the panel explains the
+  existing **Cancel run**: accepted work is kept and cancelling is not a refund. No
+  second cancellation path exists.
+- Evidence: `test:booklet-application` 9/9 (adds active-Run eligibility, retry
+  eligibility, two concurrent Continue clicks admitting exactly one attempt with one
+  charge, revision exact replay, a second revision refused during an active Run with no
+  extra charge, and a completed production refusing Continue). Build then typecheck,
+  scoped lint, `check:i18n`. Browser: next steps follow server eligibility on an active
+  Run (guidance shown; no revision form). Clicking Continue/Retry/revision in a browser
+  against seeded terminal states is part of the 10.7 matrix.
+- Local note: account suites stop MongoDB memory-server processes during forced
+  cleanup; do not run them while a browser fixture is running.
 
 Implement in order; keep only one task In progress. Small affected checks per slice;
 checkpoint-wide reviews follow 10.7. No percentage or line count substitutes for exits.

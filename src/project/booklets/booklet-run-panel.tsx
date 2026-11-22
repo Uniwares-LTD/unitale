@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bookletViewSchema, type BookletView } from "./application-contract";
+import { BookletActions } from "./booklet-actions";
 
 // Public Run statuses (runStatuses) whose outcome is not yet known; saved work
 // stays visible. Unknown/settlement-blocked attempts map to these.
@@ -27,10 +28,14 @@ export function BookletRunPanel({
   productionId,
   refreshKey,
   runStatus,
+  runId,
+  refreshRun,
 }: {
   productionId: string;
   refreshKey: string;
   runStatus: string;
+  runId: string;
+  refreshRun: () => Promise<void>;
 }) {
   const t = useTranslations("ui");
   const [view, setView] = useState<BookletView | null>(null);
@@ -219,6 +224,14 @@ export function BookletRunPanel({
                 </ul>
               </section>
             )}
+            <BookletActions
+              view={view}
+              currentRunId={runId}
+              refresh={() => {
+                void retry();
+                void refreshRun();
+              }}
+            />
           </>
         )}
       </CardContent>

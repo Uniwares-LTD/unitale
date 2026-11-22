@@ -9,6 +9,7 @@ import { BookletRunPanel } from "./booklets/booklet-run-panel";
 // Decisions remain in the existing authentic Run decision controls.
 export function ProjectRunDetail({
   data,
+  refresh,
 }: {
   data: ComponentProps<typeof RunDetail>["initial"];
   refresh: () => Promise<void>;
@@ -20,6 +21,8 @@ export function ProjectRunDetail({
     <BookletRunPanel
       productionId={target.id}
       runStatus={data.status}
+      runId={data.id}
+      refreshRun={refresh}
       refreshKey={`${data.status}:${latest?.id ?? ""}:${latest?.updatedAt ?? ""}:${data.events.length}`}
     />
   );

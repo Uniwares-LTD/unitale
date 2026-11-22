@@ -445,6 +445,7 @@ test("booklet application facade", async (t) => {
 
         const view = await app.view(productionId);
         assert.deepEqual(Object.keys(view).sort(), [
+          "actions",
           "bookletId",
           "completed",
           "expiresAt",
@@ -493,6 +494,107 @@ test("booklet application facade", async (t) => {
         await assert.rejects(
           app.original(productionId, "missing"),
           /not found/,
+        );
+      },
+    );
+
+    await t.test(
+      "recovery and revision actions never replay or double charge",
+      async () => {
+        const { db, catalog, app } = await fixture();
+        const started = await app.start(start(catalog));
+        const id = started.productionId;
+        // Active Run: Manager keeps control; no continue or revision offered.
+        let actions = (await app.view(id)).actions;
+        assert.deepEqual(
+          {
+            running: actions.running,
+            continue: actions.continue,
+            revisions: actions.revisions,
+          },
+          { running: true, continue: false, revisions: [] },
+        );
+        assert.equal(actions.retry, null);
+        // A confirmed retriable failure after its automatic allowance is offered.
+        await db.collection("bookletWork").insertOne({
+          ownerId: owner.uid,
+          productionId: id,
+          callId: "failed-call",
+          actionKey: "a1",
+          status: "failed",
+          retryable: true,
+          category: "paidLlm",
+          retryOrdinal: 1,
+          updatedAt: new Date(),
+        });
+        assert.deepEqual((await app.view(id)).actions.retry, {
+          callId: "failed-call",
+        });
+
+        // Verified failure: two concurrent Continue clicks (different keys)
+        // admit exactly one new attempt.
+        await settle(db, started.runId, "failed");
+        actions = (await app.view(id)).actions;
+        assert.equal(actions.continue, true);
+        assert.ok(actions.revisions.some((r) => r.category === "story"));
+        const before = await jobs(db);
+        const clicks = await Promise.allSettled([
+          app.command(id, { action: "continue", key: randomUUID() }),
+          app.command(id, { action: "continue", key: randomUUID() }),
+        ]);
+        assert.equal(clicks.filter((c) => c.status === "fulfilled").length, 1);
+        assert.equal(await jobs(db), before + 1);
+        assert.equal(await charges(db), 1);
+
+        // Revision: exact replay returns the same Run; a second request while
+        // that Run is active is refused without another charge.
+        await settle(db, started.runId, "succeeded");
+        const version = (await app.view(id)).version;
+        const scope = {
+          requestId: randomUUID(),
+          expectedVersion: version,
+          category: "page" as const,
+          subjects: [],
+        };
+        await assert.rejects(
+          app.command(id, { action: "quote-revision", ...scope }),
+        );
+        const story = { ...scope, category: "story" as const };
+        const quote = (await app.command(id, {
+          action: "quote-revision",
+          ...story,
+        })) as { quoteHash: string; credits: number };
+        const command = {
+          action: "start-revision" as const,
+          ...story,
+          quoteHash: quote.quoteHash,
+          acceptedCredits: quote.credits,
+        };
+        const revision = await app.command(id, command);
+        assert.deepEqual(await app.command(id, command), revision);
+        const chargesAfter = await charges(db);
+        await assert.rejects(
+          app.command(id, {
+            ...command,
+            requestId: randomUUID(),
+          }),
+        );
+        assert.equal(await charges(db), chargesAfter);
+        assert.equal((await app.view(id)).actions.running, true);
+
+        // A completed booklet cannot be continued (no successful-work replay).
+        await db
+          .collection("bookletProductions")
+          .updateOne(
+            { _id: id as never },
+            { $set: { lifecycleState: "completed" } },
+          );
+        await settle(db, (revision as { runId: string }).runId, "succeeded");
+        actions = (await app.view(id)).actions;
+        assert.equal(actions.continue, false);
+        await assert.rejects(
+          app.command(id, { action: "continue", key: randomUUID() }),
+          /Only unfinished production can continue/,
         );
       },
     );

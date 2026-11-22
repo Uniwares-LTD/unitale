@@ -116,6 +116,27 @@ export const bookletViewSchema = z.object({
     references: z.boolean(),
   }),
   pages: z.object({ accepted: z.number(), total: z.number() }),
+  // Server-computed eligibility; commands still recheck everything.
+  actions: z.object({
+    running: z.boolean(),
+    continue: z.boolean(),
+    retry: z.object({ callId: z.string() }).nullable(),
+    revisions: z.array(
+      z.object({
+        category: z.enum(["story", "style", "reference", "page"]),
+        unit: z.enum(["request", "subject"]),
+        // Style revisions always cover every style sample (server rule).
+        allSubjectsRequired: z.boolean(),
+        subjects: z.array(
+          z.object({
+            id: z.string(),
+            label: z.string(),
+            pageRole: z.enum(["cover", "story"]).nullable(),
+          }),
+        ),
+      }),
+    ),
+  }),
   subjects: z.array(
     z.object({
       id: z.string(),

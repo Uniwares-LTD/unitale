@@ -113,6 +113,16 @@ async (page) => {
   await page.screenshot({ path: "output/playwright/booklet-run-en-1440.png", fullPage: true });
   results.push("run panel shows saved progress; unowned asset returns 404");
 
+  // 10.4: next steps come from server eligibility. While a Run is active the
+  // panel explains the existing Cancel run and offers no revision or continue.
+  await page.getByRole("heading", { name: "Next steps", level: 3 }).waitFor();
+  const working = await page.getByText(/^The booklet is working\./).isVisible();
+  const continuing = await page.getByRole("button", { name: "Continue booklet" }).isVisible();
+  assert(working !== continuing, "either active guidance or continue, never both");
+  if (working)
+    assert(!(await page.getByRole("group", { name: "Request changes" }).isVisible()), "no revision while running");
+  results.push("next steps follow server eligibility (" + (working ? "active Run" : "continue offered") + ")");
+
   // Editing after a shown price invalidates it. (The dirty form is left in place;
   // the caller verifies the leave warning with a CLI goto afterwards.)
   await page.goto(origin + "/runs/new");
