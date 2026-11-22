@@ -1121,6 +1121,12 @@ JSON example and both Mermaid schema versions are unaffected.
   preference, focuses an invalid value, saves and confirms; returning to `/` restores
   Arabic/RTL. Captured and reviewed.
 
+#### Checkpoint 10 review record (2026-11-22)
+
+Two consecutive separate same-agent read-only passes (cold-review fallback) review the
+final checkpoint 10 state; their scope, findings and verdicts are recorded here by an
+evidence-only commit that names the reviewed commit.
+
 #### Checkpoint 10 closure (2026-11-22)
 
 **Checkpoint 10 is verified locally** on `feature/10-dify-workflow-design`; T21's six
