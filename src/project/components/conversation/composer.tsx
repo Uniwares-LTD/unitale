@@ -1,10 +1,48 @@
 "use client";
 
-import { type KeyboardEvent, type ReactNode, type Ref } from "react";
+import {
+  useSyncExternalStore,
+  type KeyboardEvent,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { ArrowUp, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+
+function subscribeToKeyboard(callback: () => void) {
+  const viewport = window.visualViewport;
+  viewport?.addEventListener("resize", callback);
+  document.addEventListener("focusin", callback);
+  document.addEventListener("focusout", callback);
+  return () => {
+    viewport?.removeEventListener("resize", callback);
+    document.removeEventListener("focusin", callback);
+    document.removeEventListener("focusout", callback);
+  };
+}
+
+function keyboardOccludesDock() {
+  const viewport = window.visualViewport;
+  return (
+    !!viewport &&
+    viewport.scale === 1 &&
+    window.innerWidth < 700 &&
+    window.innerHeight - viewport.height > 100 &&
+    !!document.activeElement?.closest(
+      '[data-slot="composer"][data-size="dock"]',
+    )
+  );
+}
+
+export function useDockKeyboardOpen() {
+  return useSyncExternalStore(
+    subscribeToKeyboard,
+    keyboardOccludesDock,
+    () => false,
+  );
+}
 
 /**
  * The Unitale question dock surface: the current question, its choices and the
@@ -74,7 +112,11 @@ export function Composer({
     if (canSend && !pending) onSend();
   };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing)
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.nativeEvent.isComposing
+    )
       return;
     event.preventDefault();
     send();
@@ -91,7 +133,10 @@ export function Composer({
       aria-label={sendLabel}
     >
       {pending ? (
-        <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+        <LoaderCircle
+          aria-hidden="true"
+          className="animate-spin motion-reduce:animate-none"
+        />
       ) : (
         <ArrowUp aria-hidden="true" />
       )}

@@ -45,11 +45,9 @@ type Pending = {
  * per intent is reused for a retry when an outcome is unknown. */
 export function BookletActions({
   view,
-  currentRunId,
   refresh,
 }: {
   view: BookletView;
-  currentRunId: string;
   refresh: () => void;
 }) {
   const t = useTranslations("ui");
@@ -82,8 +80,8 @@ export function BookletActions({
 
   function go(result: BookletRunReference) {
     setPending(null);
-    if (result.runId === currentRunId) refresh();
-    else router.push(`/runs/${encodeURIComponent(result.runId)}`);
+    if (result.productionId === view.productionId) refresh();
+    else router.push(`/books/${encodeURIComponent(result.productionId)}`);
   }
 
   async function send(command: BookletProductionCommand) {

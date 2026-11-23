@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/client/api";
 import { signInPath } from "@/lib/return-path";
 import { Notice, SubmitButton } from "@/components/page-patterns";
+import { useLeaveGuard } from "@/components/leave-guard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +54,7 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
   const [problem, setProblem] = useState<Problem | null>(null);
   // One key per consented request, reused for every retry of that request.
   const key = useRef<string | null>(null);
+  useLeaveGuard({ dirty: !!idea.trim() });
 
   useEffect(() => {
     const saved = readDraft();
@@ -197,7 +199,9 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
                 {t("mfd1d3a3672ed")}
               </Button>
             ) : (
-              <p className="text-supporting text-muted-foreground">{t("m79a2b7be2cdc")}</p>
+              <p className="text-supporting text-muted-foreground">
+                {t("m79a2b7be2cdc")}
+              </p>
             )
           }
         />
@@ -206,7 +210,10 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
       {consent && (
         // Accepted exception (2026-11-23): an inline consent card that states
         // pages, price and balance instead of an AlertDialog.
-        <Card aria-labelledby="book-consent-title" className="motion-safe:animate-in motion-safe:fade-in">
+        <Card
+          aria-labelledby="book-consent-title"
+          className="motion-safe:animate-in motion-safe:fade-in"
+        >
           <CardHeader>
             <CardTitle
               id="book-consent-title"
@@ -230,7 +237,9 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
                 </Button>
               </>
             )}
-            {entry && !pack && <Notice tone="warning" title={t("m391e8b97689b")} />}
+            {entry && !pack && (
+              <Notice tone="warning" title={t("m391e8b97689b")} />
+            )}
             {pack && (
               <>
                 <div>
@@ -255,7 +264,9 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
                         : problem === "price"
                           ? t("m589bd2ada19a")
                           : problem === "credits"
-                            ? t("m06db853045c4", { missing: Math.max(1, missing) })
+                            ? t("m06db853045c4", {
+                                missing: Math.max(1, missing),
+                              })
                             : problem === "unavailable"
                               ? t("m391e8b97689b")
                               : t("m3d3a090b7c87")

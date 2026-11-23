@@ -1271,16 +1271,69 @@ export function bookletApplication(
           reply: answered,
         };
       });
+      const working =
+        !!latest &&
+        activeStatuses.includes(latest.status) &&
+        !turns.some((t) => t.status === "open" || t.status === "preparing");
+      let activity: BookletConversation["activity"] = null;
+      if (latest && ["unknown", "needs-review", "settlement-blocked"].includes(latest.status))
+        activity = "confirming";
+      else if (turns.some((turn) => turn.status === "preparing"))
+        activity = "preparing-question";
+      else if (working && latest) {
+        if (latest.applicationWait) activity = "retry";
+        else if (latest.status === "queued") activity = "queued";
+        else {
+          const work = await db.collection<{ service: string }>("bookletWork").findOne({
+            ownerId: actor.uid,
+            productionId,
+            runId: latest._id,
+            status: "dispatching",
+          }, { sort: { updatedAt: -1 }, projection: { service: 1 } });
+          const activities = new Map<string, BookletConversation["activity"]>([
+            ["story-planner", "story"], ["manuscript", "story"],
+            ["art-director", "art"], ["page-composer", "layout"],
+            ["image-executor", "images"], ["quality-reviewer", "review"],
+          ]);
+          activity = activities.get(work?.service ?? "") ?? "working";
+        }
+      }
+      let reader: BookletConversation["reader"] = null;
+      if (p.currentManifestRevisionId) {
+        const manifest = await repo.getRevision(productionId, p.currentManifestRevisionId);
+        if (manifest.content.kind === "book-manifest") {
+          const cover = p.subjects.find((subject) => subject.pageRole === "cover")?.id;
+          const layoutIds = new Set(p.subjects.flatMap((subject) =>
+            subject.artifacts.filter((artifact) => artifact.kind === "book-layout").map((artifact) => artifact.id),
+          ));
+          const layoutSource = manifest.sources.find((source) => layoutIds.has(source.artifactId));
+          const layout = layoutSource ? (await repo.getRevision(productionId, layoutSource.revisionId)).content : null;
+          const lettering = new Map(layout?.kind === "book-layout" ? layout.pages.map((page) => [
+            page.id,
+            page.panels.flatMap((panel) => panel.lettering.map((span) => span.text)),
+          ]) : []);
+          reader = {
+            direction: p.brief.language.direction,
+            width: p.creativeConfigSnapshot.canvas.width,
+            height: p.creativeConfigSnapshot.canvas.height,
+            pages: manifest.content.pages.map((page) => ({
+              assetId: page.assetId,
+              cover: page.pageId === cover,
+              text: lettering.get(page.pageId) ?? [],
+            })),
+          };
+        }
+      }
       return {
         productionId,
         title: book.title,
         idea: p.brief.idea,
         state: p.lifecycleState,
-        working:
-          !!latest &&
-          activeStatuses.includes(latest.status) &&
-          !turns.some((t) => t.status === "open" || t.status === "preparing"),
+        working,
+        activity,
+        runId: latest?.run?.logicalId ?? null,
         completed: p.currentManifestRevisionId !== null,
+        reader,
         turns,
       };
     },

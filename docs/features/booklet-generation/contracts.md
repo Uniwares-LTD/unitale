@@ -70,6 +70,12 @@ production command `reply {key, requestId, reply}` submits a reply to a turn.
 credits. `GET /api/booklets/{id}?section=conversation` returns the turns, their
 statuses and their authentic replies.
 
+The conversation response includes an activity derived from the latest owned Run
+and dispatched work, plus the delivered reader when a committed manifest exists.
+Reader pages use the manifest's exact order and original asset IDs. Lettering comes
+from the selected layout when the manifest names it directly. These projections
+change neither the stored model nor the JSON example and Mermaid diagrams.
+
 `/admin/booklets` reads the current selection and its version. The administrator
 saves a replacement through `PUT /api/admin/booklets` with
 `{catalogId, expectedVersion}`. The replacement must be published and usable

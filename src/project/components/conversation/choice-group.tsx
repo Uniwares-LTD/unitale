@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
+import { ResultImage } from "@/components/media-fallback";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ArtworkViewer, type ArtworkLabels } from "./artwork-viewer";
 
 export type ChoiceOption = {
   id: string;
@@ -26,6 +27,8 @@ export function ChoiceGroup({
   selected = [],
   onChoose,
   disabled = false,
+  artworkLabels,
+  compact = false,
 }: {
   legendId: string;
   legend: string;
@@ -35,6 +38,8 @@ export function ChoiceGroup({
   /** Single: commit this option. Multiple: toggle it in the draft. */
   onChoose: (id: string) => void;
   disabled?: boolean;
+  artworkLabels?: ArtworkLabels;
+  compact?: boolean;
 }) {
   const media = options.some((option) => option.image);
   return (
@@ -42,7 +47,7 @@ export function ChoiceGroup({
       <legend id={legendId} dir="auto" className="mb-2 text-body font-semibold">
         {legend}
       </legend>
-      {options.length > 0 && (
+      {options.length > 0 && !compact && (
         <div
           className={cn(
             "grid gap-2",
@@ -53,9 +58,8 @@ export function ChoiceGroup({
         >
           {options.map((option) => {
             const pressed = selected.includes(option.id);
-            return (
+            const control = (
               <Button
-                key={option.id}
                 type="button"
                 variant={pressed ? "default" : "outline"}
                 aria-pressed={mode === "multiple" ? pressed : undefined}
@@ -63,12 +67,12 @@ export function ChoiceGroup({
                 className={cn(
                   "h-auto min-h-(--control-touch-sm) whitespace-normal text-body",
                   option.image
-                    ? "flex-col items-stretch gap-0 overflow-hidden p-0 text-start"
+                    ? "w-full flex-col items-stretch gap-0 overflow-hidden p-0 text-start"
                     : "px-4 py-2.5",
                 )}
               >
                 {option.image && (
-                  <Image
+                  <ResultImage
                     unoptimized
                     src={option.image.src}
                     alt=""
@@ -81,6 +85,27 @@ export function ChoiceGroup({
                   {option.label}
                 </span>
               </Button>
+            );
+            return (
+              <div
+                key={option.id}
+                className={cn("grid min-w-0", option.image && "relative")}
+              >
+                {control}
+                {option.image && artworkLabels && (
+                  <ArtworkViewer
+                    image={{
+                      src: option.image.src,
+                      alt: option.label,
+                      width: 640,
+                      height: 640,
+                    }}
+                    labels={artworkLabels}
+                    iconOnly
+                    className="absolute end-2 top-2 bg-background"
+                  />
+                )}
+              </div>
             );
           })}
         </div>

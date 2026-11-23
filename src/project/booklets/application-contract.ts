@@ -273,7 +273,38 @@ export const bookletConversationSchema = z.object({
   state: z.enum(["draft", "in-progress", "completed", "closed"]),
   // An attempt is queued or running and no question is open.
   working: z.boolean(),
+  activity: z
+    .enum([
+      "queued",
+      "preparing-question",
+      "story",
+      "art",
+      "layout",
+      "images",
+      "review",
+      "retry",
+      "working",
+      "confirming",
+    ])
+    .nullable(),
+  runId: z.string().nullable(),
   completed: z.boolean(),
+  reader: z
+    .object({
+      direction: z.enum(["ltr", "rtl"]),
+      width: positive,
+      height: positive,
+      pages: z
+        .array(
+          z.object({
+            assetId: id,
+            cover: z.boolean(),
+            text: z.array(z.string()),
+          }),
+        )
+        .min(1),
+    })
+    .nullable(),
   turns: z.array(
     z.object({
       requestId: z.uuid(),

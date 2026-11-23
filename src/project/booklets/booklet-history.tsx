@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
-import Link from "next/link";
 import { api, ApiError } from "@/lib/client/api";
 import { Notice } from "@/components/page-patterns";
 import { DateLabel } from "@/components/localized-value";
@@ -31,7 +30,7 @@ export function BookletHistoryPanel({
   kindLabel,
 }: {
   view: BookletView;
-  currentRunId: string;
+  currentRunId: string | null;
   kindLabel: (kind: string) => string;
 }) {
   const t = useTranslations("ui");
@@ -111,16 +110,13 @@ export function BookletHistoryPanel({
                     key={item.runId + (item.createdAt ?? "")}
                     className="flex flex-wrap justify-between gap-2 px-3 py-2"
                   >
-                    <Link
-                      href={`/runs/${encodeURIComponent(item.runId)}`}
-                      className="underline-offset-4 hover:underline"
-                    >
+                    <span>
                       {item.createdAt ? (
                         <DateLabel value={item.createdAt} />
                       ) : (
                         t("m00d60e31a4e6")
                       )}
-                    </Link>
+                    </span>
                     <span className="text-muted-foreground">
                       {item.runId === currentRunId
                         ? `${t("m0dbde8fd9594")} · `

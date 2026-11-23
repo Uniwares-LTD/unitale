@@ -1429,8 +1429,8 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 | 10C.1 Contracts | Implemented locally | Versioned turn and reply contract (`src/project/booklets/turn-contract.ts`); `request_human` accepts an optional `turn`, binds shown revisions to targets and images to their retained assets, derives generic fallback cards and carries the turn in a fenced `booklet-turn` block bound by the exact form match. **Card-registry decision:** the shared Run registry is unchanged; booklet parts stay project-owned, so no Unibase change. The start-consent card reuses the existing quote DTO. Evidence: `tests/booklet-turns.test.ts` and the MCP turn subtest. |
 | 10C.2 Default package and conversational start | Verified locally (2026-11-23) | Versioned admin editor checks the current publication and policy and records changes. The focused entry restores the idea after sign-in and asks for explicit consent. |
 | 10C.3 Manager workflow | Verified locally (2026-11-23) | Manager Human Input sends typed questions and exact revision approvals through `request_human.turn`, retains the interaction across bounded reads and accepts legacy replies for legacy receipts. All 48 compatibility tests pass and the package hashes are refreshed. |
-| 10C.4 Conversation UI | Next, building on the approved preview | Retire the booklet form and Run panel, link booklet Runs to their conversation, and keep the focused frame. Add group-by-group prose reveal, workflow-backed waiting, enlarged artwork and the delivered reader. Verify en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and side-by-side prototype captures. |
-| 10C.5 Verification and handoff | Pending | Affected suites, build, browser journeys including sign-in return, consent and start, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
+| 10C.4 Conversation UI | Verified locally (2026-11-23) | Booklet Runs route to the focused conversation. The conversation carries the approved artwork, reader, reveal, waiting, recovery and history patterns. The deployed-shape local browser matrix, CSP and prototype comparison pass. |
+| 10C.5 Verification and handoff | Next | Recheck the sign-in round trip on the conversation build, rerun the affected offline suites, reconcile evidence to the reviewed revision, and complete two consecutive read-only reviews of 10C.1–10C.4 before branch and issue handoff. |
 
 #### 10C.2 local verification (2026-11-23)
 
@@ -1536,7 +1536,7 @@ size class (`CardTitle` rendered 16px instead of 20px).
 - Roles now go directly on primitives. A primitive's own weight class still
   applies, so book card titles also set the role's weight.
 
-**Not yet conformant, tracked in 10C.4:**
+**Remaining after this preview review, addressed in 10C.4:**
 - word-group prose reveal;
 - a wait line backed by workflow state instead of the generic working copy;
 - the enlarged image viewer.
@@ -1546,6 +1546,24 @@ size class (`CardTitle` rendered 16px instead of 20px).
   and conversation × en/ar × light/dark × 393/1440 px;
 - reduced motion on, and a measured 3px focus outline on the dock composer;
 - the full conversation walk passes.
+
+#### 10C.4 local verification (2026-11-23)
+
+- The focused entry and conversation passed all 16 English/Arabic, light/dark,
+  393px/1440px combinations with reduced motion. The reader stays centred and
+  places Close on the proper logical edge. The served production response blocked
+  an unnonced script and style, and client navigation retained the document nonce.
+- The scripted browser journey submitted six replies through the application. It
+  covered consent, multiple choices, Enter and IME behavior, a change request
+  followed by approval, keeping or moving draft text, restoration after artwork
+  zoom, workflow-backed waiting, cover and page navigation, and the Run redirect.
+  The fixture supplies synthetic owned artwork and a completed manifest. The
+  production gateway's structural completion has separate offline MCP coverage.
+- Prototype One at `c95973a138947e1ce9da7165bd562a08643ba2a2` was compared with the
+  served application side by side. Both use the composer connected to the choice
+  dock. The application uses the adopted type roles and violet tokens, the
+  confirmed focused entry, and the accepted text-only scope. Local comparisons
+  are under `output/playwright/10c4-comparison-*.png`.
 
 #### Accepted gaps (user, 2026-11-23)
 
@@ -1724,17 +1742,9 @@ State of the active checkpoint:
   `request_human.turn` via the native Human Input path. The package README records
   the hashes and compatibility coverage. The scripted browser fixture still stands
   in for actual provider execution.
-- **10C.4:** the UI is approved and conformance-reviewed. The focused frame and the
-  `cn` type roles came through Unibase #69 and #70, adopted by Unitale #17 and #18.
-  Pending:
-  - retire the checkpoint 10 form and Run panel for booklets, with Run-page links to
-    `/books/[id]`;
-  - word-group prose reveal;
-  - a wait line backed by workflow state;
-  - the enlarged image viewer;
-  - side-by-side prototype captures;
-  - a CSP check in the served build.
-- **10C.5:** pending.
+- **10C.4:** verified locally. See [the browser matrix and prototype comparison](#10c4-local-verification-2026-11-23).
+- **10C.5:** next. Confirm the current served journeys and affected offline suites,
+  then review the complete checkpoint twice against the accepted plan.
 
 Evidence on the handoff head: booklet suites all pass:
 - application: 14/14;
@@ -1785,7 +1795,6 @@ Notes:
 > Then work one sub-checkpoint at a time. For each: close its details, show its goal
 > and deliveries, implement, review read-only until clean, report what was delivered
 > and the checkpoint progress, and revise the next plan.
-> - **10C.4:** the remaining UI items listed above.
 > - **10C.5:** verification, with two consecutive clean whole-checkpoint reviews.
 >
 > Keep the Unibase/Unitale design rules from the conformance review: type roles,

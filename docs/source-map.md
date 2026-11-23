@@ -76,10 +76,11 @@ and the adapter; the table does not require unrelated suites for every task.
   Checkpoint 10's private application facade is `src/lib/server/booklets/application.ts`
   (tested by `npm run test:booklet-application`); its client-safe commands/DTOs are
   `src/project/booklets/application-contract.ts`, served by `src/app/api/booklets`
-  (routes build the facade through `application-request.ts`). The Run detail panel is
-  `src/project/run-detail.tsx` with `booklets/booklet-run-panel.tsx` (actions and history in
-  `booklet-actions.tsx`/`booklet-history.tsx`). Booklet administration is
-  `src/app/admin/booklets`, `src/app/api/admin/booklets` and `src/lib/server/booklets/admin.ts`.
+  (routes build the facade through `application-request.ts`). Booklet Run detail
+  redirects to the owned conversation. Recovery and history are available there
+  through `book-details.tsx`, `booklet-actions.tsx` and `booklet-history.tsx`.
+  Booklet administration is `src/app/admin/booklets`, `src/app/api/admin/booklets`
+  and `src/lib/server/booklets/admin.ts`.
   The default conversation package setting is in `src/lib/server/booklets/settings.ts`.
   The conversation turn/reply contract is `src/project/booklets/turn-contract.ts`
   (tested by `tests/booklet-turns.test.ts`); `repository-v2.ts` `requestHuman` binds it.
@@ -88,13 +89,12 @@ and the adapter; the table does not require unrelated suites for every task.
   Unitale conversation components in `src/project/components/conversation/`. The facade's `entry`,
   `startIdea`, `conversation` and `reply` serve them, and
   `tests/integration/booklet-chat-manager.ts` is the local preview Manager.
-  The project Run start (`src/project/run-start.tsx`, `booklets/booklet-start.tsx`) and
+  The project Run start link (`src/project/run-start.tsx`) and
   home (`src/project/home.tsx`) use existing project slots. Browser checks seed the
-  disposable fixture with `tests/integration/booklet-fixture-seed.ts` (its `settle failed|succeeded|unknown`
-  mode sets the newest attempt's outcome; `runs on|off` toggles Run admission) and run `booklet-browser-checks.js`,
-  `booklet-browser-matrix.js`, `booklet-browser-recovery.js` and
-  `booklet-browser-revision.js` and `booklet-browser-uncertain.js` (after `settle unknown`)
-  in `tests/integration` through playwright-cli. `npm run test:booklet-modules` runs the
+  disposable fixture with `tests/integration/booklet-fixture-seed.ts` and run
+  `booklet-conversation-browser.js` and `booklet-conversation-matrix.js` in
+  `tests/integration` through playwright-cli. The checkpoint 10 form and panel
+  scripts are historical. `npm run test:booklet-modules` runs the
   module-disabled test in `tests/booklet-modules` with Node module mocking.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
