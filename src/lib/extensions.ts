@@ -34,6 +34,10 @@ export type ProjectExtension<Id extends string = string> = {
   module: ModuleDescriptor;
   routes?: ExtensionRoute[];
   adminSections?: ExtensionAdminSection[];
+  // Page paths (and their subpaths) rendered in the focused frame: no sidebar
+  // or browsing header, only Back and the colour-mode toggle. Each must lie
+  // inside this extension's module routes and must not be an API path.
+  focusedRoutes?: string[];
 };
 
 export function defineExtension<const Id extends string>(
@@ -101,7 +105,33 @@ export function validateExtensions(
         )
       )
         throw new Error(`Link ${route.href} is outside its module routes.`);
+    const focused = extension.focusedRoutes ?? [];
+    if (new Set(focused).size !== focused.length)
+      throw new Error(`Extension ${extension.id} repeats a focused route.`);
+    for (const path of focused)
+      if (
+        !/^\/[a-z0-9/-]+$/.test(path) ||
+        path === "/api" ||
+        path.startsWith("/api/") ||
+        !extension.module.routes.some(
+          (owned) => path === owned || path.startsWith(owned + "/"),
+        )
+      )
+        throw new Error(`Focused route ${path} is outside its module pages.`);
   }
+}
+
+// Whether a page path renders in the focused frame. The shell still requires
+// the owning module to be enabled.
+export function isFocusedPath(
+  extensions: readonly ProjectExtension[],
+  pathname: string,
+) {
+  return extensions.some((extension) =>
+    (extension.focusedRoutes ?? []).some(
+      (path) => pathname === path || pathname.startsWith(path + "/"),
+    ),
+  );
 }
 
 // Navigation entries for one placement. The shell still filters them through

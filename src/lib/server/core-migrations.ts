@@ -1,3 +1,10 @@
+import {
+  verifyCommerceExecution,
+  verifyConsumptionPromotions,
+  verifyProviderBilling,
+  verifyDomainReferences,
+  verifyAssetVariants,
+} from "./migration-verifiers";
 import { createBillingIndexes } from "./commerce/billing";
 import { createCreditIndexes } from "./store/credits";
 import { createConsumptionIndexes } from "./commerce/orders";
@@ -33,6 +40,8 @@ async function backfillAssetVariants(db: Db) {
 export const coreMigrations: readonly Migration[] = [
   {
     id: "core:0001-commerce-execution-indexes",
+    releasePhase: "before-release",
+    verify: verifyCommerceExecution,
     description: "Add opt-in commerce and execution evidence indexes.",
     async run(db) {
       await createCatalogIndexes(db);
@@ -41,16 +50,22 @@ export const coreMigrations: readonly Migration[] = [
   },
   {
     id: "runs:0001-domain-references",
+    releasePhase: "after-release",
+    verify: verifyDomainReferences,
     description: "Add domain target references to Run jobs and applications.",
     run: migrateDomainReferences,
   },
   {
     id: "runs:0002-asset-variants",
+    releasePhase: "after-release",
+    verify: verifyAssetVariants,
     description: "Generate thumbnail and preview variants for result images.",
     run: backfillAssetVariants,
   },
   {
     id: "core:0002-consumption-promotions",
+    releasePhase: "before-release",
+    verify: verifyConsumptionPromotions,
     description: "Add consumption order and promotion redemption indexes.",
     async run(db) {
       await createConsumptionIndexes(db);
@@ -59,6 +74,8 @@ export const coreMigrations: readonly Migration[] = [
   },
   {
     id: "core:0003-provider-billing",
+    releasePhase: "before-release",
+    verify: verifyProviderBilling,
     description:
       "Add verified provider billing and subscription grant indexes.",
     async run(db) {

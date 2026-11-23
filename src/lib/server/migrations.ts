@@ -9,9 +9,11 @@ import type { Db } from "mongodb";
 export type Migration = {
   id: string;
   description: string;
+  releasePhase?: "before-release" | "after-release" | "bespoke";
+  verify?: (db: Db) => Promise<{ warnings?: string[] } | void>;
   run: (db: Db) => Promise<unknown>;
 };
-type MigrationRecord = {
+export type MigrationRecord = {
   _id: string;
   description: string;
   checksum: string;
@@ -25,10 +27,19 @@ const lockId = "migrations-lock";
 const defaultLeaseMs = 10 * 60_000;
 
 export function checksum(migration: Migration) {
+  // Substituted only by the build from source/tsx checksums, never from CLI input.
+  if (typeof MIGRATION_SOURCE_CHECKSUMS !== "undefined") {
+    const value = MIGRATION_SOURCE_CHECKSUMS[migration.id];
+    if (!value)
+      throw new Error("Migration missing from packaged checksum catalog.");
+    return value;
+  }
   return createHash("sha256")
     .update(migration.run.toString().replace(/\s+/g, " "))
     .digest("hex");
 }
+
+declare const MIGRATION_SOURCE_CHECKSUMS: Record<string, string> | undefined;
 
 // Rejects malformed, duplicate or out-of-order IDs, and owners outside the
 // known set when one is given, before anything runs.
@@ -58,23 +69,27 @@ export type MigrationReport = {
   applied: string[];
   skipped: string[];
   changed: string[];
+  verification?: { id: string; warnings: string[] }[];
 };
 
 // Applies pending migrations in list order under a leased lock in `control`.
 // `enabled` decides per owner; disabled owners are skipped, not recorded, so
 // their migrations run once the module is enabled.
-export async function runMigrations(
+export async function withMigrationLease<T>(
   db: Db,
-  migrations: readonly Migration[],
-  enabled: (owner: string) => boolean,
-  { now = () => new Date(), leaseMs = defaultLeaseMs } = {},
-): Promise<MigrationReport> {
-  validateMigrations(migrations);
+  work: (lease: () => Promise<void>) => Promise<T>,
+  {
+    now = () => new Date(),
+    leaseMs = defaultLeaseMs,
+    onLeaseLost = () => {},
+  } = {},
+): Promise<T> {
   const control = db.collection<Lock>("control"),
-    records = db.collection<MigrationRecord>("migrations"),
     owner = randomUUID(),
     held = () => new Error("Another migration run holds the lock.");
+  let lost: unknown;
   const lease = async () => {
+    if (lost) throw lost;
     const at = now();
     let lock: Lock | null;
     try {
@@ -97,12 +112,15 @@ export async function runMigrations(
   // Renews the lease while a migration runs so a long migration is never
   // taken over; a lost lease fails the run before its record is written.
   const guarded = async (run: () => Promise<unknown>) => {
-    let lost: unknown, pending: Promise<void> | undefined;
+    let pending: Promise<void> | undefined;
     // One renewal at a time; the last one is awaited so a late renewal can
     // neither outlive the run nor recreate a released lock.
     const timer = setInterval(() => {
       pending ??= lease()
-        .catch((error) => void (lost ??= error))
+        .catch((error) => {
+          lost ??= error;
+          onLeaseLost();
+        })
         .finally(() => (pending = undefined));
     }, leaseMs / 3);
     try {
@@ -115,38 +133,112 @@ export async function runMigrations(
     await lease();
   };
   await lease();
-  const report: MigrationReport = { applied: [], skipped: [], changed: [] };
   try {
-    const done = new Map(
-      (await records.find().toArray()).map((row) => [row._id, row]),
-    );
-    for (const migration of migrations) {
-      const sum = checksum(migration),
-        previous = done.get(migration.id);
-      if (previous) {
-        // Applied migrations never rerun; a changed body is reported only,
-        // because formatting or toolchain changes also alter the checksum.
-        if (previous.checksum !== sum) report.changed.push(migration.id);
-        continue;
-      }
-      if (!enabled(migrationOwner(migration.id))) {
-        report.skipped.push(migration.id);
-        continue;
-      }
-      await lease();
-      const started = Date.now();
-      await guarded(() => migration.run(db));
-      await records.insertOne({
-        _id: migration.id,
-        description: migration.description,
-        checksum: sum,
-        appliedAt: now(),
-        durationMs: Date.now() - started,
-      });
-      report.applied.push(migration.id);
-    }
+    let result!: T;
+    await guarded(async () => {
+      result = await work(lease);
+    });
+    return result;
   } finally {
     await control.deleteOne({ _id: lockId, owner });
   }
-  return report;
+}
+
+export async function runMigrations(
+  db: Db,
+  migrations: readonly Migration[],
+  enabled: (owner: string) => boolean,
+  {
+    now = () => new Date(),
+    leaseMs = defaultLeaseMs,
+    approvedBatch,
+    beforeApply,
+    beforeVerify,
+    onLeaseLost,
+  }: {
+    now?: () => Date;
+    leaseMs?: number;
+    approvedBatch?: readonly { id: string; checksum: string }[];
+    beforeApply?: () => Promise<void>;
+    beforeVerify?: () => void;
+    onLeaseLost?: () => void;
+  } = {},
+): Promise<MigrationReport> {
+  validateMigrations(migrations);
+  return withMigrationLease(
+    db,
+    async (lease) => {
+      const records = db.collection<MigrationRecord>("migrations");
+      const report: MigrationReport = { applied: [], skipped: [], changed: [] };
+      const done = new Map(
+        (await records.find().toArray()).map((row) => [row._id, row]),
+      );
+      if (approvedBatch) {
+        const pending = migrations.filter(
+          (m) => !done.has(m.id) && enabled(migrationOwner(m.id)),
+        );
+        if (
+          JSON.stringify(
+            pending.map((m) => ({ id: m.id, checksum: checksum(m) })),
+          ) !== JSON.stringify(approvedBatch) ||
+          pending.some(
+            (m) => !m.verify || !m.releasePhase || m.releasePhase === "bespoke",
+          ) ||
+          [...done.values()].some(
+            (row) =>
+              !migrations.some(
+                (m) => m.id === row._id && checksum(m) === row.checksum,
+              ),
+          )
+        )
+          throw new Error(
+            "Approved migration batch does not match current state.",
+          );
+      }
+      await lease();
+      await beforeApply?.();
+      await lease();
+      for (const migration of migrations) {
+        const sum = checksum(migration),
+          previous = done.get(migration.id);
+        if (previous) {
+          // Applied migrations never rerun; a changed body is reported only,
+          // because formatting or toolchain changes also alter the checksum.
+          if (previous.checksum !== sum) report.changed.push(migration.id);
+          continue;
+        }
+        if (!enabled(migrationOwner(migration.id))) {
+          report.skipped.push(migration.id);
+          continue;
+        }
+        await lease();
+        const started = Date.now();
+        await migration.run(db);
+        await lease();
+        await records.insertOne({
+          _id: migration.id,
+          description: migration.description,
+          checksum: sum,
+          appliedAt: now(),
+          durationMs: Date.now() - started,
+        });
+        report.applied.push(migration.id);
+      }
+      if (approvedBatch) {
+        beforeVerify?.();
+        report.verification = [];
+        for (const entry of approvedBatch) {
+          const result = await migrations.find((m) => m.id === entry.id)!
+            .verify!(db);
+          report.verification.push({
+            id: entry.id,
+            warnings: result?.warnings ?? [],
+          });
+          await lease();
+        }
+      }
+      return report;
+    },
+    { now, leaseMs, onLeaseLost },
+  );
 }

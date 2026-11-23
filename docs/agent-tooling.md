@@ -1,6 +1,7 @@
 # Agent tooling
 
-Handbook owns eight workflow and four selected technology/UI skills. Canonical local
+Handbook supplies eight core workflow skills, four selected technology/UI skills and
+two optional deployment/data skills. Canonical local
 .agents/skills entrypoints read shared procedures at the task revision. Claude's thin
 .claude/skills references route to them; CLAUDE.md imports @AGENTS.md. Project facts and
 adaptations remain in the [adapter](../.agents/repository-adapter.md) and
@@ -75,6 +76,22 @@ After an interrupted lock, inspect its PID and remove it only after confirming n
 
 Codex discovery uses .agents/skills. Claude uses CLAUDE.md imports and .claude/skills.
 Markdown references install no hooks, permissions, subagents or dependencies.
+
+### Optional deployment skills
+
+`promote-to-environment` routes reviewed promotion/release orchestration;
+`operate-data` routes backup, migration, manual handoff and status/recovery through
+the same supported clients. Both are selected through the legacy `technologySkills`
+array in handbook.json; no workflowSkills field or default-core expansion is added.
+Reusable procedures and the promotion starter live in Handbook. Application-specific
+identities, permissions and operating boundaries remain in the adapter/runbooks.
+
+Refresh metadata through explicit sync, preserve local build-ui and custom suffixes,
+review integrity/provenance and check entrypoints/readiness. Publication of shared
+changes precedes consumer regeneration from the reviewed committed revision; local
+candidate wrappers alone do not establish published guidance or installed capability.
+The [reference mapping](features/deployment-data-operations/implementation-plan.md#deployment-skills-and-reference-adoption)
+records the supplied attachment and excludes uninspected upstream material.
 
 ## Local contracts and provenance
 

@@ -36,7 +36,8 @@ share semantic tokens and the same application behavior.
 | `src/lib/design-helpers.ts`                   | Pure, unit-tested logic behind the shared helpers                                      |
 | `src/components/helper-showcase.tsx`          | Synthetic examples of the shared helpers in the showcase                               |
 | `src/components/ui`                           | Installed shadcn primitives; use the shadcn CLI for additional primitives              |
-| `src/components/app-shell.tsx`                | Desktop/mobile navigation, account menu and skip link                                  |
+| `src/components/app-shell.tsx`                | Desktop/mobile navigation, account menu, skip link and the focused frame               |
+| `src/components/theme-toggle.tsx`             | Compact light/dark toggle used by the focused frame                                    |
 | `src/components/design-showcase.tsx`          | Synthetic interactive examples and static feature preview                              |
 | `src/app/design-system/page.tsx`              | Development-only route guard                                                           |
 | `src/proxy.ts`                                | Showcase-only production 404 before page streaming starts                              |
@@ -249,6 +250,11 @@ Fields have an opt-in `size="lg"` (48px minimum height, 16px text) on `Input`, `
 - Paginated lists render "Newest" next to "Older …" once a cursor is active,
   after the list and its empty state.
 - Destructive or paid actions confirm in an `AlertDialog` that states the change.
+- Immersive task pages (for example a conversation) may opt into the **focused frame**
+  through an extension's `focusedRoutes`. It keeps only Back and `ThemeToggle`, a
+  2.75rem icon button whose name describes the next mode ("Switch to dark theme").
+  The page then owns its own `h1`, and the skip link and main landmark are retained.
+  See [project extensions](architecture.md#project-extensions).
 
 These are presentation conventions. The feature preview does not add models,
 schemas, persistence, approval operations, generation or Dify integration.

@@ -4,6 +4,7 @@ import {
   defineExtension,
   extensionAdminSections,
   extensionLinks,
+  isFocusedPath,
   validateExtensions,
 } from "../src/lib/extensions";
 
@@ -118,4 +119,31 @@ test("invalid or colliding extensions are rejected", () => {
     ]),
   );
   assert.throws(() => validateExtensions(core, [dependent, notes]));
+});
+
+test("focused routes stay inside the extension's own pages", () => {
+  const core = { ids: ["files"], collections: [], routes: ["/files"] };
+  const focused = (focusedRoutes: string[]) => ({
+    ...notes,
+    routes: [],
+    adminSections: [],
+    focusedRoutes,
+  });
+  assert.doesNotThrow(() =>
+    validateExtensions(core, [focused(["/notes", "/notes/write"])]),
+  );
+  for (const paths of [
+    ["/files"], // another module's pages
+    ["/api/notes"], // API paths have no frame
+    ["/notes-other"], // a prefix is not ownership
+    ["/Notes"],
+    ["/notes", "/notes"],
+  ])
+    assert.throws(() => validateExtensions(core, [focused(paths)]), paths.join());
+  const extensions = [focused(["/notes/write"])];
+  assert.equal(isFocusedPath(extensions, "/notes/write"), true);
+  assert.equal(isFocusedPath(extensions, "/notes/write/1"), true);
+  assert.equal(isFocusedPath(extensions, "/notes/writer"), false);
+  assert.equal(isFocusedPath(extensions, "/notes"), false);
+  assert.equal(isFocusedPath([notes], "/notes/write"), false);
 });

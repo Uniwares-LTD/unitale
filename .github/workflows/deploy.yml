@@ -17,6 +17,17 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
+    outputs:
+      operation_id: ${{ steps.release.outputs.operation_id }}
+      plan_digest: ${{ steps.release.outputs.plan_digest }}
+      source_commit: ${{ steps.release.outputs.source_commit }}
+      image: ${{ steps.release.outputs.image }}
+      deployment_outcome: ${{ steps.release.outputs.deployment_outcome }}
+      migration_outcome: ${{ steps.release.outputs.migration_outcome }}
+      backup_id: ${{ steps.release.outputs.backup_id }}
+      report_artifact: ${{ steps.release.outputs.report_artifact }}
+      activation_decision: ${{ steps.release.outputs.activation_decision }}
+      next_action: ${{ steps.release.outputs.next_action }}
     runs-on: ubuntu-latest
     env:
       TARGET: ${{ inputs.environment || (github.ref_name == '_prod' && 'production' || 'staging') }}
@@ -33,6 +44,7 @@ jobs:
       - name: Restore exact candidate on retry
         run: python3 scripts/deploy/candidate.py "$RUNNER_TEMP/release-candidate.json"
       - name: Guard, build, release and verify
+        id: release
         run: bash scripts/deploy/release.sh "$TARGET"
       - name: Retain immutable release candidate
         if: always() && env.CANDIDATE_RESTORED != 'true'
@@ -42,6 +54,13 @@ jobs:
           path: ${{ runner.temp }}/release-candidate.json
           if-no-files-found: ignore
           overwrite: false
+      - name: Retain data-operation report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: data-operation-report-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/data-operation-report.json
+          if-no-files-found: ignore
       - name: Remove runner credentials
         if: always()
         run: |

@@ -55,16 +55,126 @@ checks; neither a healthy workflow nor old acceptance evidence proves them for a
 
 ### Database migrations on existing staging
 
-The routine Release workflow deploys the image and checks readiness. The
-[database migration procedure](architecture.md#extension-conventions) runs
-separately under the staging operator's authority. Review the pending migration
-IDs for the target revision, take an operational backup, run indexes before
-migrations, then verify the ledger and affected flows. The runner applies all
-eligible pending migrations, including enabled module migrations.
+The reusable flow for [#62](https://github.com/Uniwares-LTD/unibase/issues/62) is
+implemented in the local task branches. Publication, compatible controller/app-control
+installation, approval-claim acceptance, recovery rehearsal and a separately authorized
+staging run remain gates. The existing manual host sequence stays deferred. No live
+ledger or serving-release change is claimed here.
 
-[#62](https://github.com/Uniwares-LTD/unibase/issues/62) owns the simpler
-deployment migration flow. Apply and record the currently pending staging
-migrations after that flow is ready.
+Recheck serving revision, readiness and the full ledger before a later staging preview.
+The current configured target is `staging`; production remains inactive. Use the exact
+source/image retained by Release rather than copying the planning reference identities.
+
+<a id="reusable-data-operations-proposal"></a>
+
+### Reusable data operations
+
+**Before enabling these clients:** publish the reviewed shared skills and regenerate
+consumer wrappers from that revision. Publish Infrastructure's controller and executor
+sources, pin both the reusable apply workflow and its checkout to the reviewed published
+SHAs, and install the compatible controller/app-control capability `data-operations-v1`
+under separate operator authorization. Preserve enrolled actors; validate actual OIDC
+claims and target recovery credentials/rehearsal before live data execution. Image-only
+publication does not install a controller or accept recovery.
+
+Publication uses real, successive revisions; it cannot pre-pin its own future commit.
+First publish the reviewed Handbook revision and regenerate/review consumer wrappers
+from it. Publish reviewed Infrastructure controller/client source, then update
+`.github/workflows/apply-plan-executor.yml`'s checkout `ref` to that source SHA.
+After that executor revision is published, update
+`.github/workflows/apply-deployment-plan.yml`'s reusable-workflow `uses` to its exact
+SHA. A separately authorized Infrastructure operator validates actual OIDC claims and
+aligns host `executorRef`/`executorSha` with that same executor revision, preserving
+enrolled actors. Publish the reviewed Unibase integration without promoting an
+environment. Only after installation/recovery acceptance may an explicitly authorized
+staging promotion begin. A moved revision requires review of the resulting changes.
+
+From the repository root in PowerShell, the read-only commands are:
+
+```powershell
+npm.cmd run db:migrate -- --manifest
+npm.cmd run deploy:ops -- migrations staging
+npm.cmd run deploy:ops -- status staging --plan-id $planId
+```
+
+`deploy:ops` uses the runbook's configured restricted transport (`RUNNER_TEMP` access
+configuration); a workstation without it uses the manual workflow instead. `$planId`
+is the exact 64-character ID returned by a preparation or retained Release report.
+Reporting acquires no database lease, creates no indexes and executes no candidate code.
+It publishes full ledger/declaration details through paged restricted responses and the
+complete `data-operation-report.json` artifact. Changed checksums, unknown history or
+bespoke declarations require owner review; there is no force/ledger rewrite flag.
+
+Manual Actions entrypoint: [Deployment data operations](https://github.com/Uniwares-LTD/unibase/actions/workflows/data-operations.yml),
+reviewed published `main`, environment `staging`. Choose `report`, `prepare-backup`,
+`prepare-migration` or `status`. Candidate inputs for migration preparation are the exact
+immutable image and full source SHA from the retained Release candidate; status takes
+its exact plan ID. Preparation creates no backup or migration. A request UUID is retained
+before transport; reuse it for a lost preparation response, never for different inputs.
+A fresh requested backup uses a fresh request identity.
+
+Review the returned plan ID/digest, database, source/image/configuration, full-ledger
+digest, complete ordered batch and backup policy. Exact execution approval uses the
+existing [Infrastructure Apply deployment plan](https://github.com/Uniwares-LTD/infrastructure/actions/workflows/apply-deployment-plan.yml)
+on its reviewed published `main`: project `unibase`, environment `staging`, and the same
+plan ID and digest. Only enrolled-actor/OIDC approval can execute it. No CLI apply shortcut,
+new trust membership or second apply workflow is introduced. The host holds application
+lock then the renewable database lease, stops the recorded writers, creates/retrieves/
+hashes the encrypted MongoDB/GridFS archive, records write intent, and acknowledges the
+private runner before indexes/migrations. Completion requires ledger, data/index
+verification, restored writers and serving health.
+
+Release builds/publishes once at the actual environment SHA. After anonymous pull, its
+exact-candidate report either proceeds or prepares the required batch and finishes as
+`blocked-migrations`, without activation. Recovery uncertainty finishes as
+`blocked-recovery`. After exact approved verification, rerun the **original blocked
+Release**; its candidate artifact restores the same digest/SHA and both Actions and host
+gates run again. Missing artifacts or changed reviewed state stop continuation. The
+host repeats authoritative checks immediately before candidate startup under its lock.
+Compatible optional backfills may remain visible after a successful release; the agent
+then offers one automated approved run or the same manual workflow. Decline/deferral
+performs no writes. A failed release makes no optional migration offer.
+
+Unknown writes, missing/failed verification or unsafe writer/health recovery block new
+work even with zero pending IDs. Inspect status and original checkpoints; never blindly
+repeat apply. Separately authorized root recovery uses Infrastructure's
+[checked acknowledgment](https://github.com/Uniwares-LTD/infrastructure/blob/main/docs/operations.md#reusable-backup-and-migration-workflows).
+`safe-to-retry` permits a fresh approved remaining batch; `verified-complete` requires
+all original IDs, original-image verifier proof, backup, writer/process and health checks.
+The acknowledgment preserves the original failed/unknown outcome and prevents original
+plan replay. Image rollback never restores business data.
+
+Terminal report copies in `deploymentOperations` are historical evidence, written only
+on finalization or explicit resolution when possible. The existing diagnostics capability
+`data-operations.status` and `/admin/operations` share a bounded read-only reader with
+manual refresh. Existing grants do not gain the capability implicitly. Missing report
+copies do not block verified host completion; a completed-looking copy cannot override
+an unresolved host journal. No admin REST endpoint, polling/heartbeat or SSH credential
+is added to the application. Workflow outputs distinguish deployment and migration
+outcomes and retain operation/backup identities plus a single next action.
+
+### Promotion review and action records
+
+Use the [promotion PR starter](templates/promotion-pr.md) for an authorized environment
+promotion. Review the intended merge result against the target tip and record full
+source/target SHAs, actual expected deployment workflow and included source PRs.
+Inspect their deployment requirements and the diff itself for missing migration,
+index, configuration or compatibility work. Refresh the review when either branch
+changes the intended result. An empty promotion needs no merge or deployment.
+
+Give before-deployment actions readable `B<number>-<slug>` labels and after-deployment
+actions `A<number>-<slug>` labels. Include owner, location, verification, failure/resume
+and source PR or `found in diff review`. Use one PR-body inventory; required actions
+need verified evidence, while optional deferral needs a reason and remains visible.
+Do not add per-action approval prompts when the reviewed operation already covers them.
+Keep linked source PR Test flows separate from deployment actions and migration state.
+
+For `main` to `_staging`/`_prod`, verify the exact Release workflow run, resulting
+serving revision/image and health; a successful unrelated later commit does not confirm
+the reviewed release. Current environment-branch pushes trigger Release without path
+filters, so a documentation-only promotion still triggers it. PR preparation alone
+does not publish, merge or deploy. A Git backup branch does not back up MongoDB/GridFS;
+retain the existing image/config rollback and separately approved data recovery paths.
 
 ### Follow-up recovery and consolidation
 

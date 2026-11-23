@@ -2,6 +2,22 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import manifest from "../../project.config.json" with { type: "json" };
+// Optional local runtime: absence is an explicit skip, never passing coverage.
+const runtime = spawnSync(
+  "docker",
+  ["info", "--format", "{{.ServerVersion}}"],
+  {
+    encoding: "utf8",
+    windowsHide: true,
+    timeout: 15000,
+  },
+);
+if (runtime.error || runtime.status !== 0) {
+  console.log(
+    "SKIP: Docker is unavailable; disposable Linux deployment integration tests were not run.",
+  );
+  process.exit(0);
+}
 const image = `${manifest.slug}-deployment-tests`;
 const infrastructure = path.resolve(
   process.env.INFRASTRUCTURE_CHECKOUT || "../infrastructure",

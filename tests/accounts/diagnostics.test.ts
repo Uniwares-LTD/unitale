@@ -704,6 +704,17 @@ test("diagnostics: grants, authentication, capabilities and read-only evidence",
         const content = await call(grant.id, "run.content", { id: "x" });
         assert.equal(content.status, 403);
         assert.equal(content.body.error.code, "CAPABILITY_NOT_GRANTED");
+        const legacyGrant = await createGrant({ db, store, now }, issuer, {
+          duration: "15m",
+          capabilities: ["runtime.status"],
+        });
+        const dataStatus = await call(
+          legacyGrant.id,
+          "data-operations.status",
+          {},
+        );
+        assert.equal(dataStatus.status, 403);
+        assert.equal(dataStatus.body.error.code, "CAPABILITY_NOT_GRANTED");
       },
     );
 

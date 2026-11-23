@@ -45,6 +45,13 @@ export const notesServerExtension = defineServerExtension({
     {
       id: "notes:0001-default-pinned",
       description: "Default the pinned flag on existing sample notes.",
+      releasePhase: "after-release",
+      async verify(db) {
+        if (
+          await db.collection("notes").findOne({ pinned: { $exists: false } })
+        )
+          throw new Error("Notes metadata verification failed.");
+      },
       run: defaultPinned,
     },
   ],

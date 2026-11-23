@@ -4,6 +4,7 @@ import { z } from "zod";
 export const diagnosticCapabilities = {
   "capabilities.list": "metadata",
   "runtime.status": "metadata",
+  "data-operations.status": "metadata",
   "workers.status": "metadata",
   "configuration.check": "metadata",
   "reports.search": "metadata",
