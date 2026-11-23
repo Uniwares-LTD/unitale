@@ -286,7 +286,7 @@ export function BookConversation({
       }
       if (
         error instanceof ApiError &&
-        ["INVALID_INPUT", "BOOKLET_INVALID", "RATE_LIMITED"].includes(code)
+        ["INVALID_INPUT", "BOOKLET_INVALID", "BOOKLET_REPLY_INVALID", "RATE_LIMITED"].includes(code)
       )
         return "failed" as const;
       pendingReply.current = { turn, reply };
@@ -368,7 +368,7 @@ export function BookConversation({
             />
           </li>
         )}
-        {working && !open && (
+        {working && !open && !confirming && (
           <li aria-live="polite">
             <WaitRow>{waitCopy[data.activity ?? "working"]}</WaitRow>
           </li>

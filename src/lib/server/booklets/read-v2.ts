@@ -49,6 +49,23 @@ type Json = z.infer<ReturnType<typeof z.json>>;
 const bodyBytes = 8192;
 const replyBytes = 20 * 1024;
 
+export function confirmedHumanResponse(decision?: Decision):
+  | { status: "unconfirmed" | "inconsistent" }
+  | { status: "submitted"; response: Json } {
+  if (decision?.status !== "submitted" || decision.answerSource?.type !== "user" || !decision.intent)
+    return { status: "unconfirmed" };
+  const intent = decision.intent;
+  const original = "response" in intent ? intent.response : intent.inputs.response;
+  const response = z.json().safeParse(original);
+  const sent = rawResponseTextSchema.safeParse(original);
+  const confirmed = z.object({ response: z.string() }).safeParse(decision.confirmedInputs);
+  if (!response.success || !sent.success || intent.action !== "continue" ||
+      (decision.confirmedAction ?? intent.action) !== "continue" || intent.inputs.response !== sent.data ||
+      (decision.confirmedInputs !== undefined && (!confirmed.success || confirmed.data.response !== sent.data)))
+    return { status: "inconsistent" };
+  return { status: "submitted", response: response.data };
+}
+
 /** Decoded, bounded sections of an allowlisted owned document. Cursors select only
  * that DTO; they grant no access and cannot traverse database/private fields. */
 export async function readBookletDocumentV2(
@@ -507,18 +524,16 @@ export async function readBookletDocumentV2(
     const decision = matches[0];
     let status = stale ? "stale" : "pending";
     let response: Json = null;
-    if (!stale && decision?.status === "submitted" && decision.answerSource?.type === "user" && decision.intent) {
-      const action = decision.confirmedAction ?? decision.intent.action;
-      const original = "response" in decision.intent ? decision.intent.response : decision.intent.inputs.response;
-      const sent = rawResponseTextSchema.parse(original);
-      const confirmed = z.object({ response: z.string() }).safeParse(decision.confirmedInputs);
-      if (action !== "continue" || decision.intent.action !== "continue" || decision.intent.inputs.response !== sent ||
-        (decision.confirmedInputs !== undefined && (!confirmed.success || confirmed.data.response !== sent)))
+    if (!stale) {
+      const answer = confirmedHumanResponse(decision);
+      if (answer.status === "inconsistent")
         throw bookletConflict("Human response differs from its authenticated submission.");
-      status = "submitted";
-      response = z.json().parse(original);
-    } else if (!stale && (decision?.status === "expired" ||
-      (decision?.form?.expiration_time && decision.form.expiration_time * 1000 < Date.now()))) status = "expired";
+      if (answer.status === "submitted") {
+        status = "submitted";
+        response = answer.response;
+      } else if (decision?.status === "expired" ||
+        (decision?.form?.expiration_time && decision.form.expiration_time * 1000 < Date.now())) status = "expired";
+    }
     document = { ...human, status, decisionId: decision?._id ?? null, response };
   } else if (request.kind === "acceptance") {
     await repo.getProduction(productionId);

@@ -1356,7 +1356,7 @@ No deployment, migration of a live database, provider call or live import is par
 
 ### 10-chat-version - Conversational booklet experience
 
-**Planned (2026-11-23); inserted before 11 on the same issue and branch.** Checkpoint 10
+**Implemented on the issue branch before checkpoint 11 (2026-11-23).** Checkpoint 10
 delivered a form-and-panel booklet UI inside the generic Run surfaces. The accepted target
 is the conversational experience of Unitale Prototype One. This checkpoint replaces the
 booklet start, progress, decision, approval and recovery surfaces with that conversation.
@@ -1375,6 +1375,7 @@ The facade, commerce, media, history and recovery services from checkpoint 10 ar
 | MVP scope | Text and generative-UI interactions only. **Deferred and documented:** voice input, photo/reference attachments, the 3D mascot (a static mascot face may identify the agent), PDF download and sharing, Library, Explore samples, the pricing page and checkout, and browse-menu items for deferred pages. |
 | Manager | The Dify Manager workflow is extended to emit conversational turns and approval requests; the workflow package is re-validated and its hashes refreshed. |
 | Page frame (2026-11-23) | The conversation pages use a **focused full-screen frame** like the prototype: no app sidebar or browsing header, only a compact chat header (back and theme). This needs a small reusable Unibase change that lets a page opt out of the shell frame. It follows the usual path: a Unibase branch and PR, adoption into Unitale `main`, then a merge into this branch. Publishing that change needs its own authorization. **Delivered 2026-11-23:** Uniwares-LTD/unibase#69 (`a590eef`, extension `focusedRoutes` and `ThemeToggle`) was adopted into Unitale `main` by #17 (`b702406`) and merged into this branch. The booklet extension declares `focusedRoutes: ["/books"]`, so the entry and conversation pages use it. |
+| Entry frame (confirmed 2026-11-23) | `/books/new` keeps the focused frame, including when returning from sign-in. |
 | Audience marker (2026-11-23) | Kept: an idea-only start records the fixed brief audience `audienceNotStated` ("Not stated yet; ask the owner."), and the Manager asks. `briefSchema` is unchanged. |
 | Start consent (2026-11-23) | Kept as an **inline consent card** with an explicit "Start my book" action that states the pages, price and balance. This is an accepted exception to the Unibase convention that paid actions confirm in an `AlertDialog`; it applies only to this card. |
 
@@ -1395,9 +1396,8 @@ The facade, commerce, media, history and recovery services from checkpoint 10 ar
 - Approve and request-changes are distinct responses. A change request names its target
   revision; the previous output stays until its replacement is ready. Feedback is never
   approval, and approval is never purchase consent.
-- Card types extend the existing Run card registry. If the shared registry cannot accept
-  project card types, the smallest reusable registry extension is a Unibase change
-  adopted through main (decided in 10C.1, not assumed).
+- Booklet turn parts stay in the project renderer. Native Human Input also carries
+  generic fallback cards using the existing Run registry.
 
 #### UI rules taken from the prototype and accepted decisions
 
@@ -1430,7 +1430,7 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 | 10C.2 Default package and conversational start | Verified locally (2026-11-23) | Versioned admin editor checks the current publication and policy and records changes. The focused entry restores the idea after sign-in and asks for explicit consent. |
 | 10C.3 Manager workflow | Verified locally (2026-11-23) | Manager Human Input sends typed questions and exact revision approvals through `request_human.turn`, retains the interaction across bounded reads and accepts legacy replies for legacy receipts. All 48 compatibility tests pass and the package hashes are refreshed. |
 | 10C.4 Conversation UI | Verified locally (2026-11-23) | Booklet Runs route to the focused conversation. The conversation carries the approved artwork, reader, reveal, waiting, recovery and history patterns. The deployed-shape local browser matrix, CSP and prototype comparison pass. |
-| 10C.5 Verification and handoff | Next | Recheck the sign-in round trip on the conversation build, rerun the affected offline suites, reconcile evidence to the reviewed revision, and complete two consecutive read-only reviews of 10C.1–10C.4 before branch and issue handoff. |
+| 10C.5 Verification and handoff | Verified locally (2026-11-23) | Rebuilt and reran the served journeys, affected offline suites and package audit. A native reply stays pending until its confirmed output matches the recorded answer. The exact reviewed revision and the two whole-checkpoint review passes are tracked on [issue #10](https://github.com/Uniwares-LTD/unitale/issues/10). |
 
 #### 10C.2 local verification (2026-11-23)
 
@@ -1564,6 +1564,30 @@ size class (`CardTitle` rendered 16px instead of 20px).
   dock. The application uses the adopted type roles and violet tokens, the
   confirmed focused entry, and the accepted text-only scope. Local comparisons
   are under `output/playwright/10c4-comparison-*.png`.
+
+#### 10C.5 local verification (2026-11-23)
+
+- A native reply stays out of the transcript while the outcome is submitting or
+  unknown. The app archives an authentic answer only after the confirmed output
+  matches the recorded response and passes the retained turn's validation. The
+  Manager still reads authenticated legacy form responses through the same check.
+  This uses the existing decision records and leaves the persistence model unchanged.
+- The served application restored the idea after sign-in, required explicit consent,
+  and retained a draft after leaving. The admin editor rejected an unusable published
+  package, persisted an eligible replacement, and restored the Arabic public preference
+  on returning from its English interface. A lost reply response resolved after one
+  submission, and the choice dock collapsed when the test simulated keyboard occlusion.
+- The corrected production build also passed the six-reply walkthrough and all 16
+  language, theme and viewport combinations, including the served CSP and retained
+  nonce checks. The focused application regression passed again after the reply fix.
+- The compatibility suite passed 48 tests. Database-backed suites passed 15 application,
+  33 MCP, 38 repository, 17 lifecycle/media and 8 foundation tests. The module-disabled
+  check and 143 unit tests passed. The production build, typecheck, i18n, skills and docs
+  checks passed. Lint reported zero errors and six warnings in older browser scripts.
+- The package's 13-path digest remains
+  `b10028f3205c200e78bae889767cfdfafebc03ad1b51cb540e0cb0268a9cae70`.
+  Staging, live Dify/provider acceptance and physical-device and screen-reader checks
+  remain outside this local evidence.
 
 #### Accepted gaps (user, 2026-11-23)
 
@@ -1730,35 +1754,17 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
-**Session handoff (2026-11-23, during 10-chat-version):** checkpoints 01-10 are
-locally complete; see the [checkpoint 10 closure](#checkpoint-10-closure-2026-11-22).
-The active checkpoint is **[10-chat-version](#10-chat-version---conversational-booklet-experience)**,
-then 11.
+**Session handoff (2026-11-23):** see the [checkpoint 10 closure](#checkpoint-10-closure-2026-11-22)
+and the [conversation checkpoint verification](#10c5-local-verification-2026-11-23).
+Next is **[11, Integrated verification and handoff](#11---integrated-verification-and-handoff)**.
+Start by mapping exact revisions and existing evidence to the checkpoint 11 journeys
+and G01–G17/E1–E6 gates. Use deterministic providers and disposable persistence to
+cover missing cross-boundary cases, then run the integrated checks and two consecutive
+read-only reviews. The separate staging and live acceptance gates belong to checkpoint 12.
 
-State of the active checkpoint:
-- **10C.1:** done.
-- **10C.2:** verified locally. See [the browser and suite results](#10c2-local-verification-2026-11-23).
-- **10C.3 (Dify Manager):** verified offline. The actual YAML emits
-  `request_human.turn` via the native Human Input path. The package README records
-  the hashes and compatibility coverage. The scripted browser fixture still stands
-  in for actual provider execution.
-- **10C.4:** verified locally. See [the browser matrix and prototype comparison](#10c4-local-verification-2026-11-23).
-- **10C.5:** next. Confirm the current served journeys and affected offline suites,
-  then review the complete checkpoint twice against the accepted plan.
-
-Evidence on the handoff head: booklet suites all pass:
-- application: 14/14;
-- MCP: 33/33;
-- repositories: 38/38;
-- lifecycle-media: 17/17;
-- compat: 46/46;
-- modules: 1/1.
-
-Unit tests pass 142/142 with none failing. Typecheck, lint (0 errors), docs, i18n
-and the production build pass. The served build's conversation walk and the en/ar ×
-light/dark × 393/1440 matrix have no errors or overflow.
-
-The user confirmed that `/books/new` keeps the focused frame.
+The user confirmed that `/books/new` keeps the focused frame. The actual Manager YAML
+emits `request_human.turn`; the [workflow package](workflow-package/README.md) records its
+hashes and offline coverage. The local served-browser fixture uses a scripted Manager.
 
 **Local preview recipe:**
 1. `npm run build`.
@@ -1779,23 +1785,23 @@ Notes:
 
 **Continuation prompt:**
 
-> Continue Uniwares-LTD/unitale issue #10, checkpoint **10-chat-version**, on branch
+> Continue Uniwares-LTD/unitale issue #10, checkpoint **11**, on branch
 > `feature/10-dify-workflow-design`. Follow AGENTS.md: run the handbook check, read
 > the adapter and source map, then read
 > `docs/features/booklet-generation/implementation-plan.md`. Read its sections
-> "10-chat-version", "Conversation UI conformance review" and "New-session goal
-> prompt".
+> "11 - Integrated verification and handoff", "10-chat-version" and "New-session
+> goal prompt".
 >
-> Authorization: commits, pushes and issue comments on the issue branch are
-> authorized. Unibase changes, PRs or merges into either `main`, deployments and
-> paid or live provider calls each need fresh authorization.
+> Use the issue branch for local integration and review. Follow the session's
+> authorization for commits, pushes and issue comments. Unibase changes, PRs or
+> merges into either `main`, deployments and paid or live provider calls each need
+> fresh authorization.
 >
 > The user confirmed that `/books/new` keeps the focused frame.
 >
-> Then work one sub-checkpoint at a time. For each: close its details, show its goal
-> and deliveries, implement, review read-only until clean, report what was delivered
-> and the checkpoint progress, and revise the next plan.
-> - **10C.5:** verification, with two consecutive clean whole-checkpoint reviews.
+> Reconcile the exact artifacts, G01–G17 and E1–E6 with the evidence, cover the
+> remaining local integration gaps, and complete two consecutive clean whole-checkpoint
+> reviews before handoff. Keep staging and live acceptance in checkpoint 12.
 >
 > Keep the Unibase/Unitale design rules from the conformance review: type roles,
 > tokens, existing primitives, and reusable components in
@@ -1803,8 +1809,8 @@ Notes:
 
 **Homepage (approved 2026-11-22):** the Unitale-owned homepage with **Create a book**,
 **Continue your books**, sign-in return routing and booklet copy is part of 10.2 on this
-issue branch, using the existing `projectHome` hook. No Unibase change and no separate
-prerequisite branch. Do not implement a workspace, reader or storefront.
+issue branch, using the existing `projectHome` hook. The dedicated booklet reader is
+part of 10-chat-version. The standalone workspace and storefront remain deferred.
 
 Repository ownership remains governed by [preferences](../../../.agents/repository.md)
 and [template updates](../../template.md#receive-template-updates): reusable fixes

@@ -69,6 +69,9 @@ production command `reply {key, requestId, reply}` submits a reply to a turn.
 `GET /api/booklets?section=default` returns the default package and available
 credits. `GET /api/booklets/{id}?section=conversation` returns the turns, their
 statuses and their authentic replies.
+An in-flight or uncertain native submission is exposed as `confirming` without
+a reply. The transcript includes a reply after the recorded submission and any
+available native confirmation agree and the reply fits the retained turn.
 
 The conversation response includes an activity derived from the latest owned Run
 and dispatched work, plus the delivered reader when a committed manifest exists.

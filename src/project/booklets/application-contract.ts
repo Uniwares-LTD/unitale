@@ -261,6 +261,7 @@ export const bookletEditableErrors: readonly string[] = [
 export const bookletTurnStatuses = [
   "preparing", // Requested; the native question is not open yet.
   "open", // Awaiting the owner's reply.
+  "confirming", // A sent or uncertain reply awaits the native acknowledgement.
   "answered",
   "stale", // A shown revision changed before a reply.
   "expired",

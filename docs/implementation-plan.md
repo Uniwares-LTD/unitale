@@ -87,7 +87,7 @@ merge brings it into issue #10. The earlier PR #14 import and its Booklet regres
 evidence remain [historical adoption evidence](features/booklet-generation/implementation-plan.md#local-google-popup-adoption).
 Existing session handling, emulator/staging/production redirects, private configuration
 and the separately preserved setup baseline `141eb33` remain unchanged.
-Checkpoint 10 remains unimplemented.
+This adoption preceded checkpoint 10.
 
 ## Open work
 
@@ -106,31 +106,32 @@ before relying on target bindings; checkpoint 09 is Verified locally.
 The user subsequently requested committing the reviewed candidate/plan and executing
 approved scope B. Baseline committed as `2dc7b8c`; 07 local storage is complete and reviewed,
 with reviewed 08 imports through Unibase `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`.
-Tasks 09.1-09.7 are Verified locally; checkpoint 10 remains unimplemented.
-The active goal stops before checkpoint 10 implementation.
+Tasks 09.1-09.7 are verified locally. Checkpoint 10 delivered the creator controls
+and admin settings. The [conversation checkpoint](features/booklet-generation/implementation-plan.md#10-chat-version---conversational-booklet-experience)
+replaces the booklet form and Run panel with a focused conversation.
 Live operations, scope C and paid calls remain gated. The
 [remaining 07-12 plan](features/booklet-generation/implementation-plan.md#remaining-implementation-kickoff-and-ownership)
 aligns T18-T21, fixes Unitale/Unibase ownership and groups approvals at kickoff/final
 acceptance. It includes snapshotted action retries (LLM 2, image 0, retriable non-paid 3),
 automatic evidence reconciliation, preserved correction counters and explicit retry/
 continuation controls. The local backend/native Code boundaries are implemented and
-fixture-tested; creator controls/admin settings remain checkpoint 10, target execution 12.
+fixture-tested. Target execution remains checkpoint 12.
 T18-T20 candidates are locally implemented; integration/acceptance remains pending.
-T21 includes all six creator outcomes through existing Run UI, including quote/consent
-and accessible history. Earlier authorization covered DSL-first workflows, essential
+T21 includes all six creator outcomes, with quote, consent and accessible history
+available through the focused Booklet UI. Earlier authorization covered DSL-first workflows, essential
 inline checks, fixtures/tests and documentation. The custom Python plugin, TypeScript authoring
 framework and graph interpreter are withdrawn. The delivery plan's necessity and
 simplicity gate applies to every further change.
 
 Checkpoints 01-06 deliver seven readable YAML workflows, a locally validated candidate
 and the minimum application integration handoff. The user explicitly confirmed the
-initial stop at the validated Dify/provider handoff. Scope B for minimal checkpoints
-07-11 is now approved, including scoped commits/pushes/PRs/merges/imports after checks.
+initial stop at the validated Dify/provider handoff. The earlier Scope B approval
+covered the scoped implementation and publication recorded in the delivery plan.
 Checkpoint 07 v2 content/revision/work/assessment/acceptance/checkpoint storage is
 complete locally, with unchanged v1 behavior. Checkpoint 08 imports reviewed Unibase
 PRs #49/#50/#52 through exact revision `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`;
-local gateway/recovery and final 09.7 reviews pass, with 10-12
-creator UI/integration/acceptance remaining. No temporary tunnel
+local gateway/recovery and final 09.7 reviews pass, and checkpoints 11 and 12
+cover the remaining integrated verification and target acceptance. No temporary tunnel
 is planned: local MCP contract checks precede live conversion proof in 12. Scope C
 remains pending, with a selected US$3 future provider cap and no spending approval. The user authorized
 committing/pushing this candidate and updating issue #10 on 2026-11-09; that does
@@ -169,5 +170,6 @@ The [remaining Booklet plan](features/booklet-generation/implementation-plan.md#
 now maps the pinned Unitale design reference to the existing 10.1-10.7 tasks and
 11/12 verification/approval gates. That planning refresh reused adopted UI helpers
 without enabling a project theme. The separately authorized 2026-11-22 theme adoption
-is recorded in the project extension guide; no new chat/product flow is implemented. The local-popup adoption now supplies passing production build, subsequent
-typecheck and lint results; current checks and their limits are recorded there. This is a planning update; checkpoint 10 remains unimplemented.
+is recorded in the project extension guide. The local-popup adoption supplied a
+passing production build, typecheck and lint. That planning refresh preceded the
+booklet UI and conversation checkpoints.

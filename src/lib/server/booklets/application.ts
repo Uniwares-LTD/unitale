@@ -32,10 +32,7 @@ import {
   type BookletReplyResult,
   bookletHistoryKinds,
 } from "../../../project/booklets/application-contract";
-import {
-  bookletReplySchema,
-  checkReply,
-} from "../../../project/booklets/turn-contract";
+import { checkReply } from "../../../project/booklets/turn-contract";
 import { humanRequestV2Schema } from "./documents-v2";
 import { submitAuthorizedDecision, type Decision } from "../runs/service";
 import { AppError } from "../../auth-policy";
@@ -46,7 +43,7 @@ import { bookletRepositoryV2 } from "./repository-v2";
 import { bookletLifecycleV2 } from "./lifecycle-v2";
 import { enqueueBookletRun } from "./runs";
 import { bookletMedia } from "./media";
-import { readBookletDocumentV2 } from "./read-v2";
+import { confirmedHumanResponse, readBookletDocumentV2 } from "./read-v2";
 import { readSettings } from "../settings";
 import { accessPermitsSession, accountAccess } from "../store/access";
 import { readWallet } from "../store/credits";
@@ -1249,7 +1246,9 @@ export function bookletApplication(
             d.form?.form_content === human.formContent + placeholder,
         );
         const decision = matches.length === 1 ? matches[0] : undefined;
-        const answered = decision ? authenticReply(decision) : null;
+        const response = confirmedHumanResponse(decision);
+        const checked = response.status === "submitted" ? checkReply(human.turn!, response.response) : null;
+        const answered = checked?.ok ? checked.reply : null;
         const active = activeStatuses.includes(statusOf.get(human.runId) ?? "");
         let status: BookletConversation["turns"][number]["status"];
         if (answered) status = "answered";
@@ -1262,6 +1261,8 @@ export function bookletApplication(
           (decision.form?.expiration_time ?? Infinity) * 1000 < Date.now()
         )
           status = "expired";
+        else if (latest?._id === human.runId && ["submitting", "unknown"].includes(decision.status))
+          status = "confirming";
         else status = decision.status === "pending" && active ? "open" : "closed";
         return {
           requestId: human.requestId,
@@ -1271,12 +1272,14 @@ export function bookletApplication(
           reply: answered,
         };
       });
+      const confirming = turns.some((t) => t.status === "confirming");
       const working =
         !!latest &&
         activeStatuses.includes(latest.status) &&
+        !confirming &&
         !turns.some((t) => t.status === "open" || t.status === "preparing");
       let activity: BookletConversation["activity"] = null;
-      if (latest && ["unknown", "needs-review", "settlement-blocked"].includes(latest.status))
+      if (confirming || (latest && ["unknown", "needs-review", "settlement-blocked"].includes(latest.status)))
         activity = "confirming";
       else if (turns.some((turn) => turn.status === "preparing"))
         activity = "preparing-question";
@@ -1384,17 +1387,6 @@ export function bookletApplication(
       })
       .limit(400)
       .toArray();
-  }
-
-  function authenticReply(decision: Decision) {
-    if (
-      !["submitting", "submitted"].includes(decision.status) ||
-      decision.answerSource?.type !== "user" ||
-      decision.intent?.action !== "continue"
-    )
-      return null;
-    const parsed = bookletReplySchema.safeParse(decision.intent.response);
-    return parsed.success ? parsed.data : null;
   }
 
   function isStale(

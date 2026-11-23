@@ -2328,6 +2328,21 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const after = await app.conversation(production._id);
           assert.deepEqual(after.turns.map((x) => [x.status, x.reply]), [["answered", reply]]);
           assert.equal(after.idea, (await db.collection("bookletProductions").findOne({ _id: production._id as never }))!.brief.idea);
+          const decisions = db.collection<Decision>("runDecisions");
+          const decisionKey = { jobId: parent._id, token };
+          for (const status of ["submitting", "unknown"]) {
+            await decisions.updateOne(decisionKey, { $set: { status } });
+            const pending = await app.conversation(production._id);
+            assert.equal(pending.activity, "confirming");
+            assert.deepEqual(pending.turns.map((x) => [x.status, x.reply]), [["confirming", null]]);
+          }
+          await decisions.updateOne(decisionKey, { $set: {
+            status: "submitted", confirmedInputs: { response: "different response" },
+          } });
+          assert.equal((await app.conversation(production._id)).turns[0].reply, null);
+          assert.equal((await invoke("read_document", { kind: "human_response", id: human.requestId })).isError, true);
+          await decisions.updateOne(decisionKey, { $set: { confirmedInputs: { response: JSON.stringify(reply) } } });
+          assert.deepEqual((await app.conversation(production._id)).turns[0].reply, reply);
         });
         await t.test("human requests bind native presentation and authenticated first-wins responses", async () => {
           const initial = await successful("context", {});
@@ -2339,16 +2354,13 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
             responseContract: { mode: "raw-v1" }, presentation: { version: 1, cards: [] }, fence: initial.fence };
           assert.equal((await invoke("request_human", { ...request, targets: [{ ...targets[0], contentHash: "0".repeat(64) }] })).isError, true);
           assert.equal((await invoke("request_human", { ...request, presentation: { ...request.presentation, approval: {} } })).isError, true);
-          const plan = runNativeCode("manager", "guard", { context: JSON.stringify(initial), decision: {
-            action: "request_human", request_json: JSON.stringify(request), reason: "Ask one grouped optional review" } });
-          const intent = await successful("checkpoint", JSON.parse(plan.checkpoint));
-          const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(initial),
-            request: plan.request, dispatch: plan.dispatch, action: "request_human" }).request);
-          const human = await successful("request_human", ready);
-          assert.deepEqual(await successful("request_human", ready), human);
+          // A previously published workflow may still hold a legacy request.
+          // The current Manager emits typed turns, while the MCP receipt remains compatible.
+          const human = await successful("request_human", request);
+          assert.deepEqual(await successful("request_human", request), human);
           const context = await successful("context", {});
           const consumed = runNativeCode("manager", "consume", { raw: { result: human }, action: "request_human",
-            request: JSON.stringify(ready), context, version: intent.checkpointVersion });
+            request: JSON.stringify(request), context, version: context.checkpointVersion });
           const checkpoint = JSON.parse(consumed.checkpoint);
           assert.deepEqual(checkpoint.state.lastResult.document, { kind: "human_response", id: human.requestId });
           assert.ok(Buffer.byteLength(consumed.checkpoint) < 2048);
@@ -2403,7 +2415,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal((await read()).value.status, "stale");
           await db.collection("bookletProductions").updateOne({ _id: production._id as never }, { $set: { "subjects.0.artifacts.0.currentRevisionId": selected!._id } });
           assert.equal((await read()).value.response, answer.response);
-          assert.deepEqual(await successful("request_human", ready), human);
+          assert.deepEqual(await successful("request_human", request), human);
         });
         await t.test("owned histories page beyond previews and expose only allowlisted execution metadata", async () => {
           // Metadata fixtures extend real handler-created records; they never run providers.
