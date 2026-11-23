@@ -356,15 +356,12 @@ and acceptance; the new manifest requires its own whole-book coverage. This does
 migrate v1 content; existing v1 readers/reuse remain separate and unchanged.
 
 `request_human` accepts current immutable source tuples in `targets` (or an empty
-list for a brief question), `{mode:"raw-v1"}` in `responseContract`, and
-`presentation:{version:1,cards:[...]}` using at most 19 existing typed cards. It adds
-one question card with the request ID in card metadata, requires the Run's accepted
-raw-v1 response mode, and returns the table's exact form/identity fields plus fence.
-The existing mutation receipt retains the request; there is no new request store.
-The candidate Human Input appends the native paragraph placeholder once. Do not
-add another placeholder to the returned body or supply an approval object. Gallery
-cards still require existing owned Run asset identities; booklet IDs do not become
-Run assets. Booklet media presentation remains checkpoint 10 integration work.
+list for a brief question) and `{mode:"raw-v1"}` in `responseContract`. The Manager
+sends a version-1 `turn` and `presentation:{version:1,cards:[]}` for each new request.
+Unitale derives fallback cards and binds the typed turn, exact target revisions and
+retained media to the form kept in the existing receipt. Legacy requests without a
+turn still use up to 19 supplied cards. The native Human Input appends its paragraph
+placeholder once to the returned form.
 
 After Human Input, follow the checkpoint's `human_response` document reference.
 The owned bounded reader matches the original Manager Run, native `human` node and
@@ -372,6 +369,11 @@ exact presentation. It returns `status:submitted` and the exact response only fo
 an authenticated submitted user intent with consistent sent/confirmed inputs.
 Missing, mismatched or unknown submissions remain pending; expired forms and changed
 targets return `expired`/`stale`. Multiple matching native decisions fail as ambiguous.
+For a typed turn, interpret the authenticated raw string as a version-1 answer,
+approval or request for changes. Approval and changes identify the exact presented
+revision. For a sectioned read, the Manager keeps the request ID and interaction
+in its opaque checkpoint while reading the authenticated status and response.
+Requests retained without a turn continue to use the raw reply.
 Provider-filled output without a user intent is not authentication evidence. Existing
 Run submission enforces first-wins and exact repeat replay; no new submit endpoint or
 automatic acceptance is introduced. Local fixtures use the real submission service

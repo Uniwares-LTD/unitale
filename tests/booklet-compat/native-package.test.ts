@@ -8,6 +8,12 @@ import test from "node:test";
 import { parse } from "yaml";
 import { parseResult } from "../../src/lib/contracts/runs";
 import { inspectDifyWorkflow } from "../../src/lib/server/runs/dify-capabilities";
+import { humanRequestInputV2Schema } from "../../src/lib/server/booklets/documents-v2";
+import {
+  checkReply,
+  encodeReply,
+  readTurn,
+} from "../../src/project/booklets/turn-contract";
 
 // Inspect actual DSL and execute isolated pure Code functions. This is not a Dify engine.
 const root = resolve("docs/features/booklet-generation/workflow-package");
@@ -1148,6 +1154,208 @@ test("Human Input uses the actual correlated presentation and cannot fabricate o
     assert.match(method.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   delete (args.raw[0].result as any).presentationHash;
   assert.throws(() => run("manager", "consume", args), /presentation missing/);
+});
+
+test("Manager sends a typed turn through the checkpoint fence and renders the retained native form", () => {
+  const target = {
+    artifactId: "outline",
+    revisionId: "revision-1",
+    contentHash: hash("outline"),
+  };
+  const question = {
+    type: "question",
+    kind: "text",
+    prompt: "Who will read the story?",
+    options: [],
+    freeText: true,
+  };
+  const approval = { type: "approval", target, subject: "the story outline" };
+  const configuration = {
+    question: "Review your story",
+    responseContract: { mode: "raw-v1" },
+    presentation: { version: 1, cards: [] },
+    fence: 7,
+  };
+  const tool = apps.manager.workflow.graph.nodes.find(
+    (node: any) => node.id === "app-request_human",
+  );
+  assert.deepEqual(tool.data.tool_parameters.request.value, [
+    "saved",
+    "request",
+  ]);
+  assert.equal(tool.data.tool_name, "booklet_request_human_v2");
+  for (const [parts, targets] of [
+    [
+      [
+        question,
+        { type: "prose", text: "I will use your answer to shape the story." },
+      ],
+      [],
+    ],
+    [
+      [
+        {
+          type: "synopsis",
+          target,
+          title: "The lantern",
+          body: "A lantern befriends the sea.",
+        },
+        approval,
+      ],
+      [target],
+    ],
+  ] as const) {
+    const turn = { version: 1, parts };
+    const c = context();
+    const planned = guard(
+      "request_human",
+      { ...configuration, targets, turn },
+      c,
+    );
+    const saved = run("manager", "saved", {
+      raw: [{ result: { checkpointVersion: 5, fence: 8 } }],
+      context: JSON.stringify(c),
+      request: planned.request,
+      dispatch: planned.dispatch,
+      action: planned.action,
+    });
+    const outgoing = JSON.parse(saved.request);
+    assert.equal(outgoing.fence, 8);
+    assert.deepEqual(
+      humanRequestInputV2Schema.parse({
+        question: outgoing.question,
+        targets: outgoing.targets,
+        responseContract: outgoing.responseContract,
+        presentation: outgoing.presentation,
+        turn: outgoing.turn,
+      }).turn,
+      turn,
+    );
+    const form =
+      "\x60\x60\x60booklet-turn\n" + JSON.stringify(turn) + "\n\x60\x60\x60";
+    const retained = run("manager", "consume", {
+      raw: [
+        {
+          result: {
+            requestId: "request-1",
+            presentationHash: hash(form),
+            formContent: form,
+            fence: 8,
+          },
+        },
+      ],
+      action: planned.action,
+      request: saved.request,
+      context: JSON.stringify({ ...c, checkpointVersion: 5, fence: 8 }),
+      version: 5,
+    });
+    assert.deepEqual(readTurn(retained.form), turn);
+    const state = JSON.parse(retained.checkpoint).state;
+    assert.deepEqual(state.lastResult.document, {
+      kind: "human_response",
+      id: "request-1",
+    });
+    const interaction = targets.length ? approval : question;
+    assert.deepEqual(state.humanInteraction, {
+      requestId: "request-1",
+      part: interaction,
+    });
+    const read = { kind: "human_response", id: "request-1" };
+    const sectioned = run("manager", "consume", {
+      raw: [
+        {
+          result: {
+            ...read,
+            type: "object",
+            sections: [{ key: "status", complete: true, value: "submitted" }],
+            cursor: "more",
+          },
+        },
+      ],
+      action: "read_document",
+      request: JSON.stringify(read),
+      context: JSON.stringify({ ...c, checkpoint: state }),
+      version: 4,
+    });
+    assert.deepEqual(
+      JSON.parse(sectioned.checkpoint).state.humanInteraction,
+      state.humanInteraction,
+    );
+  }
+  const base = { ...configuration, targets: [] };
+  assert.throws(() => guard("request_human", base), /version-1 turn/);
+  assert.throws(
+    () =>
+      guard("request_human", {
+        ...base,
+        turn: { version: 1, parts: [question, approval] },
+      }),
+    /one interaction/,
+  );
+  assert.throws(
+    () =>
+      guard("request_human", {
+        ...base,
+        presentation: { version: 1, cards: ["legacy"] },
+        turn: { version: 1, parts: [question] },
+      }),
+    /derives conversational fallback cards/,
+  );
+});
+
+test("Manager checkpoints only the authenticated human read, preserving typed and legacy replies", () => {
+  const target = {
+    artifactId: "outline",
+    revisionId: "revision-1",
+    contentHash: hash("outline"),
+  };
+  const turn = humanRequestInputV2Schema.shape.turn.unwrap().parse({
+    version: 1,
+    parts: [{ type: "approval", target, subject: "the story outline" }],
+  });
+  const replies = [
+    {
+      status: "submitted",
+      turn,
+      response: encodeReply({ version: 1, kind: "approve", target }),
+    },
+    {
+      status: "submitted",
+      turn,
+      response: encodeReply({
+        version: 1,
+        kind: "changes",
+        target,
+        text: "Set it by the sea.",
+      }),
+    },
+    { status: "submitted", turn: null, response: "Legacy response" },
+    { status: "stale", turn, response: null },
+  ];
+  for (const value of replies) {
+    const read = { kind: "human_response", id: "request-1" };
+    const result = {
+      ...read,
+      type: "value",
+      path: [],
+      complete: true,
+      cursor: null,
+      value,
+    };
+    const consumed = run("manager", "consume", {
+      raw: [{ result }],
+      action: "read_document",
+      request: JSON.stringify(read),
+      context: JSON.stringify(context()),
+      version: 4,
+    });
+    const reply = JSON.parse(consumed.checkpoint).state.lastResult.value;
+    assert.deepEqual(reply, value);
+    if (reply.turn && reply.status === "submitted") {
+      assert.ok(typeof reply.response === "string");
+      assert.equal(checkReply(turn, JSON.parse(reply.response)).ok, true);
+    }
+  }
 });
 
 test("Planner supports zero optional subjects and rejects invented roster capacity", () => {

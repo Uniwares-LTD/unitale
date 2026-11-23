@@ -1428,8 +1428,8 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 | --- | --- | --- |
 | 10C.1 Contracts | Implemented locally | Versioned turn and reply contract (`src/project/booklets/turn-contract.ts`); `request_human` accepts an optional `turn`, binds shown revisions to targets and images to their retained assets, derives generic fallback cards and carries the turn in a fenced `booklet-turn` block bound by the exact form match. **Card-registry decision:** the shared Run registry is unchanged; booklet parts stay project-owned, so no Unibase change. The start-consent card reuses the existing quote DTO. Evidence: `tests/booklet-turns.test.ts` and the MCP turn subtest. |
 | 10C.2 Default package and conversational start | Verified locally (2026-11-23) | Versioned admin editor checks the current publication and policy and records changes. The focused entry restores the idea after sign-in and asks for explicit consent. |
-| 10C.3 Manager workflow | Next | Native Manager Human Input requests carry typed questions and revision-bound approvals in `request_human.turn`. Check the real YAML and typed reply branches offline, preserve the legacy response path, and refresh the package hashes. |
-| 10C.4 Conversation UI | In progress (UI approved; conformance reviewed) | `/books/new` and `/books/[id]` with every pattern above, in the focused frame through the Unibase shell opt-out (branch, PR and merge need authorization); home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
+| 10C.3 Manager workflow | Verified locally (2026-11-23) | Manager Human Input sends typed questions and exact revision approvals through `request_human.turn`, retains the interaction across bounded reads and accepts legacy replies for legacy receipts. All 48 compatibility tests pass and the package hashes are refreshed. |
+| 10C.4 Conversation UI | Next, building on the approved preview | Retire the booklet form and Run panel, link booklet Runs to their conversation, and keep the focused frame. Add group-by-group prose reveal, workflow-backed waiting, enlarged artwork and the delivered reader. Verify en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and side-by-side prototype captures. |
 | 10C.5 Verification and handoff | Pending | Affected suites, build, browser journeys including sign-in return, consent and start, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
 
 #### 10C.2 local verification (2026-11-23)
@@ -1720,9 +1720,10 @@ then 11.
 State of the active checkpoint:
 - **10C.1:** done.
 - **10C.2:** verified locally. See [the browser and suite results](#10c2-local-verification-2026-11-23).
-- **10C.3 (Dify Manager):** not started. The Manager YAML must emit `request_human`
-  with a `turn`. It needs offline compatibility tests and refreshed hashes. Until then
-  `tests/integration/booklet-chat-manager.ts` is the scripted local stand-in.
+- **10C.3 (Dify Manager):** verified offline. The actual YAML emits
+  `request_human.turn` via the native Human Input path. The package README records
+  the hashes and compatibility coverage. The scripted browser fixture still stands
+  in for actual provider execution.
 - **10C.4:** the UI is approved and conformance-reviewed. The focused frame and the
   `cn` type roles came through Unibase #69 and #70, adopted by Unitale #17 and #18.
   Pending:
@@ -1784,8 +1785,6 @@ Notes:
 > Then work one sub-checkpoint at a time. For each: close its details, show its goal
 > and deliveries, implement, review read-only until clean, report what was delivered
 > and the checkpoint progress, and revise the next plan.
-> - **10C.3:** the Dify Manager emits `request_human` with a typed `turn`, with
->   offline compatibility tests and refreshed package hashes.
 > - **10C.4:** the remaining UI items listed above.
 > - **10C.5:** verification, with two consecutive clean whole-checkpoint reviews.
 >

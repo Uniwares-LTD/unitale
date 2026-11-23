@@ -159,10 +159,18 @@ only after both web and AI worker use the matching v2 domain registration and th
 separately authorized target checks pass. No deployment or paid call is claimed.
 
 Current implementation SHA-256:
-`87e7875505486d6e6edc7992720f19501043ae8f7d1878bfeb93a2a37da41911`.
+`b10028f3205c200e78bae889767cfdfafebc03ad1b51cb540e0cb0268a9cae70`.
 The existing 13-path algorithm described below covers native YAML, five fixtures and
 the compatibility test; application code and documentation are outside that digest.
-Seven YAML files total 250,152 bytes.
+Seven YAML files total 253,664 bytes.
+
+Checkpoint 10C.3 adds typed conversation turns to the Manager's existing native
+Human Input path. The Manager sends each new question or approval in
+`request_human.turn`, renders the form retained by Unitale, and reads authenticated
+responses through `human_response`. Compatibility coverage runs the real Manager
+Code nodes for the typed request, refreshed fence, retained form and legacy reply.
+The six specialist YAML files have the same hashes as before 10C.3. Target import
+and execution of this revision remain pending.
 
 ## Checkpoint evidence
 
