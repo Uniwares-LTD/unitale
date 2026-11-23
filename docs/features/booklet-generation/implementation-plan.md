@@ -1146,6 +1146,19 @@ Per-sub-checkpoint reviews of the final code (each slice's files read in full):
 | 10.6 | `admin.ts`, admin route/page, `admin-booklets.tsx`, extension | Clean |
 | 10.7 | fixture seeder, browser scripts, evidence record | Clean (passes C-F) |
 
+Sequencing limitation: these slice reviews ran after all slices were built, not at each
+slice's boundary before the next slice started. A retrospective review of each boundary
+commit records what was open at that point:
+
+| Boundary | Open at that commit | Fixed in |
+| --- | --- | --- |
+| 10.1 `7cea8f7` | None in its scope (pending-start handling arrived with the 10.2 UI) | — |
+| 10.2 `67fe90a` | Language error unlinked; empty package page hid later pages; malformed picker search returned 503 | `b02ead8`; `97844a3`; `be28470` |
+| 10.3 `b6d0bc1` | Malformed production/asset path IDs returned 503 instead of 404 | `be28470` |
+| 10.4 `d69b558` | Committed continuation/revision refused at Run admission was editable (no `BOOKLET_START_PENDING`) | `97844a3` |
+| 10.5 `be28470` | None found | — |
+| 10.6 `7f2df29` | None (stale client sections from `dba661f` fixed within the slice) | — |
+
 Passes C and D were clean on `36f2c91`; the 10.2-F1 fix reset the count. **Passes E and
 F were clean on `b02ead8`** (E: delta and boundary/secret/contract invariants; F:
 evidence currency). These are the two consecutive clean reviews of the final state.
