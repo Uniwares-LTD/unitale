@@ -1374,7 +1374,7 @@ The facade, commerce, media, history and recovery services from checkpoint 10 ar
 | Package | One admin-selected **default booklet package** is used by conversations; other packages and pickers are deferred. |
 | MVP scope | Text and generative-UI interactions only. **Deferred and documented:** voice input, photo/reference attachments, the 3D mascot (a static mascot face may identify the agent), PDF download and sharing, Library, Explore samples, the pricing page and checkout, and browse-menu items for deferred pages. |
 | Manager | The Dify Manager workflow is extended to emit conversational turns and approval requests; the workflow package is re-validated and its hashes refreshed. |
-| Page frame (2026-11-23) | The conversation pages use a **focused full-screen frame** like the prototype: no app sidebar or browsing header, only a compact chat header (back and theme). This needs a small reusable Unibase change that lets a page opt out of the shell frame. It follows the usual path: a Unibase branch and PR, adoption into Unitale `main`, then a merge into this branch. Publishing that change needs its own authorization. |
+| Page frame (2026-11-23) | The conversation pages use a **focused full-screen frame** like the prototype: no app sidebar or browsing header, only a compact chat header (back and theme). This needs a small reusable Unibase change that lets a page opt out of the shell frame. It follows the usual path: a Unibase branch and PR, adoption into Unitale `main`, then a merge into this branch. Publishing that change needs its own authorization. **Delivered 2026-11-23:** Uniwares-LTD/unibase#69 (`a590eef`, extension `focusedRoutes` and `ThemeToggle`) was adopted into Unitale `main` by #17 (`b702406`) and merged into this branch. The booklet extension declares `focusedRoutes: ["/books"]`, so the entry and conversation pages use it. |
 | Audience marker (2026-11-23) | Kept: an idea-only start records the fixed brief audience `audienceNotStated` ("Not stated yet; ask the owner."), and the Manager asks. `briefSchema` is unchanged. |
 | Start consent (2026-11-23) | Kept as an **inline consent card** with an explicit "Start my book" action that states the pages, price and balance. This is an accepted exception to the Unibase convention that paid actions confirm in an `AlertDialog`; it applies only to this card. |
 
@@ -1508,9 +1508,19 @@ They take text and callbacks only. Data, copy and policy stay with the consuming
 feature.
 
 **Accepted exception:** the inline consent card instead of an `AlertDialog` (see
-the decisions above). **Not yet conformant, tracked in 10C.4:**
-- the focused frame with a compact back and theme header (needs the Unibase shell
-  opt-out);
+the decisions above). **Focused frame:** delivered through the Unibase shell
+opt-out (see the decisions above). The prototype's entry screen shows the browsing
+header (wordmark, gold Create, menu); per the decision, `/books/new` also uses the
+focused frame.
+
+**Unibase gap found (follow-up, not yet authorized):** Unibase's `cn` does not
+register the foundation's type-role utilities (`text-card-title`, `text-body`…).
+A role passed in a primitive's `className` therefore loses to the primitive's own
+size class: `CardTitle` rendered 16px instead of 20px. Until a Unibase change
+registers the roles, project code applies a role on an inner element, never on a
+primitive that sets its own font size.
+
+**Not yet conformant, tracked in 10C.4:**
 - word-group prose reveal;
 - a wait line backed by workflow state instead of the generic working copy;
 - the enlarged image viewer.

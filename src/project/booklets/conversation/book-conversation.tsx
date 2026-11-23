@@ -2,8 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { api, ApiError } from "@/lib/client/api";
 import { Notice } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
@@ -145,15 +143,11 @@ export function BookConversation({ initial }: { initial: BookletConversation }) 
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100svh-12rem)] w-full max-w-3xl flex-col">
-      <div className="mb-6 flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="size-(--control-touch-sm)" asChild>
-          <Link href="/" aria-label={t("m76900f1bfd16")}>
-            <ArrowLeft aria-hidden="true" className="rtl:rotate-180" />
-          </Link>
-        </Button>
-        <h1 className="min-w-0 truncate font-heading text-section-title">{data.title}</h1>
-      </div>
+    // The focused frame supplies Back and the theme toggle; the page owns its h1.
+    <div className="mx-auto flex min-h-[calc(100svh-6rem)] w-full max-w-3xl flex-col">
+      <h1 dir="auto" className="mb-6 truncate font-heading text-section-title">
+        {data.title}
+      </h1>
 
       <ol className="flex-1 space-y-8 pb-6" aria-label={t("mccca18175753")}>
         <li>

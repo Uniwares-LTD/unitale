@@ -209,8 +209,8 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
         // pages, price and balance instead of an AlertDialog.
         <Card aria-labelledby="book-consent-title" className="motion-safe:animate-in motion-safe:fade-in">
           <CardHeader>
-            <CardTitle id="book-consent-title" className="font-heading text-card-title">
-              {t("mee15ab57a7fb")}
+            <CardTitle id="book-consent-title">
+              <span className="block font-heading text-card-title">{t("mee15ab57a7fb")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -10,7 +10,9 @@ export const assetUrl = (productionId: string, assetId: string) =>
   `/api/booklets/${encodeURIComponent(productionId)}/assets/${encodeURIComponent(assetId)}`;
 
 const prose = "text-reading whitespace-pre-line [overflow-wrap:anywhere]";
-const cardTitle = "font-heading text-card-title";
+// Type roles go on an inner element: `cn` does not know the foundation's role
+// utilities, so a role passed to CardTitle would lose to its own size class.
+const cardTitle = "block font-heading text-card-title";
 
 // Non-interactive parts render in the history in the Manager's order. The one
 // interactive part (question, styles or approval) is rendered by the dock while
@@ -51,7 +53,9 @@ function Part({
       return (
         <Card>
           <CardHeader>
-            <CardTitle dir="auto" className={cardTitle}>{part.title}</CardTitle>
+            <CardTitle dir="auto">
+              <span className={cardTitle}>{part.title}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
@@ -69,7 +73,9 @@ function Part({
       return (
         <Card>
           <CardHeader>
-            <CardTitle dir="auto" className={cardTitle}>{part.title}</CardTitle>
+            <CardTitle dir="auto">
+              <span className={cardTitle}>{part.title}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p dir="auto" className={prose}>{part.body}</p>
@@ -93,7 +99,9 @@ function Part({
               />
             )}
             <div className={part.assetId ? undefined : "sm:col-span-2"}>
-              <CardTitle dir="auto" className={cardTitle}>{part.name}</CardTitle>
+              <CardTitle dir="auto">
+                <span className={cardTitle}>{part.name}</span>
+              </CardTitle>
               <p dir="auto" className={`mt-2 ${prose}`}>{part.description}</p>
             </div>
           </CardContent>

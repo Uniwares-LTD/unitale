@@ -17,6 +17,9 @@ export const bookletsExtension = defineExtension({
       "bookletSettings",
     ],
   },
+  // The conversation entry and pages use Unibase's focused frame (Back and
+  // theme only), as the Unitale chat header specifies.
+  focusedRoutes: ["/books"],
   adminSections: [
     {
       href: "/admin/booklets",
