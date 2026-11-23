@@ -206,7 +206,20 @@ export function BookletActions({
       {actions.running && (
         <p className="text-sm text-muted-foreground">{t("mca656448efa2")}</p>
       )}
+      {actions.resume && (
+        <p className="text-sm text-muted-foreground">{t("m695aea77ebf3")}</p>
+      )}
       <div className="flex flex-wrap gap-3">
+        {actions.resume && (
+          <Button
+            type="button"
+            disabled={busy}
+            aria-busy={busy}
+            onClick={() => void send({ action: "resume" })}
+          >
+            {t("mb73d56d79ba3")}
+          </Button>
+        )}
         {actions.retry && (
           <Button
             type="button"

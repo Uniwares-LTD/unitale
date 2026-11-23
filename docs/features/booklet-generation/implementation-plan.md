@@ -1169,6 +1169,31 @@ revision) on `b02ead8`. All suites were then rerun on the final head `103b4c6`: 
 133/133, `test:booklet-application` 12/12, repositories 38/38, lifecycle-media 17/17,
 MCP 32/32, compat 46/46, commerce 31/31 and `check:env` pass.
 
+#### Checkpoint 10 known-limitation fixes (2026-11-23)
+
+The informational limitations recorded by the checkpoint 10 reviews are fixed before 11:
+
+- **No orphaned unpaid drafts.** A first attempt refuses disabled Runs and insufficient
+  credits before anything is created. Once the book, order and draft exist, any refusal before
+  or at the paid start (Runs disabled, insufficient credits at the charge) is
+  `BOOKLET_START_PENDING`, so the browser keeps the exact request; the same key starts it
+  once possible. The picker hides never-started drafts.
+- **No dead end after a reload.** Runs are keyed by their consumption flow
+  (`booklet-flow:<flowId>`), not by the browser key, and an existing Run is detected by its
+  bound flow whatever key created it. A new `resume` command enqueues the
+  order's committed flow that has no Run (start, continuation or revision; predecessor
+  chaining as for Continue). The view reports `actions.resume`; while it is true, Continue
+  and revisions are not offered. Resume and the original key converge on one Run.
+- **Repairable retry defaults.** Admin shows the stored state and a version hash of the
+  raw value; updates present that version (any state), so malformed or missing values
+  can be repaired and stale edits still conflict (409). String or ObjectId row IDs work.
+- **Module-disabled path exercised.** `npm run test:booklet-modules`
+  (`tests/booklet-modules/`, Node module mocking) proves every facade and admin entry
+  point refuses with `MODULE_UNAVAILABLE` before any database access.
+- **Uncertainty notice exercised in a browser.** `booklet-fixture-seed.ts … settle
+  unknown` defers fixture reconciliation; `booklet-browser-uncertain.js` confirms a
+  reconciling Run shows the notice and offers no Continue or revision.
+
 #### Checkpoint 10 closure (2026-11-22)
 
 **Checkpoint 10 is verified locally** on `feature/10-dify-workflow-design`; T21's six

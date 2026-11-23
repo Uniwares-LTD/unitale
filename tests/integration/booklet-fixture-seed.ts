@@ -85,12 +85,25 @@ async function main() {
       .collection<{ _id: string }>("accountAccess")
       .findOne({ role: "admin" });
     if (!admin) throw new Error("Fixture administrator not found.");
+    // `runs on|off`: toggle Run admission (to exercise pending and Resume).
+    if (process.argv[3] === "runs") {
+      const enabled = process.argv[4] === "on";
+      await readSettings(db);
+      await db
+        .collection("baseSettings")
+        .updateOne(
+          { _id: "base" as never },
+          { $set: { "settings.runs.enabled": enabled } },
+        );
+      console.log(`Runs ${enabled ? "enabled" : "disabled"}`);
+      return;
+    }
     // `settle failed|succeeded`: give the newest booklet attempt a verified
     // terminal outcome (as the worker would) so recovery controls can be checked.
     const settle = process.argv[3] === "settle" ? process.argv[4] : null;
     if (settle) {
-      if (settle !== "failed" && settle !== "succeeded")
-        throw new Error("Use settle failed|succeeded.");
+      if (!["failed", "succeeded", "unknown"].includes(settle))
+        throw new Error("Use settle failed|succeeded|unknown.");
       const job = await db
         .collection("aiJobs")
         .findOne(
@@ -106,15 +119,31 @@ async function main() {
         );
       await db.collection("aiJobs").updateOne(
         { _id: job._id },
-        {
-          $set: {
-            status: settle,
-            lease: null,
-            terminationEvidence:
-              settle === "succeeded" ? "provider-completed" : "provider-failed",
-            updatedAt: new Date(),
-          },
-        },
+        // `unknown` is an unverified outcome (public status "reconciling").
+        settle === "unknown"
+          ? {
+              // Defer the fixture worker's reconciliation, as the base browser
+              // fixture does for its held jobs, so the state can be observed.
+              $set: {
+                status: "unknown",
+                lease: null,
+                nextAttemptAt: new Date(Date.now() + 3600000),
+                reviewAfter: new Date(Date.now() + 3600000),
+                updatedAt: new Date(),
+              },
+              $unset: { terminationEvidence: "" },
+            }
+          : {
+              $set: {
+                status: settle,
+                lease: null,
+                terminationEvidence:
+                  settle === "succeeded"
+                    ? "provider-completed"
+                    : "provider-failed",
+                updatedAt: new Date(),
+              },
+            },
       );
       console.log(`Settled ${String(job._id).slice(0, 12)} as ${settle}`);
       return;

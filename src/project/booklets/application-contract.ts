@@ -48,6 +48,8 @@ export const bookletProductionCommandSchema = z.discriminatedUnion("action", [
   }),
   z.strictObject({ action: z.literal("retry"), key, callId: id }),
   z.strictObject({ action: z.literal("continue"), key }),
+  // Starts the saved committed step that has no Run yet (idempotent by flow).
+  z.strictObject({ action: z.literal("resume") }),
 ]);
 
 export type BookletStartCommand = z.infer<typeof bookletStartCommandSchema>;
@@ -120,6 +122,8 @@ export const bookletViewSchema = z.object({
   // Server-computed eligibility; commands still recheck everything.
   actions: z.object({
     running: z.boolean(),
+    // A committed step has no Run yet: Resume it (never Continue or revise).
+    resume: z.boolean(),
     continue: z.boolean(),
     retry: z.object({ callId: z.string() }).nullable(),
     revisions: z.array(

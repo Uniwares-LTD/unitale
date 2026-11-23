@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
-import { ObjectId, type Db } from "mongodb";
+import { ObjectId, type Db, type ClientSession } from "mongodb";
+import { fingerprint } from "../foundation/canonical";
 import { AppError } from "../../auth-policy";
 import { accessTransaction } from "../store/access";
 import { requireModule } from "../modules";
@@ -69,6 +70,13 @@ export async function bookletAdminView(db: Db, actor: Actor) {
                 }
               : null,
             retryDefaults: defaults.success ? defaults.data : null,
+            // Raw stored state, so missing or malformed values can be repaired.
+            retryDefaultsState: defaults.success
+              ? ("valid" as const)
+              : row.retryDefaults === undefined
+                ? ("missing" as const)
+                : ("invalid" as const),
+            retryDefaultsVersion: storedVersion(row.retryDefaults),
             reviewer: reviewer.success
               ? { id: reviewer.data.id, revision: reviewer.data.revision }
               : null,
@@ -90,11 +98,29 @@ export async function bookletAdminView(db: Db, actor: Actor) {
 }
 
 export const bookletRetryDefaultsUpdateSchema = z.strictObject({
-  policyId: z.string().regex(/^[a-f0-9]{24}$/),
-  // The values the administrator last read; a concurrent edit conflicts.
-  expected: retryDefaults.nullable(),
+  // Row identity as listed by the view (ObjectId hex or a string _id).
+  policyId: z.string().min(1).max(128),
+  // Version of the stored value the administrator read (any state, including
+  // missing or malformed); a concurrent edit conflicts.
+  expectedVersion: z.string().regex(/^[a-f0-9]{64}$/),
   next: retryDefaults,
 });
+
+/** Version of the raw stored value, independent of key order and validity. */
+function storedVersion(value: unknown) {
+  return fingerprint({ retryDefaults: value === undefined ? null : value });
+}
+
+async function policyRow(db: Db, policyId: string, session: ClientSession) {
+  const ids: unknown[] = [policyId];
+  if (/^[a-f0-9]{24}$/.test(policyId)) ids.push(new ObjectId(policyId));
+  const rows = await policies(db)
+    .find({ _id: { $in: ids as never[] } }, { session, limit: 2 })
+    .toArray();
+  if (rows.length !== 1)
+    throw new AppError("NOT_FOUND", "Booklet binding not found.", 404);
+  return rows[0];
+}
 
 /** Edits only retry defaults; new productions snapshot them, existing keep theirs. */
 export async function updateBookletRetryDefaults(
@@ -110,38 +136,40 @@ export async function updateBookletRetryDefaults(
     db,
     actor.uid,
     async (session) => {
-      const _id = new ObjectId(input.policyId);
-      const updated = await policies(db).updateOne(
-        // Field-wise match: whole-object equality would depend on key order.
-        input.expected
-          ? {
-              _id,
-              "retryDefaults.paidLlm": input.expected.paidLlm,
-              "retryDefaults.paidImage": input.expected.paidImage,
-              "retryDefaults.nonPaid": input.expected.nonPaid,
-            }
-          : { _id, retryDefaults: { $exists: false } },
-        { $set: { retryDefaults: input.next } },
-        { session },
-      );
-      if (updated.matchedCount !== 1)
+      const row = await policyRow(db, input.policyId, session);
+      if (storedVersion(row.retryDefaults) !== input.expectedVersion)
         throw new AppError(
           "CONFLICT",
           "These settings changed after you opened them. Reload and try again.",
           409,
         );
+      // The transaction makes this read-compare-write atomic against other edits.
+      await policies(db).updateOne(
+        { _id: row._id },
+        { $set: { retryDefaults: input.next } },
+        { session },
+      );
+      const previous = retryDefaults.safeParse(row.retryDefaults);
       await db.collection("auditEvents").insertOne(
         {
           event: "booklet-retry-defaults-updated",
           actorUid: actor.uid,
-          target: input.policyId,
-          previous: input.expected,
+          target: String(row._id),
+          previous: previous.success
+            ? previous.data
+            : row.retryDefaults === undefined
+              ? "missing"
+              : "invalid",
           next: input.next,
           timestamp: new Date(),
         },
         { session },
       );
-      return { policyId: input.policyId, retryDefaults: input.next };
+      return {
+        policyId: String(row._id),
+        retryDefaults: input.next,
+        retryDefaultsVersion: storedVersion(input.next),
+      };
     },
     actor.auth_time,
   );

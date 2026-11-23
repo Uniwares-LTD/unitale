@@ -590,7 +590,9 @@
     "m85226e143424": "Runs for this book",
     "m56f6713d80de": "Versions of this book",
     "m28619f03da52": "Revisions of a result",
-    "m031684dbd2c9": "Choose a result"
+    "m031684dbd2c9": "Choose a result",
+    "m695aea77ebf3": "A saved step hasn’t started yet. Resume it to carry on; nothing is charged again.",
+    "mb73d56d79ba3": "Resume booklet"
   },
   "locale": {
     "heading": "Language and region",

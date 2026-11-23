@@ -53,10 +53,13 @@ const saved = z.object({
     paidImage: z.number(),
     nonPaid: z.number(),
   }),
+  retryDefaultsVersion: z.string(),
 });
 
 function PolicyCard({ policy }: { policy: Policy }) {
   const [expected, setExpected] = useState(policy.retryDefaults);
+  const [version, setVersion] = useState(policy.retryDefaultsVersion);
+  const [state, setState] = useState(policy.retryDefaultsState);
   const [values, setValues] = useState<Record<keyof Defaults, string>>({
     paidLlm: String(policy.retryDefaults?.paidLlm ?? 2),
     paidImage: String(policy.retryDefaults?.paidImage ?? 0),
@@ -89,9 +92,11 @@ function PolicyCard({ policy }: { policy: Policy }) {
     try {
       const result = await api("/api/admin/booklets", saved, {
         method: "POST",
-        body: { policyId: policy.id, expected, next },
+        body: { policyId: policy.id, expectedVersion: version, next },
       });
       setExpected(result.retryDefaults);
+      setVersion(result.retryDefaultsVersion);
+      setState("valid");
       toast.confirm("Retry defaults saved for new productions.");
     } catch (error) {
       setNotice(
@@ -143,9 +148,11 @@ function PolicyCard({ policy }: { policy: Policy }) {
           <div>
             <dt className="text-muted-foreground">Saved retry defaults</dt>
             <dd>
-              {expected
+              {state === "valid" && expected
                 ? `${expected.paidLlm} / ${expected.paidImage} / ${expected.nonPaid}`
-                : "Not set: new productions cannot start"}
+                : state === "invalid"
+                  ? "Invalid: save valid values to repair. New productions cannot start until then."
+                  : "Not set: new productions cannot start"}
             </dd>
           </div>
         </dl>

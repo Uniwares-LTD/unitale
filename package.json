@@ -72,6 +72,7 @@
     "test:booklet-repositories": "node --conditions=react-server --import tsx --test tests/accounts/booklet-repositories.test.ts",
     "test:booklet-lifecycle-media": "node --conditions=react-server --import tsx --test tests/accounts/booklet-lifecycle-media.test.ts",
     "test:booklet-application": "node --conditions=react-server --import tsx --test tests/accounts/booklet-application.test.ts",
+    "test:booklet-modules": "node --conditions=react-server --import tsx --experimental-test-module-mocks --test tests/booklet-modules/*.test.ts",
     "test:booklet-mcp": "node --conditions=react-server --import tsx --test tests/accounts/booklet-mcp.test.ts"
   },
   "dependencies": {

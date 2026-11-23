@@ -250,6 +250,14 @@ export function bookletApplication(
       );
   }
 
+  // One Run per committed consumption flow. Keys derive from the flow (not the
+  // browser key), so a saved-but-unstarted step can be resumed after a reload.
+  const flowKey = (flowId: string) => "booklet-flow:" + flowId;
+  const startFlow = (orderId: string) =>
+    fingerprint([orderId, "booklet-initial"]);
+  const pending = (message: string) =>
+    new AppError("BOOKLET_START_PENDING", message, 409);
+
   async function existingRun(
     runKey: string,
     productionId: string,
@@ -304,13 +312,38 @@ export function bookletApplication(
       // The flow (and any charge) is committed: only a same-key retry may
       // resume it. A new key would be refused while this flow stays active.
       if (error instanceof AppError && error.status < 500)
-        throw new AppError(
-          "BOOKLET_START_PENDING",
+        throw pending(
           "This step is saved, but it couldn’t start yet. Try again.",
-          409,
         );
       throw error;
     }
+  }
+
+  /** The order's committed flow with no Run yet, if any. */
+  async function unboundFlow(orderId: string) {
+    const order = await db
+      .collection<{ _id: string; activeWorkflow: string | null }>(
+        "consumptionOrders",
+      )
+      .findOne(
+        { _id: orderId, "value.ownerId": actor.uid },
+        { projection: { activeWorkflow: 1 } },
+      );
+    const flowId = order?.activeWorkflow;
+    if (!flowId) return null;
+    const flow = await db
+      .collection<{ _id: string; jobId: string | null }>("consumptionWorkflows")
+      .findOne({ _id: flowId, uid: actor.uid }, { projection: { jobId: 1 } });
+    if (!flow || flow.jobId) return null;
+    return (await runForFlow(flowId)) ? null : flowId;
+  }
+
+  /** Any Run already admitted for this flow, whatever key created it. */
+  function runForFlow(flowId: string) {
+    return aiJobs(db).findOne(
+      { uid: actor.uid, "consumption.workflowId": flowId },
+      { projection: { run: 1 } },
+    );
   }
 
   /** Predecessor chaining for an eligible failed/cancelled attempt; a fresh
@@ -333,6 +366,8 @@ export function bookletApplication(
       latest !== null &&
       (latest.status === "succeeded" || canStartNewAttempt(latest));
     const running = latest !== null && !terminal;
+    // A committed step without a Run is resumed, never replaced.
+    const resume = (await unboundFlow(p.orderId)) !== null;
     const live =
       p.lifecycleState === "in-progress" &&
       !(p.expiresAt && p.expiresAt <= new Date());
@@ -388,6 +423,7 @@ export function bookletApplication(
     const revisions: BookletView["actions"]["revisions"] = [];
     if (
       !running &&
+      !resume &&
       (p.lifecycleState === "in-progress" ||
         p.lifecycleState === "completed") &&
       !(p.expiresAt && p.expiresAt <= new Date())
@@ -428,7 +464,8 @@ export function bookletApplication(
     }
     return {
       running,
-      continue: live && terminal,
+      resume,
+      continue: live && terminal && !resume,
       retry,
       revisions,
     };
@@ -438,12 +475,46 @@ export function bookletApplication(
     productionId: string,
     key: string,
   ): Promise<BookletRunReference> {
-    const runKey = "booklet-continue:" + key;
+    const p = await repo.getProduction(productionId);
+    const runKey = flowKey(fingerprint([p.orderId, "continue", key]));
     const prior = await existingRun(runKey, productionId);
     if (prior) return prior;
     const predecessorId = successorOf(await latestRun(productionId));
     const workflowId = await lifecycle.continue(productionId, key);
     return enqueue(productionId, runKey, workflowId, predecessorId);
+  }
+
+  /** Enqueues the order's committed flow that has no Run (start, continuation
+   * or revision). Idempotent by flow; needs no browser key. */
+  async function resumeFlow(
+    productionId: string,
+  ): Promise<BookletRunReference> {
+    const p = await repo.getProduction(productionId);
+    const order = await db
+      .collection<{ activeWorkflow: string | null }>("consumptionOrders")
+      .findOne(
+        { _id: p.orderId as never, "value.ownerId": actor.uid },
+        { projection: { activeWorkflow: 1 } },
+      );
+    const flowId = order?.activeWorkflow;
+    if (!flowId) throw bookletConflict("There is no saved step to resume.");
+    const prior = await runForFlow(flowId);
+    if (prior?.run) {
+      if (prior.run.target?.id !== productionId) throw bookletMissing();
+      return { productionId, runId: prior.run.logicalId };
+    }
+    if (!(await unboundFlow(p.orderId)))
+      throw bookletConflict(
+        "The current step is still running or its outcome is being confirmed.",
+      );
+    const revision = await db
+      .collection("consumptionCharges")
+      .findOne({ _id: flowId as never, uid: actor.uid, kind: "revision" });
+    const predecessorId =
+      flowId === startFlow(p.orderId) || revision
+        ? null
+        : successorOf(await latestRun(productionId));
+    return enqueue(productionId, flowKey(flowId), flowId, predecessorId);
   }
 
   function revisionRequest(
@@ -526,8 +597,26 @@ export function bookletApplication(
         )
         .toArray();
       const page = books.slice(0, pageLimit);
+      // Never-started (unpaid) drafts are not booklets the user can open yet.
+      const started = new Set(
+        (
+          await db
+            .collection<{ _id: string }>("bookletProductions")
+            .find(
+              {
+                _id: { $in: page.map((b) => b.currentProductionId!) },
+                ownerId: actor.uid,
+                lifecycleState: { $ne: "draft" },
+              },
+              { projection: { _id: 1 } },
+            )
+            .toArray()
+        ).map((p) => p._id),
+      );
       return {
-        rows: page.map((b) => ({ id: b.currentProductionId!, title: b.title })),
+        rows: page
+          .filter((b) => started.has(b.currentProductionId!))
+          .map((b) => ({ id: b.currentProductionId!, title: b.title })),
         next:
           books.length > pageLimit
             ? encodeCursor(scope, page.at(-1)!._id)
@@ -592,7 +681,6 @@ export function bookletApplication(
         "booklet-start-production",
         input.key,
       ]);
-      const runKey = "booklet-start:" + input.key;
       // First attempt only: reject a stale/changed quote or an oversized brief
       // before creating the owned book, so refusals leave no empty booklet.
       // Resumes skip this; the queued order already froze the accepted terms.
@@ -622,6 +710,10 @@ export function bookletApplication(
           ),
           input.brief,
         );
+        // Refuse before anything is created: a refusal after the draft exists
+        // keeps the request (pending), but a closed page would orphan it.
+        if (!(await readSettings(db)).settings.runs.enabled)
+          throw bookletConflict("Runs are disabled. Try again later.");
         // The paid start rechecks atomically; this only avoids an unpaid draft.
         if (
           (await readWallet(db, actor.uid, { actor })).available <
@@ -677,6 +769,7 @@ export function bookletApplication(
           validateBrief(pack, input.brief);
         },
       );
+      const runKey = flowKey(startFlow(order.value.id));
       const prior = await existingRun(runKey, productionId);
       if (prior) return prior;
       const existing = await db.collection("bookletProductions").findOne(
@@ -713,14 +806,25 @@ export function bookletApplication(
         existing.orderId !== order.value.id
       )
         throw bookletConflict("Production creation changed.");
-      // Before charging only: refusing here avoids paying for a Run that cannot
-      // be admitted. Once charged, a refusal is reported as START_PENDING below.
+      // The book, order and draft now exist. Any refusal from here on keeps
+      // this exact request (BOOKLET_START_PENDING): editing would create a new
+      // key and leave this draft unpaid and orphaned. Nothing is charged
+      // before the paid start succeeds.
       if (
         (existing?.lifecycleState ?? "draft") === "draft" &&
         !(await readSettings(db)).settings.runs.enabled
       )
-        throw bookletConflict("Runs are disabled.");
-      const { workflowId } = await lifecycle.start(productionId);
+        throw pending(
+          "Runs are disabled. Your book is saved; try again later.",
+        );
+      let workflowId: string;
+      try {
+        ({ workflowId } = await lifecycle.start(productionId));
+      } catch (error) {
+        if (error instanceof AppError && error.status < 500)
+          throw pending(error.message);
+        throw error;
+      }
       // Paid and saved: enqueue reports a refusal as BOOKLET_START_PENDING.
       return enqueue(productionId, runKey, workflowId, null);
     },
@@ -966,7 +1070,10 @@ export function bookletApplication(
           };
         }
         case "start-revision": {
-          const runKey = "booklet-revision:" + command.requestId;
+          const { orderId } = await repo.getProduction(productionId);
+          const runKey = flowKey(
+            fingerprint([orderId, "revision", command.requestId]),
+          );
           const prior = await existingRun(runKey, productionId);
           if (prior) return prior;
           const workflowId = await lifecycle.startRevision(
@@ -982,8 +1089,9 @@ export function bookletApplication(
             callId: command.callId,
             key: command.key,
           });
+          const { orderId } = await repo.getProduction(productionId);
           const prior = await existingRun(
-            "booklet-continue:" + command.key,
+            flowKey(fingerprint([orderId, "continue", command.key])),
             productionId,
           );
           if (prior) return { authorized: true, continued: prior };
@@ -998,6 +1106,8 @@ export function bookletApplication(
         }
         case "continue":
           return continueWith(productionId, command.key);
+        case "resume":
+          return resumeFlow(productionId);
       }
     },
   };

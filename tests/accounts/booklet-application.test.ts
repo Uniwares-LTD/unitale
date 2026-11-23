@@ -24,6 +24,7 @@ import { creativeFieldsSchema } from "../../src/lib/server/booklets/documents";
 import { bookletApplication } from "../../src/lib/server/booklets/application";
 import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
+import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
 import {
   bookletAdminView,
   updateBookletRetryDefaults,
@@ -769,7 +770,7 @@ test("booklet application facade", async (t) => {
         await assert.rejects(
           updateBookletRetryDefaults(db, adminActor, {
             policyId: row.id,
-            expected: retryDefaults,
+            expectedVersion: row.retryDefaultsVersion,
             next: { ...next, paidLlm: 11 },
           }),
           (error: unknown) => (error as { status?: number }).status === 400,
@@ -780,22 +781,23 @@ test("booklet application facade", async (t) => {
             { uid: owner.uid, auth_time: 1 },
             {
               policyId: row.id,
-              expected: retryDefaults,
+              expectedVersion: row.retryDefaultsVersion,
               next,
             },
           ),
           /Administrator access is required/,
         );
+        assert.equal(row.retryDefaultsState, "valid");
         await updateBookletRetryDefaults(db, adminActor, {
           policyId: row.id,
-          expected: retryDefaults,
+          expectedVersion: row.retryDefaultsVersion,
           next,
         });
         // A stale second edit (based on the old values) conflicts.
         await assert.rejects(
           updateBookletRetryDefaults(db, adminActor, {
             policyId: row.id,
-            expected: retryDefaults,
+            expectedVersion: row.retryDefaultsVersion,
             next: { paidLlm: 0, paidImage: 0, nonPaid: 0 },
           }),
           (error: unknown) => (error as { status?: number }).status === 409,
@@ -823,11 +825,60 @@ test("booklet application facade", async (t) => {
           (await repo.getProduction(after.productionId)).retryPolicy,
           next,
         );
+
+        // A malformed stored value is shown as invalid and can be repaired.
+        await db
+          .collection("bookletWorkflowPolicies")
+          .updateOne({}, { $set: { retryDefaults: { paidLlm: "two" } } });
+        const broken = (await bookletAdminView(db, adminActor)).policies[0];
+        assert.equal(broken.retryDefaultsState, "invalid");
+        assert.equal(broken.retryDefaults, null);
+        await updateBookletRetryDefaults(db, adminActor, {
+          policyId: broken.id,
+          expectedVersion: broken.retryDefaultsVersion,
+          next: retryDefaults,
+        });
+        assert.equal(
+          (await bookletAdminView(db, adminActor)).policies[0]
+            .retryDefaultsState,
+          "valid",
+        );
+        // String row identities work as well as ObjectIds.
+        await db.collection("bookletWorkflowPolicies").insertOne({
+          _id: "binding-string-id" as never,
+          profileId: "other",
+          profileRevision: 1,
+          orchestratorId: "other",
+          configurationRevision: 1,
+        });
+        const stringRow = (
+          await bookletAdminView(db, adminActor)
+        ).policies.find((p) => p.id === "binding-string-id")!;
+        assert.equal(stringRow.retryDefaultsState, "missing");
+        await updateBookletRetryDefaults(db, adminActor, {
+          policyId: stringRow.id,
+          expectedVersion: stringRow.retryDefaultsVersion,
+          next: retryDefaults,
+        });
+        assert.deepEqual(
+          (await db
+            .collection("bookletWorkflowPolicies")
+            .findOne({ _id: "binding-string-id" as never }))!.retryDefaults,
+          retryDefaults,
+        );
+        await assert.rejects(
+          updateBookletRetryDefaults(db, adminActor, {
+            policyId: "missing-binding",
+            expectedVersion: stringRow.retryDefaultsVersion,
+            next: retryDefaults,
+          }),
+          (error: unknown) => (error as { status?: number }).status === 404,
+        );
       },
     );
 
     await t.test(
-      "a committed continuation refused at Run admission resumes only by key",
+      "a committed continuation refused at Run admission resumes by key or Resume, never a new key",
       async () => {
         const { db, catalog, app } = await fixture();
         const started = await app.start(start(catalog));
@@ -854,17 +905,70 @@ test("booklet application facade", async (t) => {
             key: randomUUID(),
           }),
         );
+        // After a reload the browser has lost the key: the view offers Resume
+        // (not Continue or revisions), which needs no key.
+        const actions = (await app.view(started.productionId)).actions;
+        assert.equal(actions.resume, true);
+        assert.equal(actions.continue, false);
+        assert.deepEqual(actions.revisions, []);
         const before = await jobs(db);
         const resumed = await app.command(started.productionId, {
-          action: "continue",
-          key,
+          action: "resume",
         });
         assert.deepEqual(resumed, {
           productionId: started.productionId,
           runId: started.runId,
         });
+        // Resume and the original key converge on the same single Run.
+        assert.deepEqual(
+          await app.command(started.productionId, { action: "resume" }),
+          resumed,
+        );
+        assert.deepEqual(
+          await app.command(started.productionId, { action: "continue", key }),
+          resumed,
+        );
         assert.equal(await jobs(db), before + 1);
         assert.equal(await charges(db), 1);
+        assert.equal(
+          (await app.view(started.productionId)).actions.resume,
+          false,
+        );
+      },
+    );
+
+    await t.test(
+      "resume finds a Run admitted under any key and never duplicates it",
+      async () => {
+        const { db, catalog, app } = await fixture();
+        const started = await app.start(start(catalog));
+        await settle(db, started.runId, "failed");
+        // A continuation flow admitted directly under an unrelated key.
+        const flow = await bookletLifecycleV2(db, owner).continue(
+          started.productionId,
+          randomUUID(),
+        );
+        const job = await db
+          .collection("aiJobs")
+          .findOne({ "run.logicalId": started.runId });
+        await enqueueBookletRun(db, owner, started.productionId, {
+          key: "other-key",
+          workflowId: flow,
+          orchestratorId: "booklet-v2",
+          configurationRevision: 1,
+          inputs: {},
+          predecessorId: String(job!._id),
+        });
+        assert.equal(
+          (await app.view(started.productionId)).actions.resume,
+          false,
+        );
+        const before = await jobs(db);
+        assert.deepEqual(
+          await app.command(started.productionId, { action: "resume" }),
+          { productionId: started.productionId, runId: started.runId },
+        );
+        assert.equal(await jobs(db), before);
       },
     );
 
@@ -907,25 +1011,17 @@ test("booklet application facade", async (t) => {
     await t.test(
       "resumes after each committed effect without a second charge",
       async () => {
-        // After the queued order only (simulated interruption before production creation).
-        {
-          const { db, catalog, app } = await fixture();
-          const command = start(catalog);
-          const bookletId = fingerprint([
-            owner.uid,
-            "booklet-start-book",
-            command.key,
-          ]);
-          const productionId = fingerprint([
-            owner.uid,
-            "booklet-start-production",
-            command.key,
-          ]);
+        // Simulated interruption after the book and queued order were committed.
+        async function queueOnly(
+          db: Db,
+          catalog: { id: string; revision: number; hash: string },
+          command: ReturnType<typeof start>,
+        ) {
           const base = (
             await import("../../src/lib/server/booklets/repository")
           ).bookletRepository(db, owner);
           await base.createBook({
-            id: bookletId,
+            id: fingerprint([owner.uid, "booklet-start-book", command.key]),
             title: command.title,
             key: command.key,
           });
@@ -934,60 +1030,87 @@ test("booklet application facade", async (t) => {
             owner,
             {
               key: command.key,
-              targetId: productionId,
+              targetId: fingerprint([
+                owner.uid,
+                "booklet-start-production",
+                command.key,
+              ]),
               catalogId: catalog.id,
               revision: catalog.revision,
               quoteHash: catalog.hash,
               inputHash: fingerprint({
                 title: command.title,
                 brief,
-                acceptedCredits: 20,
+                acceptedCredits: command.acceptedCredits,
               }),
             },
             types,
             async () => {},
           );
-          // A republish after the order was queued cannot change its frozen terms.
+        }
+        const runsSetting = (db: Db) => (enabled: boolean) =>
+          db
+            .collection("baseSettings")
+            .updateOne(
+              { _id: "base" as never },
+              { $set: { "settings.runs.enabled": enabled } },
+            );
+        // After the queued order only: a republish cannot change frozen terms.
+        {
+          const { db, catalog, app } = await fixture();
+          const command = start(catalog);
+          await queueOnly(db, catalog, command);
           await publish(db, 2, 99);
           const result = await app.start(command);
-          assert.equal(result.productionId, productionId);
+          assert.equal(
+            result.productionId,
+            fingerprint([owner.uid, "booklet-start-production", command.key]),
+          );
           assert.equal(await charges(db), 1);
         }
-        // Insufficient credits refuse before any book exists; the same key then starts.
+        // First attempts refuse before anything exists (credits or Runs).
         {
           const { db, catalog, app } = await fixture(0);
           const command = start(catalog);
           await assert.rejects(app.start(command), /not enough available/);
-          assert.equal(await db.collection("bookletBooks").countDocuments(), 0);
-          assert.equal(await charges(db), 0);
           await grantCredits(db, owner.uid, "late", {
             amount: 50,
             source: "purchase",
             reference: "late",
           });
+          await runsSetting(db)(false);
+          await assert.rejects(
+            app.start(command),
+            (error: unknown) =>
+              (error as { code?: string }).code === "BOOKLET_CONFLICT" &&
+              /Runs are disabled/.test((error as Error).message),
+          );
+          assert.equal(await db.collection("bookletBooks").countDocuments(), 0);
+          assert.equal(await charges(db), 0);
+          await runsSetting(db)(true);
           assert.ok(await app.start(command));
           assert.equal(await charges(db), 1);
         }
-        // After production creation: disabled Runs refuse before the paid start
-        // (nothing charged). After a simulated interruption following the paid
-        // start, a refusal is START_PENDING (retry, never edit), then resumes.
+        // Once the draft exists, refusals keep the request (never editable);
+        // the unpaid draft is hidden; after the paid start, Resume needs no key.
         {
           const { db, catalog, app } = await fixture();
           const command = start(catalog);
-          const runs = (enabled: boolean) =>
-            db
-              .collection("baseSettings")
-              .updateOne(
-                { _id: "base" as never },
-                { $set: { "settings.runs.enabled": enabled } },
-              );
+          const runs = runsSetting(db);
+          await queueOnly(db, catalog, command);
           await runs(false);
-          await assert.rejects(app.start(command), /Runs are disabled/);
+          await assert.rejects(
+            app.start(command),
+            (error: unknown) =>
+              (error as { code?: string }).code === "BOOKLET_START_PENDING" &&
+              /Runs are disabled/.test((error as Error).message),
+          );
           assert.equal(
             await db.collection("bookletProductions").countDocuments(),
             1,
           );
           assert.equal(await charges(db), 0);
+          assert.deepEqual((await app.picker()).rows, []);
           await runs(true);
           const productionId = fingerprint([
             owner.uid,
@@ -998,15 +1121,19 @@ test("booklet application facade", async (t) => {
           assert.equal(await charges(db), 1);
           assert.equal(await jobs(db), 0);
           await runs(false);
-          await assert.rejects(app.start(command), (error: unknown) => {
-            assert.equal(
-              (error as { code?: string }).code,
-              "BOOKLET_START_PENDING",
-            );
-            return true;
-          });
+          await assert.rejects(
+            app.start(command),
+            (error: unknown) =>
+              (error as { code?: string }).code === "BOOKLET_START_PENDING",
+          );
           await runs(true);
-          const result = await app.start(command);
+          assert.equal((await app.view(productionId)).actions.resume, true);
+          const result = await app.command(productionId, { action: "resume" });
+          assert.deepEqual(await app.start(command), result);
+          assert.deepEqual(
+            await app.command(productionId, { action: "resume" }),
+            result,
+          );
           assert.equal(await charges(db), 1);
           assert.equal(await jobs(db), 1);
           // An orchestrator upgrade after admission does not break exact replay.
@@ -1018,9 +1145,32 @@ test("booklet application facade", async (t) => {
             );
           assert.deepEqual(await app.start(command), result);
         }
+        // Balance race after the draft exists: the paid start's refusal keeps
+        // the request; topping up starts it once; nothing is orphaned.
+        {
+          const { db, catalog, app } = await fixture(20);
+          const first = start(catalog);
+          await queueOnly(db, catalog, first);
+          await app.start(start(catalog)); // spends the whole balance
+          await assert.rejects(
+            app.start(first),
+            (error: unknown) =>
+              (error as { code?: string }).code === "BOOKLET_START_PENDING" &&
+              /not enough/i.test((error as Error).message),
+          );
+          assert.equal(await charges(db), 1);
+          assert.equal((await app.picker()).rows.length, 1);
+          await grantCredits(db, owner.uid, "top-up", {
+            amount: 20,
+            source: "purchase",
+            reference: "top-up",
+          });
+          assert.ok(await app.start(first));
+          assert.equal(await charges(db), 2);
+          assert.equal((await app.picker()).rows.length, 2);
+        }
       },
     );
-
     await t.test(
       "rejects absent, duplicate and mismatched policy bindings",
       async () => {

@@ -82,10 +82,12 @@ and the adapter; the table does not require unrelated suites for every task.
   `src/app/admin/booklets`, `src/app/api/admin/booklets` and `src/lib/server/booklets/admin.ts`.
   The project Run start (`src/project/run-start.tsx`, `booklets/booklet-start.tsx`) and
   home (`src/project/home.tsx`) use existing project slots. Browser checks seed the
-  disposable fixture with `tests/integration/booklet-fixture-seed.ts` (its `settle` mode
-  gives the newest attempt a verified outcome) and run `booklet-browser-checks.js`,
+  disposable fixture with `tests/integration/booklet-fixture-seed.ts` (its `settle failed|succeeded|unknown`
+  mode sets the newest attempt's outcome; `runs on|off` toggles Run admission) and run `booklet-browser-checks.js`,
   `booklet-browser-matrix.js`, `booklet-browser-recovery.js` and
-  `booklet-browser-revision.js` in `tests/integration` through playwright-cli.
+  `booklet-browser-revision.js` and `booklet-browser-uncertain.js` (after `settle unknown`)
+  in `tests/integration` through playwright-cli. `npm run test:booklet-modules` runs the
+  module-disabled test in `tests/booklet-modules` with Node module mocking.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
   `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
   `mcp-tools-v2.ts` its v2 checkpoint/index/creative-registration handlers and typed-read wrapper;
