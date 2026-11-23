@@ -1354,6 +1354,86 @@ accounts for all 10 tests. Real package/capacity selection, credentials and live
 readback are final 12 inputs. Admin stays English/LTR without changing public preference.
 No deployment, migration of a live database, provider call or live import is part of 10.
 
+### 10-chat-version - Conversational booklet experience
+
+**Planned (2026-11-23); inserted before 11 on the same issue and branch.** Checkpoint 10
+delivered a form-and-panel booklet UI inside the generic Run surfaces. The accepted target
+is the conversational experience of Unitale Prototype One. This checkpoint replaces the
+booklet start, progress, decision, approval and recovery surfaces with that conversation.
+The facade, commerce, media, history and recovery services from checkpoint 10 are reused.
+
+#### Accepted decisions (user, 2026-11-23)
+
+| Topic | Decision |
+| --- | --- |
+| Baseline | [Prototype One](https://github.com/Uniwares-LTD/unitale-design/tree/main/prototype-1) and the Unitale design system v0.4 (`docs/design-system/projects/unitale`) are the MVP UI/UX baseline although marked "proposed". |
+| Flow ownership | The prototype shows interactions and UI/UX decisions, **not** the flow order. Manager decides the steps, what to ask and how each turn renders; the app renders typed turn parts in any order and validates them. |
+| Routes | Dedicated `/books/new` (entry) and `/books/[id]` (conversation). Booklet Runs at `/runs/[id]` link or redirect there; generic Runs keep the existing Run UI. The earlier "no standalone workspace" constraint is lifted for this surface only. |
+| Start and sign-in | A visitor starts without signing in through a Firebase **anonymous account**. At the first approval gate the visitor signs in with Google or email, **linking** the same uid, so the conversation and records stay owned with no migration. |
+| Pre-gate cost | Work before the gate is platform-funded, text only (no image calls), capped per anonymous account and rate-limited. |
+| Price and payment | The first approval gate shows the list price struck through and the **discounted first-book price**, covered by **welcome credits** granted once at account linking (idempotent, service-verified). Consent then charges those credits through the existing consumption order. The discount is an admin-configured first-book promotion in existing commerce. Later books need purchased credits. |
+| Package | One admin-selected **default booklet package** is used by conversations; other packages and pickers are deferred. |
+| MVP scope | Text and generative-UI interactions only. **Deferred and documented:** voice input, photo/reference attachments, the 3D mascot (a static mascot face may identify the agent), PDF download and sharing, Library, Explore samples, the pricing page and checkout, and browse-menu items for deferred pages. |
+| Manager | The Dify Manager workflow is extended to emit conversational turns and gate requests; the workflow package is re-validated and its hashes refreshed. |
+
+#### Conversation model
+
+- A conversation is the booklet production plus its Runs. Agent turns come from Manager
+  Human Input requests (Run decisions) whose content carries a versioned `unibase-ui`
+  payload; user turns are the authentic decision responses. No second transcript store:
+  history is rebuilt from existing owned decision, execution and revision records.
+- Turn parts (each optional, Manager-chosen, typed and allowlisted): prose; one question
+  (`text`, `single`, `multiple` with options; free text allowed unless the Manager
+  forbids it); artifact cards (overview with brief facts, story synopsis, location,
+  character sheet, style options with images, generic image) bound to exact artifact
+  revisions; an approval request on one artifact revision (approve, or request changes
+  through the main composer); a milestone backed by workflow state; and app-owned gates
+  (sign-in, price consent) whose content the app renders from server state, never from
+  Manager text.
+- Approve and request-changes are distinct responses. A change request names its target
+  revision; the previous output stays until its replacement is ready. Feedback is never
+  approval, and approval is never purchase consent.
+- Card types extend the existing Run card registry. If the shared registry cannot accept
+  project card types, the smallest reusable registry extension is a Unibase change
+  adopted through main (decided in 10C.1, not assumed).
+
+#### UI rules taken from the prototype and accepted decisions
+
+Entry hero, idea composer and inspiration chips (fill the composer, never send); compact
+chat header (back and theme only); one shared question dock above the input with chips
+(two-column, odd last spans), a draft kept while the agent responds and Send disabled
+until it finishes; Enter sends and Shift+Enter adds a line, ignoring IME composition;
+answered questions archive into the transcript; gradual prose then question reveal,
+instant under reduced motion or on interaction, announced once politely; a contextual
+wait row with backed copy, no invented percentages or times; no forced scrolling while
+reading older messages, with a **New response** control; enlarged artwork with zoom,
+close, and restored scroll, draft and focus; a change request labelled with its target,
+and a move-or-keep dialog when switching target with unsent text; an inline unsent error
+keeping the text; offline and unknown-outcome notices; a leave warning only for unsaved
+work; a production wait and the delivered cover-and-pages reader. Product copy follows
+the design-system copy table, with the prototype's "?" typos restored to "…" and "’".
+Mobile-first at 393px and desktop at 1440px, the 699/700px breakpoint, a fixed dock with
+safe-area insets, keyboard-open choice collapse, en/ar with logical RTL styles, and light
+and dark themes using the existing Unitale theme tokens.
+
+#### Sub-checkpoints
+
+Each sub-checkpoint closes its details first, shows its goal and deliveries, implements,
+reviews to clean at its own boundary before the next starts, reports what was delivered
+and checkpoint progress, and revises the next sub-checkpoint's plan.
+
+| Task | State | Goal and exit evidence |
+| --- | --- | --- |
+| 10C.1 Contracts | Pending | Versioned turn-part and gate contracts (client-safe), Manager human-request mapping, card-registry decision, model/doc updates. Contract tests for valid, malformed and foreign parts. |
+| 10C.2 Anonymous accounts (Unibase) | Pending | Reviewed Unibase change for anonymous sessions and credential linking that keeps the uid, with route-level rules for unverified anonymous sessions; adopted into Unitale main and merged into this branch. Linking, revocation and session tests. Needs authorization for the Unibase branch, PR and merge. |
+| 10C.3 Guest admission and funding | Pending | Anonymous booklet start on the default package without a charge; platform-funded text-only pre-gate budget and rate limits; welcome credits granted once at linking; first-book promotion pricing at the gate; consent charges through the existing order. Admin default-package and promotion settings. Abuse, idempotency and no-double-grant tests. |
+| 10C.4 Manager workflow | Pending | Dify Manager emits conversational turns, approvals and the gate request; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
+| 10C.5 Conversation UI | Pending | `/books/new` and `/books/[id]` with every pattern above; home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
+| 10C.6 Verification and handoff | Pending | Affected suites, build, browser journeys including guest start, linking, gate, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
+
+Checkpoints 11 and 12 then cover this conversational surface instead of the checkpoint 10
+form; their scope is otherwise unchanged.
+
 ### 11 - Integrated verification and handoff
 
 Use actual YAML boundaries and real app handlers with deterministic providers/disposable
@@ -1507,8 +1587,8 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 **Session handoff (2026-11-22, after checkpoint 10):** checkpoints 01-10 are locally
 complete; see the [checkpoint 10 closure](#checkpoint-10-closure-2026-11-22). The next
-checkpoint is **11 Integrated verification and handoff**; start it only on a new
-instruction. Booklet browser checks reuse `tests/integration/booklet-fixture-seed.ts`
+checkpoint is **[10-chat-version](#10-chat-version---conversational-booklet-experience)**
+(accepted 2026-11-23), then 11. Booklet browser checks reuse `tests/integration/booklet-fixture-seed.ts`
 and the `booklet-browser-*.js` scripts; set `BOOKLET_PYTHON` where `python3` is a
 Store alias, and never run account suites while a browser fixture is running.
 
