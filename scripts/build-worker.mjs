@@ -30,3 +30,4 @@ await build({
     },
   ],
 });
+await import("./build-migrations.mjs");

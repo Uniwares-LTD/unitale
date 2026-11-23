@@ -144,11 +144,27 @@ the credential, the request body or returned content.
 
 ## Capabilities
 
+`data-operations.status` reads the latest 20 recorded deployment-data outcomes and
+current configured ledger summary. Payload is `{}` or an optional exact `planId` and
+nonnegative bounded `offset`; ID details return at most 100 entries and explicit
+continuation metadata. Reads are scoped to the configured application/environment/
+database and use existing grant validation/errors. Existing grants gain no capability
+implicitly. The admin Operations page calls the same reader after its administrator
+check, without a new admin REST endpoint.
+
+These are last recorded outcomes, never live progress inferred from age. Missing final
+reports and active/unknown operations use workflow/host status. A ledger ID alone is
+not verified completion. Resolution metadata can accompany the original failed/unknown
+outcome without rewriting it. Host activation uses authoritative journal/verifier
+proof and does not depend on this report copy. Reads create no indexes, settings,
+leases, backups or migrations. See the [operator runbook](deployment.md#reusable-data-operations).
+
 Call `capabilities.list` for the inputs each capability accepts.
 
 | Area | Capabilities |
 | --- | --- |
 | Runtime | `runtime.status`, `workers.status` |
+| Deployment data | `data-operations.status` |
 | Configuration | `configuration.check` |
 | Reports | `reports.search`, `reports.get` (runtime, audit, diagnostic-access) |
 | Runs | `run.search`, `run.get`, `run.diagnose`, `run.content`* |

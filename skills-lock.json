@@ -72,6 +72,15 @@
         ".agents/skills/next-best-practices/SKILL.md": "6c98446c4b1babe9353e4a8886e2e0624266481c18bef73e283ee9c92c12c91a"
       }
     },
+    "operate-data": {
+      "kind": "handbook-entrypoint",
+      "source": "Uniwares-LTD/handbook",
+      "sourcePath": ".agents/skills/operate-data",
+      "channel": "main",
+      "files": {
+        ".agents/skills/operate-data/SKILL.md": "3322352afe93761d524db861f437e99cc42ad608a938b7e5910d8e8d401e853b"
+      }
+    },
     "playwright": {
       "kind": "handbook-entrypoint",
       "source": "Uniwares-LTD/handbook",
@@ -81,6 +90,15 @@
         ".agents/skills/playwright/LICENSE.txt": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
         ".agents/skills/playwright/NOTICE.txt": "417d5d3372914ecfd9fe102ac1d7dc2119253209f9718d6c222f616876c1904b",
         ".agents/skills/playwright/SKILL.md": "0d8e56ee031e44267fb5b992d5924f01586f10e3dcc3555d2133c8d03d66eef1"
+      }
+    },
+    "promote-to-environment": {
+      "kind": "handbook-entrypoint",
+      "source": "Uniwares-LTD/handbook",
+      "sourcePath": ".agents/skills/promote-to-environment",
+      "channel": "main",
+      "files": {
+        ".agents/skills/promote-to-environment/SKILL.md": "1c6076eb3e44ce36ab9c83da6951c4ae293b7c8025ddbdf8288e6a219daade6d"
       }
     },
     "review-change": {
@@ -134,7 +152,7 @@
   },
   "supportFiles": {
     "CLAUDE.md": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
-    ".agents/handbook.md": "a34e0188d668d7fd1109e2a62b6581ec3536a7099cc8564606c6f7be9a3fa288",
+    ".agents/handbook.md": "03cc50c32d14fd233728dbe48c00f4f565fd91657c670b154270aebd55283ddb",
     ".claude/skills/build-ui/SKILL.md": "46c8dcd9cb3c966bf5060da30f97eeccd5d900f0808cc6accaf2def4f3d6718c",
     ".claude/skills/capture-project-learnings/SKILL.md": "53569f9ce6ba678021d5ea9c6dbfd313c4051081155f3bcd0b51226909e6c2bd",
     ".claude/skills/compile-feature-spec/SKILL.md": "e9dba7a32d13cbd2a62ee2d7f96a5fdb5b6b122c3b7a251cbb7a840478b4686d",
@@ -142,7 +160,9 @@
     ".claude/skills/maintain-project/SKILL.md": "f550980bf1707d58da36b01ae7afb7d1150249a636cbbb26d50f9aea6e88af53",
     ".claude/skills/manage-issues/SKILL.md": "0ac4894634e650c1cea0ce94afc39d3a4964e3bcb5468847247f6e941f031f51",
     ".claude/skills/next-best-practices/SKILL.md": "c6ea152f1bdb1c92757903a9f5a2a96238dce53e5a301279ad61364b0c65b2b0",
+    ".claude/skills/operate-data/SKILL.md": "439d3d0727dc5d7d3fbb6d0c5575acedb35240d053920dfc2cacb2ecb2852d75",
     ".claude/skills/playwright/SKILL.md": "261f6115ace5bb7bc0c2704134a2eb448aa4aeab4d5e762a324f2684f0de84fb",
+    ".claude/skills/promote-to-environment/SKILL.md": "44c6984e97cb3e9e6d539cc3268db7cd1c0d17817360e2ff36180adc4da2deed",
     ".claude/skills/review-change/SKILL.md": "32334c2ed0f3a4a8742d9b2b465cbc89453c146033e424f720b26cca145c66c9",
     ".claude/skills/sync-docs-issues/SKILL.md": "454a4221ba7e3d98232e860760d5f4bd13c6ca37d91d6ae0f256061795df207e",
     ".claude/skills/vercel-react-best-practices/SKILL.md": "1b27370b024738b7537ce22b078f9e0164d6ca8be9fc6c64e76a4f182bb04278",

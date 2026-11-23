@@ -28,6 +28,8 @@ Client permission prompts may still be required.
 Read this project's guidance, source map and preferences declared in `handbook.json`.
 Read shared `docs/bootstrap.md`, `docs/guidance/communication.md` and the selected
 skill with `git -C PATH show REVISION:FILE`. The skill supplies its exact shared path.
+At checkout, before publication, and when using migration or post-merge tooling,
+apply the consumer's hosting decision and `docs/work-policy.md#repository-hosting-and-migration`.
 Read `docs/work-policy.md` when authority, lifecycle or branches matter, then only
 the relevant domain and skill references. Reuse guidance already read at this revision.
 
@@ -47,4 +49,4 @@ The user's task and higher-priority instructions control scope. Preserve consume
 adaptations and resolve real conflicts explicitly. Shared skill access grants no
 publication, deployment, access changes or delegation authority. Follow local rules
 when shared guidance is unavailable; pause only the decisions that depend on it.
-<!-- handbook-managed:76e2cafd85de0db522fd29894fcd4e6f3fd60b29e3c0979160dcec240e329f4d -->
+<!-- handbook-managed:ab2c10de8795e3623b6a76493de62bd4bed3dcf874abe2294f6f1152cd9a8ed5 -->

@@ -2,8 +2,9 @@
 import { useTranslations, useLocale } from "next-intl";
 
 import { moduleEnabled, moduleForPath, projectExtensions } from "@/lib/project";
-import { extensionLinks } from "@/lib/extensions";
+import { extensionLinks, isFocusedPath } from "@/lib/extensions";
 import {
+  ArrowLeft,
   Bell,
   BookOpen,
   Bookmark,
@@ -32,6 +33,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Extension links name a Lucide icon; one stable component per name keeps
 // re-renders from remounting it.
@@ -182,6 +184,7 @@ export function AppShell({
   const routes = useRoutes(signedIn);
   const accountRoutes = useAccountRoutes();
   const pathname = usePathname();
+  const guarded = useGuardedNavigation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const title =
     [...routes, ...accountRoutes].find((route) =>
@@ -192,14 +195,53 @@ export function AppShell({
       : pathname === "/design-system"
         ? translate("m4a866105af15")
         : appName);
-  const shell = (
+  const focusedModule = moduleForPath(pathname);
+  const focused =
+    isFocusedPath(projectExtensions, pathname) &&
+    (!focusedModule || moduleEnabled(focusedModule));
+  const skipLink = (
+    <a
+      href="#main-content"
+      className="sr-only fixed top-3 start-3 z-[100] rounded-md bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only"
+    >
+      {translate("mac576a66d456")}
+    </a>
+  );
+  // Focused frame (declared by an extension's focusedRoutes): the page keeps
+  // the whole width and window scrolling. Only Back and the colour-mode toggle
+  // remain; navigation and account controls are one step away on Home.
+  const focusedShell = (
     <div className="min-h-svh">
-      <a
-        href="#main-content"
-        className="sr-only fixed top-3 start-3 z-[100] rounded-md bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only"
+      {skipLink}
+      <header className="shell-surface flex h-14 items-center justify-between gap-2 px-2 sm:px-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-(--control-touch-sm)"
+          asChild
+        >
+          <Link
+            href="/"
+            onNavigate={guarded("/")}
+            aria-label={translate("m76900f1bfd16")}
+          >
+            <ArrowLeft aria-hidden="true" className="rtl:rotate-180" />
+          </Link>
+        </Button>
+        <ThemeToggle />
+      </header>
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto max-w-6xl px-4 pt-4 pb-6 outline-none sm:px-6 sm:pt-6"
       >
-        {translate("mac576a66d456")}
-      </a>
+        {children}
+      </main>
+    </div>
+  );
+  const shell = focused ? focusedShell : (
+    <div className="min-h-svh">
+      {skipLink}
       <aside className="shell-surface fixed inset-y-0 start-0 hidden w-64 flex-col border-e bg-sidebar p-6 text-sidebar-foreground md:flex">
         <Brand name={appName} />
         <p className="mt-12 mb-4 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">

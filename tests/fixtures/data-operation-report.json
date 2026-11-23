@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "operationId": "5c2f1eefbc4f6015ce14929ef878f319c98bbffae415480506f8ede0992a380f",
+  "planDigest": "5c2f1eefbc4f6015ce14929ef878f319c98bbffae415480506f8ede0992a380f",
+  "project": "fixture",
+  "environment": "staging",
+  "database": "fixture_staging",
+  "sourceCommit": "cccccccccccccccccccccccccccccccccccccccc",
+  "image": "ghcr.io/test/fixture@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "configurationHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "manifestDigest": "98def2ec430c71eafdc0246a452e5769e1bc0b8734c086cfd4d05ea471e060e2",
+  "ledgerDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "observedAt": "2026-11-21T00:00:00Z",
+  "state": "completed",
+  "phase": "health",
+  "deploymentOutcome": "not-attempted",
+  "migrationOutcome": "completed",
+  "backup": {
+    "backupId": "2222222222222222222222222222222222222222222222222222222222222222",
+    "database": "fixture_staging",
+    "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "verified": true
+  },
+  "pending": [
+    {
+      "id": "core:0001-test",
+      "checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "applied": [
+    {
+      "id": "core:0001-test",
+      "checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "verification": [
+    {
+      "id": "core:0001-test",
+      "checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "writersRestored": true,
+  "health": true,
+  "warnings": [],
+  "resolution": null
+}

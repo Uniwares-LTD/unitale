@@ -202,3 +202,8 @@ Keep reusable procedures in Handbook and application adaptations here. After
 skill metadata/routing edits explicitly sync and check entrypoints, retaining
 custom content and reviewing hashes before refresh. Templates remain project-owned
 copies, updated only by explicit per-file selection.
+
+For promotions use the selected promote-to-environment skill with deployment.md's
+source/target and operator rules. For data-operation work use operate-data with that
+runbook and Infrastructure's root-only recovery boundary. These optional skills use
+the existing technologySkills selection and grant no publication or live authority.

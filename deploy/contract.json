@@ -1,6 +1,10 @@
 {
   "version": 1,
-  "requiredCapabilities": ["operation-lock-v1", "image-retention-v1"],
+  "requiredCapabilities": [
+    "operation-lock-v1",
+    "image-retention-v1",
+    "data-operations-v1"
+  ],
   "settings": {
     "android.host": {
       "owner": "host",

@@ -1,0 +1,81 @@
+name: Deployment data operations
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [report, prepare-backup, prepare-migration, status]
+        required: true
+      environment:
+        type: choice
+        options: [staging, prod]
+        required: true
+      image:
+        description: Exact immutable candidate image (paired with commit)
+        type: string
+      commit:
+        description: Full candidate source commit (paired with image)
+        type: string
+      plan_id:
+        description: Exact plan ID for status
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.repository }}-vps-operation
+  cancel-in-progress: false
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      operation_id: ${{ steps.operation.outputs.operation_id }}
+      plan_digest: ${{ steps.operation.outputs.plan_digest }}
+      source_commit: ${{ steps.operation.outputs.source_commit }}
+      image: ${{ steps.operation.outputs.image }}
+      deployment_outcome: ${{ steps.operation.outputs.deployment_outcome }}
+      migration_outcome: ${{ steps.operation.outputs.migration_outcome }}
+      backup_id: ${{ steps.operation.outputs.backup_id }}
+      report_artifact: ${{ steps.operation.outputs.report_artifact }}
+      activation_decision: ${{ steps.operation.outputs.activation_decision }}
+      next_action: ${{ steps.operation.outputs.next_action }}
+    env:
+      TARGET: ${{ inputs.environment }}
+      ACTION: ${{ inputs.action }}
+      CANDIDATE_IMAGE: ${{ inputs.image }}
+      CANDIDATE_COMMIT: ${{ inputs.commit }}
+      PLAN_ID: ${{ inputs.plan_id }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_HOST_KEY: ${{ secrets.DEPLOY_SSH_HOST_KEY }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Configure restricted transport
+        run: |
+          python3 scripts/deploy/environment.py "$TARGET" --github-env
+      - name: Prepare access
+        run: |
+          export TUNNEL_SERVICE_TOKEN_ID=${CF_ACCESS_CLIENT_ID:-}
+          export TUNNEL_SERVICE_TOKEN_SECRET=${CF_ACCESS_CLIENT_SECRET:-}
+          bash scripts/deploy/access.sh
+      - name: Report or prepare exact operation
+        id: operation
+        run: |
+          args=("$ACTION" "$TARGET")
+          [[ -z "$CANDIDATE_IMAGE" ]] || args+=(--image "$CANDIDATE_IMAGE")
+          [[ -z "$CANDIDATE_COMMIT" ]] || args+=(--commit "$CANDIDATE_COMMIT")
+          [[ -z "$PLAN_ID" ]] || args+=(--plan-id "$PLAN_ID")
+          python3 scripts/deploy/data-operation-workflow.py "${args[@]}"
+      - name: Retain public report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: data-operation-report
+          path: ${{ runner.temp }}/data-operation-report.json
+          if-no-files-found: ignore
+      - name: Remove runner credentials
+        if: always()
+        run: |
+          source scripts/deploy/identity.sh
+          rm -rf "$RUNNER_TEMP/${project_slug}-access"

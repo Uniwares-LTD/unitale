@@ -23,6 +23,17 @@ report() {
   printf 'Release result=%s environment=%s commit=%s image=%s\n' "$outcome" "$safe_target" "$safe_commit" "$safe_image" >> "${GITHUB_STEP_SUMMARY:?}"
   printf 'Phases: compatibility=%s build=%s publication=%s deployment=%s readiness=%s\n' "$compatibility" "$build" "$publication" "$deployment" "$readiness" >> "$GITHUB_STEP_SUMMARY"
   printf 'Maintenance: %s (separate from release readiness)\n' "$maintenance" >> "$GITHUB_STEP_SUMMARY"
+  python3 - "$script_dir" "${RUNNER_TEMP:?}/data-operation-report.json" "$deployment" <<'PYREPORT'
+import json,sys
+from pathlib import Path
+sys.path.insert(0,sys.argv[1])
+import importlib.util
+spec=importlib.util.spec_from_file_location('data_workflow',Path(sys.argv[1])/'data-operation-workflow.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+path=Path(sys.argv[2])
+if path.exists():
+    value=json.loads(path.read_text());value['deploymentOutcome']=sys.argv[3].replace('_','-')
+    path.write_text(json.dumps(value,indent=2)+'\n');module.outputs(value)
+PYREPORT
 }
 trap report EXIT
 bash "$script_dir/guard.sh" "$target"
@@ -55,7 +66,7 @@ else
   printf '%s' "${GH_TOKEN:?}" | docker login ghcr.io -u "${GITHUB_ACTOR:?}" --password-stdin
   build=unknown
   publication=unknown
-  docker buildx build --push --tag "$image:$GITHUB_SHA" --label "org.opencontainers.image.revision=$GITHUB_SHA" --metadata-file "$RUNNER_TEMP/image.json" .
+  docker buildx build --push --tag "$image:$GITHUB_SHA" --label "org.opencontainers.image.revision=$GITHUB_SHA" --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY,,}" --metadata-file "$RUNNER_TEMP/image.json" .
   build=succeeded
   publication=succeeded
   digest=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["containerimage.digest"])' "$RUNNER_TEMP/image.json")
@@ -74,6 +85,24 @@ if ! docker --config "$anonymous" pull "$image@$digest"; then
 fi
 rm -rf -- "$anonymous"
 fi
+# Inspect this exact published digest; required work prepares one reviewed plan
+# and ends this run without activation. A rerun restores the retained candidate.
+python3 "$script_dir/data-operation-workflow.py" report "$target" --image "$image@$digest" --commit "$GITHUB_SHA"
+activation=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["activationDecision"])' "$RUNNER_TEMP/data-operation-report.json")
+case "$activation" in
+  blocked-migrations)
+    python3 "$script_dir/data-operation-workflow.py" prepare-migration "$target" --image "$image@$digest" --commit "$GITHUB_SHA"
+    outcome=blocked-migrations; deployment=blocked-migrations; readiness=not_attempted
+    exit 0 ;;
+  blocked-recovery)
+    outcome=blocked-recovery; deployment=blocked-recovery; readiness=not_attempted
+    exit 0 ;;
+  owner-action-required)
+    outcome=owner-action-required; deployment=not_attempted; readiness=not_attempted
+    exit 1 ;;
+  proceed) ;;
+  *) echo 'Unrecognized activation decision; activation not attempted' >&2; exit 1 ;;
+esac
 python3 "$script_dir/quality-summary.py" || echo 'Advisory report unavailable; build succeeded.' >> "$GITHUB_STEP_SUMMARY"
 bash "$script_dir/guard.sh" "$target"
 # Access setup exports the SSH config for this shell and later cleanup.

@@ -18,5 +18,15 @@ In the template, the `Unreleased` entry in CHANGELOG.md, or "None". Derived proj
 Operator intervention: None, or list owner, location, ordering, verification and
 failure/resume steps. Do not repeat completed installations for documentation-only changes.
 
-Before deployment: steps, migrations or configuration, or "None".
-After deployment: checks that confirm the live outcome, or "None". Merging is not deployment.
+Before deployment: "None", or `B<number>-<slug>` actions with required/advisory
+classification, owner/location, verification and failure/resume. Required actions
+cannot be skipped to proceed.
+After deployment: "None", or `A<number>-<slug>` actions in the same format.
+Merging is not deployment; link the exact release and migration status evidence.
+
+## Test flow
+
+"None", or the role, starting state, actions and expected result for acceptance.
+Keep these scenarios separate from deployment actions. Promotion PRs link back here.
+
+<!-- For an environment promotion, use docs/templates/promotion-pr.md instead. -->

@@ -77,7 +77,8 @@ with the [design extension guide](design-system-extension.md).
 Project features and samples register through two project-owned lists instead of
 editing core files. [src/project/extensions.ts](../src/project/extensions.ts) is
 client-safe data: a module descriptor (routes, collections, workers, configuration
-and dependencies), sidebar/account links and English administration sections.
+and dependencies), sidebar/account links, English administration sections and
+optional `focusedRoutes`.
 [src/project/server.ts](../src/project/server.ts) is server-only: MCP tools, domain
 adapters and idempotent index setup for an extension module. The contracts live in
 `src/lib/extensions.ts` and `src/lib/server/extensions.ts`.
@@ -87,8 +88,9 @@ manifest, `moduleForPath`, workers, configuration checks and diagnostics include
 them), navigation, administration sections, the MCP catalog, the domain registry
 and `db:indexes`. Registration is validated when the registry loads: IDs,
 collections and admin links must be unique, dependencies must be core or listed
-earlier, module routes must not overlap core or other extension routes, links stay
-inside their module's routes, and MCP tool names are unique. A module is enabled
+earlier, module routes must not overlap core or other extension routes, links and
+focused routes stay inside their module's routes (focused routes never under `/api`),
+and MCP tool names are unique. A module is enabled
 only when its dependencies are. A server extension may attach to a core module ID.
 The domain registry composes on first use, so extension code may import Runs or
 domain services; import only types from `src/lib/server/mcp/tools.ts`. Contributions follow `moduleEnabled`; adapters of a
@@ -101,6 +103,15 @@ instead of importing a component, because server scripts load the registry under
 the `react-server` condition; the shell loads these icons lazily, so they appear
 just after the core icons on first paint. Extension MCP permissions are added to
 `mcpPermissions` in the environment catalog so client grants validate.
+
+A page under a declared focused route renders in the shell's **focused frame**. The
+frame has no sidebar, browsing header or account menu: only a compact header with
+Back (to Home, through the leave guard) and the colour-mode `ThemeToggle`. The skip
+link, the `main-content` landmark, the session boundary and the notification
+provider stay, and the window remains the scroll container. Use the frame for
+immersive task surfaces such as a conversation. It applies only while the owning
+module is enabled. The toggle changes this browser's colour mode only; saving the
+mode to the account stays in Preferences.
 
 Samples are removable features declared in [samples.json](../samples.json); see
 [the samples guide](../src/samples/README.md). The notes sample is the reference
@@ -152,11 +163,33 @@ projects. A leased `control` lock serializes runners; applied IDs are recorded i
 `migrations` with a source checksum. Migrations must be idempotent: a failure
 records nothing and the next run retries. Disabled owners are skipped until
 enabled. A changed checksum is reported but never rerun; add a new migration
-instead. Take the operational backup first; it is the rollback. Run indexes before
+instead. Take and verify the operational backup first; database restoration is a
+separate approved recovery operation, never automatic image rollback. Run indexes before
 migrations. The lease renews while a migration runs. Provisioning's administration
 container has a 15-minute limit, so run long migrations with `npm run db:migrate`
-directly. New environments run both during provisioning; existing ones run
-`db:migrate` (or `prepare-host.py --apply --migrate`) when upgrade notes say so.
+directly for local/disposable work. New environments retain provisioning setup;
+existing deployed databases use the approved data-operation flow below. The no-flag
+command remains available for local/legacy compatibility and grants no live authority.
+Migration declarations now carry optional `releasePhase` and read-only `verify(db)`
+metadata. The six current declarations classify commerce indexes before release
+and compatible metadata/image backfills after release. Missing classification or
+verification blocks the protected runner. Released migration bodies and checksums
+remain unchanged.
+
+`npm run db:migrate -- --manifest` emits credential-free declaration metadata without
+loading environment files or connecting to MongoDB. `npm run db:migrate -- --status --json`
+reads the full ledger and reports disabled owners, pending IDs, checksum drift,
+unknown history and candidate eligibility without acquiring a lease or writing.
+The worker build also emits `dist/migration-runner.cjs` and
+`dist/migration-manifest.json`. Packaging embeds source/tsx checksums before
+esbuild transforms functions; the packaged command verifies its manifest and runner
+bytes. Never supply replacement checksums or rewrite released ledger records.
+
+The [reusable operations plan](features/deployment-data-operations/implementation-plan.md)
+records the implemented protected host executor, release gates, recovery acknowledgment,
+workflow/diagnostics/admin reporting and shared skills. Publication, installed
+capabilities and live acceptance are separate: the reporting command grants no
+authorization for live data changes.
 Dify orchestrator Runs extend the shared durable execution engine.
 The existing payment worker stays focused on payment reconciliation and credit
 maintenance. Quality warnings remain advisory; required behavior must still work.

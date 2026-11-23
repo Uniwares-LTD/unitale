@@ -2,7 +2,7 @@
 import { formatAdminNumber } from "@/lib/admin-labels";
 import { useFormatter } from "next-intl";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
@@ -400,5 +400,21 @@ export function PaymentReview({ enabled }: { enabled: boolean }) {
       </AlertDialog>
       {message && <Notice tone={message.tone} title={message.text} />}
     </div>
+  );
+}
+
+export function AdminRefresh() {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  return (
+    <Button
+      className="h-auto max-w-full whitespace-normal"
+      type="button"
+      variant="outline"
+      disabled={pending}
+      onClick={() => startTransition(() => router.refresh())}
+    >
+      {pending ? "Refreshing..." : "Refresh recorded reports"}
+    </Button>
   );
 }
