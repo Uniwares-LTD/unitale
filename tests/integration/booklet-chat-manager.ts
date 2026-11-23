@@ -48,7 +48,7 @@ async function main() {
     } catch (error) {
       console.error(error);
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
 }
 
