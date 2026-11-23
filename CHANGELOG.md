@@ -20,6 +20,12 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Register the 12 typography roles with `cn` (`src/lib/utils.ts`), and make the
+  installed primitives import it instead of the bare `cn` package. A role such as
+  `text-card-title` passed to `CardTitle` or `Button` now replaces their own size
+  instead of silently losing to it. Projects that pass roles to primitives will see
+  the intended sizes. Import `cn` from `@/lib/utils`.
+
 - Add an optional focused page frame. An extension lists `focusedRoutes` inside
   its own module routes. Those pages render without the sidebar, browsing header
   or account menu, keeping only Back, the new `ThemeToggle`, the skip link and
