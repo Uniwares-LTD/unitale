@@ -1369,12 +1369,11 @@ The facade, commerce, media, history and recovery services from checkpoint 10 ar
 | Baseline | [Prototype One](https://github.com/Uniwares-LTD/unitale-design/tree/main/prototype-1) and the Unitale design system v0.4 (`docs/design-system/projects/unitale`) are the MVP UI/UX baseline although marked "proposed". |
 | Flow ownership | The prototype shows interactions and UI/UX decisions, **not** the flow order. Manager decides the steps, what to ask and how each turn renders; the app renders typed turn parts in any order and validates them. |
 | Routes | Dedicated `/books/new` (entry) and `/books/[id]` (conversation). Booklet Runs at `/runs/[id]` link or redirect there; generic Runs keep the existing Run UI. The earlier "no standalone workspace" constraint is lifted for this surface only. |
-| Start and sign-in | A visitor starts without signing in through a Firebase **anonymous account**. At the first approval gate the visitor signs in with Google or email, **linking** the same uid, so the conversation and records stay owned with no migration. |
-| Pre-gate cost | Work before the gate is platform-funded, text only (no image calls), capped per anonymous account and rate-limited. |
-| Price and payment | The first approval gate shows the list price struck through and the **discounted first-book price**, covered by **welcome credits** granted once at account linking (idempotent, service-verified). Consent then charges those credits through the existing consumption order. The discount is an admin-configured first-book promotion in existing commerce. Later books need purchased credits. |
+| Start and sign-in (revised 2026-11-23) | **Sign-in is required to start a book, as in checkpoint 10.** A signed-out visitor on `/books/new` is sent to sign in and returned there with the entered idea kept. No anonymous accounts and no Unibase change. |
+| Price and payment (revised 2026-11-23) | Price consent stays where checkpoint 10 has it: before the start, through the existing quote, `quoteHash` and `acceptedCredits` start contract, charging purchased or granted credits through the existing consumption order. The entry shows the default package's price and the user's balance in a consent card before the first Manager turn. |
 | Package | One admin-selected **default booklet package** is used by conversations; other packages and pickers are deferred. |
 | MVP scope | Text and generative-UI interactions only. **Deferred and documented:** voice input, photo/reference attachments, the 3D mascot (a static mascot face may identify the agent), PDF download and sharing, Library, Explore samples, the pricing page and checkout, and browse-menu items for deferred pages. |
-| Manager | The Dify Manager workflow is extended to emit conversational turns and gate requests; the workflow package is re-validated and its hashes refreshed. |
+| Manager | The Dify Manager workflow is extended to emit conversational turns and approval requests; the workflow package is re-validated and its hashes refreshed. |
 
 #### Conversation model
 
@@ -1387,9 +1386,8 @@ The facade, commerce, media, history and recovery services from checkpoint 10 ar
   forbids it); artifact cards (overview with brief facts, story synopsis, location,
   character sheet, style options with images, generic image) bound to exact artifact
   revisions; an approval request on one artifact revision (approve, or request changes
-  through the main composer); a milestone backed by workflow state; and app-owned gates
-  (sign-in, price consent) whose content the app renders from server state, never from
-  Manager text.
+  through the main composer); and a milestone backed by workflow state. The price-consent
+  card at the start is app-owned and rendered from server state, never from Manager text.
 - Approve and request-changes are distinct responses. A change request names its target
   revision; the previous output stays until its replacement is ready. Feedback is never
   approval, and approval is never purchase consent.
@@ -1424,12 +1422,22 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 
 | Task | State | Goal and exit evidence |
 | --- | --- | --- |
-| 10C.1 Contracts | Pending | Versioned turn-part and gate contracts (client-safe), Manager human-request mapping, card-registry decision, model/doc updates. Contract tests for valid, malformed and foreign parts. |
-| 10C.2 Anonymous accounts (Unibase) | Pending | Reviewed Unibase change for anonymous sessions and credential linking that keeps the uid, with route-level rules for unverified anonymous sessions; adopted into Unitale main and merged into this branch. Linking, revocation and session tests. Needs authorization for the Unibase branch, PR and merge. |
-| 10C.3 Guest admission and funding | Pending | Anonymous booklet start on the default package without a charge; platform-funded text-only pre-gate budget and rate limits; welcome credits granted once at linking; first-book promotion pricing at the gate; consent charges through the existing order. Admin default-package and promotion settings. Abuse, idempotency and no-double-grant tests. |
-| 10C.4 Manager workflow | Pending | Dify Manager emits conversational turns, approvals and the gate request; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
-| 10C.5 Conversation UI | Pending | `/books/new` and `/books/[id]` with every pattern above; home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
-| 10C.6 Verification and handoff | Pending | Affected suites, build, browser journeys including guest start, linking, gate, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
+| 10C.1 Contracts | Pending | Versioned turn-part and start-consent contracts (client-safe), Manager human-request mapping, card-registry decision, model/doc updates. Contract tests for valid, malformed and foreign parts. |
+| 10C.2 Default package and conversational start | Pending | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
+| 10C.3 Manager workflow | Pending | Dify Manager emits conversational turns and approvals; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
+| 10C.4 Conversation UI | Pending | `/books/new` and `/books/[id]` with every pattern above; home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
+| 10C.5 Verification and handoff | Pending | Affected suites, build, browser journeys including sign-in return, consent and start, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
+
+#### Accepted gaps (user, 2026-11-23)
+
+- **Mid-journey sign-in.** Prototype One lets a visitor talk to the agent before signing
+  in and signs in at the first approval gate. MVP requires sign-in before the start
+  instead, so anonymous accounts, credential linking, the platform-funded pre-gate budget
+  and the Unibase change they need are not built. A later issue may add them.
+- **Price at the first approval gate.** It depended on pre-gate work before payment, so
+  it moves with the gap above: consent stays at the start. The struck-through list price,
+  first-book discount and welcome credits are not built; existing credit grants and
+  purchases fund books.
 
 Checkpoints 11 and 12 then cover this conversational surface instead of the checkpoint 10
 form; their scope is otherwise unchanged.

@@ -41,9 +41,9 @@ Issue #10 (amended 2026-11-23, checkpoint 10-chat-version) presents booklet crea
 conversation at `/books/new` and `/books/[id]`, following the accepted Prototype One
 interaction and visual decisions (design-system v0.4, confirmed as the MVP baseline). The
 conversation renders Manager-chosen turns over the existing Run decision records; the
-prototype's step order is illustrative only. A visitor may start before signing in
-(anonymous account, linked to Google/email at the first approval gate, where the
-discounted first-book price is shown and covered by welcome credits). Generic Runs keep
+prototype's step order is illustrative only. Sign-in and price consent stay before the
+start, as in checkpoint 10; the prototype's mid-journey sign-in and price at the first
+approval gate are accepted gaps for MVP. Generic Runs keep
 the existing Run UI. Manager owns call grouping and
 parallelism; the initial serial strategy is not an app or service-contract restriction.
 The full creator workspace and delivery features remain their
@@ -93,8 +93,7 @@ Customer credits and provider expenditure are separate.
 
 Adapt source J01–J12 text and J13 image responsibilities. The manager sequences work,
 clarifications, reviews and continuation. Unitale validates state without scheduling
-specialists. Human decisions come from the authenticated owner (including a linked
-anonymous account before sign-in) through the booklet conversation, bind exact revisions,
+specialists. Human decisions come from the authenticated, signed-in owner through the booklet conversation, bind exact revisions,
 become stale when targets change and cannot be fabricated by tools. Manager alone
 decides whether human approval is needed, what to ask and when/how to ask. The app
 records authentic answers but does not require approval for generation, downstream
