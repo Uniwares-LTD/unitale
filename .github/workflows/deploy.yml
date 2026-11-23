@@ -10,13 +10,50 @@ on:
         required: true
 permissions:
   contents: read
-  packages: write
   actions: read
 concurrency:
   group: ${{ github.repository }}-vps-operation
   cancel-in-progress: false
+env:
+  TARGET: ${{ inputs.environment || (github.ref_name == '_prod' && 'production' || 'staging') }}
+  GH_TOKEN: ${{ github.token }}
+  DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+  DEPLOY_SSH_HOST_KEY: ${{ secrets.DEPLOY_SSH_HOST_KEY }}
+  CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+  CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+  CLOUDFLARE_READ_TOKEN: ${{ secrets.CLOUDFLARE_READ_TOKEN }}
 jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Read tracked environment configuration
+        run: python3 scripts/deploy/environment.py "$TARGET" --github-env
+      - name: Guard, build and publish immutable candidate
+        run: |
+          if [[ "$GITHUB_RUN_ATTEMPT" != 1 ]]; then
+            echo 'Candidate publication does not rerun. Rerun only the release job of the original run.'
+            exit 1
+          fi
+          bash scripts/deploy/release.sh "$TARGET" --publish-only
+      - name: Retain immutable release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/release-candidate.json
+          if-no-files-found: error
+      - name: Remove runner credentials
+        if: always()
+        run: |
+          source scripts/deploy/identity.sh
+          rm -rf "$RUNNER_TEMP/${project_slug}-access"
+          docker logout ghcr.io || true
   release:
+    needs: publish
     outputs:
       operation_id: ${{ steps.release.outputs.operation_id }}
       plan_digest: ${{ steps.release.outputs.plan_digest }}
@@ -29,31 +66,15 @@ jobs:
       activation_decision: ${{ steps.release.outputs.activation_decision }}
       next_action: ${{ steps.release.outputs.next_action }}
     runs-on: ubuntu-latest
-    env:
-      TARGET: ${{ inputs.environment || (github.ref_name == '_prod' && 'production' || 'staging') }}
-      GH_TOKEN: ${{ github.token }}
-      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-      DEPLOY_SSH_HOST_KEY: ${{ secrets.DEPLOY_SSH_HOST_KEY }}
-      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-      CLOUDFLARE_READ_TOKEN: ${{ secrets.CLOUDFLARE_READ_TOKEN }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Read tracked environment configuration
         run: python3 scripts/deploy/environment.py "$TARGET" --github-env
-      - name: Restore exact candidate on retry
+      - name: Restore exact published candidate
         run: python3 scripts/deploy/candidate.py "$RUNNER_TEMP/release-candidate.json"
-      - name: Guard, build, release and verify
+      - name: Guard, release and verify
         id: release
-        run: bash scripts/deploy/release.sh "$TARGET"
-      - name: Retain immutable release candidate
-        if: always() && env.CANDIDATE_RESTORED != 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: release-candidate-${{ github.sha }}
-          path: ${{ runner.temp }}/release-candidate.json
-          if-no-files-found: ignore
-          overwrite: false
+        run: bash scripts/deploy/release.sh "$TARGET" --activate-only
       - name: Retain data-operation report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

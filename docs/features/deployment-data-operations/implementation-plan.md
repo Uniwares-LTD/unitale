@@ -539,8 +539,8 @@ Preserve the existing working changes and use task branches in each repository.
    The environment merge produces a new SHA; do not pretend its image digest or
    exact execution plan was known before the merge.
 2. Keep cheap host-configuration/capability preflight before build. Build/publish once
-   at the actual Release SHA and retain its immutable candidate artifact. After
-   anonymous pull verification, run the data report for that exact image/SHA.
+   at the actual Release SHA in the `publish` job and retain its immutable candidate
+   artifact. After anonymous pull verification, run the data report for that exact image/SHA.
 3. With required pending IDs, prepare the exact data plan and finish Release as
    `blocked-migrations`, without activating the image. Publish plan ID/digest, report,
    candidate and manual next action. Do not hold a workflow open awaiting a person.
@@ -548,9 +548,10 @@ Preserve the existing working changes and use task branches in each repository.
    approval. This is execution authorization for the now-known identity, not a
    duplicate approval of an unchanged known plan. If the exact plan was already
    approved, reuse that consent; existing one-use host enforcement still applies.
-5. After migration verification, resume the original blocked Release using its
-   existing run rerun/candidate-restore mechanism. Reuse the same image digest and
-   SHA, rerun read-only gates, then activate. A missing artifact or moved reviewed
+5. After migration verification, rerun only the `release` job of the original
+   blocked Release. This preserves the successful `publish` job's artifact across
+   attempts. Reuse the same image digest and SHA, rerun read-only gates, then activate.
+   A missing artifact or moved reviewed
    state stops continuation rather than rebuilding/reviewing a new candidate silently.
    Initial deployment approval covers this known-blocked continuation; unrelated
    failed/unknown deployment retries require readback and appropriate authorization.
