@@ -1513,12 +1513,14 @@ opt-out (see the decisions above). The prototype's entry screen shows the browsi
 header (wordmark, gold Create, menu); per the decision, `/books/new` also uses the
 focused frame.
 
-**Unibase gap found (follow-up, not yet authorized):** Unibase's `cn` does not
-register the foundation's type-role utilities (`text-card-title`, `text-body`…).
-A role passed in a primitive's `className` therefore loses to the primitive's own
-size class: `CardTitle` rendered 16px instead of 20px. Until a Unibase change
-registers the roles, project code applies a role on an inner element, never on a
-primitive that sets its own font size.
+**Unibase gap found and fixed:** Unibase's `cn` did not register the foundation's
+type-role utilities, so a role passed to a primitive lost to the primitive's own
+size class (`CardTitle` rendered 16px instead of 20px).
+- Uniwares-LTD/unibase#70 (`e884b25`) registers the roles in `src/lib/utils.ts`
+  and points the primitives at it.
+- Unitale #18 (`496dd01`) adopted it, and it is merged into this branch.
+- Roles now go directly on primitives. A primitive's own weight class still
+  applies, so book card titles also set the role's weight.
 
 **Not yet conformant, tracked in 10C.4:**
 - word-group prose reveal;
