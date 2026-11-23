@@ -1427,7 +1427,7 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 | Task | State | Goal and exit evidence |
 | --- | --- | --- |
 | 10C.1 Contracts | Implemented locally | Versioned turn and reply contract (`src/project/booklets/turn-contract.ts`); `request_human` accepts an optional `turn`, binds shown revisions to targets and images to their retained assets, derives generic fallback cards and carries the turn in a fenced `booklet-turn` block bound by the exact form match. **Card-registry decision:** the shared Run registry is unchanged; booklet parts stay project-owned, so no Unibase change. The start-consent card reuses the existing quote DTO. Evidence: `tests/booklet-turns.test.ts` and the MCP turn subtest. |
-| 10C.2 Default package and conversational start | In progress (review slice) | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
+| 10C.2 Default package and conversational start | In progress: entry, idea start and tests done; admin editor pending | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
 | 10C.3 Manager workflow | Pending | Dify Manager emits conversational turns and approvals; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
 | 10C.4 Conversation UI | In progress (UI approved; conformance reviewed) | `/books/new` and `/books/[id]` with every pattern above, in the focused frame through the Unibase shell opt-out (branch, PR and merge need authorization); home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
 | 10C.5 Verification and handoff | Pending | Affected suites, build, browser journeys including sign-in return, consent and start, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
@@ -1698,12 +1698,94 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
-**Session handoff (2026-11-22, after checkpoint 10):** checkpoints 01-10 are locally
-complete; see the [checkpoint 10 closure](#checkpoint-10-closure-2026-11-22). The next
-checkpoint is **[10-chat-version](#10-chat-version---conversational-booklet-experience)**
-(accepted 2026-11-23), then 11. Booklet browser checks reuse `tests/integration/booklet-fixture-seed.ts`
-and the `booklet-browser-*.js` scripts; set `BOOKLET_PYTHON` where `python3` is a
-Store alias, and never run account suites while a browser fixture is running.
+**Session handoff (2026-11-23, during 10-chat-version):** checkpoints 01-10 are
+locally complete; see the [checkpoint 10 closure](#checkpoint-10-closure-2026-11-22).
+The active checkpoint is **[10-chat-version](#10-chat-version---conversational-booklet-experience)**,
+then 11.
+
+State of the active checkpoint:
+- **10C.1:** done.
+- **10C.2:** the entry, `entry`/`startIdea` facade and their tests are done
+  (`test:booklet-application`). Pending:
+  - the admin default-package editor on `/admin/booklets`, validated against
+    published packages and the policy row (fixtures seed `bookletSettings` directly);
+  - a browser check of the signed-out return to `/books/new`.
+- **10C.3 (Dify Manager):** not started. The Manager YAML must emit `request_human`
+  with a `turn`. It needs offline compatibility tests and refreshed hashes. Until then
+  `tests/integration/booklet-chat-manager.ts` is the scripted local stand-in.
+- **10C.4:** the UI is approved and conformance-reviewed. The focused frame and the
+  `cn` type roles came through Unibase #69 and #70, adopted by Unitale #17 and #18.
+  Pending:
+  - retire the checkpoint 10 form and Run panel for booklets, with Run-page links to
+    `/books/[id]`;
+  - word-group prose reveal;
+  - a wait line backed by workflow state;
+  - the enlarged image viewer;
+  - side-by-side prototype captures;
+  - a CSP check in the served build.
+- **10C.5:** pending.
+
+Evidence on the handoff head: booklet suites all pass:
+- application: 14/14;
+- MCP: 33/33;
+- repositories: 38/38;
+- lifecycle-media: 17/17;
+- compat: 46/46;
+- modules: 1/1.
+
+Unit tests pass 142/142 with none failing. Typecheck, lint (0 errors), docs, i18n
+and the production build pass. The served build's conversation walk and the en/ar ×
+light/dark × 393/1440 matrix have no errors or overflow.
+
+Open question for the user: `/books/new` uses the focused frame per the decision,
+but the prototype's entry screen uses the browsing header.
+
+**Local preview recipe:**
+1. `npm run build`.
+2. `node --conditions=react-server --import tsx scripts/integration.mjs --owned-auth --browser --ai`.
+3. Seed with `tests/integration/booklet-fixture-seed.ts <mongo-uri>`; find the
+   mongod `--port` from the process list.
+4. Run `tests/integration/booklet-chat-manager.ts <mongo-uri>` in the background.
+5. Sign in at `/account` with the fixture admin's emulator email and the password
+   `local-fixture-password`. List it with the Auth emulator's `accounts:query`, using
+   the `Bearer owner` token and project `demo-unitale`.
+
+Notes:
+- Set `BOOKLET_PYTHON` where `python3` is a Store alias.
+- Never run account suites while a browser fixture is running: they kill its mongod.
+- A production build fails with EBUSY while a fixture holds `.next/standalone`.
+- Turbopack refuses to build through a `node_modules` junction, for example in a
+  worktree.
+
+**Continuation prompt:**
+
+> Continue Uniwares-LTD/unitale issue #10, checkpoint **10-chat-version**, on branch
+> `feature/10-dify-workflow-design`. Follow AGENTS.md: run the handbook check, read
+> the adapter and source map, then read
+> `docs/features/booklet-generation/implementation-plan.md`. Read its sections
+> "10-chat-version", "Conversation UI conformance review" and "New-session goal
+> prompt".
+>
+> Authorization: commits, pushes and issue comments on the issue branch are
+> authorized. Unibase changes, PRs or merges into either `main`, deployments and
+> paid or live provider calls each need fresh authorization.
+>
+> First, ask whether `/books/new` keeps the focused frame or uses the browsing
+> header as in the prototype entry.
+>
+> Then work one sub-checkpoint at a time. For each: close its details, show its goal
+> and deliveries, implement, review read-only until clean, report what was delivered
+> and the checkpoint progress, and revise the next plan.
+> - **10C.2:** the admin default-package editor, plus a browser check of the
+>   signed-out return to `/books/new`.
+> - **10C.3:** the Dify Manager emits `request_human` with a typed `turn`, with
+>   offline compatibility tests and refreshed package hashes.
+> - **10C.4:** the remaining UI items listed above.
+> - **10C.5:** verification, with two consecutive clean whole-checkpoint reviews.
+>
+> Keep the Unibase/Unitale design rules from the conformance review: type roles,
+> tokens, existing primitives, and reusable components in
+> `src/project/components/conversation/`.
 
 **Homepage (approved 2026-11-22):** the Unitale-owned homepage with **Create a book**,
 **Continue your books**, sign-in return routing and booklet copy is part of 10.2 on this

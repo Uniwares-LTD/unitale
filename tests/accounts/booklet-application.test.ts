@@ -21,7 +21,10 @@ import { readSettings } from "../../src/lib/server/settings";
 import { orchestratorSchema } from "../../src/lib/contracts/runs";
 import { fingerprint } from "../../src/lib/server/foundation/canonical";
 import { creativeFieldsSchema } from "../../src/lib/server/booklets/documents";
-import { bookletApplication } from "../../src/lib/server/booklets/application";
+import {
+  audienceNotStated,
+  bookletApplication,
+} from "../../src/lib/server/booklets/application";
 import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
@@ -335,6 +338,102 @@ test("booklet application facade", async (t) => {
           app.picker({ cursor: "bm90LWEtY3Vyc29y" }),
           /Invalid pagination cursor/,
         );
+      },
+    );
+
+    await t.test(
+      "conversation entry quotes the default package and starts from the idea",
+      async () => {
+        const { db, catalog, app } = await fixture(30);
+        const setDefault = (catalogId: string) =>
+          db
+            .collection<{ _id: string; catalogId: string }>("bookletSettings")
+            .updateOne(
+              { _id: "default-package" },
+              { $set: { catalogId } },
+              { upsert: true },
+            );
+        // No setting, or a setting naming no published package: nothing offered.
+        assert.deepEqual(await app.entry(), {
+          package: null,
+          availableCredits: 30,
+        });
+        await setDefault("consumption:missing");
+        assert.equal((await app.entry()).package, null);
+        await setDefault(catalog.id);
+        const entry = await app.entry();
+        assert.equal(entry.package?.catalogId, catalog.id);
+        assert.equal(entry.package?.credits, 20);
+        assert.equal(entry.availableCredits, 30);
+        for (const hidden of ["executionProfileId", "fields", "terms"])
+          assert.equal(hidden in entry.package!, false);
+
+        const idea = `${"A lantern who is afraid of the dark ".repeat(4)}\nShe lives by the sea.`;
+        const command = {
+          action: "start-idea" as const,
+          key: randomUUID(),
+          catalogId: catalog.id,
+          revision: catalog.revision,
+          quoteHash: catalog.hash,
+          acceptedCredits: 20,
+          idea,
+          // The package offers only English: the start falls back to it.
+          language: "ar" as const,
+        };
+        // A stale quote or price is refused before anything is created.
+        await assert.rejects(
+          app.startIdea({ ...command, key: randomUUID(), quoteHash: "0".repeat(64) }),
+          /package changed/,
+        );
+        await assert.rejects(
+          app.startIdea({ ...command, key: randomUUID(), acceptedCredits: 19 }),
+          /price changed/,
+        );
+        assert.equal(await db.collection("bookletBooks").countDocuments(), 0);
+        assert.equal(await charges(db), 0);
+
+        const result = await app.startIdea(command);
+        assert.deepEqual(await app.startIdea(command), result);
+        assert.equal(await charges(db), 1);
+        const production = await bookletRepositoryV2(db, owner).getProduction(
+          result.productionId,
+        );
+        assert.deepEqual(production.brief, {
+          idea,
+          audience: audienceNotStated,
+          language,
+          characters: [],
+          locations: [],
+          visualPreferences: "",
+        });
+        const book = await db
+          .collection("bookletBooks")
+          .findOne({ _id: production.bookletId as never });
+        // Title: the idea's first line, cut to 80 characters.
+        assert.equal(book!.title.length, 80);
+        assert.ok(book!.title.endsWith("…"));
+        assert.ok(idea.startsWith(book!.title.slice(0, 79)));
+        const conversation = await app.conversation(result.productionId);
+        assert.equal(conversation.idea, idea);
+        assert.deepEqual(conversation.turns, []);
+        // The same key with a changed idea (and so a changed title) is a
+        // conflict, never a second book.
+        await assert.rejects(
+          app.startIdea({ ...command, idea: "Another idea" }),
+          /different input/,
+        );
+        assert.equal(await charges(db), 1);
+        // The remaining 10 credits cannot fund another 20-credit book.
+        await assert.rejects(
+          app.startIdea({ ...command, key: randomUUID() }),
+          /not enough available credits/,
+        );
+        assert.equal(await charges(db), 1);
+        assert.equal((await app.entry()).availableCredits, 10);
+        // Strict commands: unknown fields and unsupported languages are refused.
+        await assert.rejects(app.startIdea({ ...command, title: "x" }));
+        await assert.rejects(app.startIdea({ ...command, language: "fr" }));
+        await assert.rejects(app.startIdea({ ...command, idea: " " }));
       },
     );
 
