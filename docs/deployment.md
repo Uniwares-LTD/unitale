@@ -127,8 +127,12 @@ verification, restored writers and serving health.
 Release builds/publishes once at the actual environment SHA. After anonymous pull, its
 exact-candidate report either proceeds or prepares the required batch and finishes as
 `blocked-migrations`, without activation. Recovery uncertainty finishes as
-`blocked-recovery`. After exact approved verification, rerun the **original blocked
-Release**; its candidate artifact restores the same digest/SHA and both Actions and host
+`blocked-recovery`. After exact approved verification, open the **original blocked
+Release** and rerun only its `release` job. In GitHub CLI, use
+`gh run rerun --repo Uniwares-LTD/unibase --job RELEASE_JOB_ID` with that run's
+`release` job ID. GitHub keeps the successful `publish` job and its candidate
+artifact on this targeted rerun. A full workflow rerun can remove that artifact.
+The `release` job restores the same digest/SHA and both Actions and host
 gates run again. Missing artifacts or changed reviewed state stop continuation. The
 host repeats authoritative checks immediately before candidate startup under its lock.
 Compatible optional backfills may remain visible after a successful release; the agent

@@ -3,6 +3,8 @@
 set -Eeuo pipefail
 set +x
 target=${1:?target required}
+mode=${2:-}
+case "$mode" in ''|--publish-only|--activate-only) ;; *) exit 2 ;; esac
 [[ "$target" != prod ]] || target=production
 export TARGET=$target
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -36,6 +38,11 @@ if path.exists():
 PYREPORT
 }
 trap report EXIT
+candidate="${RUNNER_TEMP:?}/release-candidate.json"
+if [[ "$mode" == --activate-only && ! -s "$candidate" ]]; then
+  echo 'Published candidate unavailable; activation not attempted.' >&2
+  exit 1
+fi
 bash "$script_dir/guard.sh" "$target"
 python3 "$script_dir/routes.py" "$target"
 python3 "$script_dir/public-package.py" before
@@ -57,7 +64,6 @@ if [[ "$target" == staging || "$target" == production ]]; then
   fi
 fi
 image="ghcr.io/${GITHUB_REPOSITORY,,}"
-candidate="$RUNNER_TEMP/release-candidate.json"
 if [[ -f "$candidate" ]]; then
   digest=$(python3 -c 'import json,sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); from candidate import validate; print(validate(json.load(open(sys.argv[2])),sys.argv[3],sys.argv[4])["image"].split("@",1)[1])' "$script_dir" "$candidate" "$GITHUB_SHA" "$GITHUB_REPOSITORY")
   build=reused
@@ -74,6 +80,10 @@ else
   python3 -c 'import json,sys; json.dump({"sourceCommit":sys.argv[2],"image":sys.argv[3]},open(sys.argv[1],"w"))' "$candidate" "$GITHUB_SHA" "$image@$digest"
 fi
 [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 1
+if [[ "$mode" == --publish-only ]]; then
+  outcome=published
+  exit 0
+fi
 if [[ "$target" == staging || "$target" == production ]]; then
 python3 "$script_dir/public-package.py" after
 # Fresh client configuration prevents runner credentials from authenticating this pull.
@@ -86,7 +96,7 @@ fi
 rm -rf -- "$anonymous"
 fi
 # Inspect this exact published digest; required work prepares one reviewed plan
-# and ends this run without activation. A rerun restores the retained candidate.
+# and ends this job without activation. Rerun only this job to reuse the publisher's artifact.
 python3 "$script_dir/data-operation-workflow.py" report "$target" --image "$image@$digest" --commit "$GITHUB_SHA"
 activation=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["activationDecision"])' "$RUNNER_TEMP/data-operation-report.json")
 case "$activation" in

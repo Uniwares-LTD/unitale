@@ -12,11 +12,13 @@ REPO = Path(__file__).resolve().parents[2]
 
 @unittest.skipUnless(BASH and Path(BASH).is_file(), 'Bash unavailable')
 class ReleaseSequenceTests(unittest.TestCase):
-    def run_release(self, failure=''):
+    def run_release(self, failure='', mode='', retained=False, activation='proceed'):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / 'bin').mkdir()
             shutil.copyfile(REPO / 'scripts/deploy/release.sh', root / 'release.sh')
+            if retained:
+                (root / 'release-candidate.json').write_text('{}', encoding='utf-8')
             fixtures = {
                 'guard.sh': '#!/usr/bin/env bash\nexit 0\n',
                 'access.sh': '#!/usr/bin/env bash\necho access >> "$RUNNER_TEMP/events"\n',
@@ -33,7 +35,13 @@ case "$1" in
     [[ "$FAIL_AT" != preflight ]] || exit 2
     [[ "$FAIL_AT" != transport ]] || exit 1
     ;;
-  -c) printf 'sha256:%064d\\n' 0 ;;
+  *data-operation-workflow.py) echo "$2" >> "$RUNNER_TEMP/events" ;;
+  -c)
+    case "$2" in
+      *containerimage.digest*|*'from candidate import validate'*) printf 'sha256:%064d\\n' 0 ;;
+      *activationDecision*) echo "$ACTIVATION_DECISION" ;;
+    esac
+    ;;
 esac
 ''',
             }
@@ -44,8 +52,10 @@ esac
             env = dict(os.environ, RUNNER_TEMP=root.as_posix(), GITHUB_STEP_SUMMARY=(root/'summary').as_posix(),
                        GITHUB_SHA='a'*40, GITHUB_REPOSITORY='test/unibase', GITHUB_ACTOR='fixture',
                        GH_TOKEN='fixture', VPS_HOST='fixture', VPS_USER='fixture',
-                       DEPLOY_SSH_PRIVATE_KEY='fixture', DEPLOY_SSH_HOST_KEY='fixture', FAIL_AT=failure)
-            result = subprocess.run([BASH, '-c', 'export PATH="$PWD/bin:$PATH"; bash release.sh staging'],
+                       DEPLOY_SSH_PRIVATE_KEY='fixture', DEPLOY_SSH_HOST_KEY='fixture', FAIL_AT=failure,
+                       ACTIVATION_DECISION=activation)
+            result = subprocess.run([BASH, '-c', 'export PATH="$PWD/bin:$PATH"; bash release.sh staging "$@"',
+                                     'fixture', *([mode] if mode else [])],
                                     cwd=root, env=env, capture_output=True, text=True, timeout=20)
             events = (root/'events').read_text(encoding='utf-8') if (root/'events').exists() else ''
             summary = (root/'summary').read_text(encoding='utf-8') if (root/'summary').exists() else ''
@@ -74,3 +84,30 @@ esac
         result, events, summary = self.run_release('deploy')
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('deployment=unknown readiness=unknown', summary)
+
+    def test_publication_finishes_before_evaluating_the_data_gate(self):
+        result, events, summary = self.run_release(mode='--publish-only')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(events.splitlines(), ['access', 'preflight', 'docker:login', 'docker:buildx'])
+        self.assertIn('publication=succeeded deployment=not_attempted', summary)
+
+    def test_activation_uses_only_the_retained_candidate(self):
+        result, events, _ = self.run_release(mode='--activate-only', retained=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn('docker:buildx', events)
+        self.assertLess(events.index('report'), events.index('deploy'))
+
+        result, events, _ = self.run_release(mode='--activate-only')
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('Published candidate unavailable', result.stderr)
+        self.assertEqual(events, '')
+
+    def test_required_migration_stops_activation_of_published_candidate(self):
+        result, events, summary = self.run_release(
+            mode='--activate-only', retained=True, activation='blocked-migrations',
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn('docker:buildx', events)
+        self.assertNotIn('deploy', events)
+        self.assertLess(events.index('report'), events.index('prepare-migration'))
+        self.assertIn('deployment=blocked-migrations readiness=not_attempted', summary)
