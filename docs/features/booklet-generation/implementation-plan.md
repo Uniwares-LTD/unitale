@@ -1152,7 +1152,9 @@ evidence currency). These are the two consecutive clean reviews of the final sta
 Checks on that state: full suites on `cf88bfe` (code since differs only by a comment and
 one ARIA attribute); production build then typecheck, lint, Prettier, `check:i18n`,
 `check:docs`, `check:skills` and the full browser sequence (checks, matrix, recovery,
-revision) on `b02ead8`.
+revision) on `b02ead8`. All suites were then rerun on the final head `103b4c6`: unit
+133/133, `test:booklet-application` 12/12, repositories 38/38, lifecycle-media 17/17,
+MCP 32/32, compat 46/46, commerce 31/31 and `check:env` pass.
 
 #### Checkpoint 10 closure (2026-11-22)
 
