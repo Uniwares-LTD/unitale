@@ -129,7 +129,7 @@ exact-candidate report either proceeds or prepares the required batch and finish
 `blocked-migrations`, without activation. Recovery uncertainty finishes as
 `blocked-recovery`. After exact approved verification, open the **original blocked
 Release** and rerun only its `release` job. In GitHub CLI, use
-`gh run rerun --repo Uniwares-LTD/unibase --job RELEASE_JOB_ID` with that run's
+`gh run rerun --repo Uniwares-LTD/unitale --job RELEASE_JOB_ID` with that run's
 `release` job ID. GitHub keeps the successful `publish` job and its candidate
 artifact on this targeted rerun. A full workflow rerun can remove that artifact.
 The `release` job restores the same digest/SHA and both Actions and host
