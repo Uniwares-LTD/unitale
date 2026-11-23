@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { loadLocalEnvironment } from "./environment.mjs";
-loadLocalEnvironment(process.env.NODE_ENV !== "production");
+if (!process.argv.includes("--manifest"))
+  loadLocalEnvironment(process.env.NODE_ENV !== "production");
 const child = spawn(process.execPath, process.argv.slice(2), {
   stdio: "inherit",
   windowsHide: true,

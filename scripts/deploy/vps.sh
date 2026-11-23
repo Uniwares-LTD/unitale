@@ -158,6 +158,12 @@ candidate_commit=$(sed -n 's/^RELEASE_COMMIT=//p' "$candidate/compose.env")
 [[ "$candidate_image" =~ ^ghcr.io/[a-z0-9_.-]+/[a-z0-9_.-]+@sha256:[a-f0-9]{64}$ && "$candidate_commit" =~ ^[a-f0-9]{40}$ ]] || { echo 'Invalid retained image identity' >&2; exit 1; }
 revision=$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$candidate_image")
 [[ "$revision" == "$candidate_commit" ]] || { echo 'Image revision does not match the release commit' >&2; exit 1; }
+# The installed controller owns authoritative data evidence. Gate before the
+# activation/restoration trap: a blocked release must not restart either image.
+if python3 -c 'import json,sys; sys.exit(0 if "data-operations-v1" in json.load(open(sys.argv[1]))["requiredCapabilities"] else 1)' "$script_dir/../../deploy/contract.json"; then
+  [[ -n "${UNIWARES_DATA_GATE:-}" ]] || { echo 'UNSUPPORTED_CAPABILITY: data activation gate required' >&2; exit 2; }
+  python3 -IB "$UNIWARES_DATA_GATE" "$slug" "$target" "$candidate_image" "$candidate_commit"
+fi
 restore() {
   trap - ERR INT TERM HUP
   if [[ -n "$current" ]]; then

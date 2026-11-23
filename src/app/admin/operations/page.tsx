@@ -1,3 +1,5 @@
+import { DataOperationsPanel } from "@/components/data-operations-panel";
+import { currentDataOperations } from "@/lib/server/data-operations";
 import { formatAdminNumber } from "@/lib/admin-labels";
 import { DateLabel } from "@/components/localized-value";
 import { AdminStateLabel as StateLabel } from "@/components/admin-state-label";
@@ -36,10 +38,11 @@ export async function generateMetadata() {
 export default async function OperationsPage() {
   await adminPageSession();
   const { settings } = await readSettings();
-  const [summary, reports, payments] = await Promise.all([
+  const [summary, reports, payments, dataOperations] = await Promise.all([
     operationsSummary(),
     cleanupReports(),
     paymentOperations(),
+    currentDataOperations().catch(() => null),
   ]);
   return (
     <PageMessages path="/admin/operations">
@@ -55,6 +58,7 @@ export default async function OperationsPage() {
             )
           }
         />
+        <DataOperationsPanel status={dataOperations} />
         <Card>
           <CardHeader>
             <CardTitle>Workers and queues</CardTitle>

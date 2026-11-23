@@ -22,7 +22,7 @@ def load(path=None):
             raise ValueError('Unsupported setting ownership or validation: ' + name)
         if rule['owner'] == 'image' and name != 'runtime.DIAGNOSTICS_ENABLED':
             raise ValueError('New image ownership requires a controller contract upgrade')
-    if contract.get('requiredCapabilities') not in (['operation-lock-v1'], ['operation-lock-v1', 'image-retention-v1']):
+    if contract.get('requiredCapabilities') not in (['operation-lock-v1'], ['operation-lock-v1', 'image-retention-v1'], ['operation-lock-v1', 'image-retention-v1', 'data-operations-v1']):
         raise ValueError('Unsupported controller capabilities')
     return contract
 

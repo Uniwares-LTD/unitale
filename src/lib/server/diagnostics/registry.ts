@@ -45,6 +45,8 @@ import {
   settingsGet,
 } from "./capabilities/administration";
 
+import { dataOperationsStatus } from "./capabilities/data-operations";
+
 const capabilitiesList = define({
   description: "Capabilities this grant permits, with scope and inputs.",
   inputs: {},
@@ -69,6 +71,7 @@ const capabilitiesList = define({
 export const registry: Record<DiagnosticCapability, CapabilityDefinition> = {
   "capabilities.list": capabilitiesList,
   "runtime.status": runtimeStatus,
+  "data-operations.status": dataOperationsStatus,
   "workers.status": workersStatus,
   "configuration.check": configurationCheck,
   "reports.search": reportsSearch,

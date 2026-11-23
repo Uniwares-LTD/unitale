@@ -21,6 +21,8 @@ COPY --from=build --chown=1001:1001 /app/dist/worker-healthcheck.cjs ./worker-he
 COPY --from=build --chown=1001:1001 /app/dist/runtime-settings.json ./runtime-settings.json
 COPY --from=build --chown=1001:1001 /app/scripts/runtime-settings.cjs ./runtime-settings.cjs
 COPY --from=build --chown=1001:1001 /app/scripts/load-runtime-settings.cjs ./load-runtime-settings.cjs
+COPY --from=build --chown=1001:1001 /app/dist/migration-runner.cjs ./migration-runner.cjs
+COPY --from=build --chown=1001:1001 /app/dist/migration-manifest.json ./migration-manifest.json
 USER 1001:1001
 EXPOSE 3000
 CMD ["node", "server.js"]

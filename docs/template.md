@@ -78,7 +78,8 @@ Extend through the registries instead of editing core lists. The
 1. Contract and storage: zod schemas and owned persistence that filters by the
    caller's `uid`.
 2. Registration: a `defineExtension` entry in `src/project/extensions.ts` (module,
-   routes, collections, links, admin sections) and a `defineServerExtension` entry
+   routes, collections, links, admin sections, optional focused-frame routes) and a
+   `defineServerExtension` entry
    in `src/project/server.ts` (MCP tools, domain adapters, indexes, migrations).
    See [project extensions](architecture.md#project-extensions).
 3. Routes under `src/app`: Route Handlers use `endpoint()` (module gating, CSRF,
@@ -87,6 +88,11 @@ Extend through the registries instead of editing core lists. The
    `t("m…")` calls; administration copy stays in English source.
 5. Data changes: a migration with ID `<module>:<NNNN>-<name>`, run by
    `npm run db:migrate`; see [migrations](architecture.md#extension-conventions).
+   Document its release ordering, retained-image compatibility, verification and
+   failure/resume behavior. The [reusable data operations plan](features/deployment-data-operations/implementation-plan.md)
+   describes proposed manual and deployment integration; it adds no executable
+   workflow yet. Future adoption uses the destination project's own identities and
+   recovery configuration, not parent database or host bindings.
 6. Tests, then `npm run typecheck`, `npm run lint`, the affected test suites and
    `npm run build`.
 

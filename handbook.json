@@ -9,6 +9,8 @@
     "next-best-practices",
     "vercel-react-best-practices",
     "web-design-guidelines",
-    "playwright"
+    "playwright",
+    "promote-to-environment",
+    "operate-data"
   ]
 }
