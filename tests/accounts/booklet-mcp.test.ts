@@ -9,6 +9,7 @@ import { validateBookletSuiteV2 } from "../../src/lib/server/booklets/suite-v2";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { Binary } from "mongodb";
 import sharp from "sharp";
+import { readTurn } from "../../src/project/booklets/turn-contract";
 
 function suiteFixture() {
   const exported = parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/manager/workflow.yaml", "utf8"));
@@ -59,7 +60,7 @@ import { bookletRepository } from "../../src/lib/server/booklets/repository";
 import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
 import { createConsumptionIndexes } from "../../src/lib/server/commerce/orders";
-import { orchestratorSchema } from "../../src/lib/contracts/runs";
+import { orchestratorSchema, parseUiForm } from "../../src/lib/contracts/runs";
 import { extensionProductTypes } from "../../src/lib/server/extensions";
 import { validateDefinition } from "../../src/lib/server/commerce/catalogs";
 import { resumeBookletRetryV2 } from "../../src/lib/server/booklets/retry-v2";
@@ -2253,6 +2254,44 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal(runNativeCode("manager", "guard", { context: JSON.stringify(inherited), decision: { action: "record_acceptance",
             request_json: JSON.stringify({ ...request, revisionId: linked.revisionId, sources: [sources[1]], fence: inherited.fence }),
             reason: "Reuse unchanged content after assessing its replacement context" } }).action, "record_acceptance");
+        });
+        await t.test("conversational turns bind their targets and retained images", async () => {
+          const initial = await successful("context", {});
+          const p = await db.collection("bookletProductions").findOne({ _id: production._id as never });
+          const artifact = p!.subjects[0].artifacts.find((artifact: { id: string }) => artifact.id === "story-v2");
+          const selected = await db.collection("bookletRevisions").findOne({ _id: artifact.currentRevisionId });
+          const target = { artifactId: "story-v2", revisionId: selected!._id, contentHash: selected!.contentHash };
+          const turn = { version: 1, parts: [
+            { type: "milestone", label: "Story" },
+            { type: "prose", text: "Here is the story so far." },
+            { type: "synopsis", target, title: "The outline", body: "A dragon learns to share." },
+            { type: "approval", target, subject: "the story outline" },
+          ] };
+          const request = { question: "Approve the story outline?", targets: [target],
+            responseContract: { mode: "raw-v1" }, presentation: { version: 1, cards: [] }, turn, fence: initial.fence };
+          const foreign = { ...target, artifactId: "other-artifact" };
+          for (const bad of [
+            { ...request, turn: { ...turn, parts: [...turn.parts.slice(0, 3), { type: "approval", target: foreign, subject: "x" }] } },
+            { ...request, turn: { ...turn, parts: [...turn.parts, { type: "image", target, assetId: "not-retained", alt: "x" }] } },
+            { ...request, turn: { ...turn, parts: turn.parts.slice(0, 3) } },
+            { ...request, presentation: { version: 1, cards: [{ id: "extra", content: { type: "summary", version: 1,
+              data: { title: "x", body: "" } } }] } },
+          ]) assert.equal((await invoke("request_human", bad)).isError, true);
+          const plan = runNativeCode("manager", "guard", { context: JSON.stringify(initial), decision: {
+            action: "request_human", request_json: JSON.stringify(request), reason: "Ask for story approval" } });
+          const intent = await successful("checkpoint", JSON.parse(plan.checkpoint));
+          const ready = JSON.parse(runNativeCode("manager", "saved", { raw: { result: intent }, context: JSON.stringify(initial),
+            request: plan.request, dispatch: plan.dispatch, action: "request_human" }).request);
+          const human = await successful("request_human", ready);
+          assert.deepEqual(readTurn(human.formContent), turn);
+          assert.deepEqual(parseUiForm(human.formContent + "\n{{#$output.response#}}").cards.map((c) => c.id).slice(1),
+            ["turn-details"]);
+          const read = await successful("read_document", { kind: "human_response", id: human.requestId });
+          assert.deepEqual(read.value.turn, turn);
+          const context = await successful("context", {});
+          const consumed = runNativeCode("manager", "consume", { raw: { result: human }, action: "request_human",
+            request: JSON.stringify(ready), context, version: intent.checkpointVersion });
+          await successful("checkpoint", JSON.parse(consumed.checkpoint));
         });
         await t.test("human requests bind native presentation and authenticated first-wins responses", async () => {
           const initial = await successful("context", {});

@@ -10,6 +10,11 @@ import {
   bookletAssessmentV2Schema,
 } from "../../../project/booklets/contracts-v2";
 import { assetIdentitySchema } from "../../../project/booklets/contracts";
+import {
+  turnFence,
+  turnReferences,
+  type BookletTurn,
+} from "../../../project/booklets/turn-contract";
 import type { CreditActor } from "../store/credit-types";
 import { fingerprint } from "../foundation/canonical";
 import { bookletRepository } from "./repository";
@@ -102,6 +107,30 @@ export async function createBookletV2Indexes(db: Db) {
   await db
     .collection("bookletAcceptances")
     .createIndex({ ownerId: 1, productionId: 1, revisionId: 1, createdAt: 1 });
+}
+
+// Generic Run cards for a booklet turn, shown only outside the conversation
+// (for example the generic Run page). The typed turn stays authoritative.
+function turnFallbackCards(turn: BookletTurn) {
+  const lines: string[] = [];
+  const cards: { id: string; content: { type: string; version: number; data: unknown } }[] = [];
+  for (const part of turn.parts) {
+    if (part.type === "prose") lines.push(part.text);
+    if (part.type === "milestone") lines.push(part.label);
+    if (part.type === "overview") lines.push(part.title, ...part.facts.map((f) => `${f.label}: ${f.value}`));
+    if (part.type === "synopsis") lines.push(part.title, part.body);
+    if (part.type === "character" || part.type === "location") lines.push(`${part.name}: ${part.description}`);
+    if (part.type === "image") lines.push(part.alt);
+    if (part.type === "approval") lines.push(`Approve ${part.subject}, or describe the changes you want.`);
+    if (part.type === "question" || part.type === "styles")
+      cards.push({ id: "turn-question", content: { type: "question", version: 1, data: {
+        kind: part.type === "styles" ? "single" : part.kind, title: part.prompt, explanation: "",
+        options: part.options.map((o) => ({ id: o.id, label: o.label })),
+      } } });
+  }
+  const text = lines.join("\n\n");
+  return [...(text ? [{ id: "turn-details", content: { type: "summary", version: 1,
+    data: { title: "Details", body: text.length > 10000 ? text.slice(0, 9999) + "…" : text } } }] : []), ...cards];
 }
 
 // Explicit v2 entry point. Reuse v1 admission validation for newly created records
@@ -1248,22 +1277,40 @@ export function bookletRepositoryV2(
         await activeManager(p, value.runId, value.holderId, session);
         if (new Set(value.targets.map((target) => fingerprint(target))).size !== value.targets.length)
           throw bookletConflict("Duplicate human request target.");
+        const retained = new Map<string, string[]>();
         for (const target of value.targets) {
           const artifact = p.subjects.flatMap((subject) => subject.artifacts).find((artifact) => artifact.id === target.artifactId);
-          if (artifact?.currentRevisionId !== target.revisionId || !await revisions.findOne({
+          const revision = artifact?.currentRevisionId === target.revisionId ? await revisions.findOne({
             ownerId: actor.uid, productionId: p._id, _id: target.revisionId,
             artifactId: target.artifactId, contentHash: target.contentHash,
-          }, { session, projection: { _id: 1 } })) throw bookletConflict("Human request targets must match current owned revisions.");
+          }, { session, projection: { _id: 1, assets: 1 } }) : null;
+          if (!revision) throw bookletConflict("Human request targets must match current owned revisions.");
+          retained.set(target.revisionId, z.array(z.object({ assetId: z.string() }))
+            .parse(revision.assets ?? []).map((asset) => asset.assetId));
+        }
+        if (value.turn) {
+          if (value.presentation.cards.length)
+            throw bookletConflict("A conversational turn derives its own fallback cards.");
+          // Every shown revision is a request target and every shown image is
+          // retained by that exact revision; Manager text never names other media.
+          for (const { target, assetId } of turnReferences(value.turn))
+            if (!value.targets.some((t) => fingerprint(t) === fingerprint(target)) ||
+              (assetId !== null && !retained.get(target.revisionId)?.includes(assetId)))
+              throw bookletConflict("Turn parts must show request targets and their retained images.");
         }
         const requestId = randomUUID();
         const presentation = uiPayloadSchema.parse({ version: 1, cards: [{
           id: "request-" + requestId, content: { type: "summary", version: 1,
             data: { title: value.question.slice(0, 500), body: value.question.length > 500 ? value.question : "" } },
-        }, ...value.presentation.cards] });
-        // The native Human Input node appends the response placeholder once.
-        const formContent = "```unibase-ui\n" + JSON.stringify(presentation) + "\n```";
+        }, ...(value.turn ? turnFallbackCards(value.turn) : value.presentation.cards)] });
+        // The native Human Input node appends the response placeholder once. A
+        // turn travels in its own fenced block, so the exact native form matched
+        // by human_response also binds the typed conversation turn.
+        const formContent = "```unibase-ui\n" + JSON.stringify(presentation) + "\n```" +
+          (value.turn ? "\n```" + turnFence + "\n" + JSON.stringify(value.turn) + "\n```" : "");
         const humanRequest = humanRequestV2Schema.parse({ requestId, runId: value.runId,
-          targets: value.targets, responseContract: value.responseContract, formContent,
+          targets: value.targets, responseContract: value.responseContract,
+          turn: value.turn ?? null, formContent,
           presentationHash: fingerprint(formContent + "\n{{#$output.response#}}"),
         });
         boundState(humanRequest);

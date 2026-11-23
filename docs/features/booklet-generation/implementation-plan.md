@@ -1386,7 +1386,8 @@ The facade, commerce, media, history and recovery services from checkpoint 10 ar
   forbids it); artifact cards (overview with brief facts, story synopsis, location,
   character sheet, style options with images, generic image) bound to exact artifact
   revisions; an approval request on one artifact revision (approve, or request changes
-  through the main composer); and a milestone backed by workflow state. The price-consent
+  through the main composer); and a milestone, a Manager-chosen section label that makes
+  no progress claim (waiting and progress copy come from app state). The price-consent
   card at the start is app-owned and rendered from server state, never from Manager text.
 - Approve and request-changes are distinct responses. A change request names its target
   revision; the previous output stays until its replacement is ready. Feedback is never
@@ -1422,7 +1423,7 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 
 | Task | State | Goal and exit evidence |
 | --- | --- | --- |
-| 10C.1 Contracts | Pending | Versioned turn-part and start-consent contracts (client-safe), Manager human-request mapping, card-registry decision, model/doc updates. Contract tests for valid, malformed and foreign parts. |
+| 10C.1 Contracts | Implemented locally | Versioned turn and reply contract (`src/project/booklets/turn-contract.ts`); `request_human` accepts an optional `turn`, binds shown revisions to targets and images to their retained assets, derives generic fallback cards and carries the turn in a fenced `booklet-turn` block bound by the exact form match. **Card-registry decision:** the shared Run registry is unchanged; booklet parts stay project-owned, so no Unibase change. The start-consent card reuses the existing quote DTO. Evidence: `tests/booklet-turns.test.ts` and the MCP turn subtest. |
 | 10C.2 Default package and conversational start | Pending | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
 | 10C.3 Manager workflow | Pending | Dify Manager emits conversational turns and approvals; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
 | 10C.4 Conversation UI | Pending | `/books/new` and `/books/[id]` with every pattern above; home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |

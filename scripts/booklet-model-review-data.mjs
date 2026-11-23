@@ -136,7 +136,7 @@ export const documents = [
     fields: [
       "_id / ownerId / scope / key / inputHash",
       "result {id, version, revisionId?, ordinal?, fence?, expiresAt?, humanRequest?}",
-      "v2 humanRequest {requestId, runId, targets[], responseContract, presentationHash, formContent}",
+      "v2 humanRequest {requestId, runId, targets[], responseContract, turn?, presentationHash, formContent}",
       "createdAt",
       "Internal idempotency; not a charge or operation",
     ],

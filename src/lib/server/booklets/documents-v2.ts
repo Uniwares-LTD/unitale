@@ -7,6 +7,7 @@ import {
   bookletSourceV2Schema,
   bookletAssessmentV2Schema,
 } from "../../../project/booklets/contracts-v2";
+import { bookletTurnSchema } from "../../../project/booklets/turn-contract";
 import {
   artifactEntrySchema,
   productionDocumentSchema,
@@ -228,16 +229,20 @@ export type AssessmentV2 = z.infer<typeof assessmentDocumentV2Schema>;
 export type AcceptanceV2 = z.infer<typeof acceptanceDocumentV2Schema>;
 
 // Existing Run raw responses and typed presentation; no parallel form engine.
+// A conversational request adds a typed booklet turn (turn-contract.ts); its
+// generic cards are then derived by the repository, so `presentation.cards` is empty.
 export const humanRequestInputV2Schema = z.strictObject({
   question: z.string().trim().min(1).max(4000),
   targets: z.array(bookletSourceV2Schema).max(100),
   responseContract: z.strictObject({ mode: z.literal("raw-v1") }),
   presentation: z.strictObject({ version: z.literal(1), cards: uiPayloadSchema.shape.cards.max(19) }),
+  turn: bookletTurnSchema.optional(),
 });
 export const humanRequestV2Schema = z.strictObject({
   requestId: z.string().uuid(), runId: id,
-  targets: humanRequestInputV2Schema.shape.targets,
-  responseContract: humanRequestInputV2Schema.shape.responseContract,
+  targets: z.array(bookletSourceV2Schema).max(100),
+  responseContract: z.strictObject({ mode: z.literal("raw-v1") }),
+  turn: bookletTurnSchema.nullable().default(null),
   presentationHash: z.string().regex(/^[a-f0-9]{64}$/),
   formContent: z.string().max(100000 - "\n{{#$output.response#}}".length),
 });

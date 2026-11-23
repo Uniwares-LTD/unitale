@@ -80,6 +80,8 @@ and the adapter; the table does not require unrelated suites for every task.
   `src/project/run-detail.tsx` with `booklets/booklet-run-panel.tsx` (actions and history in
   `booklet-actions.tsx`/`booklet-history.tsx`). Booklet administration is
   `src/app/admin/booklets`, `src/app/api/admin/booklets` and `src/lib/server/booklets/admin.ts`.
+  The conversation turn/reply contract is `src/project/booklets/turn-contract.ts`
+  (tested by `tests/booklet-turns.test.ts`); `repository-v2.ts` `requestHuman` binds it.
   The project Run start (`src/project/run-start.tsx`, `booklets/booklet-start.tsx`) and
   home (`src/project/home.tsx`) use existing project slots. Browser checks seed the
   disposable fixture with `tests/integration/booklet-fixture-seed.ts` (its `settle failed|succeeded|unknown`

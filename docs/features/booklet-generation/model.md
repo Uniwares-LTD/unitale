@@ -397,7 +397,18 @@ answers remain in `runDecisions`; owned reads match the original Run, native `hu
 node and exact presentation. Only a submitted authenticated user intent is returned
 as an answer. Unknown submissions remain pending, and changed targets are stale.
 Manager acceptance remains separate. The JSON example and complete diagram include
-this optional receipt result. The core diagram excludes operational receipts; its
+this optional receipt result.
+
+A conversational request (checkpoint 10-chat-version) also retains `turn`, a
+version-1 booklet turn from `src/project/booklets/turn-contract.ts`, or `null` for
+earlier requests. It holds Manager-ordered parts: prose, one question, style choice or
+approval, artifact cards, images and an optional milestone. Every shown revision must
+be a request target, and every shown image must be an asset retained by that exact
+revision. The repository derives generic fallback cards from the turn and appends the
+turn as one fenced `booklet-turn` block, so the exact form matched by `human_response`
+binds the typed turn too. The owner's reply is a typed version-1 `answer`, `approve`
+or `changes` JSON value sent as the raw-v1 response; the Manager still decides what it
+means. No collection or index is added. The core diagram excludes operational receipts; its
 structure is unchanged and its acceptance status is refreshed. Both generated views
 are checked. These are local checks, not live Dify form evidence.
 
