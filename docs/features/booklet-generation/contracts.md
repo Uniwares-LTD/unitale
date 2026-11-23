@@ -63,6 +63,13 @@ shared Run card registry is unchanged and needs no Unibase extension. The Manage
 interprets replies; approval is never purchase consent and the app derives no state
 from turn text.
 
+The public application contract (still version 1) gains these additive commands and
+reads. `start-idea` is the idea-only start with the same quote and credit consent. The
+production command `reply {key, requestId, reply}` submits a reply to a turn.
+`GET /api/booklets?section=default` returns the default package and available
+credits. `GET /api/booklets/{id}?section=conversation` returns the turns, their
+statuses and their authentic replies.
+
 ## Versioning
 
 Persist `schemaVersion: 1`; catalog/profile/policy revisions identify immutable

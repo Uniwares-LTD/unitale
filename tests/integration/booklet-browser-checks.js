@@ -31,8 +31,8 @@ async (page) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(origin + "/");
   const signIn = page.getByRole("link", { name: "Sign in to create a book", exact: true });
-  assert((await signIn.getAttribute("href")) === "/account?next=%2Fruns%2Fnew", "sign-in return path");
-  results.push("signed-out home: sign-in returns to /runs/new");
+  assert((await signIn.getAttribute("href")) === "/account?next=%2Fbooks%2Fnew", "sign-in return path");
+  results.push("signed-out home: sign-in returns to /books/new");
   await context.addCookies(cookies);
 
   for (const [lang, width] of [["en", 1440], ["ar", 390], ["en", 390], ["ar", 1440]]) {
@@ -41,7 +41,7 @@ async (page) => {
     await page.goto(origin + "/");
     assert((await page.locator("html").getAttribute("dir")) === (lang === "ar" ? "rtl" : "ltr"), "direction");
     const create = page.getByRole("link", { name: lang === "ar" ? "أنشئ كتابًا" : "Create a book", exact: true });
-    assert((await create.getAttribute("href")) === "/runs/new", "create link");
+    assert((await create.getAttribute("href")) === "/books/new", "create link");
     await noOverflow(`home ${lang} ${width}`);
     await page.screenshot({ path: `output/playwright/booklet-home-${lang}-${width}.png`, fullPage: true });
     await page.goto(origin + "/runs/new");

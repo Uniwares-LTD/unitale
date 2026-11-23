@@ -47,7 +47,7 @@ async function UnitaleHome({ appName, hasSession }: ProjectHomeProps) {
             books && (
               <div className="mt-7 flex flex-wrap gap-3">
                 <Button asChild className="h-11">
-                  <Link href="/runs/new">
+                  <Link href="/books/new">
                     {translate("ma0c29655f13c")}
                     {arrow}
                   </Link>
@@ -60,7 +60,7 @@ async function UnitaleHome({ appName, hasSession }: ProjectHomeProps) {
           ) : (
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild className="h-11">
-                <Link href={books ? signInPath("/runs/new") : "/account"}>
+                <Link href={books ? signInPath("/books/new") : "/account"}>
                   {books
                     ? translate("m91ad161d3a0e")
                     : translate("mbfd402b2f6f3")}

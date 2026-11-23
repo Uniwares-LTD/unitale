@@ -16,7 +16,9 @@ export async function GET(
     const query = new URL(request.url).searchParams;
     const app = requestBookletApplication(session);
     return json(
-      query.get("section") === "history"
+      query.get("section") === "conversation"
+        ? await app.conversation(productionId)
+        : query.get("section") === "history"
         ? await app.history(productionId, {
             kind: query.get("kind"),
             artifactId: query.get("artifactId"),

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { bookletIdSchema, briefSchema } from "./contracts";
+import { bookletReplySchema, bookletTurnSchema } from "./turn-contract";
 
 // Client-safe public booklet commands and DTOs (version 1 of the public contract;
 // a breaking shape needs explicit versioning, see contracts.md). Server records,
@@ -27,9 +28,22 @@ export const bookletStartCommandSchema = z.strictObject({
   title: z.string().trim().min(1).max(160),
   brief: briefSchema,
 });
+// Conversational start from the idea alone; the server derives the title and
+// brief (see the facade). Consent is the same exact quote and credits.
+export const bookletIdeaStartCommandSchema = z.strictObject({
+  action: z.literal("start-idea"),
+  key,
+  catalogId: id,
+  revision: positive,
+  quoteHash: hash,
+  acceptedCredits: positive,
+  idea: z.string().trim().min(1).max(4000),
+  language: z.enum(["en", "ar"]),
+});
 export const bookletCreationCommandSchema = z.discriminatedUnion("action", [
   bookletQuoteCommandSchema,
   bookletStartCommandSchema,
+  bookletIdeaStartCommandSchema,
 ]);
 
 const revisionScope = {
@@ -50,6 +64,13 @@ export const bookletProductionCommandSchema = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("continue"), key }),
   // Starts the saved committed step that has no Run yet (idempotent by flow).
   z.strictObject({ action: z.literal("resume") }),
+  // The owner's typed reply to one conversation turn (checked against it).
+  z.strictObject({
+    action: z.literal("reply"),
+    key,
+    requestId: z.uuid(),
+    reply: bookletReplySchema,
+  }),
 ]);
 
 export type BookletStartCommand = z.infer<typeof bookletStartCommandSchema>;
@@ -84,6 +105,11 @@ export const bookletPackageSummarySchema = z.object({
   ),
   available: z.boolean(),
 });
+export const bookletEntrySchema = z.object({
+  package: bookletPackageSummarySchema.nullable(),
+  availableCredits: z.number(),
+});
+export type BookletEntry = z.infer<typeof bookletEntrySchema>;
 export const bookletPackagePageSchema = z.object({
   rows: z.array(bookletPackageSummarySchema),
   next: z.string().nullable(),
@@ -229,3 +255,37 @@ export const bookletEditableErrors: readonly string[] = [
   "MODULE_UNAVAILABLE",
   "RATE_LIMITED",
 ];
+
+// Conversation (checkpoint 10-chat-version). Turns come from the Manager's
+// validated human requests; replies from the authentic Run decisions.
+export const bookletTurnStatuses = [
+  "preparing", // Requested; the native question is not open yet.
+  "open", // Awaiting the owner's reply.
+  "answered",
+  "stale", // A shown revision changed before a reply.
+  "expired",
+  "closed", // The Run stopped before a reply.
+] as const;
+export const bookletConversationSchema = z.object({
+  productionId: id,
+  title: z.string(),
+  idea: z.string(),
+  state: z.enum(["draft", "in-progress", "completed", "closed"]),
+  // An attempt is queued or running and no question is open.
+  working: z.boolean(),
+  completed: z.boolean(),
+  turns: z.array(
+    z.object({
+      requestId: z.uuid(),
+      createdAt: z.string(),
+      status: z.enum(bookletTurnStatuses),
+      turn: bookletTurnSchema,
+      reply: bookletReplySchema.nullable(),
+    }),
+  ),
+});
+export type BookletConversation = z.infer<typeof bookletConversationSchema>;
+export const bookletReplyResultSchema = z.object({
+  status: z.enum(["submitting", "submitted"]),
+});
+export type BookletReplyResult = z.infer<typeof bookletReplyResultSchema>;

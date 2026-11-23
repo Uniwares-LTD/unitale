@@ -1424,10 +1424,46 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 | Task | State | Goal and exit evidence |
 | --- | --- | --- |
 | 10C.1 Contracts | Implemented locally | Versioned turn and reply contract (`src/project/booklets/turn-contract.ts`); `request_human` accepts an optional `turn`, binds shown revisions to targets and images to their retained assets, derives generic fallback cards and carries the turn in a fenced `booklet-turn` block bound by the exact form match. **Card-registry decision:** the shared Run registry is unchanged; booklet parts stay project-owned, so no Unibase change. The start-consent card reuses the existing quote DTO. Evidence: `tests/booklet-turns.test.ts` and the MCP turn subtest. |
-| 10C.2 Default package and conversational start | Pending | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
+| 10C.2 Default package and conversational start | In progress (review slice) | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
 | 10C.3 Manager workflow | Pending | Dify Manager emits conversational turns and approvals; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
-| 10C.4 Conversation UI | Pending | `/books/new` and `/books/[id]` with every pattern above; home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
+| 10C.4 Conversation UI | In progress (review slice) | `/books/new` and `/books/[id]` with every pattern above; home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
 | 10C.5 Verification and handoff | Pending | Affected suites, build, browser journeys including sign-in return, consent and start, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
+
+#### Review slice (2026-11-23, awaiting user approval)
+
+The user asked to stop once the first conversational flow can be viewed. The slice
+uses the real data path. 10C.3 (Dify Manager) and the remaining 10C.2/10C.4 items
+wait for that approval.
+
+- **Entry** `/books/new`: hero, idea composer, three inspiration cards that fill the
+  composer, and a consent card with the default package's pages, price and the
+  owner's available credits. Signed-out visitors keep their idea in this tab's
+  session storage across sign-in. The start is `start-idea`: the server derives the
+  title from the idea's first line, uses the UI language when the package offers it,
+  starts with empty character and location lists, and sets the audience marker
+  `audienceNotStated` for the Manager to ask about. The quote, `quoteHash`,
+  `acceptedCredits` and resumable start are unchanged.
+- **Conversation** `/books/[id]`: turns come from the validated `request_human`
+  receipts, matched to native decisions as `human_response` matches them (never
+  parsed from provider form text). Statuses are preparing, open, answered, stale,
+  expired and closed. Replies go through the `reply` command, which runs
+  `checkReply` and the existing authentic decision submission. One tap commits a
+  single choice; multiple choices stay a draft until Send. An approval offers
+  Approve, or a change request typed in the composer and labelled with its target.
+  The page has a wait row, a New response control and an offline notice.
+- **Default package**: the `bookletSettings` row (see the model guide), read with the
+  balance through `GET /api/booklets?section=default`. The admin editor is pending.
+- **Local preview Manager**: `tests/integration/booklet-chat-manager.ts` stands in for
+  the Dify Manager in the browser fixture. Its turns pass the real `requestHuman`.
+  Because a running book accepts revisions only from recorded paid specialist work,
+  it writes its two story revisions directly into the fixture database. Its script
+  and questions are illustrative only.
+- **Not in the slice**: the admin default-package editor; retiring the checkpoint
+  10 form and Run panel; Run-page links; the image viewer; gradual prose reveal
+  beyond a fade; a reader; side-by-side parity captures; and the full browser matrix.
+  The chat renders inside the shared app shell (sidebar and header). A focused
+  full-screen layout like the prototype's needs a shell opt-out in Unibase; this is
+  an open question for the user.
 
 #### Accepted gaps (user, 2026-11-23)
 

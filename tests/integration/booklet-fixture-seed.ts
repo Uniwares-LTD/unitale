@@ -199,6 +199,18 @@ async function main() {
       },
       retryDefaults: { paidLlm: 2, paidImage: 0, nonPaid: 3 },
     });
+    // Conversations use one admin-selected default package.
+    const short = await db
+      .collection<{ _id: string }>("commerceCatalogs")
+      .findOne({ _id: { $regex: /fixture-short$/ } as never });
+    if (!short) throw new Error("Default fixture package not found.");
+    await db
+      .collection<{ _id: string; catalogId: string; updatedAt: Date }>("bookletSettings")
+      .updateOne(
+        { _id: "default-package" },
+        { $set: { catalogId: short._id, updatedAt: new Date() } },
+        { upsert: true },
+      );
     await readSettings(db);
     await db
       .collection("baseSettings")

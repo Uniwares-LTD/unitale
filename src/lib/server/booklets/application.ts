@@ -19,6 +19,7 @@ import {
   bookletProductionCommandSchema,
   bookletQuoteCommandSchema,
   bookletStartCommandSchema,
+  bookletIdeaStartCommandSchema,
   type BookletPackagePage,
   type BookletPackageSummary,
   type BookletRetryResult,
@@ -26,8 +27,17 @@ import {
   type BookletRunReference,
   type BookletView,
   type BookletHistory,
+  type BookletConversation,
+  type BookletEntry,
+  type BookletReplyResult,
   bookletHistoryKinds,
 } from "../../../project/booklets/application-contract";
+import {
+  bookletReplySchema,
+  checkReply,
+} from "../../../project/booklets/turn-contract";
+import { humanRequestV2Schema } from "./documents-v2";
+import { submitAuthorizedDecision, type Decision } from "../runs/service";
 import { AppError } from "../../auth-policy";
 import { bookletConflict, bookletMissing } from "./context";
 import { creativeFieldsSchema, id } from "./documents";
@@ -667,6 +677,51 @@ export function bookletApplication(
       return item;
     },
 
+    /** Conversation entry: the admin-selected default package (null when
+     * unset or unavailable) and the owner's currently available credits. */
+    async entry(): Promise<BookletEntry> {
+      requireModule("booklets");
+      const row = await db
+        .collection<{ _id: string; catalogId: string }>("bookletSettings")
+        .findOne({ _id: "default-package" });
+      const item = row ? await summary(row.catalogId) : null;
+      return {
+        package: item?.available ? item : null,
+        availableCredits: (await readWallet(db, actor.uid, { actor }))
+          .available,
+      };
+    },
+
+    /** Conversational start: the idea alone, with the same explicit consent.
+     * Title and brief are derived here; the Manager asks for the rest. */
+    async startIdea(raw: unknown): Promise<BookletRunReference> {
+      requireModule("booklets");
+      const input = bookletIdeaStartCommandSchema.parse(raw);
+      const item = await summary(input.catalogId);
+      if (!item?.available) throw unavailable();
+      const language =
+        item.languages.find((l) => l.tag === input.language) ??
+        item.languages[0];
+      const first = input.idea.split(/\r?\n/)[0].trim();
+      return this.start({
+        action: "start",
+        key: input.key,
+        catalogId: input.catalogId,
+        revision: input.revision,
+        quoteHash: input.quoteHash,
+        acceptedCredits: input.acceptedCredits,
+        title: first.length > 80 ? first.slice(0, 79).trimEnd() + "…" : first,
+        brief: {
+          idea: input.idea,
+          audience: audienceNotStated,
+          language,
+          characters: [],
+          locations: [],
+          visualPreferences: "",
+        },
+      });
+    },
+
     /** Resumable: book → queued order → v2 production → paid start → Run. */
     async start(raw: unknown): Promise<BookletRunReference> {
       requireModule("booklets");
@@ -1050,7 +1105,10 @@ export function bookletApplication(
       productionId: string,
       raw: unknown,
     ): Promise<
-      BookletRevisionQuote | BookletRunReference | BookletRetryResult
+      | BookletRevisionQuote
+      | BookletRunReference
+      | BookletRetryResult
+      | BookletReplyResult
     > {
       requireModule("booklets");
       pathId(productionId);
@@ -1108,7 +1166,197 @@ export function bookletApplication(
           return continueWith(productionId, command.key);
         case "resume":
           return resumeFlow(productionId);
+        case "reply":
+          return reply(productionId, command);
       }
     },
+
+    /** The owned conversation: Manager turns with their authentic replies. */
+    async conversation(productionId: string): Promise<BookletConversation> {
+      requireModule("booklets");
+      pathId(productionId);
+      const p = await repo.getProduction(productionId);
+      const book = await db
+        .collection<{ _id: string; title: string }>("bookletBooks")
+        .findOne(
+          { _id: p.bookletId, ownerId: actor.uid, "deletion.deletedAt": null },
+          { projection: { title: 1 } },
+        );
+      if (!book) throw bookletMissing();
+      const asked = await humanRequests(productionId);
+      const runIds = [...new Set(asked.map((a) => a.human.runId))];
+      const [jobs, decisions, latest] = await Promise.all([
+        aiJobs(db)
+          .find(
+            { _id: { $in: runIds }, uid: actor.uid },
+            { projection: { status: 1 } },
+          )
+          .toArray(),
+        nativeDecisions(asked.map((a) => a.human)),
+        latestRun(productionId),
+      ]);
+      const statusOf = new Map(jobs.map((j) => [j._id, j.status]));
+      const turns = asked.map(({ human, createdAt }) => {
+        const matches = decisions.filter(
+          (d) =>
+            d.jobId === human.runId &&
+            d.form?.form_content === human.formContent + placeholder,
+        );
+        const decision = matches.length === 1 ? matches[0] : undefined;
+        const answered = decision ? authenticReply(decision) : null;
+        const active = activeStatuses.includes(statusOf.get(human.runId) ?? "");
+        let status: BookletConversation["turns"][number]["status"];
+        if (answered) status = "answered";
+        else if (isStale(p, human.targets)) status = "stale";
+        else if (!decision)
+          // Ambiguous native matches are never answerable here.
+          status = matches.length || !active ? "closed" : "preparing";
+        else if (
+          decision.status === "expired" ||
+          (decision.form?.expiration_time ?? Infinity) * 1000 < Date.now()
+        )
+          status = "expired";
+        else status = decision.status === "pending" && active ? "open" : "closed";
+        return {
+          requestId: human.requestId,
+          createdAt: createdAt.toISOString(),
+          status,
+          turn: human.turn!,
+          reply: answered,
+        };
+      });
+      return {
+        productionId,
+        title: book.title,
+        idea: p.brief.idea,
+        state: p.lifecycleState,
+        working:
+          !!latest &&
+          activeStatuses.includes(latest.status) &&
+          !turns.some((t) => t.status === "open" || t.status === "preparing"),
+        completed: p.currentManifestRevisionId !== null,
+        turns,
+      };
+    },
   };
+
+  /** Validated conversational requests (with a turn) for one owned production. */
+  async function humanRequests(productionId: string, requestId?: string) {
+    const rows = await db
+      .collection<{ result: { humanRequest?: unknown }; createdAt: Date }>(
+        "bookletRepositoryWrites",
+      )
+      .find(
+        {
+          ownerId: actor.uid,
+          productionId,
+          ...(requestId
+            ? { "result.humanRequest.requestId": requestId }
+            : { "result.humanRequest.turn": { $type: "object" } }),
+        },
+        {
+          projection: { "result.humanRequest": 1, createdAt: 1 },
+          sort: { createdAt: 1, _id: 1 },
+          limit: 200,
+        },
+      )
+      .toArray();
+    return rows.flatMap((row) => {
+      const human = humanRequestV2Schema.safeParse(row.result.humanRequest);
+      return human.success && human.data.turn
+        ? [{ human: human.data, createdAt: row.createdAt }]
+        : [];
+    });
+  }
+
+  // Native decisions are matched exactly as `human_response` matches them:
+  // the original Manager Run, the native `human` node and the exact form.
+  function nativeDecisions(humans: { runId: string; formContent: string }[]) {
+    if (!humans.length) return Promise.resolve([] as Decision[]);
+    return db
+      .collection<Decision>("runDecisions")
+      .find({
+        uid: actor.uid,
+        nodeId: "human",
+        jobId: { $in: [...new Set(humans.map((h) => h.runId))] },
+        "form.form_content": {
+          $in: humans.map((h) => h.formContent + placeholder),
+        },
+      })
+      .limit(400)
+      .toArray();
+  }
+
+  function authenticReply(decision: Decision) {
+    if (
+      !["submitting", "submitted"].includes(decision.status) ||
+      decision.answerSource?.type !== "user" ||
+      decision.intent?.action !== "continue"
+    )
+      return null;
+    const parsed = bookletReplySchema.safeParse(decision.intent.response);
+    return parsed.success ? parsed.data : null;
+  }
+
+  function isStale(
+    p: { subjects: { artifacts: { id: string; currentRevisionId: string | null }[] }[] },
+    targets: { artifactId: string; revisionId: string }[],
+  ) {
+    return targets.some(
+      (t) =>
+        !p.subjects.some((s) =>
+          s.artifacts.some(
+            (a) => a.id === t.artifactId && a.currentRevisionId === t.revisionId,
+          ),
+        ),
+    );
+  }
+
+  async function reply(
+    productionId: string,
+    command: Extract<
+      z.infer<typeof bookletProductionCommandSchema>,
+      { action: "reply" }
+    >,
+  ): Promise<BookletReplyResult> {
+    const p = await repo.getProduction(productionId);
+    const [asked] = await humanRequests(productionId, command.requestId);
+    if (!asked) throw bookletMissing();
+    const { human } = asked;
+    if (isStale(p, human.targets))
+      throw bookletConflict("This question changed. Reload the conversation.");
+    const checked = checkReply(human.turn!, command.reply);
+    if (!checked.ok)
+      throw new AppError("BOOKLET_REPLY_INVALID", checked.reason, 400);
+    const [matches, job] = await Promise.all([
+      nativeDecisions([human]),
+      aiJobs(db).findOne({ _id: human.runId, uid: actor.uid }),
+    ]);
+    if (matches.length !== 1 || !job)
+      throw new AppError(
+        "DECISION_UNAVAILABLE",
+        "This question is not open.",
+        409,
+      );
+    // The existing authentic decision path: ownership, live attempt, first
+    // answer wins, and the same key/payload is an idempotent retry.
+    const result = await submitAuthorizedDecision(
+      db,
+      { uid: actor.uid, auth_time: actor.authTime },
+      job,
+      matches[0],
+      { key: command.key, action: "continue", response: checked.reply },
+      { type: "user" },
+    );
+    return {
+      status: result.status === "submitted" ? "submitted" : "submitting",
+    };
+  }
 }
+
+// The native Human Input appends this placeholder to the retained form body.
+const placeholder = "\n{{#$output.response#}}";
+const activeStatuses: string[] = ["queued", "dispatching", "running", "paused"];
+// The conversational entry collects only the idea. The brief still requires an
+// audience, so it carries this fixed marker and the Manager asks the owner.
+export const audienceNotStated = "Not stated yet; ask the owner.";

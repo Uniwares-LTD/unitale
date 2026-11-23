@@ -10,6 +10,7 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { Binary } from "mongodb";
 import sharp from "sharp";
 import { readTurn } from "../../src/project/booklets/turn-contract";
+import { bookletApplication } from "../../src/lib/server/booklets/application";
 
 function suiteFixture() {
   const exported = parseYaml(readFileSync("docs/features/booklet-generation/workflow-package/manager/workflow.yaml", "utf8"));
@@ -2292,6 +2293,41 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const consumed = runNativeCode("manager", "consume", { raw: { result: human }, action: "request_human",
             request: JSON.stringify(ready), context, version: intent.checkpointVersion });
           await successful("checkpoint", JSON.parse(consumed.checkpoint));
+          // The conversation facade: typed replies are checked against the turn,
+          // submitted through the authentic decision path and returned unchanged.
+          await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: {
+            "run.orchestrator.responseMode": "raw-v1", leaseUntil: new Date(Date.now() + 180000) } });
+          const parent = (await db.collection<AiJob>("aiJobs").findOne({ _id: "run-v2" }))!;
+          const app = bookletApplication(db, { uid: "owner", authTime: 1 }, { types: [] });
+          const before = await app.conversation(production._id);
+          assert.deepEqual(before.turns.map((x) => [x.status, x.reply]), [["preparing", null]]);
+          const token = "synthetic-turn-token";
+          await persistAiEvent(db, parent, { type: "decision", nodeId: "human", title: "Booklet conversation", token });
+          await db.collection("runDecisions").updateOne({ jobId: parent._id, token }, { $set: { form: {
+            form_content: human.formContent + "\n{{#$output.response#}}",
+            inputs: [{ type: "paragraph", output_variable_name: "response" }],
+            user_actions: [{ id: "continue", title: "Continue" }], resolved_default_values: {},
+          } } });
+          assert.equal((await app.conversation(production._id)).turns[0].status, "open");
+          const reply = { version: 1 as const, kind: "approve" as const, target };
+          const command = { action: "reply" as const, key: randomUUID(), requestId: human.requestId, reply };
+          await assert.rejects(app.command(production._id, { ...command,
+            reply: { version: 1, kind: "answer", choices: [], text: "Yes" } }), /approve-or-change/);
+          await assert.rejects(app.command(production._id, { ...command,
+            reply: { ...reply, target: { ...target, contentHash: "0".repeat(64) } } }), /different-version/);
+          await assert.rejects(bookletApplication(db, { uid: "foreign", authTime: 1 }, { types: [] })
+            .command(production._id, command), /not found/i);
+          await app.command(production._id, command);
+          // Same key and reply: idempotent; a different reply loses to the first.
+          await app.command(production._id, command);
+          await assert.rejects(app.command(production._id, { ...command, key: randomUUID(),
+            reply: { version: 1, kind: "changes", target, text: "Shorter" } }), /already pending or submitted/);
+          const answered = await successful("read_document", { kind: "human_response", id: human.requestId });
+          assert.equal(answered.value.status, "submitted");
+          assert.deepEqual(answered.value.response, reply);
+          const after = await app.conversation(production._id);
+          assert.deepEqual(after.turns.map((x) => [x.status, x.reply]), [["answered", reply]]);
+          assert.equal(after.idea, (await db.collection("bookletProductions").findOne({ _id: production._id as never }))!.brief.idea);
         });
         await t.test("human requests bind native presentation and authenticated first-wins responses", async () => {
           const initial = await successful("context", {});

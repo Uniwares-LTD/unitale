@@ -154,14 +154,25 @@ const sameTarget = (a: z.infer<typeof target>, b: z.infer<typeof target>) =>
   a.revisionId === b.revisionId &&
   a.contentHash === b.contentHash;
 
-// Validates a reply against the turn it answers. Returns the reply, or a short
-// reason the composer can show while keeping the user's text.
+// Why a reply does not fit its turn. Codes, not copy: the public UI maps them to
+// catalog messages and keeps the user's text.
+export type ReplyProblem =
+  | "unsupported"
+  | "approve-or-change"
+  | "different-version"
+  | "answer-question"
+  | "offered-only"
+  | "type-answer"
+  | "choose-one"
+  | "choose-some";
+
+// Validates a reply against the turn it answers.
 export function checkReply(
   turn: BookletTurn,
   raw: unknown,
-): { ok: true; reply: BookletReply } | { ok: false; reason: string } {
+): { ok: true; reply: BookletReply } | { ok: false; reason: ReplyProblem } {
   const parsed = bookletReplySchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, reason: "Unsupported reply." };
+  if (!parsed.success) return { ok: false, reason: "unsupported" };
   const reply = parsed.data;
   const part = turn.parts.find(
     (p): p is Extract<BookletTurnPart, { type: "question" | "styles" | "approval" }> =>
@@ -169,26 +180,26 @@ export function checkReply(
   )!;
   if (part.type === "approval") {
     if (reply.kind === "answer")
-      return { ok: false, reason: "Approve or request changes." };
+      return { ok: false, reason: "approve-or-change" };
     return sameTarget(reply.target, part.target)
       ? { ok: true, reply }
-      : { ok: false, reason: "This reply targets a different version." };
+      : { ok: false, reason: "different-version" };
   }
   if (reply.kind !== "answer")
-    return { ok: false, reason: "This turn asks a question." };
+    return { ok: false, reason: "answer-question" };
   const kind = part.type === "styles" ? "single" : part.kind;
   const freeText = part.type === "styles" ? false : part.freeText;
   const offered = new Set(part.options.map((o) => o.id));
   if (!unique(reply.choices) || reply.choices.some((c) => !offered.has(c)))
-    return { ok: false, reason: "Choose an offered answer." };
+    return { ok: false, reason: "offered-only" };
   if (reply.text && !freeText)
-    return { ok: false, reason: "Choose one of the offered answers." };
+    return { ok: false, reason: "offered-only" };
   if (kind === "text" && (reply.choices.length || !reply.text))
-    return { ok: false, reason: "Type an answer." };
+    return { ok: false, reason: "type-answer" };
   if (kind === "single" && reply.choices.length + (reply.text ? 1 : 0) !== 1)
-    return { ok: false, reason: "Choose one answer." };
+    return { ok: false, reason: "choose-one" };
   if (kind === "multiple" && !reply.choices.length && !reply.text)
-    return { ok: false, reason: "Choose at least one answer." };
+    return { ok: false, reason: "choose-some" };
   return { ok: true, reply };
 }
 
@@ -198,7 +209,9 @@ export function encodeReply(reply: BookletReply) {
 }
 
 // Fenced block that carries the turn inside the native form content, next to
-// the generic `unibase-ui` fallback cards. Exactly one block per form.
+// the generic `unibase-ui` fallback cards. Exactly one block per form. Decision
+// form text comes from the provider: render turns from the validated request
+// receipt, and use this only to check that a form carries that same turn.
 export const turnFence = "booklet-turn";
 export function readTurn(formContent: string): BookletTurn | null {
   const matches = [
