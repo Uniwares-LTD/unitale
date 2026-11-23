@@ -621,7 +621,6 @@
     "m06db853045c4": "You need {missing} more credits to start this book.",
     "m3d3a090b7c87": "We couldn’t start your book. Your idea is kept; try again.",
     "m040985b8ff7e": "Get credits",
-    "m3768da03d71e": "Starting your book…",
     "m6d9b2dbc225a": "Start my book",
     "m288f7ad20405": "A little inspiration, if you need it",
     "mcd5053d9a549": "Sign in to start your book. Your idea will be kept.",
@@ -644,14 +643,14 @@
     "ma9c0a994cdc4": "Type an answer.",
     "m336bcb612c43": "Choose one answer.",
     "m9e271cb8532b": "Choose at least one answer.",
-    "m32c614f5f7ef": "Your reply wasn’t sent. Your text is kept; try again.",
     "mb3f9b4ef46c3": "Approve this version",
     "m74a41190a3b4": "Your reply",
     "m4a70ac5bf862": "Wait for the next question…",
     "mc2bc01335874": "Choose an option above.",
     "m5801a5064e61": "Describe the changes you’d like…",
     "mcd617a801ef0": "Write your reply…",
-    "m74dc5b13b682": "New book"
+    "m74dc5b13b682": "New book",
+    "m256c277e5562": "Your message wasn’t sent. Your text is kept."
   },
   "locale": {
     "heading": "Language and region",

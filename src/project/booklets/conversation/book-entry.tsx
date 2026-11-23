@@ -1,15 +1,18 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUp } from "lucide-react";
 import { api, ApiError } from "@/lib/client/api";
 import { signInPath } from "@/lib/return-path";
-import { Notice } from "@/components/page-patterns";
+import { Notice, SubmitButton } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import Image from "next/image";
+import { Composer } from "@/project/components/conversation/composer";
+import { InspirationList } from "@/project/components/conversation/inspiration-list";
 import {
   bookletEditableErrors,
   bookletEntrySchema,
@@ -152,29 +155,22 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
     }
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing)
-      return;
-    event.preventDefault();
-    send();
-  }
-
   const pack = entry?.package ?? null;
   const missing = pack ? pack.credits - (entry?.availableCredits ?? 0) : 0;
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 py-6 sm:py-12">
       <header className="text-center">
-        <h1 className="font-heading text-[clamp(2.5rem,6vw,4rem)] leading-[1.08] tracking-tight">
+        <h1 className="font-heading text-display">
           <span className="block">{t("m262c2d549b96")}</span>
           <span className="block">{t("me524c3dd7e43")}</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
+        <p className="mx-auto mt-5 max-w-md text-reading text-muted-foreground">
           {t("mec401c187075")}
         </p>
       </header>
 
       <div className="relative">
-        {/* Static mascot face only; the 3D mascot is deferred. */}
+        {/* Static mascot face only (decorative); the 3D mascot is deferred. */}
         <Image
           src="/images/unitale-mascot-face.svg"
           alt=""
@@ -183,158 +179,126 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
           height={64}
           className="absolute -top-14 end-8 size-16 sm:end-12"
         />
-        <div className="rounded-[var(--x-unitale-radius-dialog)] border bg-card p-4 shadow-[var(--x-unitale-shadow-raised)] focus-within:ring-[3px] focus-within:ring-ring/40 sm:p-6">
-          <label htmlFor="book-idea" className="sr-only">
-            {t("mb3ba025e2ecd")}
-          </label>
-          <textarea
-            id="book-idea"
-            ref={field}
-            value={idea}
-            maxLength={4000}
-            rows={3}
-            readOnly={consent}
-            placeholder={t("m4966873a89fb")}
-            onChange={(event) => setIdea(event.target.value)}
-            onKeyDown={onKeyDown}
-            className="block max-h-56 min-h-24 w-full resize-none bg-transparent text-lg leading-relaxed outline-none placeholder:text-muted-foreground"
-          />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">{t("m79a2b7be2cdc")}</p>
-            {consent ? (
+        <Composer
+          id="book-idea"
+          size="entry"
+          inputRef={field}
+          value={idea}
+          onChange={setIdea}
+          onSend={send}
+          canSend={!consent && !!idea.trim()}
+          readOnly={consent}
+          maxLength={4000}
+          label={t("mb3ba025e2ecd")}
+          placeholder={t("m4966873a89fb")}
+          sendLabel={t("mf6f4688ff23d")}
+          footer={
+            consent ? (
               <Button variant="ghost" onClick={edit} disabled={starting}>
                 {t("mfd1d3a3672ed")}
               </Button>
             ) : (
-              <Button
-                size="icon"
-                className="size-11 rounded-full"
-                onClick={send}
-                disabled={!idea.trim()}
-                aria-label={t("mf6f4688ff23d")}
-              >
-                <ArrowUp aria-hidden="true" />
-              </Button>
-            )}
-          </div>
-        </div>
+              <p className="text-supporting text-muted-foreground">{t("m79a2b7be2cdc")}</p>
+            )
+          }
+        />
       </div>
 
       {consent && (
-        <section
-          aria-labelledby="book-consent-title"
-          className="rounded-[var(--x-unitale-radius-card)] border bg-card p-5 sm:p-6 motion-safe:animate-in motion-safe:fade-in"
-        >
-          <h2 id="book-consent-title" className="font-heading text-xl">
-            {t("mee15ab57a7fb")}
-          </h2>
-          {!entry && !loadFailed && (
-            <div className="mt-4 space-y-2" aria-label={t("mba3bbbe10d8b")}>
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          )}
-          {loadFailed && (
-            <div className="mt-4 space-y-3">
-              <Notice tone="error" title={t("mb99fbb363d5b")} />
-              <Button variant="outline" onClick={loadEntry}>
-                {t("md8b8392e2c54")}
-              </Button>
-            </div>
-          )}
-          {entry && !pack && (
-            <div className="mt-4">
-              <Notice
-                tone="warning"
-                title={t("m391e8b97689b")}
-              />
-            </div>
-          )}
-          {pack && (
-            <>
-              <p className="mt-3 text-base leading-relaxed">
-                {pack.includeCover
-                  ? t("m2625981f6078", {
-                      pages: pack.storyPages,
-                    })
-                  : t("me047ec3372f2", {
-                      pages: pack.storyPages,
+        // Accepted exception (2026-11-23): an inline consent card that states
+        // pages, price and balance instead of an AlertDialog.
+        <Card aria-labelledby="book-consent-title" className="motion-safe:animate-in motion-safe:fade-in">
+          <CardHeader>
+            <CardTitle id="book-consent-title" className="font-heading text-card-title">
+              {t("mee15ab57a7fb")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!entry && !loadFailed && (
+              <div className="space-y-2" aria-label={t("mba3bbbe10d8b")}>
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            )}
+            {loadFailed && (
+              <>
+                <Notice tone="error" title={t("mb99fbb363d5b")} />
+                <Button variant="outline" onClick={loadEntry}>
+                  {t("md8b8392e2c54")}
+                </Button>
+              </>
+            )}
+            {entry && !pack && <Notice tone="warning" title={t("m391e8b97689b")} />}
+            {pack && (
+              <>
+                <div>
+                  <p className="text-reading">
+                    {pack.includeCover
+                      ? t("m2625981f6078", { pages: pack.storyPages })
+                      : t("me047ec3372f2", { pages: pack.storyPages })}
+                  </p>
+                  <p className="text-supporting text-muted-foreground">
+                    {t("mcc1d89950812", {
+                      credits: pack.credits,
+                      available: entry!.availableCredits,
                     })}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("mcc1d89950812", {
-                  credits: pack.credits,
-                  available: entry!.availableCredits,
-                })}
-              </p>
-              {problem && (
-                <div className="mt-4">
-                <Notice
-                  tone={problem === "pending" ? "warning" : "error"}
-                  title={
-                    problem === "pending"
-                      ? t("me079e4adcff9")
-                      : problem === "price"
-                        ? t("m319be527cbf8")
-                        : problem === "credits"
-                          ? t("m06db853045c4", {
-                              missing: Math.max(1, missing),
-                            })
-                          : problem === "unavailable"
-                            ? t("m391e8b97689b")
-                            : t("m3d3a090b7c87")
-                  }
-                />
+                  </p>
                 </div>
-              )}
-              <div className="mt-5 flex flex-wrap gap-3">
-                {missing > 0 ? (
-                  <Button asChild>
-                    <a href="/credits">{t("m040985b8ff7e")}</a>
-                  </Button>
-                ) : (
-                  <Button onClick={start} disabled={starting} aria-busy={starting}>
-                    {starting
-                      ? t("m3768da03d71e")
-                      : problem === "pending" || problem === "failed"
+                {problem && (
+                  <Notice
+                    tone={problem === "pending" ? "warning" : "error"}
+                    title={
+                      problem === "pending"
+                        ? t("me079e4adcff9")
+                        : problem === "price"
+                          ? t("m319be527cbf8")
+                          : problem === "credits"
+                            ? t("m06db853045c4", { missing: Math.max(1, missing) })
+                            : problem === "unavailable"
+                              ? t("m391e8b97689b")
+                              : t("m3d3a090b7c87")
+                    }
+                  />
+                )}
+                <div className="flex flex-wrap gap-3">
+                  {missing > 0 ? (
+                    <Button asChild className="min-h-(--control-touch-sm)">
+                      <Link href="/credits">{t("m040985b8ff7e")}</Link>
+                    </Button>
+                  ) : (
+                    // Pending keeps the label; the request key makes a retry safe.
+                    <SubmitButton
+                      pending={starting}
+                      onClick={start}
+                      className="min-h-(--control-touch-sm)"
+                    >
+                      {problem === "pending" || problem === "failed"
                         ? t("md8b8392e2c54")
                         : t("m6d9b2dbc225a")}
-                  </Button>
-                )}
-              </div>
-            </>
-          )}
-        </section>
+                    </SubmitButton>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {!consent && (
-        <section aria-labelledby="book-inspiration-title">
-          <h2 id="book-inspiration-title" className="mb-3 text-sm text-muted-foreground">
-            {t("m288f7ad20405")}
-          </h2>
-          <ul className="grid gap-3 sm:grid-cols-3">
-            {inspirations.map((item) => (
-              <li key={item.title}>
-                <button
-                  type="button"
-                  // Fills the composer only; sending stays a deliberate action.
-                  onClick={() => {
-                    setIdea(item.text);
-                    field.current?.focus();
-                  }}
-                  className="flex min-h-[var(--control-touch-lg,2.75rem)] w-full flex-col items-start gap-1 rounded-[var(--x-unitale-radius-card)] border bg-card px-4 py-3 text-start transition-colors hover:bg-accent focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-ring"
-                >
-                  <span className="text-sm font-medium">{item.title}</span>
-                  <span className="text-xs text-muted-foreground">{item.hint}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <InspirationList
+          headingId="book-inspiration-title"
+          heading={t("m288f7ad20405")}
+          items={inspirations}
+          onPick={(index) => {
+            // Fills the composer only; sending stays a deliberate action.
+            setIdea(inspirations[index].text);
+            field.current?.focus();
+          }}
+        />
       )}
 
       {!signedIn && idea.trim() && (
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-supporting text-muted-foreground">
           {t("mcd5053d9a549")}
         </p>
       )}

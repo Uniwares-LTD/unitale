@@ -82,8 +82,9 @@ and the adapter; the table does not require unrelated suites for every task.
   `src/app/admin/booklets`, `src/app/api/admin/booklets` and `src/lib/server/booklets/admin.ts`.
   The conversation turn/reply contract is `src/project/booklets/turn-contract.ts`
   (tested by `tests/booklet-turns.test.ts`); `repository-v2.ts` `requestHuman` binds it.
-  The conversation pages are `src/app/books/new` and `src/app/books/[id]`, with client
-  components in `src/project/booklets/conversation/`. The facade's `entry`,
+  The conversation pages are `src/app/books/new` and `src/app/books/[id]`, with booklet
+  client components in `src/project/booklets/conversation/` composed from the reusable
+  Unitale conversation components in `src/project/components/conversation/`. The facade's `entry`,
   `startIdea`, `conversation` and `reply` serve them, and
   `tests/integration/booklet-chat-manager.ts` is the local preview Manager.
   The project Run start (`src/project/run-start.tsx`, `booklets/booklet-start.tsx`) and

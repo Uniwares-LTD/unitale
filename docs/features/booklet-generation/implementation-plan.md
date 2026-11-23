@@ -1374,6 +1374,9 @@ The facade, commerce, media, history and recovery services from checkpoint 10 ar
 | Package | One admin-selected **default booklet package** is used by conversations; other packages and pickers are deferred. |
 | MVP scope | Text and generative-UI interactions only. **Deferred and documented:** voice input, photo/reference attachments, the 3D mascot (a static mascot face may identify the agent), PDF download and sharing, Library, Explore samples, the pricing page and checkout, and browse-menu items for deferred pages. |
 | Manager | The Dify Manager workflow is extended to emit conversational turns and approval requests; the workflow package is re-validated and its hashes refreshed. |
+| Page frame (2026-11-23) | The conversation pages use a **focused full-screen frame** like the prototype: no app sidebar or browsing header, only a compact chat header (back and theme). This needs a small reusable Unibase change that lets a page opt out of the shell frame. It follows the usual path: a Unibase branch and PR, adoption into Unitale `main`, then a merge into this branch. Publishing that change needs its own authorization. |
+| Audience marker (2026-11-23) | Kept: an idea-only start records the fixed brief audience `audienceNotStated` ("Not stated yet; ask the owner."), and the Manager asks. `briefSchema` is unchanged. |
+| Start consent (2026-11-23) | Kept as an **inline consent card** with an explicit "Start my book" action that states the pages, price and balance. This is an accepted exception to the Unibase convention that paid actions confirm in an `AlertDialog`; it applies only to this card. |
 
 #### Conversation model
 
@@ -1426,14 +1429,17 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 | 10C.1 Contracts | Implemented locally | Versioned turn and reply contract (`src/project/booklets/turn-contract.ts`); `request_human` accepts an optional `turn`, binds shown revisions to targets and images to their retained assets, derives generic fallback cards and carries the turn in a fenced `booklet-turn` block bound by the exact form match. **Card-registry decision:** the shared Run registry is unchanged; booklet parts stay project-owned, so no Unibase change. The start-consent card reuses the existing quote DTO. Evidence: `tests/booklet-turns.test.ts` and the MCP turn subtest. |
 | 10C.2 Default package and conversational start | In progress (review slice) | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
 | 10C.3 Manager workflow | Pending | Dify Manager emits conversational turns and approvals; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
-| 10C.4 Conversation UI | In progress (review slice) | `/books/new` and `/books/[id]` with every pattern above; home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
+| 10C.4 Conversation UI | In progress (UI approved; conformance reviewed) | `/books/new` and `/books/[id]` with every pattern above, in the focused frame through the Unibase shell opt-out (branch, PR and merge need authorization); home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
 | 10C.5 Verification and handoff | Pending | Affected suites, build, browser journeys including sign-in return, consent and start, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
 
-#### Review slice (2026-11-23, awaiting user approval)
+#### Review slice (2026-11-23, UI approved by the user)
 
-The user asked to stop once the first conversational flow can be viewed. The slice
-uses the real data path. 10C.3 (Dify Manager) and the remaining 10C.2/10C.4 items
-wait for that approval.
+The user asked to stop once the first conversational flow could be viewed. The slice
+uses the real data path. The user reviewed and **approved the conversation UI** on
+2026-11-23. Before 10C.3 the user asked for a design-system conformance review, so
+that the pages use Unibase and Unitale guidelines, accepted classes, tokens and
+existing components, and new components are reusable. See
+[conformance review](#conversation-ui-conformance-review-2026-11-23).
 
 - **Entry** `/books/new`: hero, idea composer, three inspiration cards that fill the
   composer, and a consent card with the default package's pages, price and the
@@ -1461,9 +1467,59 @@ wait for that approval.
 - **Not in the slice**: the admin default-package editor; retiring the checkpoint
   10 form and Run panel; Run-page links; the image viewer; gradual prose reveal
   beyond a fade; a reader; side-by-side parity captures; and the full browser matrix.
-  The chat renders inside the shared app shell (sidebar and header). A focused
-  full-screen layout like the prototype's needs a shell opt-out in Unibase; this is
-  an open question for the user.
+  The slice renders inside the shared app shell. The accepted focused frame (see the
+  decisions above) is 10C.4 work behind the Unibase shell opt-out.
+
+#### Conversation UI conformance review (2026-11-23)
+
+The review checked the approved UI against [Unibase's design system](../../design-system.md),
+the [derived-project guide](../../design-system-extension.md) and the pinned Unitale
+package guides. Those guides were the README rules and product copy; Entry, Composer,
+Choice, Waiting, Review, Header, Button, Icon button, Text area and Mascot.
+
+| Finding | Resolution |
+| --- | --- |
+| Ad-hoc text sizes and a `clamp()` hero | Only the shared type roles: `text-display`, `text-reading`, `text-body`, `text-supporting`, `text-label`, `text-caption`, `text-card-title`, `text-section-title`, with `font-heading` for Fraunces titles. |
+| Raw `textarea` and `button` elements | `Textarea` (`size="lg"`) and `Button` everywhere, through the components below. |
+| Hand-styled card `div`s | `Card`, `CardHeader`, `CardTitle` and `CardContent`; the project theme already rounds `[data-slot="card"]`. |
+| Scattered `--x-unitale-*` arbitrary values and an ad-hoc focus ring | Project tokens are consumed only inside the reusable components. Focus uses `--x-unitale-focus-width` and `--x-unitale-focus-offset`, and reveal uses `--x-unitale-duration-reveal`. |
+| Literal sizes `size-11`/`min-h-11` | `--control-touch-sm` (the product's 2.75rem minimum). The dock uses Unitale's dock layer, 20. |
+| Start pending changed its label | `SubmitButton`: the label stays and the button is busy and disabled. Send shows progress, and sent text is held read-only until acknowledged. |
+| Typing blocked while the agent worked | Typing stays available. Only Send waits, and the draft survives across turns until it is sent (Composer guide). |
+| Unsent copy differed from the package | "Your message wasn’t sent. Your text is kept." plus Try again (Unitale product copy). |
+| Hand-joined reply labels | `useFormatter().list` (locale list formatting). |
+| Inline `style` for the wait animation | Utility delay classes; no inline style attributes. |
+| Uppercase milestone eyebrow | `text-label` without uppercase (Unitale typography). |
+| Raw `<a>` for Get credits | `next/link` `Link`. |
+| Manager text in Arabic pages | `dir="auto"` on Manager content and FSI/PDI isolation for Manager subjects inside translated sentences. |
+| Chat parts buried in booklet files | Reusable, booklet-agnostic components (below), composed by the booklet pages. |
+| Last message hidden by the dock | Scroll to the page end; the sticky dock stays in flow. |
+
+**Reusable components** in `src/project/components/conversation/`:
+- `Composer` (entry and dock sizes; Enter, Shift+Enter and IME rules; Send pending);
+- `ConversationDock` (the question dock surface);
+- `ChoiceGroup` (single choice commits on tap, multiple choice is a pressed-state
+  draft; the odd last option spans; optional artwork for style choices);
+- `AgentMessage`, `UserMessage`, `WaitRow`, `NewResponseButton` and
+  `MilestoneDivider`;
+- `InspirationList`.
+
+They take text and callbacks only. Data, copy and policy stay with the consuming
+feature.
+
+**Accepted exception:** the inline consent card instead of an `AlertDialog` (see
+the decisions above). **Not yet conformant, tracked in 10C.4:**
+- the focused frame with a compact back and theme header (needs the Unibase shell
+  opt-out);
+- word-group prose reveal;
+- a wait line backed by workflow state instead of the generic working copy;
+- the enlarged image viewer.
+
+**Evidence** (served production build):
+- no horizontal overflow and no page or console errors in eight combinations: entry
+  and conversation × en/ar × light/dark × 393/1440 px;
+- reduced motion on, and a measured 3px focus outline on the dock composer;
+- the full conversation walk passes.
 
 #### Accepted gaps (user, 2026-11-23)
 

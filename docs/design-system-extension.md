@@ -148,6 +148,16 @@ for behavior, ownership and acceptance criteria.
 | Locale, focus and reduced motion (10.7) | Typed en/ar catalogs, logical RTL styles, Radix focus behavior | Specimen keyboard/motion guidance | Verify actual compositions, 390px/desktop, zoom and CSP |
 | Voice, mascot, timed reveals, reader/PDF/sharing | Not required by checkpoint 10 | Optional media/delivery/journey concepts | Remain outside 10; no new component or controller now |
 
+**Conversation components (checkpoint 10-chat-version).** The Unitale Entry, Composer,
+Choice and Waiting patterns are implemented as project-owned, reusable React components in
+`src/project/components/conversation/`: `Composer`, `ConversationDock`, `ChoiceGroup`,
+`AgentMessage`, `UserMessage`, `WaitRow`, `NewResponseButton`, `MilestoneDivider` and
+`InspirationList`. They compose the shared `Button`, `Textarea` and Next `Image`. They use
+only type roles, semantic colours, `--control-touch-*` and the `--x-unitale-*` tokens,
+and they hold no feature data or copy. Reuse them for any Unitale conversational
+surface; the review record is in the
+[booklet plan](features/booklet-generation/implementation-plan.md#conversation-ui-conformance-review-2026-11-23).
+
 Do not copy the specimen localStorage controllers, add a parallel component library,
 or build general-purpose composition machinery. No missing shared primitive has
 been demonstrated by this inventory. Checkpoint 10 still starts at **10.1 Private
