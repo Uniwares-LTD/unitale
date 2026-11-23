@@ -16,7 +16,7 @@ export default async function Page() {
     <div className="page-stack">
       <PageHeader
         title="Booklets"
-        description="Action retry defaults for new booklet productions. Existing productions keep the defaults they started with."
+        description="Choose the package for new conversations and manage retry defaults for new productions."
       />
       <AdminBooklets initial={initial} />
     </div>

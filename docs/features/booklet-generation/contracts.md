@@ -70,6 +70,12 @@ production command `reply {key, requestId, reply}` submits a reply to a turn.
 credits. `GET /api/booklets/{id}?section=conversation` returns the turns, their
 statuses and their authentic replies.
 
+`/admin/booklets` reads the current selection and its version. The administrator
+saves a replacement through `PUT /api/admin/booklets` with
+`{catalogId, expectedVersion}`. The replacement must be published and usable
+under the current workflow policy. A stale selection or quote requires fresh
+consent for a new conversation. A saved order resumes with its accepted terms.
+
 ## Versioning
 
 Persist `schemaVersion: 1`; catalog/profile/policy revisions identify immutable

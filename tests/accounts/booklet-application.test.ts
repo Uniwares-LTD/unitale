@@ -30,6 +30,7 @@ import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { enqueueBookletRun } from "../../src/lib/server/booklets/runs";
 import {
   bookletAdminView,
+  updateBookletDefaultPackage,
   updateBookletRetryDefaults,
 } from "../../src/lib/server/booklets/admin";
 import { bookletsServerExtension } from "../../src/project/booklets/server";
@@ -830,6 +831,113 @@ test("booklet application facade", async (t) => {
         assert.deepEqual(
           versions.items.map((item) => (item as { current: boolean }).current),
           [true],
+        );
+      },
+    );
+
+    await t.test(
+      "administrators can set an eligible default package and stale edits conflict",
+      async () => {
+        const { db, catalog, app } = await fixture();
+        const initial = (await bookletAdminView(db, admin)).defaultPackage;
+        assert.equal(initial.catalogId, null);
+        const command = {
+          catalogId: catalog.id,
+          expectedVersion: initial.version,
+        };
+        await assert.rejects(
+          updateBookletDefaultPackage(
+            db,
+            { uid: owner.uid, auth_time: 1 },
+            command,
+          ),
+          /Administrator access is required/,
+        );
+        const other = await saveCatalogDraft(
+          db,
+          admin,
+          {
+            ...terms(1, 20),
+            terms: {
+              ...terms(1, 20).terms,
+              identity: { id: "booklet-draft", revision: 1, schemaVersion: 1 },
+            },
+          },
+          0,
+          types,
+        );
+        await assert.rejects(
+          updateBookletDefaultPackage(db, admin, {
+            ...command,
+            catalogId: other.id,
+          }),
+          /Choose a published booklet package/,
+        );
+        const preview = await previewCatalog(db, admin, other.id, types);
+        await publishCatalog(db, admin, other.id, 1, preview.hash, types);
+        await assert.rejects(
+          app.startIdea({
+            action: "start-idea",
+            key: randomUUID(),
+            catalogId: catalog.id,
+            revision: catalog.revision,
+            quoteHash: catalog.hash,
+            acceptedCredits: 20,
+            idea: "A lantern who is afraid of the dark",
+            language: "en",
+          }),
+          /default package changed/,
+        );
+        await db
+          .collection("bookletWorkflowPolicies")
+          .updateOne({}, { $unset: { retryDefaults: "" } });
+        await assert.rejects(
+          updateBookletDefaultPackage(db, admin, command),
+          /matching, usable workflow policy/,
+        );
+        await db
+          .collection("bookletWorkflowPolicies")
+          .updateOne({}, { $set: { retryDefaults } });
+        const saved = await updateBookletDefaultPackage(db, admin, command);
+        assert.deepEqual((await bookletAdminView(db, admin)).defaultPackage, {
+          ...saved,
+          available: true,
+        });
+        assert.equal((await app.entry()).package?.catalogId, catalog.id);
+        const idea = {
+          action: "start-idea",
+          key: randomUUID(),
+          catalogId: catalog.id,
+          revision: catalog.revision,
+          quoteHash: catalog.hash,
+          acceptedCredits: 20,
+          idea: "A lantern who is afraid of the dark",
+          language: "en",
+        };
+        const started = await app.startIdea(idea);
+        await assert.rejects(
+          updateBookletDefaultPackage(db, admin, {
+            ...command,
+            catalogId: other.id,
+          }),
+          /changed after you opened/,
+        );
+        await updateBookletDefaultPackage(db, admin, {
+          catalogId: other.id,
+          expectedVersion: saved.version,
+        });
+        assert.equal((await app.entry()).package?.catalogId, other.id);
+        await assert.rejects(
+          app.startIdea({ ...idea, key: randomUUID() }),
+          /default package changed/,
+        );
+        assert.deepEqual(await app.startIdea(idea), started);
+        assert.equal(await charges(db), 1);
+        assert.equal(
+          await db.collection("auditEvents").countDocuments({
+            event: "booklet-default-package-updated",
+          }),
+          2,
         );
       },
     );

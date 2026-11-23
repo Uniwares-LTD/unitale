@@ -5,7 +5,12 @@ import { fingerprint } from "../foundation/canonical";
 import { AppError } from "../../auth-policy";
 import { accessTransaction } from "../store/access";
 import { requireModule } from "../modules";
-import { bookletPolicyDefaultsSchema } from "./application";
+import {
+  bookletPackageSummary,
+  bookletPolicyDefaultsSchema,
+} from "./application";
+import { id } from "./documents";
+import { bookletSettings, defaultBookletPackageId } from "./settings";
 
 type Actor = { uid: string; auth_time: number };
 const retryDefaults = bookletPolicyDefaultsSchema.shape.retryDefaults;
@@ -14,8 +19,7 @@ function invalid() {
   return new AppError("INVALID_INPUT", "Check the submitted values.", 400);
 }
 
-/** Read-only binding identity, capacity summary and editable action-retry
- * defaults. Provider/suite/reviewer publication details are not returned. */
+/** Booklet settings, binding summaries and retry evidence. */
 export async function bookletAdminView(db: Db, actor: Actor) {
   requireModule("booklets");
   return accessTransaction(
@@ -42,7 +46,19 @@ export async function bookletAdminView(db: Db, actor: Actor) {
           { session, sort: { timestamp: -1 }, limit: 20 },
         )
         .toArray();
+      const setting = await bookletSettings(db).findOne(
+        { _id: defaultBookletPackageId },
+        { session },
+      );
+      const pack = setting
+        ? await bookletPackageSummary(db, setting.catalogId, session)
+        : null;
       return {
+        defaultPackage: {
+          catalogId: setting?.catalogId ?? null,
+          version: defaultPackageVersion(setting),
+          available: pack?.available ?? false,
+        },
         policies: rows.map((row) => {
           const capacity = bookletPolicyDefaultsSchema.shape.capacity.safeParse(
             row.capacity,
@@ -92,6 +108,69 @@ export async function bookletAdminView(db: Db, actor: Actor) {
           retryOrdinal: Number(event.retryOrdinal ?? 0),
         })),
       };
+    },
+    actor.auth_time,
+  );
+}
+
+export const bookletDefaultPackageUpdateSchema = z.strictObject({
+  catalogId: id,
+  expectedVersion: z.string().regex(/^[a-f0-9]{64}$/),
+});
+
+function defaultPackageVersion(
+  row: { catalogId: string; updatedAt?: Date } | null,
+) {
+  return fingerprint(
+    row ? [row.catalogId, row.updatedAt?.toISOString() ?? null] : null,
+  );
+}
+
+export async function updateBookletDefaultPackage(
+  db: Db,
+  actor: Actor,
+  raw: unknown,
+) {
+  requireModule("booklets");
+  const parsed = bookletDefaultPackageUpdateSchema.safeParse(raw);
+  if (!parsed.success) throw invalid();
+  const { catalogId, expectedVersion } = parsed.data;
+  return accessTransaction(
+    db,
+    actor.uid,
+    async (session) => {
+      const settings = bookletSettings(db);
+      const key = { _id: defaultBookletPackageId };
+      const previous = await settings.findOne(key, { session });
+      const version = defaultPackageVersion(previous);
+      if (version !== expectedVersion)
+        throw new AppError(
+          "CONFLICT",
+          "The default package changed after you opened this page. Reload and try again.",
+          409,
+        );
+      const pack = await bookletPackageSummary(db, catalogId, session);
+      if (!pack?.available)
+        throw new AppError(
+          "BOOKLET_UNAVAILABLE",
+          "Choose a published booklet package with a matching, usable workflow policy.",
+          409,
+        );
+      if (previous?.catalogId === catalogId) return { catalogId, version };
+      const next = { catalogId, updatedAt: new Date() };
+      await settings.updateOne(key, { $set: next }, { session, upsert: true });
+      await db.collection("auditEvents").insertOne(
+        {
+          event: "booklet-default-package-updated",
+          actorUid: actor.uid,
+          target: defaultBookletPackageId,
+          previous: previous?.catalogId ?? null,
+          next: catalogId,
+          timestamp: next.updatedAt,
+        },
+        { session },
+      );
+      return { catalogId, version: defaultPackageVersion(next) };
     },
     actor.auth_time,
   );

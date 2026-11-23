@@ -3,7 +3,9 @@ import { database } from "@/lib/server/mongo";
 import { requireModule } from "@/lib/server/modules";
 import {
   bookletAdminView,
+  bookletDefaultPackageUpdateSchema,
   bookletRetryDefaultsUpdateSchema,
+  updateBookletDefaultPackage,
   updateBookletRetryDefaults,
 } from "@/lib/server/booklets/admin";
 
@@ -25,6 +27,19 @@ export async function POST(request: Request) {
         database(),
         actor,
         await readJson(request, bookletRetryDefaultsUpdateSchema, 4000),
+      ),
+    );
+  });
+}
+
+export async function PUT(request: Request) {
+  return endpoint(request, async (actor) => {
+    requireModule("booklets");
+    return json(
+      await updateBookletDefaultPackage(
+        database(),
+        actor,
+        await readJson(request, bookletDefaultPackageUpdateSchema, 4000),
       ),
     );
   });

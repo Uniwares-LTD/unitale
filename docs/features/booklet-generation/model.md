@@ -596,12 +596,15 @@ also shows these internal collections:
 - `bookletMcpTransferBudgets`: one deterministic owner/production row with cumulative
   reserved `bytes`. Concurrent reservations serialize on this row and cannot
   exceed the frozen execution-derived budget.
-- `bookletSettings` (checkpoint 10-chat-version): application settings read only by
-  the private booklet facade. One row, `{_id: "default-package", catalogId,
-  updatedAt}`, names the published consumption catalog that conversations quote and
-  start; an absent or unavailable package shows "not available" and nothing is
-  inferred. It holds no creative, order or billing state and is not part of the core
-  or complete diagrams. The admin editor is pending (10C.2); fixtures seed the row.
+- `bookletSettings` (checkpoint 10-chat-version): one row,
+  `{_id: "default-package", catalogId, updatedAt}`, names the published consumption
+  catalog that conversations quote and start. The `/admin/booklets` editor checks
+  the publication, current workflow policy and package capacity before saving.
+  It rejects stale edits and records changes as `booklet-default-package-updated`
+  audit events. An absent or unavailable package leaves the entry unavailable.
+  Orders already saved keep their accepted terms. The row has no creative, order or
+  billing state. Its shape is unchanged, and it remains outside both Mermaid
+  diagrams and the booklet document example.
 - `bookletWorkflowPolicies`: a unique execution profile/revision and orchestrator/
   configuration-revision binding to `reviewer {id, revision, publicationId}`.
   Trusted T19/T20 integration owns publication verification and immutable provisioning;

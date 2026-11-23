@@ -142,10 +142,9 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
       if (code === "BOOKLET_START_PENDING") setProblem("pending");
       else if (code === "INSUFFICIENT_CREDITS") setProblem("credits");
       else if (code === "BOOKLET_CONFLICT") {
-        // The quote changed: show the current price before a new consent.
+        // Refresh the quote before asking the customer to consent again.
         setProblem("price");
         setEntry(null);
-        loadEntry();
       } else if (code === "BOOKLET_UNAVAILABLE") setProblem("unavailable");
       else setProblem("failed");
       // Refusals before any charge allow a fresh request; anything else keeps
@@ -254,7 +253,7 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
                       problem === "pending"
                         ? t("me079e4adcff9")
                         : problem === "price"
-                          ? t("m319be527cbf8")
+                          ? t("m589bd2ada19a")
                           : problem === "credits"
                             ? t("m06db853045c4", { missing: Math.max(1, missing) })
                             : problem === "unavailable"

@@ -5,6 +5,8 @@ import { useState } from "react";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client/api";
 import type { bookletAdminView } from "@/lib/server/booklets/admin";
+import type { SaveResult } from "@/lib/design-helpers";
+import { useLeaveGuard } from "@/components/leave-guard";
 import { Notice, SubmitButton, EmptyState } from "@/components/page-patterns";
 import { StatusBadge } from "@/components/status-badge";
 import { toast } from "@/components/toast";
@@ -15,8 +17,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { bookletIdSchema } from "./contracts";
 import {
   Table,
   TableBody,
@@ -55,6 +63,143 @@ const saved = z.object({
   }),
   retryDefaultsVersion: z.string(),
 });
+
+const savedDefault = z.object({ catalogId: z.string(), version: z.string() });
+
+function DefaultPackageCard({ initial }: { initial: View["defaultPackage"] }) {
+  const [current, setCurrent] = useState(initial);
+  const [catalogId, setCatalogId] = useState(initial.catalogId ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const dirty = catalogId.trim() !== (current.catalogId ?? "");
+  const fieldId = "default-booklet-catalog";
+
+  async function save(): Promise<SaveResult> {
+    if (pending) return "unknown";
+    const selected = bookletIdSchema.safeParse(catalogId.trim());
+    if (!selected.success) {
+      setError("Enter a published booklet catalog ID.");
+      document.getElementById(fieldId)?.focus();
+      return "failed";
+    }
+    setPending(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await api("/api/admin/booklets", savedDefault, {
+        method: "PUT",
+        body: { catalogId: selected.data, expectedVersion: current.version },
+      });
+      setCurrent({ ...result, available: true });
+      setCatalogId(result.catalogId);
+      toast.confirm("Default booklet package saved.");
+      return "saved";
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.code === "BOOKLET_UNAVAILABLE") {
+        setError(
+          "Choose a published booklet package with a matching, usable workflow policy.",
+        );
+        return "failed";
+      }
+      if (cause instanceof ApiError && cause.code === "CONFLICT") {
+        setNotice(
+          "The default package changed. Reload this page before saving again.",
+        );
+        return "failed";
+      }
+      if (
+        cause instanceof ApiError &&
+        [
+          "FORBIDDEN",
+          "UNAUTHENTICATED",
+          "ACCOUNT_CHANGED",
+          "INVALID_INPUT",
+        ].includes(cause.code)
+      ) {
+        setNotice(
+          "The package couldn’t be saved. Check your session and the catalog ID.",
+        );
+        return "failed";
+      }
+      setNotice(
+        "The save couldn’t be confirmed. Reload this page to check the current package.",
+      );
+      return "unknown";
+    } finally {
+      setPending(false);
+    }
+  }
+
+  useLeaveGuard({ dirty, save });
+
+  return (
+    <Card className="shadow-none">
+      <CardHeader>
+        <CardTitle role="heading" aria-level={2}>
+          Default booklet package
+        </CardTitle>
+        <CardDescription>
+          New conversations quote this package before the customer starts.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {(!current.catalogId || !current.available) && (
+          <Notice
+            tone="warning"
+            title={
+              current.catalogId
+                ? "Current package unavailable"
+                : "No default package"
+            }
+          >
+            Select a published booklet package with a usable workflow policy to
+            enable new conversations.
+          </Notice>
+        )}
+        {notice && <Notice tone="error" title={notice} />}
+        <form
+          noValidate
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (dirty)
+              void save().then((outcome) => {
+                if (outcome === "failed")
+                  document.getElementById(fieldId)?.focus();
+              });
+          }}
+        >
+          <Field data-invalid={Boolean(error)}>
+            <FieldLabel htmlFor={fieldId}>Published catalog ID</FieldLabel>
+            <Input
+              id={fieldId}
+              dir="ltr"
+              value={catalogId}
+              readOnly={pending}
+              maxLength={128}
+              aria-invalid={Boolean(error)}
+              aria-describedby={
+                fieldId + "-help" + (error ? " " + fieldId + "-error" : "")
+              }
+              onChange={(event) => {
+                setCatalogId(event.target.value);
+                setError(null);
+              }}
+            />
+            <FieldDescription id={fieldId + "-help"}>
+              Enter the full consumption catalog ID listed in Commerce.
+            </FieldDescription>
+            <FieldError id={fieldId + "-error"}>{error}</FieldError>
+          </Field>
+          <SubmitButton pending={pending} disabled={!dirty}>
+            Save default package
+          </SubmitButton>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
 function PolicyCard({ policy }: { policy: Policy }) {
   const [expected, setExpected] = useState(policy.retryDefaults);
@@ -205,6 +350,7 @@ function PolicyCard({ policy }: { policy: Policy }) {
 export function AdminBooklets({ initial }: { initial: View }) {
   return (
     <div className="page-stack">
+      <DefaultPackageCard initial={initial.defaultPackage} />
       {initial.policies.length === 0 ? (
         <EmptyState
           title="No booklet bindings"

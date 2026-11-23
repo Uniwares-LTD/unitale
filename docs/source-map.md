@@ -80,6 +80,7 @@ and the adapter; the table does not require unrelated suites for every task.
   `src/project/run-detail.tsx` with `booklets/booklet-run-panel.tsx` (actions and history in
   `booklet-actions.tsx`/`booklet-history.tsx`). Booklet administration is
   `src/app/admin/booklets`, `src/app/api/admin/booklets` and `src/lib/server/booklets/admin.ts`.
+  The default conversation package setting is in `src/lib/server/booklets/settings.ts`.
   The conversation turn/reply contract is `src/project/booklets/turn-contract.ts`
   (tested by `tests/booklet-turns.test.ts`); `repository-v2.ts` `requestHuman` binds it.
   The conversation pages are `src/app/books/new` and `src/app/books/[id]`, with booklet

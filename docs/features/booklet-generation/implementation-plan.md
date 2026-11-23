@@ -1427,10 +1427,23 @@ and checkpoint progress, and revises the next sub-checkpoint's plan.
 | Task | State | Goal and exit evidence |
 | --- | --- | --- |
 | 10C.1 Contracts | Implemented locally | Versioned turn and reply contract (`src/project/booklets/turn-contract.ts`); `request_human` accepts an optional `turn`, binds shown revisions to targets and images to their retained assets, derives generic fallback cards and carries the turn in a fenced `booklet-turn` block bound by the exact form match. **Card-registry decision:** the shared Run registry is unchanged; booklet parts stay project-owned, so no Unibase change. The start-consent card reuses the existing quote DTO. Evidence: `tests/booklet-turns.test.ts` and the MCP turn subtest. |
-| 10C.2 Default package and conversational start | In progress: entry, idea start and tests done; admin editor pending | Admin default-package setting (validated against published packages and the policy row); a facade read that quotes the default package for the entry; signed-in start from the idea text through the existing quote/consent/start contract; signed-out sign-in return to `/books/new` keeping the idea. Default-package, stale-quote, insufficient-balance and return-path tests. |
-| 10C.3 Manager workflow | Pending | Dify Manager emits conversational turns and approvals; offline compatibility tests and refreshed hashes; specialists unchanged unless required. |
+| 10C.2 Default package and conversational start | Verified locally (2026-11-23) | Versioned admin editor checks the current publication and policy and records changes. The focused entry restores the idea after sign-in and asks for explicit consent. |
+| 10C.3 Manager workflow | Next | Native Manager Human Input requests carry typed questions and revision-bound approvals in `request_human.turn`. Check the real YAML and typed reply branches offline, preserve the legacy response path, and refresh the package hashes. |
 | 10C.4 Conversation UI | In progress (UI approved; conformance reviewed) | `/books/new` and `/books/[id]` with every pattern above, in the focused frame through the Unibase shell opt-out (branch, PR and merge need authorization); home and Run links; the checkpoint 10 form and Run panel retired for booklets. en/ar, light/dark, 393/1440, keyboard, reduced motion, CSP and prototype-parity captures reviewed side by side. |
 | 10C.5 Verification and handoff | Pending | Affected suites, build, browser journeys including sign-in return, consent and start, approval, change request, production and reader; two consecutive clean whole-checkpoint reviews; docs and issue evidence. |
+
+#### 10C.2 local verification (2026-11-23)
+
+- The production browser fixture returned a signed-out visitor to the focused
+  `/books/new` with the original idea and a consent card. Signing in issued no start
+  request. In the admin editor, a published package with an unusable policy was
+  refused, an eligible replacement persisted after reload, and the Arabic public
+  preference was restored when leaving English/LTR administration.
+- The application suite passed 15 tests and the module-disabled suite passed.
+  The tests cover unauthorized edits, publication and policy checks, concurrent edit
+  detection, stale quotes, insufficient balance and a saved start after a package
+  replacement. The production build, typecheck, lint and documentation checks passed.
+  The final quote-recovery copy and catalog passed the scoped lint and i18n checks.
 
 #### Review slice (2026-11-23, UI approved by the user)
 
@@ -1458,7 +1471,8 @@ existing components, and new components are reusable. See
   Approve, or a change request typed in the composer and labelled with its target.
   The page has a wait row, a New response control and an offline notice.
 - **Default package**: the `bookletSettings` row (see the model guide), read with the
-  balance through `GET /api/booklets?section=default`. The admin editor is pending.
+  balance through `GET /api/booklets?section=default`. This preview predates the
+  10C.2 editor.
 - **Local preview Manager**: `tests/integration/booklet-chat-manager.ts` stands in for
   the Dify Manager in the browser fixture. Its turns pass the real `requestHuman`.
   Because a running book accepts revisions only from recorded paid specialist work,
@@ -1705,11 +1719,7 @@ then 11.
 
 State of the active checkpoint:
 - **10C.1:** done.
-- **10C.2:** the entry, `entry`/`startIdea` facade and their tests are done
-  (`test:booklet-application`). Pending:
-  - the admin default-package editor on `/admin/booklets`, validated against
-    published packages and the policy row (fixtures seed `bookletSettings` directly);
-  - a browser check of the signed-out return to `/books/new`.
+- **10C.2:** verified locally. See [the browser and suite results](#10c2-local-verification-2026-11-23).
 - **10C.3 (Dify Manager):** not started. The Manager YAML must emit `request_human`
   with a `turn`. It needs offline compatibility tests and refreshed hashes. Until then
   `tests/integration/booklet-chat-manager.ts` is the scripted local stand-in.
@@ -1737,8 +1747,7 @@ Unit tests pass 142/142 with none failing. Typecheck, lint (0 errors), docs, i18
 and the production build pass. The served build's conversation walk and the en/ar ×
 light/dark × 393/1440 matrix have no errors or overflow.
 
-Open question for the user: `/books/new` uses the focused frame per the decision,
-but the prototype's entry screen uses the browsing header.
+The user confirmed that `/books/new` keeps the focused frame.
 
 **Local preview recipe:**
 1. `npm run build`.
@@ -1770,14 +1779,11 @@ Notes:
 > authorized. Unibase changes, PRs or merges into either `main`, deployments and
 > paid or live provider calls each need fresh authorization.
 >
-> First, ask whether `/books/new` keeps the focused frame or uses the browsing
-> header as in the prototype entry.
+> The user confirmed that `/books/new` keeps the focused frame.
 >
 > Then work one sub-checkpoint at a time. For each: close its details, show its goal
 > and deliveries, implement, review read-only until clean, report what was delivered
 > and the checkpoint progress, and revise the next plan.
-> - **10C.2:** the admin default-package editor, plus a browser check of the
->   signed-out return to `/books/new`.
 > - **10C.3:** the Dify Manager emits `request_human` with a typed `turn`, with
 >   offline compatibility tests and refreshed package hashes.
 > - **10C.4:** the remaining UI items listed above.

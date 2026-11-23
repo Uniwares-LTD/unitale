@@ -50,6 +50,7 @@ import { readBookletDocumentV2 } from "./read-v2";
 import { readSettings } from "../settings";
 import { accessPermitsSession, accountAccess } from "../store/access";
 import { readWallet } from "../store/credits";
+import { readDefaultBookletPackage } from "./settings";
 
 // Trusted application settings on the existing `bookletWorkflowPolicies` row.
 // Capacity is immutable per execution profile revision; retry defaults affect
@@ -110,6 +111,144 @@ export function bookletPackageFrom(
   });
 }
 
+/** Exactly one enabled, validated booklet v2 orchestrator at its current
+ * revision must carry a policy row for the profile. Never inferred. */
+async function configuration(
+  db: Db,
+  profileId: string,
+  profileRevision: number,
+  session?: ClientSession,
+) {
+  const records = await db
+    .collection<OrchestratorRecord>("orchestrators")
+    .find(
+      {
+        validated: true,
+        lifecycle: { $ne: "unregistered" },
+        "definition.enabled": true,
+        "definition.domainAdapter.id": "booklet",
+        "definition.domainAdapter.version": "2",
+        "definition.responseMode": "raw-v1",
+      },
+      { session, limit: 10 },
+    )
+    .toArray();
+  const matches = [];
+  for (const record of records) {
+    // Mirror Run admission so a paid start never meets a predictable refusal:
+    // booklet Runs carry no browser inputs and no legacy mapping.
+    if (
+      (record.definition.legacyInputs?.length ?? 0) ||
+      record.definition.inputs.some((field) => field.required)
+    )
+      continue;
+    const row = await db.collection("bookletWorkflowPolicies").findOne(
+      {
+        profileId,
+        profileRevision,
+        orchestratorId: record._id,
+        configurationRevision: record.revision,
+      },
+      { session },
+    );
+    if (row) matches.push({ record, row });
+  }
+  if (matches.length !== 1) throw unavailable();
+  const [{ record, row }] = matches;
+  const parsed = bookletPolicyDefaultsSchema.safeParse({
+    capacity: row.capacity,
+    retryDefaults: row.retryDefaults,
+  });
+  if (
+    !parsed.success ||
+    parsed.data.capacity.id !== profileId ||
+    parsed.data.capacity.revision !== profileRevision
+  )
+    throw unavailable();
+  return {
+    orchestratorId: record._id,
+    configurationRevision: record.revision,
+    ...parsed.data,
+  };
+}
+
+function bookletTerms(terms: ConsumptionTerms) {
+  return terms.productType === "booklet" && terms.productSchemaVersion === 1;
+}
+
+export async function bookletPackageSummary(
+  db: Db,
+  catalogId: string,
+  session?: ClientSession,
+): Promise<BookletPackageSummary | null> {
+  // A published version is immutable. Read the live head in the same snapshot
+  // as the policy when validating an administrator's selection.
+  const revision = session
+    ? (
+        await db
+          .collection<{ _id: string; publishedRevision: number | null }>(
+            "commerceCatalogs",
+          )
+          .findOne(
+            { _id: catalogId },
+            { session, projection: { publishedRevision: 1 } },
+          )
+      )?.publishedRevision
+    : undefined;
+  if (session && !revision) return null;
+  const publication = await publishedCatalog(
+    db,
+    catalogId,
+    revision ?? undefined,
+  );
+  if (
+    !publication ||
+    publication.definition.kind !== "consumption" ||
+    !bookletTerms(publication.definition.terms)
+  )
+    return null;
+  const terms = publication.definition.terms;
+  let pack: BookletPackage;
+  try {
+    pack = bookletPackageFrom(publication.definition.fields, terms);
+  } catch {
+    return null;
+  }
+  let available = true;
+  try {
+    const config = await configuration(
+      db,
+      pack.executionProfileId,
+      pack.executionProfileRevision,
+      session,
+    );
+    validatePackageCapacity(pack, config.capacity);
+  } catch {
+    available = false;
+  }
+  return {
+    catalogId,
+    revision: publication.revision,
+    quoteHash: publication.hash,
+    credits: terms.credits,
+    entitlementDays: terms.entitlementDays,
+    storyPages: pack.storyPages,
+    includeCover: pack.includeCover,
+    maxCharacters: pack.maxCharacters,
+    maxLocations: pack.maxLocations,
+    maxPanelsPerPage: pack.maxPanelsPerPage,
+    styleSamples: pack.styleSamples,
+    languages: pack.languages.map((l) => ({ ...l })),
+    allowances: terms.allowances.map((a) => ({
+      category: a.category,
+      unit: a.unit,
+      included: a.included,
+      extraCredits: a.extraCredits,
+    })),
+    available,
+  };
+}
+
 /**
  * Private booklet application facade for routes and Server Components. The actor
  * comes only from a verified session. Each command rechecks module, account and
@@ -125,120 +264,6 @@ export function bookletApplication(
   const repo = bookletRepositoryV2(db, actor);
   const lifecycle = bookletLifecycleV2(db, actor);
   const types = options.types;
-
-  /** Exactly one enabled, validated booklet v2 orchestrator at its current
-   * revision must carry a policy row for the profile. Never inferred. */
-  async function configuration(
-    profileId: string,
-    profileRevision: number,
-    session?: ClientSession,
-  ) {
-    const records = await db
-      .collection<OrchestratorRecord>("orchestrators")
-      .find(
-        {
-          validated: true,
-          lifecycle: { $ne: "unregistered" },
-          "definition.enabled": true,
-          "definition.domainAdapter.id": "booklet",
-          "definition.domainAdapter.version": "2",
-          "definition.responseMode": "raw-v1",
-        },
-        { session, limit: 10 },
-      )
-      .toArray();
-    const matches = [];
-    for (const record of records) {
-      // Mirror Run admission so a paid start never meets a predictable refusal:
-      // booklet Runs carry no browser inputs and no legacy mapping.
-      if (
-        (record.definition.legacyInputs?.length ?? 0) ||
-        record.definition.inputs.some((field) => field.required)
-      )
-        continue;
-      const row = await db.collection("bookletWorkflowPolicies").findOne(
-        {
-          profileId,
-          profileRevision,
-          orchestratorId: record._id,
-          configurationRevision: record.revision,
-        },
-        { session },
-      );
-      if (row) matches.push({ record, row });
-    }
-    if (matches.length !== 1) throw unavailable();
-    const [{ record, row }] = matches;
-    const parsed = bookletPolicyDefaultsSchema.safeParse({
-      capacity: row.capacity,
-      retryDefaults: row.retryDefaults,
-    });
-    if (
-      !parsed.success ||
-      parsed.data.capacity.id !== profileId ||
-      parsed.data.capacity.revision !== profileRevision
-    )
-      throw unavailable();
-    return {
-      orchestratorId: record._id,
-      configurationRevision: record.revision,
-      ...parsed.data,
-    };
-  }
-
-  function bookletTerms(terms: ConsumptionTerms) {
-    return terms.productType === "booklet" && terms.productSchemaVersion === 1;
-  }
-
-  async function summary(
-    catalogId: string,
-  ): Promise<BookletPackageSummary | null> {
-    const publication = await publishedCatalog(db, catalogId);
-    if (
-      !publication ||
-      publication.definition.kind !== "consumption" ||
-      !bookletTerms(publication.definition.terms)
-    )
-      return null;
-    const terms = publication.definition.terms;
-    let pack: BookletPackage;
-    try {
-      pack = bookletPackageFrom(publication.definition.fields, terms);
-    } catch {
-      return null;
-    }
-    let available = true;
-    try {
-      const config = await configuration(
-        pack.executionProfileId,
-        pack.executionProfileRevision,
-      );
-      validatePackageCapacity(pack, config.capacity);
-    } catch {
-      available = false;
-    }
-    return {
-      catalogId,
-      revision: publication.revision,
-      quoteHash: publication.hash,
-      credits: terms.credits,
-      entitlementDays: terms.entitlementDays,
-      storyPages: pack.storyPages,
-      includeCover: pack.includeCover,
-      maxCharacters: pack.maxCharacters,
-      maxLocations: pack.maxLocations,
-      maxPanelsPerPage: pack.maxPanelsPerPage,
-      styleSamples: pack.styleSamples,
-      languages: pack.languages.map((l) => ({ ...l })),
-      allowances: terms.allowances.map((a) => ({
-        category: a.category,
-        unit: a.unit,
-        included: a.included,
-        extraCredits: a.extraCredits,
-      })),
-      available,
-    };
-  }
 
   function validateBrief(
     pack: BookletPackage,
@@ -306,6 +331,7 @@ export function bookletApplication(
     try {
       const p = await repo.getProduction(productionId);
       const config = await configuration(
+        db,
         p.creativeConfigSnapshot.executionProfileId,
         p.creativeConfigSnapshot.executionProfileRevision,
       );
@@ -657,7 +683,7 @@ export function bookletApplication(
       const page = heads.slice(0, pageLimit);
       const rows = [];
       for (const head of page) {
-        const item = await summary(head._id);
+        const item = await bookletPackageSummary(db, head._id);
         if (item) rows.push(item);
       }
       return {
@@ -672,7 +698,7 @@ export function bookletApplication(
     async quote(raw: unknown): Promise<BookletPackageSummary> {
       requireModule("booklets");
       const command = bookletQuoteCommandSchema.parse(raw);
-      const item = await summary(command.catalogId);
+      const item = await bookletPackageSummary(db, command.catalogId);
       if (!item?.available) throw unavailable();
       return item;
     },
@@ -681,10 +707,10 @@ export function bookletApplication(
      * unset or unavailable) and the owner's currently available credits. */
     async entry(): Promise<BookletEntry> {
       requireModule("booklets");
-      const row = await db
-        .collection<{ _id: string; catalogId: string }>("bookletSettings")
-        .findOne({ _id: "default-package" });
-      const item = row ? await summary(row.catalogId) : null;
+      const catalogId = await readDefaultBookletPackage(db);
+      const item = catalogId
+        ? await bookletPackageSummary(db, catalogId)
+        : null;
       return {
         package: item?.available ? item : null,
         availableCredits: (await readWallet(db, actor.uid, { actor }))
@@ -697,11 +723,29 @@ export function bookletApplication(
     async startIdea(raw: unknown): Promise<BookletRunReference> {
       requireModule("booklets");
       const input = bookletIdeaStartCommandSchema.parse(raw);
-      const item = await summary(input.catalogId);
-      if (!item?.available) throw unavailable();
+      const prior = await db.collection<OrderRow>("consumptionOrders").findOne({
+        "value.ownerId": actor.uid,
+        "value.idempotencyKey": input.key,
+      });
+      // A saved order can resume with its frozen package even if the default
+      // or the published version changes after consent.
+      if (!prior && (await readDefaultBookletPackage(db)) !== input.catalogId)
+        throw bookletConflict(
+          "The default package changed. Review the quote again.",
+        );
+      if (prior && !bookletTerms(prior.value.terms))
+        throw bookletConflict("Changed order retry.");
+      const published = prior
+        ? null
+        : await bookletPackageSummary(db, input.catalogId);
+      const languages = prior
+        ? bookletPackageFrom(prior.fields, prior.value.terms).languages
+        : published?.available
+          ? published.languages
+          : null;
+      if (!languages) throw unavailable();
       const language =
-        item.languages.find((l) => l.tag === input.language) ??
-        item.languages[0];
+        languages.find((l) => l.tag === input.language) ?? languages[0];
       const first = input.idea.split(/\r?\n/)[0].trim();
       return this.start({
         action: "start",
@@ -747,7 +791,7 @@ export function bookletApplication(
             { projection: { _id: 1 } },
           ))
       ) {
-        const item = await summary(input.catalogId);
+        const item = await bookletPackageSummary(db, input.catalogId);
         if (!item?.available) throw unavailable();
         if (
           item.revision !== input.revision ||
@@ -816,6 +860,7 @@ export function bookletApplication(
           if (!book) throw bookletMissing();
           const pack = bookletPackageFrom(row.fields, row.value.terms);
           const config = await configuration(
+            db,
             pack.executionProfileId,
             pack.executionProfileRevision,
             session,
@@ -841,6 +886,7 @@ export function bookletApplication(
       if (!existing) {
         const pack = bookletPackageFrom(order.fields, order.value.terms);
         const config = await configuration(
+          db,
           pack.executionProfileId,
           pack.executionProfileRevision,
         );

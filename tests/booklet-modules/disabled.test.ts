@@ -43,7 +43,7 @@ const db = new Proxy(
 test("disabled booklets module refuses every application and admin entry point", async () => {
   const { bookletApplication } =
     await import("../../src/lib/server/booklets/application");
-  const { bookletAdminView, updateBookletRetryDefaults } =
+  const { bookletAdminView, updateBookletDefaultPackage, updateBookletRetryDefaults } =
     await import("../../src/lib/server/booklets/admin");
   const app = bookletApplication(
     db,
@@ -56,12 +56,15 @@ test("disabled booklets module refuses every application and admin entry point",
     ["packages", () => app.packages()],
     ["quote", () => app.quote({ action: "quote", catalogId: "c" })],
     ["start", () => app.start({})],
+    ["entry", () => app.entry()],
+    ["idea start", () => app.startIdea({})],
     ["view", () => app.view("p")],
     ["history", () => app.history("p", { kind: "runs" })],
     ["original", () => app.original("p", "a")],
     ["command", () => app.command("p", { action: "resume" })],
     ["admin view", () => bookletAdminView(db, admin)],
     ["admin update", () => updateBookletRetryDefaults(db, admin, {})],
+    ["admin default package", () => updateBookletDefaultPackage(db, admin, {})],
   ];
   for (const [name, call] of calls)
     await assert.rejects(
