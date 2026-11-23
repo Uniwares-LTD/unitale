@@ -34,6 +34,7 @@ share semantic tokens and the same application behavior.
 | `src/components/leave-guard.tsx`              | Unsaved-changes guard for in-app navigation                                            |
 | `src/components/media-fallback.tsx`           | Fallback for absent or broken images                                                   |
 | `src/lib/design-helpers.ts`                   | Pure, unit-tested logic behind the shared helpers                                      |
+| `src/lib/utils.ts`                            | `cn` class merging with the typography roles registered                                |
 | `src/components/helper-showcase.tsx`          | Synthetic examples of the shared helpers in the showcase                               |
 | `src/components/ui`                           | Installed shadcn primitives; use the shadcn CLI for additional primitives              |
 | `src/components/app-shell.tsx`                | Desktop/mobile navigation, account menu, skip link and the focused frame               |
@@ -62,6 +63,13 @@ title, section title, card title, reading, field, body, supporting, label and
 caption. Apply the approved role as a `text-*` utility. For example,
 `text-card-title` pairs 20px text with a 26px line height at weight 600.
 `font-heading` and `font-sans` use the preset's heading and body font hooks.
+
+`cn` (`src/lib/utils.ts`, the shadcn `utils` alias) registers the 12 roles as font
+sizes. A role passed in a primitive's `className` therefore replaces the primitive's
+own size and line height; for example `<CardTitle className="text-card-title">`.
+Import `cn` from `@/lib/utils`, never from the `cn` package; a unit test enforces
+this. A primitive's own weight class (such as `font-medium`) still applies; add a
+weight utility when the role's weight matters.
 
 ## Switching and persistence
 
