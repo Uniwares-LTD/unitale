@@ -77,6 +77,7 @@ export function Composer({
   placeholder,
   label,
   labelledBy,
+  describedBy,
   sendLabel,
   size = "dock",
   maxLength,
@@ -99,6 +100,7 @@ export function Composer({
   label?: string;
   /** ID of a visible element (question or target) that labels the field. */
   labelledBy?: string;
+  describedBy?: string;
   sendLabel: string;
   /** `entry` is the opening idea composer; `dock` the conversation reply. */
   size?: "entry" | "dock";
@@ -173,6 +175,7 @@ export function Composer({
           readOnly={readOnly || pending}
           disabled={disabled}
           aria-labelledby={labelledBy}
+          aria-describedby={describedBy}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
@@ -181,7 +184,7 @@ export function Composer({
             "resize-none border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 dark:bg-transparent",
             // Override the large field's own spacing; its 1rem text is the field role.
             size === "entry"
-              ? "max-h-56 data-[size=lg]:px-0"
+              ? "max-h-56 ring-0 data-[size=lg]:px-0"
               : "max-h-36 data-[size=lg]:min-h-(--control-touch-sm) data-[size=lg]:px-0 data-[size=lg]:py-2.5",
           )}
         />

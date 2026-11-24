@@ -46,7 +46,9 @@ function readPendingStart(storageKey: string | null) {
   if (!storageKey) return null;
   try {
     const saved = sessionStorage.getItem(storageKey);
-    return saved ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved)) : null;
+    return saved
+      ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved))
+      : null;
   } catch {
     return null;
   }
@@ -209,26 +211,32 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
   const missing = pack ? pack.credits - (entry?.availableCredits ?? 0) : 0;
   const recovering = pendingStart && (!entry || problem !== null);
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 py-6 sm:py-12">
+    <div
+      data-slot="book-entry"
+      className="mx-auto flex w-full max-w-xl flex-col gap-8 py-4 sm:py-8"
+    >
       <header className="text-center">
+        <p className="mb-5 font-heading text-section-title text-muted-foreground">
+          <bdi>Unitale</bdi>
+        </p>
         <h1 className="font-heading text-display">
           <span className="block">{t("m262c2d549b96")}</span>
           <span className="block">{t("me524c3dd7e43")}</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-md text-reading text-muted-foreground">
+        <p className="mx-auto mt-4 max-w-md text-body text-muted-foreground">
           {t("mec401c187075")}
         </p>
       </header>
 
-      <div className="relative">
+      <div className="relative mt-4">
         {/* Static mascot face only (decorative); the 3D mascot is deferred. */}
         <Image
           src="/images/unitale-mascot-face.svg"
           alt=""
           aria-hidden="true"
-          width={64}
-          height={64}
-          className="absolute -top-14 end-8 size-16 sm:end-12"
+          width={48}
+          height={48}
+          className="pointer-events-none absolute -top-10 end-6 size-12 sm:end-8"
         />
         <Composer
           id="book-idea"
@@ -241,6 +249,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
           readOnly={consent}
           maxLength={4000}
           label={t("mb3ba025e2ecd")}
+          describedBy={!consent ? "book-idea-hint" : undefined}
           placeholder={t("m4966873a89fb")}
           sendLabel={t("mf6f4688ff23d")}
           footer={
@@ -248,21 +257,25 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
               <Button variant="ghost" onClick={edit} disabled={starting}>
                 {t("mfd1d3a3672ed")}
               </Button>
-            ) : !consent ? (
-              <p className="text-supporting text-muted-foreground">
-                {t("m79a2b7be2cdc")}
-              </p>
             ) : null
           }
         />
+        {!consent && (
+          <p
+            id="book-idea-hint"
+            className="mt-3 text-center text-supporting text-muted-foreground"
+          >
+            {t("m79a2b7be2cdc")}
+          </p>
+        )}
       </div>
 
       {recovering && (
         <Notice
           tone="warning"
-          title={t(
-            problem === "pending" ? "me079e4adcff9" : "m08d20ade842d",
-          )}
+          title={
+            problem === "pending" ? t("me079e4adcff9") : t("m6b8971f87e59")
+          }
         >
           <SubmitButton
             pending={starting}
@@ -278,7 +291,8 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
         // pages, price and balance instead of an AlertDialog.
         <Card
           aria-labelledby="book-consent-title"
-          className="motion-safe:animate-in motion-safe:fade-in"
+          size="sm"
+          className="gap-2 bg-transparent shadow-none ring-0 motion-safe:animate-in motion-safe:fade-in"
         >
           <CardHeader>
             <CardTitle
@@ -288,7 +302,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
               {t("mee15ab57a7fb")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {!entry && !loadFailed && (
               <div className="space-y-2" aria-label={t("mba3bbbe10d8b")}>
                 <Skeleton className="h-4 w-2/3" />
@@ -309,7 +323,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
             {pack && (
               <>
                 <div>
-                  <p className="text-reading">
+                  <p className="text-body">
                     {pack.includeCover
                       ? t("m2625981f6078", { pages: pack.storyPages })
                       : t("me047ec3372f2", { pages: pack.storyPages })}
