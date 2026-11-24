@@ -150,6 +150,12 @@ html[data-project="unitale"] [data-slot="composer"] textarea:focus-visible {
   outline: none;
   box-shadow: none;
 }
+html[data-project="unitale"]
+  :is([data-unitale-reader], [data-unitale-artwork-viewer])
+  > [data-slot="dialog-close"] {
+  min-width: var(--control-touch-sm);
+  min-height: var(--control-touch-sm);
+}
 html[data-project="unitale"] [data-slot="book-entry"] [data-slot="composer"] {
   border-color: var(--input);
   box-shadow: none;

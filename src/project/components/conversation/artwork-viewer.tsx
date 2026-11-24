@@ -66,20 +66,20 @@ export function ArtworkViewer({
         </Button>
       </DialogTrigger>
       <DialogContent
+        data-unitale-artwork-viewer
         aria-describedby={undefined}
         onCloseAutoFocus={() => {
           requestAnimationFrame(() =>
-            window.scrollTo({ top: position.current }),
+            window.scrollTo({ top: position.current, behavior: "instant" }),
           );
         }}
-        className="max-h-[90svh] min-w-0 gap-3 sm:max-w-3xl motion-reduce:animate-none"
+        className="max-h-[90svh] min-w-0 gap-3 bg-card text-card-foreground shadow-none ring-0 sm:max-w-3xl motion-reduce:animate-none"
       >
-        <DialogTitle
-          dir="auto"
-          className="text-card-title pe-10 [overflow-wrap:anywhere]"
-        >
-          {image.alt}
-        </DialogTitle>
+        <div className="flex min-h-(--control-touch-sm) min-w-0 items-center pe-12">
+          <DialogTitle className="min-w-0 text-card-title [overflow-wrap:anywhere]">
+            <bdi>{image.alt}</bdi>
+          </DialogTitle>
+        </div>
         <div
           className="max-h-[63svh] min-w-0 overflow-auto overscroll-contain rounded-(--x-unitale-radius-media) bg-muted"
           tabIndex={0}
