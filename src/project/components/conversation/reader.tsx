@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,6 +17,7 @@ export function ConversationReader({
   title,
   heading,
   openLabel,
+  downloadLabel,
   previousLabel,
   nextLabel,
   pageLabel,
@@ -26,6 +27,7 @@ export function ConversationReader({
   title: string;
   heading: string;
   openLabel: string;
+  downloadLabel: string;
   previousLabel: string;
   nextLabel: string;
   pageLabel: (index: number) => string;
@@ -85,6 +87,16 @@ export function ConversationReader({
               unoptimized
               className="mx-auto block h-auto max-h-[64svh] w-full rounded-(--x-unitale-radius-media) object-contain"
             />
+            <Button
+              asChild
+              variant="outline"
+              className="min-h-(--control-touch-sm) justify-self-start"
+            >
+              <a href={illustration.src} download={illustration.alt}>
+                <Download aria-hidden="true" />
+                {downloadLabel}
+              </a>
+            </Button>
             {text.length > 0 && (
               <div
                 dir={direction}

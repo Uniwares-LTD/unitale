@@ -94,7 +94,12 @@ async (page) => {
   await page.waitForFunction((top) => Math.abs(window.scrollY - top) <= 2, beforeZoom);
   require(await illustration.evaluate((element) => document.activeElement === element), "Artwork focus did not return");
   require(await reply.inputValue() === "Please keep the stars very bright.", "Opening artwork cleared the draft");
-  await reply.fill("");
+  // Request a second cover. The fixture retains original-a for the first
+  // version and original-b for the revised illustration.
+  await button("Request changes").click();
+  await reply.fill("Brighten the sky in the opening illustration.");
+  await reply.press("Enter");
+  await illustration.nth(1).waitFor();
 
   const conversationApi = `${productionApi}?section=conversation`;
   let browsingEarlier = false;
@@ -122,13 +127,29 @@ async (page) => {
   await button("Read your book").click();
   const reader = page.getByRole("dialog");
   await reader.getByText("Cover", { exact: true }).waitFor();
+  const checkDownload = async (expectedSha256) => {
+    const link = reader.getByRole("link", { name: "Download", exact: true });
+    const [download] = await Promise.all([page.waitForEvent("download"), link.click()]);
+    const stream = await download.createReadStream();
+    const bytes = [];
+    for await (const chunk of stream) bytes.push(...chunk);
+    const digest = await page.evaluate(async (data) => {
+      const hash = await crypto.subtle.digest("SHA-256", new Uint8Array(data));
+      return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }, bytes);
+    require(digest === expectedSha256, "Downloaded bytes differ from the retained fixture original");
+    require(download.url() === new URL(await reader.getByRole("img").getAttribute("src"), origin).href, "Download did not use the displayed manifest page");
+  };
+  await checkDownload("6ba39f5e8928a00b6396ff8a91144123175fd201e1065c996eadf9d4cb363523");
   require(await reader.getByRole("button", { name: "Previous page" }).isDisabled(), "Reader moved before the cover");
   await capture("cover");
   await page.keyboard.press("ArrowRight");
   await reader.getByText("Page 1 of 4", { exact: true }).waitFor();
   await reader.getByText(/The stars lit up the valley/).waitFor();
   await capture("reader");
-  for (let index = 0; index < 3; index += 1) await reader.getByRole("button", { name: "Next page" }).click();
+  await reader.getByRole("button", { name: "Next page" }).click();
+  await checkDownload("85f4e38d333e174ced79217c90a564699fcd589be0d376a91629dc96d48ada49");
+  for (let index = 0; index < 2; index += 1) await reader.getByRole("button", { name: "Next page" }).click();
   require(await reader.getByRole("button", { name: "Next page" }).isDisabled(), "Reader moved after its last page");
   await page.keyboard.press("Escape");
 
@@ -145,6 +166,6 @@ async (page) => {
   require(await page.getByRole("link", { name: "Create a book", exact: true }).getAttribute("href") === "/books/new", "The Run entry did not link to the conversation");
   await page.goto(conversation);
   require(errors.length === 0, errors.join("\n"));
-  require(sent === 7, `Expected six accepted replies and one fixture refusal, saw ${sent} submissions`);
+  require(sent === 8, `Expected seven accepted replies and one fixture refusal, saw ${sent} submissions`);
   return { conversation, sent, knownReplyRefusal: true, historyPreserved: true, pageErrors: errors };
 }
