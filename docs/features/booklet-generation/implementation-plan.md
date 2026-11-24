@@ -1905,7 +1905,7 @@ and the [conversation checkpoint verification](#10c5-local-verification-2026-11-
 Staging resumes at the [checkpoint 12 approval gate](#12---final-approvals-and-staging-acceptance)
 under [issue #21](https://github.com/Uniwares-LTD/unitale/issues/21). Manual testing
 with real Firebase and shared staging data is deferred. The [project roadmap](../../implementation-plan.md#open-work)
-links the parallel phone-first review and T22 owner download work.
+links the parallel phone-first review.
 
 The user confirmed that `/books/new` keeps the focused frame. The actual Manager YAML
 emits `request_human.turn`; the [workflow package](workflow-package/README.md) records its

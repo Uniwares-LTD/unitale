@@ -106,12 +106,15 @@ read-only reviews. Manual real-login testing is deferred.
 owns staging deployment, managed Dify and MCP bindings, and application-connected
 acceptance. Scope C and provider spend remain pending separate approval.
 
-Three follow-ups can proceed in parallel. T23 PDF and T24 sharing follow as distinct
-delivery milestones.
+Phone-first review and staging preparation can proceed in parallel. T23 PDF and
+T24 sharing follow as distinct delivery milestones.
 
 - Parham leads the phone-first creator and admin review with Sina. [Issue #20](https://github.com/Uniwares-LTD/unitale/issues/20)
 - `uniwares-uk` owns staging preparation and checkpoint 12 acceptance. [Issue #21](https://github.com/Uniwares-LTD/unitale/issues/21)
-- `uniwares-uk` owns the private reader's T22 owner download action. [Issue #22](https://github.com/Uniwares-LTD/unitale/issues/22)
+
+T22 private image downloads passed local verification. The
+[booklet delivery map](features/booklet-generation/implementation-plan.md#issue-10-deliverables-and-dependency-map)
+records the browser verification. [Issue #22](https://github.com/Uniwares-LTD/unitale/issues/22)
 
 ## Booklet plan refresh after Unibase 0.5.0 merge
 
