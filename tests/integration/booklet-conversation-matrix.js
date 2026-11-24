@@ -42,6 +42,14 @@ async (page) => {
             const close = await dialog.getByRole("button", { name: locale === "ar" ? "إغلاق" : "Close", exact: true }).boundingBox();
             require(Math.abs(box.x + box.width / 2 - width / 2) <= 2, `${frame}: reader off center`);
             require((close.x < width / 2) === (locale === "ar"), `${frame}: reader close at wrong edge`);
+            const advance = locale === "ar" ? "ArrowLeft" : "ArrowRight";
+            const previous = locale === "ar" ? "ArrowRight" : "ArrowLeft";
+            const pageIndicator = dialog.locator("output");
+            const original = await pageIndicator.textContent();
+            await page.keyboard.press(advance);
+            require(await pageIndicator.textContent() !== original, `${frame}: arrow key did not advance in the UI direction`);
+            await page.keyboard.press(previous);
+            require(await pageIndicator.textContent() === original, `${frame}: reverse arrow key did not restore the first page`);
             await page.keyboard.press("Escape");
           }
           results.push(frame);

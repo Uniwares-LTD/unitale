@@ -15,9 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Page() {
   if (!moduleEnabled("runs") || !moduleEnabled("booklets")) notFound();
   const session = await getSession();
+  const ownerId = session?.email_verified ? session.uid : null;
   return (
     <PageMessages path="/books/new">
-      <BookEntry signedIn={Boolean(session?.email_verified)} />
+      <BookEntry key={ownerId} ownerId={ownerId} />
     </PageMessages>
   );
 }

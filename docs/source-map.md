@@ -92,7 +92,8 @@ and the adapter; the table does not require unrelated suites for every task.
   The project Run start link (`src/project/run-start.tsx`) and
   home (`src/project/home.tsx`) use existing project slots. Browser checks seed the
   disposable fixture with `tests/integration/booklet-fixture-seed.ts` and run
-  `booklet-conversation-browser.js` and `booklet-conversation-matrix.js` in
+  `booklet-conversation-browser.js`, `booklet-conversation-matrix.js` and
+  `booklet-start-recovery.js` in
   `tests/integration` through playwright-cli. The checkpoint 10 form and panel
   scripts are historical. `npm run test:booklet-modules` runs the
   module-disabled test in `tests/booklet-modules` with Node module mocking.

@@ -15,10 +15,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Composer } from "@/project/components/conversation/composer";
 import { InspirationList } from "@/project/components/conversation/inspiration-list";
 import {
-  bookletEditableErrors,
   bookletEntrySchema,
+  bookletIdeaStartCommandSchema,
   bookletRunReferenceSchema,
   type BookletEntry,
+  type BookletIdeaStartCommand,
 } from "../application-contract";
 
 // The idea survives the sign-in round trip in this tab only.
@@ -41,29 +42,48 @@ function writeDraft(value: string | null) {
 
 type Problem = "failed" | "pending" | "price" | "credits" | "unavailable";
 
-export function BookEntry({ signedIn }: { signedIn: boolean }) {
+function readPendingStart(storageKey: string | null) {
+  if (!storageKey) return null;
+  try {
+    const saved = sessionStorage.getItem(storageKey);
+    return saved ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved)) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function BookEntry({ ownerId }: { ownerId: string | null }) {
+  const signedIn = ownerId !== null;
+  const storageKey = ownerId ? `unitale-book-start:${ownerId}` : null;
   const t = useTranslations("ui");
   const locale = useLocale();
   const router = useRouter();
   const field = useRef<HTMLTextAreaElement>(null);
+  const submitting = useRef(false);
   const [idea, setIdea] = useState("");
   const [consent, setConsent] = useState(false);
   const [entry, setEntry] = useState<BookletEntry | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [starting, setStarting] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
-  // One key per consented request, reused for every retry of that request.
-  const key = useRef<string | null>(null);
-  useLeaveGuard({ dirty: !!idea.trim() });
+  const [pendingStart, setPendingStart] =
+    useState<BookletIdeaStartCommand | null>(null);
+  useLeaveGuard({ dirty: !pendingStart && !!idea.trim() });
 
   useEffect(() => {
     const saved = readDraft();
-    // Restored after the sign-in round trip; the user still confirms the price.
+    const pending = readPendingStart(storageKey);
     queueMicrotask(() => {
-      if (saved) setIdea(saved);
-      if (saved && signedIn) setConsent(true);
+      if (pending) {
+        setPendingStart(pending);
+        setIdea(pending.idea);
+        setConsent(true);
+      } else if (saved) {
+        setIdea(saved);
+        if (storageKey) setConsent(true);
+      }
     });
-  }, [signedIn]);
+  }, [storageKey]);
 
   function loadEntry() {
     api("/api/booklets?section=default", bookletEntrySchema).then(
@@ -75,8 +95,8 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
     );
   }
   useEffect(() => {
-    if (consent && !entry) loadEntry();
-  }, [consent, entry]);
+    if (consent && !entry && !pendingStart) loadEntry();
+  }, [consent, entry, pendingStart]);
 
   const inspirations = [
     {
@@ -112,52 +132,82 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
   function edit() {
     setConsent(false);
     setProblem(null);
-    key.current = null;
     field.current?.focus();
   }
 
   async function start() {
+    if (!storageKey || submitting.current) return;
     const pack = entry?.package;
-    if (!pack || starting) return;
-    key.current ??= crypto.randomUUID();
+    let request = pendingStart;
+    if (!request) {
+      if (!pack) return;
+      request = {
+        action: "start-idea",
+        key: crypto.randomUUID(),
+        catalogId: pack.catalogId,
+        revision: pack.revision,
+        quoteHash: pack.quoteHash,
+        acceptedCredits: pack.credits,
+        idea: idea.trim(),
+        language: locale === "ar" ? "ar" : "en",
+      };
+      // Save before sending. A reload must replay the exact consented request.
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify(request));
+      } catch {
+        setProblem("failed");
+        return;
+      }
+      setPendingStart(request);
+      setProblem(null);
+    }
+    const clearPending = () => {
+      try {
+        sessionStorage.removeItem(storageKey);
+      } catch {
+        // The retained request is still safe to replay with the same key.
+      }
+      setPendingStart(null);
+    };
+    submitting.current = true;
     setStarting(true);
-    setProblem(null);
     try {
       const run = await api("/api/booklets", bookletRunReferenceSchema, {
         method: "POST",
         timeoutMs: 60000,
-        body: {
-          action: "start-idea",
-          key: key.current,
-          catalogId: pack.catalogId,
-          revision: pack.revision,
-          quoteHash: pack.quoteHash,
-          acceptedCredits: pack.credits,
-          idea: idea.trim(),
-          language: locale === "ar" ? "ar" : "en",
-        },
+        body: request,
       });
       writeDraft(null);
+      clearPending();
       router.push(`/books/${encodeURIComponent(run.productionId)}`);
     } catch (error) {
       const code = error instanceof ApiError ? error.code : "";
+      // Transient refusals such as rate limiting cannot settle an earlier attempt.
+      if (
+        [
+          "INVALID_INPUT",
+          "BOOKLET_CONFLICT",
+          "BOOKLET_UNAVAILABLE",
+          "BOOKLET_INVALID",
+          "INSUFFICIENT_CREDITS",
+        ].includes(code)
+      ) {
+        clearPending();
+        setEntry(null);
+      }
       if (code === "BOOKLET_START_PENDING") setProblem("pending");
       else if (code === "INSUFFICIENT_CREDITS") setProblem("credits");
-      else if (code === "BOOKLET_CONFLICT") {
-        // Refresh the quote before asking the customer to consent again.
-        setProblem("price");
-        setEntry(null);
-      } else if (code === "BOOKLET_UNAVAILABLE") setProblem("unavailable");
+      else if (code === "BOOKLET_CONFLICT") setProblem("price");
+      else if (code === "BOOKLET_UNAVAILABLE") setProblem("unavailable");
       else setProblem("failed");
-      // Refusals before any charge allow a fresh request; anything else keeps
-      // the same key so a retry can never start a second paid book.
-      if (bookletEditableErrors.includes(code)) key.current = null;
+      submitting.current = false;
       setStarting(false);
     }
   }
 
   const pack = entry?.package ?? null;
   const missing = pack ? pack.credits - (entry?.availableCredits ?? 0) : 0;
+  const recovering = pendingStart && (!entry || problem !== null);
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 py-6 sm:py-12">
       <header className="text-center">
@@ -194,20 +244,36 @@ export function BookEntry({ signedIn }: { signedIn: boolean }) {
           placeholder={t("m4966873a89fb")}
           sendLabel={t("mf6f4688ff23d")}
           footer={
-            consent ? (
+            consent && !pendingStart ? (
               <Button variant="ghost" onClick={edit} disabled={starting}>
                 {t("mfd1d3a3672ed")}
               </Button>
-            ) : (
+            ) : !consent ? (
               <p className="text-supporting text-muted-foreground">
                 {t("m79a2b7be2cdc")}
               </p>
-            )
+            ) : null
           }
         />
       </div>
 
-      {consent && (
+      {recovering && (
+        <Notice
+          tone="warning"
+          title={t(
+            problem === "pending" ? "me079e4adcff9" : "m08d20ade842d",
+          )}
+        >
+          <SubmitButton
+            pending={starting}
+            onClick={start}
+            className="mt-3 min-h-(--control-touch-sm)"
+          >
+            {t("md8b8392e2c54")}
+          </SubmitButton>
+        </Notice>
+      )}
+      {consent && !recovering && (
         // Accepted exception (2026-11-23): an inline consent card that states
         // pages, price and balance instead of an AlertDialog.
         <Card

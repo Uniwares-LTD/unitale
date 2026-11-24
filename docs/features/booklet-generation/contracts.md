@@ -65,7 +65,11 @@ from turn text.
 
 The public application contract (still version 1) gains these additive commands and
 reads. `start-idea` is the idea-only start with the same quote and credit consent. The
-production command `reply {key, requestId, reply}` submits a reply to a turn.
+entry keeps the consented payload in account-scoped tab storage before submitting.
+If the response is lost, the owner can retry the same request after reloading, using
+its original key and quote.
+
+The production command `reply {key, requestId, reply}` submits a reply to a turn.
 `GET /api/booklets?section=default` returns the default package and available
 credits. `GET /api/booklets/{id}?section=conversation` returns the turns, their
 statuses and their authentic replies.
@@ -76,7 +80,8 @@ available native confirmation agree and the reply fits the retained turn.
 The conversation response includes an activity derived from the latest owned Run
 and dispatched work, plus the delivered reader when a committed manifest exists.
 Reader pages use the manifest's exact order and original asset IDs. Lettering comes
-from the selected layout when the manifest names it directly. These projections
+from the selected layout when the manifest names it directly. Reader navigation follows
+the interface direction, and lettering follows the booklet language. These projections
 change neither the stored model nor the JSON example and Mermaid diagrams.
 
 `/admin/booklets` reads the current selection and its version. The administrator
