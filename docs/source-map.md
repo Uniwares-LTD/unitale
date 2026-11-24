@@ -27,20 +27,19 @@ and the adapter; the table does not require unrelated suites for every task.
 - [Booklet requirements](features/booklet-generation/prd.md) and
   [delivery plan](features/booklet-generation/implementation-plan.md) own the accepted
   product contract and cross-repository dependencies. Its
-  [remaining 07-12 plan](features/booklet-generation/implementation-plan.md#remaining-implementation-kickoff-and-ownership)
-  maps T18-T21, Unitale/Unibase ownership and approval gates. Its
+  [delivery map](features/booklet-generation/implementation-plan.md#issue-10-deliverables-and-dependency-map)
+  owns checkpoint progress, estimates and the resume point. Its
   [post-import design mapping](features/booklet-generation/implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
-  bounds design-reference adoption within 10-12 and records outstanding merge checks; its
+  records the design-reference adoption and merge evidence. Its
   [retry/reconciliation policy](features/booklet-generation/implementation-plan.md#action-retries-and-automatic-reconciliation)
-  owns accepted defaults and recovery semantics. Storage and reviewed shared seams are
-  delivered in 07-08; local gateway/recovery tasks 09.1-09.7 are Verified, and the sequenced 10 plan covers creator UI/admin settings.
+  owns accepted defaults and recovery semantics.
   [Workflow package design](features/booklet-generation/workflow-design.md) owns
   issue #10's accepted Manager/app/service boundaries, integration gap assessment and
   open contract decisions. It distinguishes the target from current application code.
   The [candidate package](features/booklet-generation/workflow-package/README.md)
   contains readable native Dify YAML, essential inline checks and source provenance;
   its [integration handoff](features/booklet-generation/workflow-package/integration-handoff.md)
-  records implemented local boundaries separately from pending UI and target acceptance.
+  records implemented local boundaries and the remaining provider acceptance checks.
   Official provider plugins are configuration dependencies; no custom provider package
   or workflow authoring framework is delivered. Target capabilities remain pending.
   The handoff also links the bounded offline-tested upstream patch for demonstrated
@@ -56,9 +55,8 @@ and the adapter; the table does not require unrelated suites for every task.
   01-06 deliver a candidate package before application changes; 07-12 are gated
   application integration and staging acceptance. Its execution procedure owns slice
   order, two-pass review, evidence/resume records and dependency reassessment.
-  Package boundaries describe the target integration; 07 implements opt-in v2 storage
-  in the model docs, with local application runtime wiring verified through 09.6 and UI/target evidence pending. The package integration handoff is created in 01 and
-  closed in 06, without a second application implementation queue.
+  The model docs own the opt-in v2 storage contract. The provider handoff links back to
+  the delivery map for application progress.
   [Implementation-readiness audit](features/booklet-generation/workflow-design.md#implementation-readiness-audit)
   maps A01-A22 to selected technical resolutions and their remaining verification gates.
   The package specification owns the wire/storage/transport/recovery/UI details;

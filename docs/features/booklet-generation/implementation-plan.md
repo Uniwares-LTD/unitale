@@ -7,7 +7,7 @@ define the target. The latter owns current decisions, gaps and unresolved contra
 it explicitly replaces earlier app/Executor human-approval and quality gates.
 Preserve existing records and the single-orchestrator dispatcher. Unibase changes originate in its repository and
 reach Unitale through reviewed template integration. No production catalog seeds.
-For the current issue #10 design handoff, the Handbook baseline is
+For the original issue #10 design handoff, the Handbook baseline was
 `D:\misc\code\uniwares\handbook` at
 `0048c32a98060bb094eb3010aa0f4f407e97796e` (explicitly refreshed from the local
 committed Handbook on 2026-11-09; earlier task baseline was `71891a9031eeebee1ff8d2a66494bdeb10ad5d3f`).
@@ -15,16 +15,13 @@ Earlier implementation evidence below retains its historical scope.
 
 ## Execution prerequisites
 
-**Readiness: candidate checkpoints 01-06, local storage 07 and shared-runtime import 08 are
-implemented and reviewed. Scope B covers 07-11; checkpoint 09 is Verified locally. The active goal stops before 10. Runtime/live
-acceptance and scope C remain separate.** The
-[A01-A22 register](workflow-design.md#implementation-readiness-audit)
+The [delivery map](#issue-10-deliverables-and-dependency-map) records current progress
+and remaining work. Scope B covers 07–11. Scope C governs staging and live acceptance.
+The [A01-A22 register](workflow-design.md#implementation-readiness-audit)
 links each resolution to the [package specification](workflow-package-spec.md#technical-resolutions-for-a01-a22).
-Checkpoints 01-12 below replace the application-first C0-C10 sequence. Deliver the
-candidate workflows and proposed application changes at 06. That initial stop was
-superseded by the recorded scope B approval for 07-11. The active goal completes
-09.7 and the 10 plan, then stops before 10 implementation; 12 remains gated. E1-E5 retain partial or pending runtime evidence; E6 records current local checks, not
-integrated acceptance; candidate validation is distinct from integrated/live acceptance.
+Checkpoints 01–12 replaced the application-first C0–C10 sequence. The initial candidate
+handoff at 06 was followed by the recorded scope B approval. E1–E5 retain partial or
+pending runtime evidence. E6 records local checks.
 A failed probe blocks its dependent binding, not independent schemas/fake-provider work.
 No checkpoint starts merely because documentation has been updated.
 
@@ -132,20 +129,31 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 ### Issue #10 deliverables and dependency map
 
-| Checkpoint | Deliverable | Acceptance and continuation |
+**Status as of 2026-11-24.** Implementation is complete locally through
+[10-chat-version](#10-chat-version---conversational-booklet-experience). The latest
+app revision is `8fe1837`, which includes the lost-start debit and reader direction
+fixes. Checkpoint 11 is next. Checkpoint 12 requires staging approval.
+
+| Checkpoint | Status | Deliverable and acceptance |
 | --- | --- | --- |
-| 01 - Minimal boundaries | Seven-role inputs/outputs, essential identities, source mapping and provider capability matrix | Boundary/privacy fixtures and two clean read-only reviews; continue to 02 |
-| 02 - Existing plugins and compatibility | Official text/vision/image plugin configuration; source-backed capability findings | Record installed/import/runtime evidence separately; unresolved capabilities explicitly pending; continue only with independently valid work |
-| 03 - Creative and text review DSL | Planner, Manuscript, Art Director and text/specification/correction Reviewer | Load actual YAML, check references and execute essential inline checks; two clean reviews |
-| 04 - Composition and images DSL | Page Composer, deterministic Prepare, exact Generate and all Reviewer modes | Exact Unicode/routing, ordered originals, partial/unknown outcomes and scoped coverage fixtures; two clean reviews |
-| 05 - Serial Manager DSL | Create/continue/revise/recover, optional human waits, preflight, review, bounded correction and retention | Seven actual graphs checked; deterministic guard tests; full Dify journeys remain pending unless actually executed; two clean reviews |
-| 06 - Candidate and handoff | Secret-free seven-workflow package, configuration, minimum application delta and evidence | Affected checks and two clean integrated read-only reviews against 713da2d; stop before 07 |
-| 07 - Application Contracts & Persistence | Versioned runtime interfaces, compatible readers and necessary storage/index changes | Locally complete with two clean reviews; v1 preserved; model/example/both Mermaid versions updated; runtime integration remains 08-11 |
-| 08 - Shared Runtime Extensions | Only demonstrated missing generic seams, implemented in Unibase and imported through review | Reviewed imports through Unibase `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe` (PRs #49/#50/#52); local checks pass; live conversion remains 12 |
-| 09 - Unitale Gateway & Recovery | Necessary booklet MCP, admission, usage, originals and recovery behavior | Actual handlers/repositories and failure-path tests |
-| 10 - Run UI Integration | T21 brief, quotes, progress, decisions, revisions and history in existing Run UI | Browser/race checks; no separate creator workspace |
-| 11 - Integrated Verification | Actual workflows against implemented application interfaces | Real integrated offline checks and two clean reviews |
-| 12 - Staging Publication & Acceptance | Exact publications, finite paid acceptance and final exports | Separate scoped live/publication/paid authorization and operator inputs |
+| 01 - Minimal boundaries | Complete locally | Seven-role inputs and outputs, source and identity mapping, and the provider capability matrix. Boundary and privacy fixtures passed. |
+| 02 - Existing plugins and compatibility | Candidate scope complete | Official text, vision and image plugin compatibility and isolated feasibility evidence. Integrated execution belongs to 12. |
+| 03 - Creative and text review DSL | Complete offline | Planner, Manuscript, Art Director, and text, specification and correction review. YAML references and inline checks passed. |
+| 04 - Composition and images DSL | Complete offline | Page Composer, deterministic preparation, exact generation and Reviewer modes. Fixtures cover text, ordered originals, and partial and unknown outcomes. |
+| 05 - Serial Manager DSL | Complete offline | Create, continue, revise and recover, with Human Input, bounded correction, and retained results. Actual graphs and guard fixtures passed. |
+| 06 - Candidate and handoff | Complete locally | Seven secret-free workflows, setup and evidence. The original candidate review at `713da2d` is historical evidence. |
+| 07 - Application Contracts & Persistence | Complete locally | Versioned runtime interfaces, compatible v1 readers, storage and indexes, with the documented model, example and diagrams. |
+| 08 - Shared Runtime Extensions | Complete locally | Reviewed Unibase imports for image transport, execution evidence, waits and recovery. Live conversion belongs to 12. |
+| 09 - Unitale Gateway & Recovery | Complete locally | Booklet MCP, prepaid admission, usage, originals and guarded recovery. Actual handlers and repositories passed failure-path checks. |
+| 10 - Run UI Integration | Complete locally | Creator quotes and consent, progress, decisions, revisions and history, plus admin settings. Booklet navigation was later replaced by the focused conversation. |
+| 10-chat-version - Conversation | Complete locally | Focused entry and chat, typed Manager turns, default-package editor, reader and recovery. The served browser suite covered the conversation and one-time debits. |
+| 11 - Integrated Verification | Next | Exercise actual YAML boundaries and application handlers with deterministic dependencies, close evidence gaps and complete two clean read-only reviews. |
+| 12 - Staging Publication & Acceptance | Pending approval | Deploy the reviewed app and worker, verify Dify publications and MCP bindings, run bounded real acceptance and retain evidence and secret-free exports. |
+
+**Remaining effort estimate.** Allow **2–4 engineer-days** for [11](#11---integrated-verification-and-handoff)
+and **2–3 engineer-days** for [12](#12---final-approvals-and-staging-acceptance) once
+the staging inputs are available. The **4–7 engineer-day** total excludes time
+waiting for access and approvals.
 
 ### Remaining implementation: kickoff and ownership
 
@@ -154,8 +162,8 @@ and executing 07-11. Candidate/planning baseline committed as `2dc7b8c`; checkpo
 is complete through `867759c`. The original reviewed 08 import was Unibase
 `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe` (PRs #49/#50/#52). The current exact
 import is recorded in `project.source.json` and the [local-popup adoption](#local-google-popup-adoption);
-09.1-09.7 are Verified locally; checkpoint 10 remains unimplemented. Scope C and paid/live operations remain pending. The plan targets unattended
-Sol Medium work under the recorded approval.
+The [delivery map](#issue-10-deliverables-and-dependency-map) tracks current progress.
+Scope C and paid/live operations remain pending.
 
 The [capability audit and approval register](workflow-package/integration-handoff.md#approval-register)
 records the actual user decisions. Scope A used one zero-cost disposable app, verified
@@ -693,7 +701,7 @@ and docs/i18n/skills checks pass. Two separate same-agent read-only passes of th
 bounded correction found no remaining blocker. The whole-package review hashes above
 are historical identities preceding this correction, not hashes of the current tree.
 No model fields, persistence shape, JSON example, schema diagrams, workflow YAML or
-candidate digest changed; checkpoint 10 remains unimplemented.
+candidate digest changed in this checkpoint 09 follow-up.
 
 #### Accepted amendments and remaining evidence
 
@@ -720,7 +728,8 @@ All execution gates remain disabled. Actual revised Dify imports/publications, n
 runtime execution, retry-form resume, Manager/application MCP image conversion,
 configured commercial packages and paid acceptance are checkpoint 12 evidence.
 Creator controls and public history are checkpoint 10; saving history is not its UI.
-The active goal stops before implementing 10. No deployment or paid call occurred.
+This checkpoint 09 slice stopped before 10. No deployment or paid call occurred in
+the slice.
 
 ### Checkpoint 09 closure follow-up and checkpoint 10 prerequisites
 
@@ -733,7 +742,7 @@ HEAD `554ec9d51004264d2e9e8f7b874485dfb414fda7` plus the preserved working tree.
 | 09-F2 dispatch locks | Verified | Existing transaction sets first story/style/reference locks according to generated subject kind. Repository cases cover style, character, location and page, replay, locked quotes and retained locks after failed/unknown outcomes. |
 | 09-F3 unresolved targets | Verified | Existing work lookup rejects overlapping paid creative attempts across funding/Run/service scopes, preserving funding-scoped correction accounting. Both unknown and dispatching states reject atomically. |
 | 09-F4 verification | Verified | 38 repository, 32 MCP, 17 lifecycle/media and 46 compatibility tests pass. Build, sequential typecheck, scoped lint and docs/model/i18n/skills checks pass. Two separate same-agent focused read-only passes found no blocking issue. |
-| 09-F5 readiness handoff | Verified | Prerequisite inventory below; checkpoint 10 remains unimplemented. |
+| 09-F5 readiness handoff | Verified | Prerequisite inventory for the subsequent checkpoint 10 work. |
 
 A necessary adjacent correction projects lock timestamps as ISO strings in the
 existing production reader. Populated locks exposed two JSON-read failures in the
@@ -840,7 +849,7 @@ Use the existing app and setup tools, not a new bootstrap framework.
 | Shared development/staging identity | Verified configuration | User confirmed real shared staging Firebase locally. Use `uniwares-base`, Unitale web registration `unitale-staging`, app ID `1:870391561828:web:ad66111854ba5233882971`, and `unitale_staging` for dev/staging. No demo auth or fixture simulation on shared data. |
 | Database provisioning | Verified | Created `unitale_staging` runtime user with only readWrite on `unitale_staging`, scoped to existing `kids-booklet` cluster in Atlas project `6a869d84e65675f845fa22eb`. Ping and transaction capability pass. No new cluster or network rule. Credentials retained outside Git. |
 | Local bindings and preparation | Verified | Ignored user-only `.env.local` selects APP_ENV local, https://localhost:3100, real Firebase, scoped Atlas DB and disabled payments/Dify/MCP/persona execution. Additive indexes pass; 3 earlier migration records retained and 7 remaining migrations applied successfully. Runtime secrets are outside Git. |
-| As-is local acceptance | Verified sign-in | The preserved HTTPS local app serves Account. On 2026-11-21 the user completed real Google popup sign-in and confirmed the Unitale account; the session endpoint returned 200. This does not establish owned Run, administrator or provider acceptance; checkpoint 10 remains unimplemented. |
+| As-is local acceptance | Verified sign-in | On 2026-11-21 the user confirmed real Google popup sign-in and the Unitale account on the preserved HTTPS local app. The session endpoint returned 200. This historical check covers sign-in only. |
 | Unitale theme and component readiness | Verified locally, 2026-11-22 | Unibase foundation/helpers already adopted; project-owned light/dark tokens, fonts and type roles now enabled. Build, typecheck, 133 unit tests, contrast and public browser checks pass. [Inventory and verification limits](../../design-system-extension.md#unitale-adoption-before-checkpoint-10). No checkpoint 10 behavior implemented. |
 
 Shared database means local and staging writes affect the same Unitale records.
@@ -1588,6 +1597,11 @@ size class (`CardTitle` rendered 16px instead of 20px).
   `b10028f3205c200e78bae889767cfdfafebc03ad1b51cb540e0cb0268a9cae70`.
   Staging, live Dify/provider acceptance and physical-device and screen-reader checks
   remain outside this local evidence.
+- Follow-up `8fe1837` passed a served-browser regression for a lost accepted start.
+  Reload and retry reused the original request and opened the same booklet. The first
+  request debited 20 fixture credits, and the retry debited zero. The six-reply journey
+  and 16 browser configurations also passed, including reader keyboard navigation
+  in the Arabic interface with an English booklet.
 
 #### Accepted gaps (user, 2026-11-23)
 
@@ -1604,6 +1618,10 @@ Checkpoints 11 and 12 then cover this conversational surface instead of the chec
 form; their scope is otherwise unchanged.
 
 ### 11 - Integrated verification and handoff
+
+The owner deferred manual real-login testing on the shared environment until after
+the remaining checkpoint work. Checkpoint 11 keeps its automated integration and
+browser checks on disposable fixtures.
 
 Use actual YAML boundaries and real app handlers with deterministic providers/disposable
 persistence, not a Dify execution engine emulator. Cover:
@@ -1642,6 +1660,17 @@ artifact/revision evidence, G01-G17 resolutions and E1-E6 status; local tests ne
 Dify runtime acceptance. Preserve bounded evidence when an external gate remains open.
 
 ### 12 - Final approvals and staging acceptance
+
+**Manual local and staging parity (owner, 2026-11-24).** Use the same Firebase
+project, `unitale_staging` database and application service bindings for manual
+local testing and the later staging deployment. Keep the local HTTPS launch and
+hosted environment configuration appropriate to their respective origins. The owner
+prefers a dedicated Unitale staging AI worker for the shared queue. Local AI testing
+must coordinate worker ownership and the Dify registration with that setup. The
+scripted Manager and seed scripts remain disposable fixtures. The deferred manual
+credit check uses normal admin grants and a published booklet package, with payment
+checkout disabled.
+See [prepared local launch](../local-google-popup/adoption.md#prepared-local-launch).
 
 Present one reviewable package after 11: exact revisions/import, migration instructions,
 workflow hashes, plugin identities, settings/bindings, test evidence and unresolved gates.
@@ -1754,13 +1783,14 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 ### New-session goal prompt
 
-**Session handoff (2026-11-23):** see the [checkpoint 10 closure](#checkpoint-10-closure-2026-11-22)
+**Session handoff (2026-11-24):** see the [current delivery map](#issue-10-deliverables-and-dependency-map)
 and the [conversation checkpoint verification](#10c5-local-verification-2026-11-23).
 Next is **[11, Integrated verification and handoff](#11---integrated-verification-and-handoff)**.
 Start by mapping exact revisions and existing evidence to the checkpoint 11 journeys
 and G01–G17/E1–E6 gates. Use deterministic providers and disposable persistence to
 cover missing cross-boundary cases, then run the integrated checks and two consecutive
 read-only reviews. The separate staging and live acceptance gates belong to checkpoint 12.
+Manual testing with real Firebase and shared staging data is deferred.
 
 The user confirmed that `/books/new` keeps the focused frame. The actual Manager YAML
 emits `request_human.turn`; the [workflow package](workflow-package/README.md) records its

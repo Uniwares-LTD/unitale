@@ -1133,7 +1133,7 @@ Scope A approved on 2026-11-10. User response: "I approve but it's important to 
 | Scope | Agreed scope | Current status / exclusions |
 | --- | --- | --- |
 | A: zero-cost feasibility probes | Up to three disposable `unitale10_capability_20261110_*` apps and their test-only workflow-tool/MCP bindings; deterministic nodes and synthetic PNG fixtures; import/publication/execution/readback, disconnect/retrieval and cleanup of those resources. Probe ordered MCP image conversion, retained node/iteration evidence, and safe action retry delay/reentry. Any fixture endpoint must use an already approved reachable route; no new host/network setup | Approved 2026-11-10 with minimum reasonable resource use. US$0; no LLM/image/provider calls, production app changes, shared plugin changes, application implementation or commits. If a reachable fixture route is absent, stop that probe and report it |
-| B: implementation kickoff | Checkpoints 07-11 in Unitale; demonstrated bounded generic changes in Unibase; local fixtures/checks, scoped commits/pushes/PRs/normal merges and reviewed exact template imports after required reviews | Approved 2026-11-10: "I approve with this note: keep everything simple and minimal, do not over-engineer". Reuse existing services/worker/Run UI; no new framework, scheduler, plugin or dashboard. No deployment, release/tag, new dependency, paid call, production migration or bypass of branch protections. External required reviews may still block; 07-09 complete locally; current goal stops before 10 |
+| B: implementation kickoff | Checkpoints 07-11 in Unitale; demonstrated bounded generic changes in Unibase; local fixtures/checks, scoped commits/pushes/PRs/normal merges and reviewed exact template imports after required reviews | Approved 2026-11-10: "I approve with this note: keep everything simple and minimal, do not over-engineer". Reuse existing services, worker and Run UI. The approval excludes deployment, release/tag, new dependencies, paid calls, production migrations and bypassing branch protections. See the [delivery map](../implementation-plan.md#issue-10-deliverables-and-dependency-map) for progress. |
 | C: staging acceptance | Exact reviewed application deployment/migration, specialist-first Dify publication/bindings, named test package/accounts, cleanup and finite paid acceptance | Pending by explicit choice "Keep C pending". User selected US$3 total for future provider acceptance; no spending until C approval. Review exact artifacts, deployment/configuration/migration, secure inputs and resource identities after 11; historical US$1 cap is not renewed |
 
 Scope A is closed for the minimum feasible probe; MCP live proof is deferred to 12.
@@ -1149,26 +1149,18 @@ an approval boundary. No technical approval establishes unverified capabilities.
 
 ## Next-step runbook
 
-| Stage | Progress | Next action and exit evidence | Unattended work and preparation |
-| --- | --- | --- | --- |
-| 01-06: local package | Complete locally | Seven candidates, focused checks and two clean same-agent read-only passes; current digest in README | Local checks can run unattended; no further implementation is needed for this handoff |
-| Provider/composition feasibility | Isolated probes and installed-source audit complete; SDK retries/default timeout/alias accepted | Reuse shared providers unchanged; current-provider configuration and all seven secret-free candidate import/readbacks now pass; actual execution of this revised binding and application acceptance remain unverified | No-money checks can run unattended with authorized staging access. No plugin installation or upstream release required; any further paid probes need a newly agreed finite scope/cap. Billing reconciliation needs account usage/invoice access |
-| 07: application contracts/persistence | Complete locally; two clean same-agent reviews | Follow the [bounded slices](../implementation-plan.md#07---application-contracts--persistence); v2 compatibility, action/assessment/checkpoint facts and retry snapshots | Kickoff approval covers 07-11 and scoped cross-repository publication; disposable local persistence only |
-| 08: shared runtime seams | Complete locally; reviewed exact imports | Unibase PRs #49/#50/#52 imported through `a7eda79b0f7c77732913e3a6b82a6eab3f6485fe`; image transport, private observations, internal waits, Run UI slots and existing-worker late reconciliation pass local checks | No provider release dependency; project wiring remains 09-11 and live MCP conversion remains 12 |
-| 09: Unitale gateway/recovery | Tasks 09.1-09.7 Verified locally | Delivered owned Manager MCP, prepaid admission, originals, guarded action retries, bounded worker reconciliation and connected journeys; final checks and two clean same-agent whole-package reviews pass | Reuse existing worker/commerce; no new scheduler or blind replay; fake-provider tests unattended after dependencies |
-| 10: existing Run UI / T21 | Sequenced plan revised; implementation not started | Follow 10.1-10.7: private facade, consent, results/decisions/media, recovery/revisions, history, minimal admin and browser/review exits | Local browser fixtures; en/ar public and English/LTR admin; no standalone creator workspace |
-| 11: integrated validation | Not started | Actual boundaries, failure/recovery/race tests and two clean reviews; distinguish offline from Dify evidence | Local tests unattended under kickoff approval; final handoff records exact revisions and pending gates |
-| 12: staging acceptance | Integrated acceptance pending | Publish specialists then Manager, verify bindings/tags, execute T18-T21 journeys and retain secret-free evidence | Final grouped approval: deployment/migration/publication, secure inputs, package/capacity, test accounts and selected US$3 total cap (no spend until approval); real staging MCP image proof; human consent remains human |
+The [delivery map](../implementation-plan.md#issue-10-deliverables-and-dependency-map)
+owns checkpoint status. Continue with [11](../implementation-plan.md#11---integrated-verification-and-handoff)
+using the current native YAML and application handlers with deterministic dependencies.
 
-
-Current execution: 07-08 and 09.1-09.6 are locally verified; 09.7 is Verified; stopped
-before implementing 10. Reuse delivered services and exact imported shared seams.
-Scope B is approved for 07-11 with minimal implementation; scope C stays pending.
-Reuse the verified provider/structured-output behavior and existing services when
-implementation starts. No temporary tunnel is planned. A compatibility failure narrows or revises
-the affected step; it does not authorize a new plugin or framework. Keep all seven
-execution switches disabled until the activation prerequisites above are satisfied;
-scoped paid probes use separately authorized disposable copies.
+For [12](../implementation-plan.md#12---final-approvals-and-staging-acceptance),
+reuse the installed shared provider configuration described in the
+[accepted tradeoffs](#accepted-provider-tradeoffs). Historical feasibility probes
+and import/readback cover the revisions named in their evidence. Verify the current
+Manager and the exact application bindings during staging acceptance. Follow the
+[binding and acceptance procedure](#difyprovider-compatibility-procedure) for target
+setup, ordered publication, native image transport, usage evidence and cleanup.
+Execution stays disabled until the applicable approvals and activation checks pass.
 
 Checkpoint 09 closure follow-up is locally verified: dispatch establishes existing
 stage locks and rejects overlapping unresolved creative work across funding scopes.

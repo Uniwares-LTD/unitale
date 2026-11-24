@@ -100,7 +100,9 @@ before 348 individually inventoried source/generated/test files were removed.
 
 ## Current integration slice
 
-Tasks 09.1-09.7 are Verified locally; checkpoint 10 is planned and unimplemented.
+The [delivery map](../implementation-plan.md#issue-10-deliverables-and-dependency-map)
+records application progress through the conversation checkpoint and the remaining
+integration and staging work.
 The [delivery plan](../implementation-plan.md#09---unitale-gateway--recovery)
 owns exit conditions and application evidence. This summary supersedes earlier slice
 counts and pending claims; historical reviews below apply only to their recorded state.
