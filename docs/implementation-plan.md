@@ -91,9 +91,9 @@ This adoption preceded checkpoint 10.
 
 ## Open work
 
-Issue #10 is implemented locally through the focused booklet conversation on
-`feature/10-dify-workflow-design`. The [Booklet delivery map](features/booklet-generation/implementation-plan.md#issue-10-deliverables-and-dependency-map)
-owns checkpoint status, remaining effort and the resume point. The
+Issue #10 delivered the seven-workflow package and locally verified creator journey.
+The [Booklet delivery map](features/booklet-generation/implementation-plan.md#issue-10-deliverables-and-dependency-map)
+owns T01–T28 status and remaining outcomes. The
 [PRD](features/booklet-generation/prd.md) owns requirements. The
 [workflow package README](features/booklet-generation/workflow-package/README.md)
 and [provider handoff](features/booklet-generation/workflow-package/integration-handoff.md#next-step-runbook)
@@ -105,6 +105,13 @@ read-only reviews. Manual real-login testing is deferred.
 [Checkpoint 12](features/booklet-generation/implementation-plan.md#12---final-approvals-and-staging-acceptance)
 owns staging deployment, managed Dify and MCP bindings, and application-connected
 acceptance. Scope C and provider spend remain pending separate approval.
+
+Three follow-ups can proceed in parallel. T23 PDF and T24 sharing follow as distinct
+delivery milestones.
+
+- Parham leads the phone-first creator and admin review with Sina. [Issue #20](https://github.com/Uniwares-LTD/unitale/issues/20)
+- `uniwares-uk` owns staging preparation and checkpoint 12 acceptance. [Issue #21](https://github.com/Uniwares-LTD/unitale/issues/21)
+- `uniwares-uk` owns the private reader's T22 owner download action. [Issue #22](https://github.com/Uniwares-LTD/unitale/issues/22)
 
 ## Booklet plan refresh after Unibase 0.5.0 merge
 

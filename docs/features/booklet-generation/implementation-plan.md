@@ -90,17 +90,17 @@ acceptance retain separate authorization. No agent delegation is implied.
 | T15 | Unitale | Lifecycle, human decisions, locks, entitlements and restart | T13,T14 | Implemented; local verification complete |
 | T16 | Unitale | Original media, derivatives, source routing and resumable attachment | T13,T14 | Implemented; local verification complete |
 | T17 | Unitale | MCP-only booklet tools | T15,T16 | v1 implemented and preserved with historical transport bounds; v2 complete-payload path locally verified in 09 |
-| T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Candidate implemented; integration/acceptance pending |
-| T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | Candidate, persistence and local enforcement verified through 09.6; target acceptance pending |
-| T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Candidate and local application/recovery verified through 09.6; creator controls and target acceptance pending |
-| T21 | Unitale | Creator brief, quotes, progress, decisions, revisions and history | T15,T16 | Pending |
-| T22 | Unitale | Private reader and image downloads | T15,T16 | Pending |
+| T18 | Unitale | Source specialist workflows generalized to package inputs | T01,T02 | Specialists integrated and verified locally in 11; live execution and quality remain in 12 |
+| T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | All six review modes and durable correction limits verified locally in 11; live quality remains in 12 |
+| T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Manager, authenticated Human Input and durable recovery verified locally in 11; live execution remains in 12 |
+| T21 | Unitale | Creator brief, quotes, progress, decisions, revisions and history | T15,T16 | Accepted scope verified locally in 10 and 11; phone-first review and staging acceptance remain open |
+| T22 | Unitale | Private reader and image downloads | T15,T16 | Private reader and owner access to originals verified locally; owner download action pending |
 | T23 | Unitale | Manifest-bound deterministic PDF | T15,T16 | Pending |
 | T24 | Unitale | Revocable version-bound sharing and download controls | T22,T23 | Pending |
 | T25 | Unitale | Storefront, wallet, offers, coupons and entitlements | T13,T15 | Pending |
-| T26 | Both | Integrated simulated journeys and compatibility | T20,T21,T24,T25 | Pending |
-| T27 | Both | Migration/recovery rehearsal, documentation and final reviews | T26 | Pending |
-| T28 | Both | Authorized real provider/store/device acceptance | T27 + external prerequisites | Gated |
+| T26 | Both | Integrated simulated journeys and compatibility | T20,T21,T24,T25 | Checkpoint 11 covers the creator slice; whole-product simulation pending |
+| T27 | Both | Migration/recovery rehearsal, documentation and final reviews | T26 | Checkpoint 11 contributes local recovery and review evidence; whole-product rehearsal pending |
+| T28 | Both | Authorized real provider/store/device acceptance | T27 + external prerequisites | Gated; checkpoint 12 supplies the Dify slice after approval |
 
 ### Issue #10 design and delivery boundary
 
@@ -217,38 +217,10 @@ separate. Earlier T18-T20 next-step statements below are historical evidence.
 
 ### Estimated implementation effort completed and checkpoint mapping
 
-Planning estimate as of 2026-11-12, not measured hours, acceptance percentages or a
-claim that the MVP is ready. Ranges estimate each T milestone's implementation work
-already delivered, including reusable foundations. Milestones differ in size and share
-services: do not average these percentages or add them as effort. Live acceptance is
-reported separately, principally in 12 and T28. No per-T time ledger exists.
-
-| T checkpoint | Estimated implementation effort done | Current delivery-checkpoint relationship | Remaining outcome |
-| --- | --- | --- | --- |
-| T01 | 95-100% | Original contracts; v2 refinement in 01/07/09 | Boundary adjustments demonstrated during UI/integration |
-| T02 | 100% of accepted offline scope | 02/06; reused in 09/11 | Live evidence belongs to 12 |
-| T03 | 95-100% | Earlier Unibase foundation, reused by 08/11 | Store/device acceptance in T28 |
-| T04-T08 (each) | 95-100% | Earlier Unibase foundation; necessary generic extensions in 08 | Final integrated regression/acceptance |
-| T09-T12 (each) | 90-100% | Earlier billing/Android/admin imports, reused by 08/11 | Actual configured stores/device and final integration |
-| T13 | 100% of local foundation scope | Earlier import; reviewed runtime updates in 08 | Future imports only for demonstrated gaps |
-| T14 | 95-100% | 07 persistence; 09 runtime use | Final UI/integration boundary validation |
-| T15 | 90-95% | 09 lifecycle/recovery; consumed by 10 | Public recovery/revision integration and acceptance |
-| T16 | 90-95% | 09 originals/reuse; 10 owned media bridge | Public delivery and real transport evidence |
-| T17 | 90-95% | 09 v2 MCP; 11 regression; 12 live bindings | Actual deployed MCP/native-file proof |
-| T18 | 85-95% | 03/04/06 workflows; 09 integration | 11 local integration and 12 actual execution/quality |
-| T19 | 85-95% | 03/04 Reviewer; 07/09 durable enforcement | Broader revision cases and actual quality acceptance |
-| T20 | 80-90% | 05 Manager; 09 recovery; 10 controls | Creator integration and real Dify journeys |
-| T21 | 15-25% | Supporting 09 services; primary work is 10 | All six creator outcomes, browser checks in 10/11 |
-| T22 | 10-20% | Reuses 09 media and 10 bridge; delivery is after 12 | Private ordered reader and accepted downloads |
-| T23 | 0-5% | After 12; reuses immutable manifest/originals | Deterministic PDF |
-| T24 | 0-5% | After 12 | Revocable version-bound sharing/download controls |
-| T25 | 25-40% | Reuses earlier commerce/wallet; beyond 10-12 scope | Customer storefront/offer/entitlement integration |
-| T26 | 15-25% | 11 contributes a subset | Whole-product journeys including delivery/sharing/storefront |
-| T27 | 10-20% | 11/12 contribute evidence | Whole-product migration/recovery rehearsal and reviews |
-| T28 | 5-10% | 12 contributes Dify acceptance | Full provider/store/device acceptance; historical probes are feasibility only |
-
-The final MVP still needs T21-T28. Checkpoints 10-12 complete the workflow integration
-slice and do not replace those later delivery, commerce-experience or release outcomes.
+The 2026-11-12 planning estimates are preserved in Git history. The
+[delivery map](#issue-10-deliverables-and-dependency-map) records current status.
+[Checkpoint 11](#checkpoint-11-local-validation) records executed local checks and
+[checkpoint 12](#12---final-approvals-and-staging-acceptance) owns target acceptance.
 
 ### Requirements alignment check
 
@@ -1930,8 +1902,10 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 **Session handoff (2026-11-24):** see the [current delivery map](#issue-10-deliverables-and-dependency-map)
 and the [conversation checkpoint verification](#10c5-local-verification-2026-11-23).
 [Checkpoint 11](#11---integrated-verification-and-handoff) is complete locally.
-Resume at the [checkpoint 12 approval gate](#12---final-approvals-and-staging-acceptance)
-after approval. Manual testing with real Firebase and shared staging data is deferred.
+Staging resumes at the [checkpoint 12 approval gate](#12---final-approvals-and-staging-acceptance)
+under [issue #21](https://github.com/Uniwares-LTD/unitale/issues/21). Manual testing
+with real Firebase and shared staging data is deferred. The [project roadmap](../../implementation-plan.md#open-work)
+links the parallel phone-first review and T22 owner download work.
 
 The user confirmed that `/books/new` keeps the focused frame. The actual Manager YAML
 emits `request_human.turn`; the [workflow package](workflow-package/README.md) records its
