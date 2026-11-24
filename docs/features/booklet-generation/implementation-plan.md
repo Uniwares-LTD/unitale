@@ -94,7 +94,7 @@ acceptance retain separate authorization. No agent delegation is implied.
 | T19 | Unitale | Versioned quality assessment service and bounded correction contract; issue #10 covers all review modes | T01,T02 | All six review modes and durable correction limits verified locally in 11; live quality remains in 12 |
 | T20 | Unitale | Manager composition, Human Input and durable continuation | T17,T18,T19 | Manager, authenticated Human Input and durable recovery verified locally in 11; live execution remains in 12 |
 | T21 | Unitale | Creator brief, quotes, progress, decisions, revisions and history | T15,T16 | Accepted scope verified locally in 10 and 11; phone-first review and staging acceptance remain open |
-| T22 | Unitale | Private reader and image downloads | T15,T16 | Private reader and owner access to originals verified locally; owner download action pending |
+| T22 | Unitale | Private reader and image downloads | T15,T16 | Owner download action verified locally on 2026-11-24. The production-build browser fixture downloaded the accepted cover after an illustration revision and an interior page. Both SHA-256 digests matched the retained originals. The same cover URL returned 401 without a session and 404 for a different verified account. [Issue #22](https://github.com/Uniwares-LTD/unitale/issues/22) |
 | T23 | Unitale | Manifest-bound deterministic PDF | T15,T16 | Pending |
 | T24 | Unitale | Revocable version-bound sharing and download controls | T22,T23 | Pending |
 | T25 | Unitale | Storefront, wallet, offers, coupons and entitlements | T13,T15 | Pending |
@@ -1905,7 +1905,7 @@ and the [conversation checkpoint verification](#10c5-local-verification-2026-11-
 Staging resumes at the [checkpoint 12 approval gate](#12---final-approvals-and-staging-acceptance)
 under [issue #21](https://github.com/Uniwares-LTD/unitale/issues/21). Manual testing
 with real Firebase and shared staging data is deferred. The [project roadmap](../../implementation-plan.md#open-work)
-links the parallel phone-first review and T22 owner download work.
+links the parallel phone-first review.
 
 The user confirmed that `/books/new` keeps the focused frame. The actual Manager YAML
 emits `request_human.turn`; the [workflow package](workflow-package/README.md) records its

@@ -345,6 +345,7 @@ export function BookConversation({
               title={data.title}
               heading={t("me75f834e009a")}
               openLabel={t("m920487473fe6")}
+              downloadLabel={t("md6eafe823591")}
               previousLabel={t("m1208ec01f223")}
               nextLabel={t("mca000000000f")}
               direction={reader.direction}
