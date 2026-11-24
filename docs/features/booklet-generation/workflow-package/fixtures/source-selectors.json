@@ -1,0 +1,968 @@
+{
+  "repository": "karpishe-experiments/agentic-poc",
+  "publishedCommit": "587f1b7775e316f4c58461dd3fda773af6d5dc2e",
+  "extractedSourceCommit": "1d4cc02307edad21aadefc244bcc4e286396b88f",
+  "path": "docs/accepted/2026-09-27_dify-booklet-runner/workflow-package/prompt-reference/catalog.json",
+  "selectors": [
+    {
+      "key": "manager/none/playful_kid/decision-or-proposal",
+      "role": "manager",
+      "taskId": null,
+      "promptSha256": "5815ed44ad07df30bf1d537e7398a9cf45a0ad78e5195934606c537579bfe190",
+      "schemaSha256": "06ec970b8265898ba13b1d7099dacc0c2a538af8b8fa157f58c3134082696bdb",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "tester/none/playful_kid/decision-or-proposal",
+      "role": "tester",
+      "taskId": null,
+      "promptSha256": "68cbb621b3daa21dc8f0ac2d3196f5a59f82fd07576ad251eed66551c30caf6b",
+      "schemaSha256": "a26f1f35f3836f94477f65ac0d67601347ce34d4c1c5c557f9ff8a4fb06c0b77",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "excluded-production"
+    },
+    {
+      "key": "tester/none/playful_kid/report",
+      "role": "tester",
+      "taskId": null,
+      "promptSha256": "118edcc438d13fed134dcf5b0604245799a39def7f747815c47f6f3d46948861",
+      "schemaSha256": "653fd9dba880b0402f54d5fce3c6a2b35f1793c5c52b667c99c982c63cbf0c5d",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "excluded-production"
+    },
+    {
+      "key": "judge/none/playful_kid/report",
+      "role": "judge",
+      "taskId": null,
+      "promptSha256": "118edcc438d13fed134dcf5b0604245799a39def7f747815c47f6f3d46948861",
+      "schemaSha256": "653fd9dba880b0402f54d5fce3c6a2b35f1793c5c52b667c99c982c63cbf0c5d",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J01/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J01",
+      "promptSha256": "4ab6bdb7bbdbde9b91bea9ce712616e7f5644f251d0149a0310997ab523efe34",
+      "schemaSha256": "22227b10afaf0326c481ee57f6f5d4edcd4efc69f131643dd1f00b63bf0b3f49",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J02/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J02",
+      "promptSha256": "e2f1a89b71d27d5f34245bf8e27ba633f02b0fb2f50b340de36404ced5c55d9a",
+      "schemaSha256": "6524b8a38038988caab0eeed608717a45286abc3bdab3290efdc82cdae681a1e",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J03/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J03",
+      "promptSha256": "a3a9d6ab62adb63477b17b59355d18788655f590197f0b9e6bce229cdccd6779",
+      "schemaSha256": "300ebd4e5295d4a2f1f1dcdac257693356fc213842ef3e654a28e18b2330b1a0",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J04/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J04",
+      "promptSha256": "43ce5a5e48539e9d8b96c659236e4f2137de7325661d3b16f4ed2e21e4308024",
+      "schemaSha256": "3ee0bc19568ed8503bfc3b55c37ad5db4404107f6a91179c7a1eb1f72b2c6797",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J05/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J05",
+      "promptSha256": "e9be6bcdb72a004c10a6b8223eeb072dfffa8cadf7b09c8c590265296a96f1ac",
+      "schemaSha256": "6587e93420bcc5a19d7b96ca1b1c3d74b9138b97966d1e69d9cfb66e712f48b2",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J06/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J06",
+      "promptSha256": "b90de720c5f91ded0952b08b92422271485ed4b3054650c1aa83f4759e8e54cf",
+      "schemaSha256": "7e25ae3f61c923f33c330e0c21c87a4ae0f8780aed1086c0c81ac48ca69cf5e2",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J07/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J07",
+      "promptSha256": "fc7b490f751a86508b3c0b536276995d67c7bc510e97bb5fa3425f8eb2bb3afa",
+      "schemaSha256": "61bc3f5a7b4a67335172ad54e8c87a2d7a54fb4e0bd368f6e26e8c5b4bfb800b",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J08/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J08",
+      "promptSha256": "386f3ec1d015e1898732137b9034f8632c8f4d8f3d2f3c2c59420bf553c688df",
+      "schemaSha256": "db0809559da49c9f0242bb0f61769954e3dec41ec639f1e0afcb42cbc97441b8",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J09/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J09",
+      "promptSha256": "d84560c234398e12d2b1dc3b97049f7212bb085e9886758363eebc534a00e7a1",
+      "schemaSha256": "e264aa893408e522c31d382f5963519107d1506ce35fad7154819e2e74cd6afb",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J10/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J10",
+      "promptSha256": "9fafc1b89bbebd10ac04686c1f373e7585dd111c126c5b43ddb7dcf139353981",
+      "schemaSha256": "2a85c1ae32f1916033e47514ad95dfde7573299b1c49988a9083e99da1c7ae16",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J11/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J11",
+      "promptSha256": "9425cdbb5e2f9ef94fec9ff75deff0491c3227080720830cbc311b3c9d8919bd",
+      "schemaSha256": "361f82158eda2995a84e7956b28d31dcff0605a41be5b349ec00725334dfcb54",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J12/playful_kid/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J12",
+      "promptSha256": "961e36648756946b1cbb25cc76dbdf85e751de6ea01f52219667a4fcc6f1863a",
+      "schemaSha256": "2e24eb78543b2bba0ac7f97aeecc2fe11cee2d386d0a2d180e0d516c415ee7b4",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "manager/none/enthusiast_parent/decision-or-proposal",
+      "role": "manager",
+      "taskId": null,
+      "promptSha256": "5815ed44ad07df30bf1d537e7398a9cf45a0ad78e5195934606c537579bfe190",
+      "schemaSha256": "06ec970b8265898ba13b1d7099dacc0c2a538af8b8fa157f58c3134082696bdb",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "tester/none/enthusiast_parent/decision-or-proposal",
+      "role": "tester",
+      "taskId": null,
+      "promptSha256": "b7aea056dfc51984f1ffa293fc5cd96a3f414c11a23b121dd5053f5ed5ae5ba9",
+      "schemaSha256": "a26f1f35f3836f94477f65ac0d67601347ce34d4c1c5c557f9ff8a4fb06c0b77",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "excluded-production"
+    },
+    {
+      "key": "tester/none/enthusiast_parent/report",
+      "role": "tester",
+      "taskId": null,
+      "promptSha256": "118edcc438d13fed134dcf5b0604245799a39def7f747815c47f6f3d46948861",
+      "schemaSha256": "653fd9dba880b0402f54d5fce3c6a2b35f1793c5c52b667c99c982c63cbf0c5d",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "excluded-production"
+    },
+    {
+      "key": "judge/none/enthusiast_parent/report",
+      "role": "judge",
+      "taskId": null,
+      "promptSha256": "118edcc438d13fed134dcf5b0604245799a39def7f747815c47f6f3d46948861",
+      "schemaSha256": "653fd9dba880b0402f54d5fce3c6a2b35f1793c5c52b667c99c982c63cbf0c5d",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J01/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J01",
+      "promptSha256": "4ab6bdb7bbdbde9b91bea9ce712616e7f5644f251d0149a0310997ab523efe34",
+      "schemaSha256": "22227b10afaf0326c481ee57f6f5d4edcd4efc69f131643dd1f00b63bf0b3f49",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J02/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J02",
+      "promptSha256": "e2f1a89b71d27d5f34245bf8e27ba633f02b0fb2f50b340de36404ced5c55d9a",
+      "schemaSha256": "6524b8a38038988caab0eeed608717a45286abc3bdab3290efdc82cdae681a1e",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J03/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J03",
+      "promptSha256": "a3a9d6ab62adb63477b17b59355d18788655f590197f0b9e6bce229cdccd6779",
+      "schemaSha256": "300ebd4e5295d4a2f1f1dcdac257693356fc213842ef3e654a28e18b2330b1a0",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J04/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J04",
+      "promptSha256": "43ce5a5e48539e9d8b96c659236e4f2137de7325661d3b16f4ed2e21e4308024",
+      "schemaSha256": "3ee0bc19568ed8503bfc3b55c37ad5db4404107f6a91179c7a1eb1f72b2c6797",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J05/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J05",
+      "promptSha256": "e9be6bcdb72a004c10a6b8223eeb072dfffa8cadf7b09c8c590265296a96f1ac",
+      "schemaSha256": "6587e93420bcc5a19d7b96ca1b1c3d74b9138b97966d1e69d9cfb66e712f48b2",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J06/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J06",
+      "promptSha256": "b90de720c5f91ded0952b08b92422271485ed4b3054650c1aa83f4759e8e54cf",
+      "schemaSha256": "7e25ae3f61c923f33c330e0c21c87a4ae0f8780aed1086c0c81ac48ca69cf5e2",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J07/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J07",
+      "promptSha256": "fc7b490f751a86508b3c0b536276995d67c7bc510e97bb5fa3425f8eb2bb3afa",
+      "schemaSha256": "61bc3f5a7b4a67335172ad54e8c87a2d7a54fb4e0bd368f6e26e8c5b4bfb800b",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J08/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J08",
+      "promptSha256": "386f3ec1d015e1898732137b9034f8632c8f4d8f3d2f3c2c59420bf553c688df",
+      "schemaSha256": "db0809559da49c9f0242bb0f61769954e3dec41ec639f1e0afcb42cbc97441b8",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J09/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J09",
+      "promptSha256": "d84560c234398e12d2b1dc3b97049f7212bb085e9886758363eebc534a00e7a1",
+      "schemaSha256": "e264aa893408e522c31d382f5963519107d1506ce35fad7154819e2e74cd6afb",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J10/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J10",
+      "promptSha256": "9fafc1b89bbebd10ac04686c1f373e7585dd111c126c5b43ddb7dcf139353981",
+      "schemaSha256": "2a85c1ae32f1916033e47514ad95dfde7573299b1c49988a9083e99da1c7ae16",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J11/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J11",
+      "promptSha256": "cc50773671d91dc29dcdebc83b2c69eda8c7ceb0c401f4ce10459189f00fa532",
+      "schemaSha256": "bd37282307dace567336693448fe8e0a5f0e0c0615f8b3a972742c95b92a61c4",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J12/enthusiast_parent/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J12",
+      "promptSha256": "961e36648756946b1cbb25cc76dbdf85e751de6ea01f52219667a4fcc6f1863a",
+      "schemaSha256": "2e24eb78543b2bba0ac7f97aeecc2fe11cee2d386d0a2d180e0d516c415ee7b4",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "manager/none/professional_creator/decision-or-proposal",
+      "role": "manager",
+      "taskId": null,
+      "promptSha256": "5815ed44ad07df30bf1d537e7398a9cf45a0ad78e5195934606c537579bfe190",
+      "schemaSha256": "06ec970b8265898ba13b1d7099dacc0c2a538af8b8fa157f58c3134082696bdb",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "tester/none/professional_creator/decision-or-proposal",
+      "role": "tester",
+      "taskId": null,
+      "promptSha256": "72eff3608ef499d935ce1b8b681f82494edc35d75e53ea484400f90f5e39b77f",
+      "schemaSha256": "a26f1f35f3836f94477f65ac0d67601347ce34d4c1c5c557f9ff8a4fb06c0b77",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "excluded-production"
+    },
+    {
+      "key": "tester/none/professional_creator/report",
+      "role": "tester",
+      "taskId": null,
+      "promptSha256": "118edcc438d13fed134dcf5b0604245799a39def7f747815c47f6f3d46948861",
+      "schemaSha256": "653fd9dba880b0402f54d5fce3c6a2b35f1793c5c52b667c99c982c63cbf0c5d",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "excluded-production"
+    },
+    {
+      "key": "judge/none/professional_creator/report",
+      "role": "judge",
+      "taskId": null,
+      "promptSha256": "118edcc438d13fed134dcf5b0604245799a39def7f747815c47f6f3d46948861",
+      "schemaSha256": "653fd9dba880b0402f54d5fce3c6a2b35f1793c5c52b667c99c982c63cbf0c5d",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J01/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J01",
+      "promptSha256": "4ab6bdb7bbdbde9b91bea9ce712616e7f5644f251d0149a0310997ab523efe34",
+      "schemaSha256": "22227b10afaf0326c481ee57f6f5d4edcd4efc69f131643dd1f00b63bf0b3f49",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J02/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J02",
+      "promptSha256": "e2f1a89b71d27d5f34245bf8e27ba633f02b0fb2f50b340de36404ced5c55d9a",
+      "schemaSha256": "6524b8a38038988caab0eeed608717a45286abc3bdab3290efdc82cdae681a1e",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J03/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J03",
+      "promptSha256": "a3a9d6ab62adb63477b17b59355d18788655f590197f0b9e6bce229cdccd6779",
+      "schemaSha256": "300ebd4e5295d4a2f1f1dcdac257693356fc213842ef3e654a28e18b2330b1a0",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J04/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J04",
+      "promptSha256": "43ce5a5e48539e9d8b96c659236e4f2137de7325661d3b16f4ed2e21e4308024",
+      "schemaSha256": "3ee0bc19568ed8503bfc3b55c37ad5db4404107f6a91179c7a1eb1f72b2c6797",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J05/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J05",
+      "promptSha256": "e9be6bcdb72a004c10a6b8223eeb072dfffa8cadf7b09c8c590265296a96f1ac",
+      "schemaSha256": "6587e93420bcc5a19d7b96ca1b1c3d74b9138b97966d1e69d9cfb66e712f48b2",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J06/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J06",
+      "promptSha256": "b90de720c5f91ded0952b08b92422271485ed4b3054650c1aa83f4759e8e54cf",
+      "schemaSha256": "7e25ae3f61c923f33c330e0c21c87a4ae0f8780aed1086c0c81ac48ca69cf5e2",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J07/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J07",
+      "promptSha256": "fc7b490f751a86508b3c0b536276995d67c7bc510e97bb5fa3425f8eb2bb3afa",
+      "schemaSha256": "61bc3f5a7b4a67335172ad54e8c87a2d7a54fb4e0bd368f6e26e8c5b4bfb800b",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J08/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J08",
+      "promptSha256": "386f3ec1d015e1898732137b9034f8632c8f4d8f3d2f3c2c59420bf553c688df",
+      "schemaSha256": "db0809559da49c9f0242bb0f61769954e3dec41ec639f1e0afcb42cbc97441b8",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J09/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J09",
+      "promptSha256": "d84560c234398e12d2b1dc3b97049f7212bb085e9886758363eebc534a00e7a1",
+      "schemaSha256": "e264aa893408e522c31d382f5963519107d1506ce35fad7154819e2e74cd6afb",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J10/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J10",
+      "promptSha256": "9fafc1b89bbebd10ac04686c1f373e7585dd111c126c5b43ddb7dcf139353981",
+      "schemaSha256": "2a85c1ae32f1916033e47514ad95dfde7573299b1c49988a9083e99da1c7ae16",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J11/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J11",
+      "promptSha256": "2635481af9fe756310efe14eb8bfccac0fb5bedaaf7ed0d0debc1e937288eea3",
+      "schemaSha256": "761a04601667a06cea13b822f5c33ce1f5d189606298bfba0c50c57597cd8d05",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    },
+    {
+      "key": "specialist/J12/professional_creator/decision-or-proposal",
+      "role": "specialist",
+      "taskId": "J12",
+      "promptSha256": "961e36648756946b1cbb25cc76dbdf85e751de6ea01f52219667a4fcc6f1863a",
+      "schemaSha256": "2e24eb78543b2bba0ac7f97aeecc2fe11cee2d386d0a2d180e0d516c415ee7b4",
+      "sourcePaths": [
+        "lib/experiment-runner/execution-request.ts",
+        "lib/experiment-runner/m4-request.ts",
+        "db/experiment-text-preparation.ts"
+      ],
+      "sourceSymbols": [
+        "executionDefinitionFor",
+        "realRequestDefinition",
+        "executionRequestDefinition",
+        "m4RequestDefinition",
+        "m4AllowedContextValues"
+      ],
+      "disposition": "adapt"
+    }
+  ]
+}

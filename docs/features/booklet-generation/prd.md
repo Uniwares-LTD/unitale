@@ -1,5 +1,24 @@
 # Unitale booklet generation requirements
 
+The [workflow design](workflow-design.md) records the accepted issue #10 delivery
+and ownership decisions. It supersedes the earlier application-enforced human/quality
+gates for the target design. Existing T14-T17 code still implements those older guards;
+v1 behavior remains unchanged. The DSL-first local candidate through 06 and local
+v2 storage/runtime integration through 09.7 are implemented and locally reviewed. Current verification is in the candidate README. Creator UI is 10,
+integrated validation 11 and authorized target acceptance 12.
+
+The [A01-A22 technical resolutions](workflow-package-spec.md#technical-resolutions-for-a01-a22)
+and [01-12 checkpoints](implementation-plan.md#issue-10-deliverables-and-dependency-map)
+record workflow-first delivery: complete the candidate package and application-change
+handoff at 06, then require explicit authorization before app implementation at 07.
+Scope B subsequently supplied that authorization; the active goal stops before 10.
+The first phase uses official Dify plugins and native YAML with essential inline code,
+without a custom plugin or Unitale/Unibase runtime changes.
+These checkpoints do not
+mark G implementation gaps or E evidence gates complete. Native MCP image transfer
+replaces the proposed stateful file utility; a lost parent must be reconciled before
+successor admission. These refinements preserve the accepted product boundaries.
+
 ## Outcome and users
 
 Registered creators buy configurable booklet production using credits, guide the
@@ -14,10 +33,21 @@ Google Play. A persistent booklet has multiple paid production versions; continu
 a version does not repurchase it. Preserve existing Runs, purchases and artifacts.
 Exclude iOS, uploads, manuscript imports, discovery, printing and persona creation.
 
-The dispatcher calls only the orchestrator. The orchestrator calls text/image
-specialists and a separate visual reviewer, requests human input and accesses MCP.
+The dispatcher calls only Manager. Manager calls the focused narrative, art, page,
+image and independent quality services, manages human interaction and accesses MCP.
 Children have no MCP credential or private Run context. All workflow tools use
 `/api/mcp`; ordinary browser/admin routes and payment webhooks remain ordinary APIs.
+Issue #10 (amended 2026-11-23, checkpoint 10-chat-version) presents booklet creation as a
+conversation at `/books/new` and `/books/[id]`, following the accepted Prototype One
+interaction and visual decisions (design-system v0.4, confirmed as the MVP baseline). The
+conversation renders Manager-chosen turns over the existing Run decision records; the
+prototype's step order is illustrative only. Sign-in and price consent stay before the
+start, as in checkpoint 10; the prototype's mid-journey sign-in and price at the first
+approval gate are accepted gaps for MVP. Generic Runs keep
+the existing Run UI. Manager owns call grouping and
+parallelism; the initial serial strategy is not an app or service-contract restriction.
+The full creator workspace and delivery features remain their
+separate milestones; the seven-workflow package is one integrated staging delivery.
 
 ## Requirements and acceptance
 
@@ -36,7 +66,8 @@ preferences. Preserve en/ar UI; book languages require separate lettering/RTL ac
 Each version snapshots its package/order, source production, locks, entitlements,
 artifacts and execution history. Allow one active mutation workflow per production.
 New paid versions reopen story/references and preserve completed predecessors.
-Reused creative content requires explicit acceptance. Test concurrent starts and stale tabs.
+Reused creative content requires explicit Manager acceptance with exact provenance;
+Manager decides whether to ask the human. Test concurrent starts and stale tabs.
 
 ### R03 — Operational schema
 
@@ -62,10 +93,20 @@ Customer credits and provider expenditure are separate.
 
 Adapt source J01–J12 text and J13 image responsibilities. The manager sequences work,
 clarifications, reviews and continuation. Unitale validates state without scheduling
-specialists. Human decisions come from authenticated Run UI, bind exact revisions,
-become stale when targets change and cannot be fabricated by tools. No fixed review
-mode or personas. Prove generated parent/child, bounded loops and Human Input against
-the deployed Dify version; offline fixtures alone do not prove live compatibility.
+specialists. Human decisions come from the authenticated, signed-in owner through the booklet conversation, bind exact revisions,
+become stale when targets change and cannot be fabricated by tools. Manager alone
+decides whether human approval is needed, what to ask and when/how to ask. The app
+records authentic answers but does not require approval for generation, downstream
+use or completion. Manager acceptance, human responses and quality assessments are
+separate records/concepts. No fixed review mode or personas. Prove generated
+parent/child, bounded loops and Human Input against the deployed Dify version;
+offline fixtures alone do not prove live compatibility.
+
+Common human-review checkpoints remain optional Manager policy. Prefer fewer
+interruptions, combine related questions and ask only when context or the user's
+requested control warrants it. Financial consent remains an app responsibility.
+Use the published reference models initially, with model-independent service
+contracts and replaceable versioned model/workflow bindings.
 
 ### R06 — Revision gates
 
@@ -86,7 +127,10 @@ Lock transactionally before downstream authorization; failure/unknown does not u
 One configured service credential covers the catalog; automatic scoped Run context
 still enforces ownership and allowed operations. Versioned tools read context, begin
 operations, save revisions, record evidence, retain/read original assets, record quality,
-apply already-persisted human decisions, inspect operations and complete manifests.
+retrieve already-persisted human decisions, record Manager acceptance, inspect
+operations and complete structurally valid manifests. These are target capabilities;
+the preserved v1 T17 catalog follows its earlier approval contract; the opt-in v2
+Manager catalog implements the new boundary with local evidence through 09.6.
 Stable idempotency keys and expected revisions make identical retries return the first
 effect and changed payloads conflict. Keep secrets out of prompts, outputs and logs.
 
@@ -107,12 +151,24 @@ storage and configured private object storage without requiring cloud credential
 
 ### R10 — Quality
 
-A separate versioned visual-review workflow blocks missing/wrong/unreadable lettering,
-missing story content, material character/location inconsistency and unusable layout.
-Unitale checks evidence/target/policy identity and enforces disposition, not visual logic.
-Aesthetic preference is human revision. Platform-funded repairs default to one/output,
-obey finite package budgets and never use customer allowances. Exhaustion stops for
-admin resolution. Human approval cannot bypass a failed required review.
+A separate versioned Reviewer assesses text, specifications, final image requests,
+generated images, whole-book output and targeted corrections. Findings distinguish
+confirmed repairable defects, advisories, inconclusive evidence and blocked execution.
+Manager owns every quality gate, including exact-request preflight for all image kinds,
+output review and whole-book coverage. Reviewer reports; Manager coordinates the next
+action. Neither Unitale nor Image Executor independently requires a quality pass for
+progression. Unitale still verifies evidence authenticity and integrity.
+
+Review criteria include missing/wrong/unreadable lettering, missing required story
+content, material character/location inconsistency and unusable layout. Manager
+reviews artifacts before acceptance/downstream use, not every temporary draft.
+
+Manager must not substitute human approval for a required pass or regenerate from
+aesthetic advice or inconclusive evidence. Platform-funded corrections never consume
+customer revision allowances. Manager's Dify configuration defaults to three LLM
+corrections after the initial attempt and one image correction after the initial image.
+App-enforced counters and product ceilings survive continuation. Exhaustion pauses
+with findings and a resolution path. See the [ownership decisions](workflow-design.md#decision-and-enforcement-ownership).
 
 ### R11 — Purchases, subscriptions and promotions
 
@@ -140,6 +196,17 @@ charge again. Failed/cancelled started production retains charge pending admin r
 Audited adjustments link original charges; fully refunded entitlements cannot continue.
 Unknown provider outcomes require reconciliation, not automatic paid replay. Snapshot and
 disclose optional expiry. Numerical examples are fixtures only.
+Manager controls paid dispatch. Unitale records usage and overages, and can block new
+paid work at a configured per-production ceiling as a safeguard, not a hard spending
+guarantee. Continuations and corrections share the production's usage; a new paid
+production has its own ceiling. Use reported cost when available, otherwise labelled
+estimates with versioned pricing; replace estimates without double counting. Unknown
+usage remains visible. Manager may continue independent work while reconciling an
+unknown call, but must never replay that call blindly. Already-dispatched work may
+finish and produce a recorded overage; retention, reconciliation and reads remain
+available. Signed execution grants, provider-spend reservations and executor-level
+replay protection are not v1 requirements. Existing hard customer-credit, purchase,
+entitlement and product-lock rules remain app-owned.
 
 ### R13 — Delivery
 
@@ -159,9 +226,12 @@ budgets, MCP and retention settings.
 
 ## Decisions and sources
 
-Accepted implementation request is the authority for R01–R14. Use
-[agentic-poc at the pinned revision](https://github.com/karpishe-experiments/agentic-poc/tree/baa9dda25c041b2d7a77853f9f6c3daa73161217),
-not story-panel. Source Real acceptance was incomplete; it is not Unitale acceptance.
+Accepted product requirements and the [workflow design decisions](workflow-design.md)
+govern R01–R14. Local package completion does not establish live acceptance. The original
+foundation used [agentic-poc at its pinned revision](https://github.com/karpishe-experiments/agentic-poc/tree/baa9dda25c041b2d7a77853f9f6c3daa73161217).
+Issue #10 uses the newer published package pinned in the
+[workflow design sources](workflow-design.md#sources-and-maintenance), not story-panel.
+Source Real acceptance was incomplete; it is not Unitale acceptance.
 Unibase owns reusable transport, execution evidence, commerce, wallet and admin frameworks;
 Unitale owns book-specific rules, workflows and experiences.
 
@@ -173,5 +243,14 @@ acceptance. No publication, live configuration or paid calls follow from plan ap
 
 ## Open decisions and readiness
 
-Product decisions are closed. Admin values, environment provisioning and live evidence
-are explicit release prerequisites, not permission to invent launch configuration.
+The original product baseline is accepted. Issue #10's workflow ownership changes are
+accepted as documented in [workflow design](workflow-design.md). The
+[package specification](workflow-package-spec.md) defines the planned service,
+usage-evidence, compatibility and minimum UI contracts; the
+[delivery plan](implementation-plan.md#issue-10-deliverables-and-dependency-map)
+defines implementation checkpoints and unpassed technical/live evidence gates. Admin values,
+environment provisioning and live evidence are explicit release prerequisites, not
+permission to invent launch configuration.
+The [readiness register](workflow-design.md#implementation-readiness-audit) maps each
+A01-A22 resolution to its contract and required proof. Selected design decisions do
+not establish runtime compatibility or authorize implementation.

@@ -26,18 +26,105 @@ and the adapter; the table does not require unrelated suites for every task.
 
 - [Booklet requirements](features/booklet-generation/prd.md) and
   [delivery plan](features/booklet-generation/implementation-plan.md) own the accepted
-  product contract and cross-repository dependencies. Implementation is in progress.
+  product contract and cross-repository dependencies. Its
+  [delivery map](features/booklet-generation/implementation-plan.md#issue-10-deliverables-and-dependency-map)
+  owns checkpoint progress, estimates and the resume point. Its
+  [post-import design mapping](features/booklet-generation/implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
+  records the design-reference adoption and merge evidence. Its
+  [retry/reconciliation policy](features/booklet-generation/implementation-plan.md#action-retries-and-automatic-reconciliation)
+  owns accepted defaults and recovery semantics.
+  [Workflow package design](features/booklet-generation/workflow-design.md) owns
+  issue #10's accepted Manager/app/service boundaries, integration gap assessment and
+  open contract decisions. It distinguishes the target from current application code.
+  The [candidate package](features/booklet-generation/workflow-package/README.md)
+  contains readable native Dify YAML, essential inline checks and source provenance;
+  its [integration handoff](features/booklet-generation/workflow-package/integration-handoff.md)
+  records implemented local boundaries and the remaining provider acceptance checks.
+  Official provider plugins are configuration dependencies; no custom provider package
+  or workflow authoring framework is delivered. Target capabilities remain pending.
+  The handoff also links the bounded offline-tested upstream patch for demonstrated
+  official-plugin gaps, plus isolated test-build evidence and verified cleanup.
+  The upstream PR is withdrawn. The handoff owns accepted SDK retry/default-timeout/alias
+  tradeoffs; reuse installed shared providers unchanged. Local builds are optional
+  historical remediation, not delivery prerequisites or official releases.
+  [First-package specification](features/booklet-generation/workflow-package-spec.md)
+  owns the detailed operation mapping, proposed contracts, configuration inputs and
+  app/MCP/UI change inventory for generating the seven workflows.
+  The delivery plan's 01-12 checkpoints own issue #10 sequencing, per-gap coverage,
+  exact validation commands and implementation/publication/paid-acceptance gates.
+  01-06 deliver a candidate package before application changes; 07-12 are gated
+  application integration and staging acceptance. Its execution procedure owns slice
+  order, two-pass review, evidence/resume records and dependency reassessment.
+  The model docs own the opt-in v2 storage contract. The provider handoff links back to
+  the delivery map for application progress.
+  [Implementation-readiness audit](features/booklet-generation/workflow-design.md#implementation-readiness-audit)
+  maps A01-A22 to selected technical resolutions and their remaining verification gates.
+  The package specification owns the wire/storage/transport/recovery/UI details;
+  design closure is distinct from G implementation gaps and E1-E6 runtime evidence.
   [Contract compatibility](features/booklet-generation/contracts.md) describes the
   opt-in v1 schemas and the distinction between shape validation and service authorization.
   [Model review](features/booklet-generation/model.md) owns the accepted document boundaries, nested JSON example, diagrams and implemented lifecycle/media boundaries;
   Unitale repositories and schemas live in `src/lib/server/booklets`;
+  [v2 content boundaries](../src/project/booklets/contracts-v2.ts) and the
+  [v2 repository](../src/lib/server/booklets/repository-v2.ts) are opt-in 07 work,
+  preserving strict v1 readers and records. V2 work, scoped assessments and Manager
+  acceptance use project-owned collections and the index-only 0004 migration; trusted
+  runtime/tool wiring is locally verified through 09.6; target execution remains pending.
   `src/project/booklets/extension.ts` and `server.ts` own registration.
+  Checkpoint 10's private application facade is `src/lib/server/booklets/application.ts`
+  (tested by `npm run test:booklet-application`); its client-safe commands/DTOs are
+  `src/project/booklets/application-contract.ts`, served by `src/app/api/booklets`
+  (routes build the facade through `application-request.ts`). Booklet Run detail
+  redirects to the owned conversation. Recovery and history are available there
+  through `book-details.tsx`, `booklet-actions.tsx` and `booklet-history.tsx`.
+  Booklet administration is `src/app/admin/booklets`, `src/app/api/admin/booklets`
+  and `src/lib/server/booklets/admin.ts`.
+  The default conversation package setting is in `src/lib/server/booklets/settings.ts`.
+  The conversation turn/reply contract is `src/project/booklets/turn-contract.ts`
+  (tested by `tests/booklet-turns.test.ts`); `repository-v2.ts` `requestHuman` binds it.
+  The conversation pages are `src/app/books/new` and `src/app/books/[id]`, with booklet
+  client components in `src/project/booklets/conversation/` composed from the reusable
+  Unitale conversation components in `src/project/components/conversation/`. The facade's `entry`,
+  `startIdea`, `conversation` and `reply` serve them, and
+  `tests/integration/booklet-chat-manager.ts` is the local preview Manager.
+  The project Run start link (`src/project/run-start.tsx`) and
+  home (`src/project/home.tsx`) use existing project slots. Browser checks seed the
+  disposable fixture with `tests/integration/booklet-fixture-seed.ts` and run
+  `booklet-conversation-browser.js`, `booklet-conversation-matrix.js` and
+  `booklet-start-recovery.js` in
+  `tests/integration` through playwright-cli. The checkpoint 10 form and panel
+  scripts are historical. `npm run test:booklet-modules` runs the
+  module-disabled test in `tests/booklet-modules` with Node module mocking.
   `npm run test:booklet-repositories` and `npm run test:booklet-lifecycle-media` verify disposable-database behavior.
-  `src/lib/server/booklets/mcp-tools.ts` owns the private catalog and
-  `mcp-transfers.ts` its bounded staging; `npm run test:booklet-mcp` verifies the
+  `src/lib/server/booklets/mcp-tools.ts` owns the private v1 catalog and
+  `mcp-tools-v2.ts` its v2 checkpoint/index/creative-registration handlers and typed-read wrapper;
+  `read-v2.ts` owns v2 production/checkpoint/revision/work/assessment/acceptance/execution DTOs, authenticated human-response correlation, bounded typed sections and owned artifact/action/acceptance/human/execution/production history metadata;
+  direct owned v2 predecessor reads and exact revalidation copy use the same readers/repository, with verified original attachments and separately selected current candidates;
+  `suite-v2.ts` validates server-owned Manager/child-tool mappings and resolves the configured Reviewer policy;
+  `usage-v2.ts` reads owned work-attempt totals, native Run costs and execution bounds for context and dispatch guards without adding an accounting ledger;
+  `reconcile-v2.ts` supplies one leased, non-paid accepted-work readback per existing AI-worker cycle, including after a parent Run terminates; it retains results/logs without dispatch or successor creation;
+  `retry-v2.ts` implements the v2 domain's existing-worker `resumePaused` hook for the call-bound native `retry-wait`; it uses journaled application decisions and cannot answer creator questions or dispatch work;
+  `mcp-transfers.ts` owns bounded staging. `npm run test:booklet-mcp` verifies the
   real MCP handler with disposable persistence. [MCP guidance](mcp.md#unitale-booklet-catalog-t17)
   owns its permissions, transfer protocol and trusted reviewer binding.
   Booklet lifecycle, prepaid Run admission, guards and original-media services are in `src/lib/server/booklets`; the domain adapter is `src/project/booklets/domain.ts`.
+  The existing admission service selects the stored v1/v2 production and matching
+  domain version; both adapters reject generic Run-start admission. V2 financial
+  lifecycle calls live in `src/lib/server/booklets/lifecycle-v2.ts` and reuse existing
+  commerce quote/allocation journals and shared product revision-scope checks;
+  MCP and observer wiring are implemented and locally fixture-tested in 09.
+  `src/lib/server/booklets/work-v2.ts` derives creative-text, review and image-action
+  registration identity from validated child inputs; preflight binds exact retained preparation.
+  Registration records intent without dispatching providers.
+  `media.ts` reuses the original byte store for v2 observed Generate outputs, selected
+  by a server-only ownership option; `mcp-tools-v2.ts` matches native files before download.
+  The same gateway returns ordered original MCP image blocks separately from JSON;
+  `repository-v2.ts` publishes one selected original/artifact effect per observed output.
+  `observations-v2.ts` retains matching child envelopes through the existing native
+  worker hook; raw creative bodies stay separate from redacted diagnostic traces.
+  V2 transfer reuses `mcp-transfers.ts` with server-selected versioned ownership.
+  `reconcile-v2.ts` performs non-paid accepted-parent readback through existing provider
+  retrieval/tracing, without rewriting worker leases or granting dispatch authority.
   Regenerate the simple/complete Mermaid versions with `npm run docs:booklet-model` whenever model relationships change.
   The [offline Dify harness](features/booklet-generation/dify-compatibility.md) owns
   candidate graph/adapter compatibility evidence and `test:booklet-compat`;

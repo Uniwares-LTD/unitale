@@ -1,10 +1,10 @@
 "use client";
 
-import type { ComponentProps, ComponentType } from "react";
+import type { ComponentProps, FC } from "react";
 import type { RunDetail } from "@/components/runs/run-ui";
 
-// Project-owned controls inside the existing poller. Authorization stays server-side.
-export const ProjectRunDetail: ComponentType<{
+// Booklet Runs resolve to their conversation before the generic detail mounts.
+export const ProjectRunDetail: FC<{
   data: ComponentProps<typeof RunDetail>["initial"];
   refresh: () => Promise<void>;
 }> = () => null;

@@ -12,17 +12,25 @@ Core document boundaries and selected nested fields. Complete details: [complete
 %%{init: {"theme":"base","themeVariables":{"primaryColor":"#f1f5f9","primaryTextColor":"#172033","primaryBorderColor":"#64748b","lineColor":"#64748b","edgeLabelBackground":"#ffffff"},"flowchart":{"htmlLabels":false,"useMaxWidth":false}}}%%
 flowchart TB
   Booklet["Booklet<br/>I: T14 bookletBooks<br/>_id / documentVersion / ownerId / title / version<br/>currentProductionId? -&gt; Production<br/>createdAt / updatedAt<br/>deletion {deletedAt?, recoverUntil?}"]
-  Production["Production<br/>I: bookletProductions; T14/T15<br/>_id / bookletId / orderId / revisionChargeId? / version<br/>brief {} / creativeConfigSnapshot {}<br/>subjects[] {<br/>  id / kind / label<br/>  artifacts[] {id, kind, currentRevisionId, acceptedRevisionId}<br/>}<br/>stageLocks {} / mutationLease? {}"]
+  Production["Production<br/>I: bookletProductions; T14/T15<br/>_id / bookletId / orderId / revisionChargeId? / version<br/>brief {} / creativeConfigSnapshot {}<br/>v2: retryPolicy {} / checkpointVersion / checkpoint?<br/>subjects[] {<br/>  id / kind / label<br/>  artifacts[] {id, kind, currentRevisionId, acceptedRevisionId}<br/>}<br/>stageLocks {} / mutationLease? {}"]
   Artifact_revision["Artifact revision<br/>I: bookletRevisions; immutable content<br/>_id / productionId / artifactId / subjectId<br/>kind / ordinal / contentHash<br/>content {panels[] {lettering[]} or other typed payload}<br/>sources[] / assets[] / provenance {}"]
+  Work_attempt["Work attempt<br/>I: 07 bookletWork storage; dispatch integration pending 09<br/>_id / documentVersion 2 / ownerId / productionId / callId / runId<br/>actionKey / requestHash / service / operation / category<br/>requestPayload? {exact meaningful JSON, max 256 KiB}<br/>resultPayload? {exact observed JSON, max 1 MiB}"]
+  Scoped_assessment["Scoped assessment<br/>I: 07 bookletAssessments; trusted observer wiring pending 09<br/>_id / documentVersion 2 / ownerId / productionId / callId<br/>policyBinding / reviewerBinding / createdAt / evidenceIds[]<br/>assessment {mode, targetHash, requestHash?, sources[],<br/>  disposition, coverage, findings[], limitations[]}"]
+  Manager_acceptance["Manager acceptance<br/>I: bookletAcceptances; locally verified Manager gateway<br/>_id / documentVersion 2 / ownerId / productionId / runId<br/>revisionId / contentHash / targetIds[] / assetIds[]<br/>evidenceIds[] / createdAt<br/>Atomic acceptedRevisionId selection; distinct from human/quality policy"]
   Operation["Operation<br/>I: bookletGenerations; image admission<br/>_id / documentVersion / ownerId / productionId / runId<br/>artifactId / state / createdAt / revisionId? / repairRoot?<br/>sources[] {artifactId, revisionId, sha256}<br/>revisionAllocationId? (one output root per allocation/artifact)"]
   Quality_review["Quality review<br/>I: bookletQualityReviews<br/>_id / ownerId / productionId<br/>value {schemaVersion, id, operationId, productionId, createdAt,<br/>  target {artifactId, revisionId, sha256}, asset {assetId, sha256},<br/>  sources[] {artifactId, revisionId, sha256},"]
   Original_asset_receipt["Original asset receipt<br/>I: bookletAssets; originals and derivatives<br/>_id / documentVersion / ownerId / productionId / operationId<br/>outputKey / inputHash / sha256 / bytes / mime / width / height<br/>state: staging or ready / originalAssetId? / createdAt<br/>storage {kind: mongo} or {kind: object, object {storeId, key, versionId?}}"]
   Consumption_order["Consumption order<br/>I: consumptionOrders<br/>_id<br/>value {id, ownerId, targetId, terms, state}<br/>value {chargedCredits, refundedCredits, chargeLedgerId?}<br/>value {idempotencyKey, inputHash, startedAt?, expiresAt?}"]
   Review_request["Review request<br/>I: bookletReviewRequests<br/>_id / documentVersion / ownerId / productionId / runId<br/>targets[] {artifactId, revisionId, sha256}<br/>contentHash / presentationHash / sourceProductionId?<br/>appliedDecisionId? / createdAt"]
+  Work_attempt -->|"productionId; frozen retry/correction scope"| Production
+  Scoped_assessment -->|"observed callId and exact review scope"| Work_attempt
+  Manager_acceptance -->|"exact owned revision and contentHash"| Artifact_revision
+  Manager_acceptance -->|"accepted pointer updated atomically"| Production
   Booklet -->|"currentProductionId; one booklet has many productions"| Production
   Production -->|"subjects[].artifacts[] current and accepted revision IDs"| Artifact_revision
   Artifact_revision -->|"productionId plus embedded artifactId and subjectId"| Production
   Artifact_revision -->|"sources[] exact immutable dependencies"| Artifact_revision
+  Artifact_revision -->|"v2 revalidatedFrom; unchanged content/assets with replacement sources"| Artifact_revision
   Production -->|"productionId on each operation"| Operation
   Operation -->|"revisionId"| Artifact_revision
   Quality_review -->|"targetRevisionId and source identities"| Artifact_revision
@@ -31,5 +39,6 @@ flowchart TB
   Review_request -->|"productionId"| Production
   Review_request -->|"targets[] exact revisions"| Artifact_revision
   Original_asset_receipt -->|"attachments[]"| Artifact_revision
+  Original_asset_receipt -->|"v2 operationId = observed Generate callId; one receipt per outputKey"| Work_attempt
   Original_asset_receipt -->|"originalAssetId for derivatives"| Original_asset_receipt
 ```

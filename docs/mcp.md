@@ -388,6 +388,152 @@ the same strictly named `MCP_TOKEN_*` credentials and Run client selection.
 
 ## Unitale booklet catalog (T17)
 
+Checkpoint 09 now adds versioned project tools alongside the v1 catalog:
+`booklet_checkpoint_v2`, atomic fence refresh through `booklet_lease_v2`, and
+specialist registration and guarded text/image/preparation dispatch
+through `booklet_begin_work_v2`.
+Each accepts private `runContext` plus a bounded JSON-string `request` and returns
+an explicit `result` object. They require an owned native v2 Manager Run and its current
+prepaid workflow/job binding, use atomic version/fence checks and leave no lease across
+calls. Exact retries replay existing receipts. Initial atomic checkpoints accept fence
+zero. The core catalog version is unchanged; these project-extension contracts are
+versioned in their names. Dispatch accepts registered creative text, image generation,
+all six review modes and unpaid preparation with bounded owned original references. Paid work checks
+configured suite, ownership, funding, locks, attempts, reported cost and native execution
+bounds; unpaid preparation uses the same durable dispatch and native-result retention.
+Image-request review must match an exact retained preparation, including target, source
+tuples and ordered original identities; image generation uses that same retained
+preparation guard. Context separates text (`canDispatch`) and image (`canDispatchImage`)
+call eligibility. All six assessment modes, original retention/publication,
+corrective generation and revalidation are locally verified. Whole-book inputs bind
+the selected immutable manifest and actual page-image sources/originals. Registered
+Generate work summaries expose exact preflight facts outside the recent assessment
+preview; correction finding lineage is verified at registration. The acceptance
+gateway records the current Manager's exact owned revision/source/original selection
+with admission, lock, funding and evidence checks. It grants no human or quality
+authority. The bounded reader supports owned `acceptance` records. `request_human`
+retains a current-target raw-v1 presentation in its existing mutation receipt;
+`read_document` kind `human_response` correlates authenticated Run answers by
+original attempt, native node and exact presentation. Unknown/mismatched answers
+stay pending; changed targets are stale. Existing Run submission provides first-wins.
+Manager manifest publication/revalidation now binds immutable page-image sources
+and exact original attachments, without a provider call or automatic completion.
+Creative text/images retain their producer and financial guards. `booklet_complete_v2`
+accepts `{manifestRevisionId,fence}` and validates the selected immutable manifest,
+accepted dependencies, purchased structure and original bytes without an app quality
+gate. Context exposes exact-revision full-history `manifestReview` coverage counts
+for Manager's whole-book acceptance/completion policy. Native Run termination remains
+separate. For a selected non-manifest revision, context exposes `acceptanceReview`
+from exact individual or grouped owned passing evidence outside the recent preview.
+Unchanged revalidation may retain an older body's review: `reviewedRevisionId`
+identifies that body, while Manager decides whether replacement context needs review.
+Identical content alone cannot borrow another revision's assessment. When context
+reports an already completed production, native Manager facts/gate/finish return its
+committed outcome without another reasoning call; checkpoint intent alone cannot do so.
+The existing AI worker's booklet extension now checks one due unresolved work record
+per cycle, including after its parent terminates. Short per-work claims fence readback;
+successful active reads preserve the cumulative failed-read count. Failed status reads
+use the production's non-paid retry allowance and the Run's bounded backoff/deadline;
+credential/identity failures stop automatic checking. Exhaustion leaves liability
+unresolved and does not authorize paid retry. Each check retains fixed-code trace
+evidence; owned work reads expose next-check time/count/reason without claim tokens.
+This local worker integration does not prove live Dify result availability.
+An authenticated application control can call `bookletRepositoryV2.authorizeRetry`
+with `{callId,key}` after the latest confirmed retriable failure exhausts its automatic
+allowance. Existing receipts/audit events deduplicate and log the one-attempt grant;
+registration consumes it atomically without resetting retry/correction counters.
+Context exposes the ordinal/authorization flag and owned work reads expose the grant
+timestamp/consuming call, omitting the click key. This method is not an MCP tool and
+Manager cannot grant retries. Its creator control remains checkpoint 10 work.
+Confirmed retriable failures persist `retryNotBefore`, derived from the originating
+Run's backoff snapshot and retry ordinal; trusted retry-after is capped by that same
+maximum. Registered retries inherit the stored time. Context/owned reads expose ISO
+timing and context's `dispatchReady` flag; both native and application guards deny
+early dispatch. The native `wait {callId}` action uses the fixed application-owned
+`retry-wait` Human Input node. The existing worker resumes the same execution after
+checking registered work, eligibility, ownership and exact presentation. It does not
+notify the creator or grant/dispatch work. Invalid presentation is logged with a fixed
+code and left unresolved. No production lease or reasoning poll spans the wait.
+Unclassified native failures still deterministically stop for reconciliation; actual
+provider stage evidence remains unproved and does not authorize replay.
+The candidate execution switch stays disabled.
+No Dify binding, credential, shared provider or live configuration changes are included.
+`booklet_sources_v2` verifies owned immutable source tuples and requested original
+identities, returning `{references:[{assetId,sha256,bytes}]}` plus ordered native MCP
+image blocks. Binary carriers are excluded from JSON. Every image is read with owned
+byte/hash verification; derivatives, changed identities and foreign assets fail.
+References have a maximum of 16 entries and an 8 MiB aggregate transfer allowance;
+capacity failure never drops references or resizes originals. See the handoff's
+existing MCP-limit configuration for base64/response capacity. Actual Dify conversion
+of these blocks into native files remains checkpoint 12 evidence.
+`booklet_retain_original_v2` accepts `{callId,outputKey,nativeFile,fence}` and returns
+`{asset:{id,sha256,bytes,mime,width,height,...},fence}`. It matches the exact observed
+Generate output, refreshes the mutation fence with a replay receipt, and uses the existing
+restricted first-party downloader (8 MiB) and verified original-media store. Stored
+receipt replays perform no download. Canvas/format changes, forged files and unobserved
+outputs fail. It makes no generation call. Expired native URLs remain an explicit
+unresolved retention gap; no redispatch or provider renewal machinery is added.
+`booklet_record_assessment_v2` accepts `{assessment,executionLocator:{runId,nodeId:"child-quality-reviewer",executionId},fence}`.
+It derives policy/Reviewer identities from the originating Run's server configuration,
+matches an exact retained native proposal, and returns `{assessmentId,complete,fence}`
+through the existing atomic receipt path. It cannot fabricate execution or coverage.
+`booklet_read_document_v2` additionally exposes owned production/checkpoint/revision/work/assessment DTOs
+under `extension:booklets:read`. Its existing `{kind,id,cursor?}` request returns whole
+small JSON values or bounded typed sections, array pages and decoded text fragments.
+Each response identifies its path, hash and completeness; cursors reject changed or
+different documents. Follow child and page cursors without decoding them. No base64
+content reconstruction is required. Artifact history reads return at most 20 metadata
+items with an initial ordinal snapshot; later appends require a fresh read and bodies
+are fetched separately by immutable revision ID. `acceptance_history`, `human_history`
+and `execution_history` use the production ID; `production_history` uses its booklet ID.
+These metadata pages include at most 20 items within the response byte bound. Their
+cursors bind ownership, query, production version and inventory count; changes require
+a fresh read. Follow acceptance/human/execution document references for bounded bodies.
+Execution DTOs expose status, identities, timestamps and reported usage, excluding
+inputs, outputs, credentials and private configuration. Production history includes
+same-book v1/v2 metadata labelled by document version; it grants no cross-production
+body access. These reads share the same private native Manager and prepaid binding checks.
+`booklet_transfer_v2` reuses bounded staging with server-selected v2 ownership. Its
+request is `{action:"open",key,kind,bytes,sha256}` or
+`{action:"part",transferId,index,data}`. Parts use the returned decoded chunk size and
+canonical base64. Changed metadata/bytes, incomplete payloads and private context
+spanning adjacent chunks are rejected. This stores bytes only; it does not publish a
+revision, authorize generation or alter the production fence. Existing v1 callers
+retain strict v1 ownership. Work reads also expose retained meaningful request and
+observed result bodies through the existing typed paging protocol.
+`booklet_reconcile_work_v2` accepts `{callId,executionLocator?}`. An optional locator
+contains the stored parent Manager's native `runId`, plus optional `nodeId` and
+`executionId` to constrain its child-node tracing. It cannot select a provider/app;
+changed run/node identities fail. The app derives the authoritative parent from work,
+retrieves that execution and verifies its accepted workflow before retaining matching
+child observations. Known results and undispatched registrations need no provider call.
+Replies expose status, result availability and a typed work-document locator; they
+do not copy large bodies into the Manager checkpoint. Missing/uncertain evidence never
+grants safe replay. This is non-paid readback, not automatic worker recovery or cost
+settlement. The native transport is locally tested with deterministic readback only.
+`booklet_index_v2` atomically registers subject/artifact entries, returns stable ID maps
+and an advanced fence, and reuses matching entries without changing their revision
+pointers. Purchased capacity and one responsibility per subject are enforced. Changed
+identity metadata/reparenting and invalid batches fail without partial index writes.
+`booklet_save_revision_v2` publishes retained text proposals or selected observed originals. Its
+arguments are `{artifactId,content,sources,assets,evidence,mutationKey,fence}`. Prefer
+`content:{callId,itemId,proposalIndex}` to select an exact retained successful proposal;
+no creative text is copied through the model. Typed content or `{transferId}` containing
+a complete revision JSON payload is also accepted and must match the retained proposal.
+The server derives producer/Run provenance, checks the current prepaid Manager, funding,
+target scope, evidence, locks and product limits, then atomically advances the pointer.
+Replies contain actual revision/hash/fence identities. Cast/location roster deltas merge
+structurally while preserving the other kind and their previous-roster source lineage.
+For images supply `content:{kind:"reference"|"page-image",asset:{assetId,sha256}}`
+and exactly that single identity in `assets`, using the originating Generate evidence
+and sources. Each original/artifact publishes once; other returned originals can have
+separate candidate revisions without another generation. Revalidation accepts
+`revalidatedFrom` with unchanged assets, replacement sources and retained producer
+or exact-context review evidence; content can be omitted for server-side reuse.
+It writes immutable lineage and grants no acceptance or new provider dispatch.
+Manager acceptance and selected-manifest structural completion are locally implemented
+and fixture-tested; actual target acceptance remains pending at checkpoint 12.
+
 The `booklets` server extension registers these private v1 tools on the existing
 `/api/mcp`. One service credential with `extension:booklets:read` and
 `extension:booklets:write` covers the catalog. Each invocation also requires the

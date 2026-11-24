@@ -1,5 +1,252 @@
 # Booklet document model
 
+This guide, its JSON example and both Mermaid views describe implemented persistence.
+The accepted [workflow design](workflow-design.md) owns target acceptance/quality
+boundaries; the explicit v2 section below records implemented storage and remaining
+wiring. Update all model artifacts together for concrete schema changes; do not relabel
+existing approval/quality records as Manager acceptance.
+
+## Version 2 storage boundary
+
+Checkpoint 09.5 adds optional worker-only `reconciliation` metadata to an existing
+work attempt: `nextAt` (Date or null when automatic checks stop), cumulative
+`failedReads`, a short `leaseId`/`leaseUntil`, and a fixed diagnostic `reason`.
+It schedules non-paid readback through the existing AI worker, without changing
+production fences, native job status, action/correction counters or dispatch rights.
+Timing/deadlines come from the accepted Run snapshot; the production's non-paid
+retry allowance bounds failed status reads. Successful active reads do not reset
+that count. Exhaustion retains unknown liability and late-result retention remains
+possible. Public work DTOs expose scheduling status without claim identities.
+The JSON example and complete diagram include this optional record; the regenerated
+core diagram keeps its existing abbreviated work fields and is unchanged. Old work
+remains valid without it. `db:indexes` provisions the work-status/readback eligibility index.
+V2 continuation/revision reuse the existing verified-terminal consumption-flow
+release before a new flow; replayed requests cannot release newer work. This changes
+lifecycle behavior over existing fields, so the JSON and diagrams need no further change.
+
+An exhausted confirmed retriable failure can now carry optional
+`retryAuthorization {key, authorizedAt, consumedByCallId}`. The authenticated owner
+grants one extra attempt through an application service; Manager cannot grant it.
+Existing repository receipts deduplicate the click, and an audit event records it.
+Registration consumes the grant atomically and increments the existing retry ordinal;
+automatic and correction allowances are not reset. Unknown/non-retriable outcomes and
+missing request bodies remain ineligible. Work DTOs expose the timestamp/consuming call
+without the authorization key. The JSON example notes this optional field and the
+complete Mermaid includes it; the regenerated core Mermaid's abbreviated fields are unchanged.
+
+Work may also carry `retryNotBefore` (a database Date). A trusted confirmed retriable
+failure sets its next eligible time from the accepted Run's base/max backoff and retry
+ordinal, including bounded retry-after. The next registered attempt carries that exact
+time; new Run identities cannot shorten it. Dispatch checks it before changing work
+state. Context exposes `dispatchReady` and ISO timing; owned reads return the ISO time.
+The JSON example notes this optional field and the complete diagram includes it;
+the regenerated core diagram remains abbreviated and unchanged.
+
+The native `retry-wait` uses existing opaque checkpoint intent
+`{pending:{action:"wait",callId}}` and existing application-owned `runDecisions`.
+`booklet@2.resumePaused` checks registered work and the exact call-bound presentation,
+then uses the existing journaled application decision source when eligible. It neither
+grants nor dispatches work. These are existing fields, so JSON/schema diagrams remain
+unchanged. Fixed-code blocked-wait records use existing audit events.
+
+The explicit [v2 schemas](../../../src/lib/server/booklets/documents-v2.ts) and
+[v2 repository](../../../src/lib/server/booklets/repository-v2.ts) reuse the existing
+collections and owned transaction/admission validation. New v2 production creation is
+atomic; existing v1 records are never converted. Strict v1 readers remain unchanged;
+mixed readers discriminate documentVersion. Production v2 adds creation identity,
+a snapshotted retry policy and a versioned opaque checkpoint capped at 64 KiB.
+The JSON example includes an independent v2 draft beside unchanged v1 examples.
+
+V2 content preserves exact manuscript text and useful JSON creative fields. It adds
+native image-spec/book-layout/page-spec variants and source contentHash identities;
+v1 sources retain sha256. Assessment parsers support six modes without granting
+quality or execution authority. Draft v2 revisions now write atomically with their production index pointer, preserve
+exact text and verify local immutable source/owned original identities. Their contentHash
+is SHA-256 of canonical content, matching the Manager source contract; v1 keeps its
+hashVersion-1 wrapper. Active creative-text writes now require a current owned prepaid
+Manager and a unique retained native proposal, exact evidence/sources and matching
+funding. Stage locks and purchased page/canvas/panel limits remain server enforced.
+The same text producer/artifact publishes once, including across continuation.
+Image writes now match a selected original from observed Generate work, using its
+exact sources, funding and evidence. Each original/artifact publishes once; several
+returned originals may have distinct candidate revisions without another generation.
+Manager acceptance, structural completion and revalidation wiring are locally verified
+in 09; actual application-connected Dify execution remains checkpoint 12 evidence.
+
+V2 revisions gain optional `revalidatedFrom`
+lineage to an owned revision of the same artifact. The write preserves exact
+content/assets and records replacement sources. Manager may reuse retained producer
+evidence; when new review evidence is supplied, it must identify that exact context,
+including original pixels for images. MCP may omit content when this reference
+is supplied, allowing server-side reuse of large retained text. This path is verified
+locally; it is not a completed checkpoint claim.
+
+For a new v2 production, this same lineage may identify a selected revision in its
+direct owned v2 `sourceProductionId`, within the same booklet and matching stable
+subject/artifact responsibility. Exact content/originals copy only into an empty
+responsibility, initially unaccepted; replacement dependencies are local. Existing
+original storage gains an attachment to the new revision, with no duplicate bytes
+or invented provider work. Page originals must match the new purchased canvas/format.
+Compatible body-review lineage remains labelled with the revision actually reviewed;
+Manager decides whether new context needs another review. Current-manifest whole-book
+coverage is never inherited. Legacy v1 contracts and reuse services remain unchanged.
+Subsequent unchanged revalidation of an imported candidate verifies its owned original
+reuse provenance and exact body/assets; it does not invent producer work or force a
+new body review solely because the byte store belongs to the predecessor.
+The JSON notes describe this use; both Mermaid relationships already represent these
+source-production/lineage/attachment links, so their structure is unchanged.
+
+Request-backed corrections now bind confirmed findings to exact selected baseline
+revision identities and reviewed targets. Correction review preserves the original
+finding body and before/after source identities. These guards reuse existing work,
+assessment and revision fields; the JSON example and both Mermaid views are unchanged.
+
+V2 Manager manifest assembly now reuses the immutable revision writer. Each page
+binds an owned page-image source and its exact original attachment. Provenance uses
+the admitted Manager Run and a `manifest:` snapshot operation ID; it does not claim
+a specialist execution or create a work attempt. Unchanged manifests can retain
+`revalidatedFrom` with replacement dependency sources. These use existing content,
+source, asset and provenance fields, so the JSON example and both diagrams remain
+structurally unchanged. Draft publication and Manager selection do not complete a
+production or change its final manifest pointer.
+
+V2 structural completion is now locally implemented. An explicit selected manifest
+revision binds the owned accepted dependency graph and purchased layout/page structure;
+full original-byte verification happens before the short atomic metadata write.
+The existing production fields become `lifecycleState:completed` and
+`currentManifestRevisionId:<selected revision>`. The receipt reuses its existing
+`revisionId` field, and exact replay precedes byte I/O. Manager owns whole-book quality
+policy using exact-revision full-history coverage facts; no human/quality prerequisite
+is added to the application lifecycle. Native Run termination is separate. This adds
+behavior over existing fields, so JSON and both diagrams remain structurally applicable.
+
+V2 image registration/dispatch now consumes the exact retained preparation, preserving
+its call ID/hash, target and source identities. Image eligibility uses its own configured
+call ceiling; Manager retains preflight policy ownership. Partial native image results
+are retained as work before media storage. The existing media service accepts an internal
+v2 ownership option and checks each observed outputKey, original canvas and format.
+It preserves complete bytes and supports several independently keyed originals from one
+Generate, including retention after cancellation; it does not authorize redispatch or
+revision publication. The asset format stays at version 1: operationId is the v2 work
+callId and sourceRevisions.sha256 stores each source contentHash. No collection, index or
+field is added. The JSON example records this interpretation and both diagrams show
+the v2 work relationship. The MCP retention gateway matches the exact observed native
+file and uses the existing restricted downloader; fixture HTTP responses are synthetic.
+MCP source delivery now returns ordered verified original pixels separately from JSON
+identity metadata; the local fixture binds synthetic native handles to the actual
+Manager/Reviewer Code nodes and records exact visual coverage of a published image.
+Actual Dify file conversion is unverified. This uses existing work/revision/asset fields
+and relationships; the JSON example and both Mermaid versions remain structurally valid.
+This is local service verification, not provider execution.
+
+Planner cast/location roster proposals are deltas for their respective subject kinds.
+The revision writer preserves the other kind's current IDs and records the preceding
+roster revision as a source when merging. Unregistered or wrong-kind subjects and a
+stale explicitly selected roster source fail. The raw child delta remains unchanged in
+work retention; the saved revision/hash describe the combined roster. Initial roster
+work may publish its observed descriptions after their stable subjects are indexed.
+These are guarded writes using existing fields; the JSON example and both diagrams
+remain structurally unchanged.
+V2 work, assessment and Manager acceptance storage is implemented alongside v1.
+Work uses registered/dispatching/succeeded/partial/failed/unknown states; only confirmed
+retryable failure permits a new attempt, bounded by the production snapshot. Unknown
+results remain unresolved until server observation. Creative-text registration now
+derives action identity from the validated full child request and exact source content;
+active registration checks the native parent Run and consumption workflow/job binding
+inside its transaction. Dispatch repeats the same checks, including cancellation and
+native execution status, before changing a registered intent to dispatching. A registered,
+unsubmitted intent may bind to the current admitted successor; its work `runId` then
+records that dispatching parent. Previously dispatched work remains non-replayable.
+Dispatch usage/lock checks and trusted native outcome retention are locally verified
+in 09; hidden provider SDK attempts and incomplete costs remain accepted unknowns.
+Work may additionally retain `requestPayload`, the exact meaningful request JSON,
+capped at 256 KiB and verified against `requestHash`. Creative registration stores
+it in the same transaction as intent, excluding only renewable reference URLs/native
+file handles. Owned work reads expose it through the existing bounded typed reader.
+This preserves text and extension fields without diagnostic redaction, so restart
+does not require reconstructing a request from a hash. Older records may omit it;
+their missing body is not proof that dispatch can resume. No new collection or index.
+The JSON example and both diagrams include this optional field. Reviewer registration
+now retains each item's immutable target scope in that same request body. Reviews can
+compare distinct revisions of one artifact; duplicate source tuples fail. Request-backed
+assessment writes match the selected item's scope and exact retained native proposal.
+Legacy metadata-only server records retain their existing behavior. No persisted fields
+changed, so the JSON example and both diagrams remain structurally unchanged. Image
+registration, the assessment MCP gateway and bounded recovery are locally verified
+in 09. Actual Dify execution remains 12.
+Native Manager `decide` observations also use the existing work fields for durable
+paid LLM attempt facts. Their request body is unobserved; the metadata hash is not a
+prompt hash. Successful complete bounded outputs may be retained; failed reasoning
+stays unknown until trusted success updates the same attempt. Retention remains valid
+after cancellation and changes no production fence/version. These are new uses of
+existing fields, so the JSON example and both diagrams remain structurally unchanged.
+
+The native v2 observer now retains matching complete child envelopes in optional
+`resultPayload` (at most 1 MiB), with `resultObservation` carrying native execution,
+node, retry and loop identities. These fields share the work record and its 4 MiB
+BSON bound; no separate output collection. The observer requires the accepted Manager
+workflow ID, native run, fixed child node and registered call/invocation/item identities.
+It uses the existing worker transaction and redacted trace storage. Exact creative
+bodies stay separate from diagnostic redaction. Truncated or unrelated output does
+not establish a terminal result. Duplicate observations are idempotent; conflicting
+terminal bodies fail. Retention may finish after cancellation, without granting
+dispatch, publication, acceptance or retry authority. Bounded worker reconciliation
+is locally verified in 09. Safe provider-failure classification remains an accepted
+limitation; absent explicit evidence, outcomes stay unknown and cannot be replayed.
+Actual target integration proof remains 12.
+Correction roots bind task, target
+and funding identity. Counts derive from distinct dispatched corrective actions;
+technical retries reuse an action key. No separate correction-budget collection.
+Dispatch requires correction metadata for a changed request on an already attempted
+creative task/target in the same funding scope. Counts are per target, across target
+regrouping; independent targets do not spend each other's allowance. Other specialist
+operations remain separate tasks. Historical funding resolves through retained commerce
+receipts. Only dispatched attempts count; technical retries count once. This changes
+enforcement, not fields or relationships, so the JSON example and both Mermaid views
+are unaffected.
+Completed productions permit only final checkpoint and short-lease acquisition/release
+metadata. Creative mutations remain closed; metadata still requires ownership, a fresh
+version/fence and an unexpired production. Checkpoint receipts include their confirmed
+fence. No state field or relationship changes; the JSON example and diagrams are unchanged.
+Gateway-local mutations can check and advance the existing production fence in their
+database transaction, leaving `mutationLease` null. Creative-text registration uses
+this atomic mode. A live lease blocks it; stale versions/fences fail, failed writes
+roll back the fence, and exact receipt replay does not perform another mutation.
+The existing explicit lease API retains its behavior. This adds no storage fields.
+The v2 MCP checkpoint and creative-text register handlers use these atomic writes.
+An initial expected fence of zero is valid in atomic mode; returned fences advance
+from it. Gateway receipt replay retains the original CAS version. The explicit lease
+and v1 mutation parsers still require positive fences. No example/diagram field changes.
+V2 document reads expose allowlisted revision/work/assessment DTOs. Large values use
+typed sections, ordered array pages and decoded Unicode text fragments with explicit
+completeness. Cursors bind the owned document hash and reject changes; they do not
+grant access to private database fields. This read projection adds no storage fields,
+so the JSON example and both Mermaid views remain unchanged.
+Artifact history reads page existing immutable revision metadata with an initial
+ordinal snapshot. Later appends do not change that cursor's window. This query uses
+the existing revision index and adds no collection, index or model field.
+V2 index batches register subjects/artifact slots in one version/fence transaction.
+Matching entries retain their pointers and IDs. Existing capacities and per-subject
+responsibilities are reused; another candidate ID cannot create a duplicate artifact
+responsibility. This restores the documented uniqueness invariant in v2 insertion
+without changing stored fields; the example and diagrams remain applicable.
+Creative registration targets resolve to actual artifact responsibilities for the
+native operation and subject kind. Child selectors retain subject IDs and must belong
+to those artifact parents. This distinction closes subject-alias accounting resets
+without changing the stored schema or native wire fields; grouped revisions remain
+supported. New local subject keys during initial roster creation stay under the roster
+artifact's accounting scope. The example and diagrams need no field/relationship changes.
+Assessments bind observed review scope and evidence, coexist per revision, and derive
+completeness independently of model fields. Acceptance updates the exact revision
+pointer atomically without adding an app human/quality-policy gate.
+
+`booklets:0004-manager-state` creates the three new collection indexes, with no data
+conversion. These are storage services, not dispatch authority: trusted observer,
+prepaid admission, human correlation, MCP and Run UI wiring remain in 08-10. Existing
+review-request/runDecisions fields are reused for human correlation; no new human
+response collection or fabricated decision is introduced. No workflow is activated.
+The existing v1 service descriptions below retain their version-1 scope.
+
 ## Outcome
 
 The accepted model uses a **production document with an embedded content index**.
@@ -32,7 +279,10 @@ The [PRD](prd.md) governs behavior. Dedicated persistence schemas are separate f
 [v1 workflow contracts](contracts.md). Field lists
 are operational summaries, not exhaustive DTOs. Later execution, quality and delivery
 proposals retain their review status; accepting the index does not approve all of them.
-The booklets extension registers namespaced index migrations and a Run domain adapter. It has no routes, MCP tools, navigation or workers. Lifecycle services use existing Unibase charging and enqueue only the parent orchestrator; they make no generation calls.
+The booklets extension registers namespaced index migrations, a Run domain adapter
+and the T17 MCP catalog. It has no routes, navigation or workers. Lifecycle services
+use existing Unibase charging and enqueue only the parent orchestrator; they make
+no generation calls.
 
 ## Approach
 
@@ -50,7 +300,8 @@ The booklets extension registers namespaced index migrations and a Run domain ad
   Its typed content embeds panels and lettering, story units, or accepted manifest
   entries. Sources and asset identities are bounded embedded references. Raw prompts
   and provider envelopes stay in evidence storage.
-- **Generation admissions**, review requests and quality reviews stay outside Production. Human submissions remain in existing `runDecisions`; revision requests, allocations and charges reuse commerce documents. Repair usage is derived from generation records grouped by `repairRoot`, bounded by the frozen package limit. No separate attempt, repair-budget or attachment collection is introduced.
+- **Generation admissions**, review requests and quality reviews stay outside Production. Human submissions remain in existing `runDecisions`; revision requests, allocations and charges reuse commerce documents. Repair usage is derived from generation records grouped by `repairRoot`, bounded by the frozen package limit. For v1 no separate attempt, repair-budget or attachment collection is introduced;
+  v2 uses the Work attempt records described above.
 - **Manifest** is a revision kind, not an Edition collection. Its nested page
   entries bind order, exact image revisions, original assets, quality and approval.
 - **Economy** reuses existing Unibase documents. Production references its order;
@@ -136,6 +387,31 @@ live in `bookletRepositoryWrites`; identical retries return the original result
 after current access/ownership checks. Different input conflicts. Receipts are
 operational history, not generation operations or customer charges.
 
+V2 `requestHuman` receipts additionally retain `result.humanRequest`: request ID,
+original Manager Run, immutable target tuples, `{mode:"raw-v1"}` response contract,
+exact native form body and presentation hash. The question card's metadata
+ID identifies the request without displaying technical IDs. The form reserves the
+existing native response placeholder; its hash includes that placeholder exactly
+once. This reuses the receipt rather than adding another request collection. Actual
+answers remain in `runDecisions`; owned reads match the original Run, native `human`
+node and exact presentation. Only a submitted authenticated user intent is returned
+as an answer. Unknown submissions remain pending, and changed targets are stale.
+Manager acceptance remains separate. The JSON example and complete diagram include
+this optional receipt result.
+
+A conversational request (checkpoint 10-chat-version) also retains `turn`, a
+version-1 booklet turn from `src/project/booklets/turn-contract.ts`, or `null` for
+earlier requests. It holds Manager-ordered parts: prose, one question, style choice or
+approval, artifact cards, images and an optional milestone. Every shown revision must
+be a request target, and every shown image must be an asset retained by that exact
+revision. The repository derives generic fallback cards from the turn and appends the
+turn as one fenced `booklet-turn` block, so the exact form matched by `human_response`
+binds the typed turn too. The owner's reply is a typed version-1 `answer`, `approve`
+or `changes` JSON value sent as the raw-v1 response; the Manager still decides what it
+means. No collection or index is added. The core diagram excludes operational receipts; its
+structure is unchanged and its acceptance status is refreshed. Both generated views
+are checked. These are local checks, not live Dify form evidence.
+
 A production lease lasts 1?300 seconds. Acquisition/takeover increments a durable
 fence; every creative write checks expected version, holder, fence and expiry.
 Renewal and release are versioned/idempotent. Revisions and pointer updates commit
@@ -202,6 +478,27 @@ to prevent bypassing the prepaid binding. A paused Run is answered through the
 existing authenticated Human Input UI. A new continuation requires verified prior
 termination; it does not buy another package. T20 supplies the actual orchestrator
 publication. The picker endpoint remains a T21 integration, not a route added here.
+
+Checkpoint 09 extends this admission boundary to explicit v2 productions. Both
+`booklet@1` and `booklet@2` remain registered; the selected orchestrator and successor
+must match the stored production's version. V2 ownership uses the same owned book
+check inside the caller transaction; default v1 readers still reject v2 records.
+Admission increments only the production version/update time, preserving checkpoint,
+work, retry snapshots and immutable content, and reuses the existing consumption/job
+binding. The v2 adapter rejects generic Run admission and does not apply v1 creative
+approval gates. `bookletLifecycleV2` starts and continues that production through the
+existing consumption journals, and finishes a workflow only with verified termination.
+Shared version-aware persistence validates the selected schema and fences the stored
+document version, preventing conversion through a save. These calls preserve opaque
+checkpoints, retry policy and content; the service does not dispatch providers. V2
+revision quote/start uses the same subject/stage-lock checks and quote/allocation
+journals as v1. Quotes bind the exact production version and accepted amount; a new
+revision records its funding origin and reopens working state without changing old
+revisions or the selected manifest. MCP and automatic recovery wiring remain
+subsequent work; no orchestrator is activated here.
+
+No document field, relationship, index or migration changes in this admission slice;
+the JSON example and both Mermaid schema versions remain applicable unchanged.
 
 Production's nullable `revisionChargeId` retains the originating revision charge
 and allocation scope across continuation workflows. It is set atomically by
@@ -299,10 +596,34 @@ also shows these internal collections:
 - `bookletMcpTransferBudgets`: one deterministic owner/production row with cumulative
   reserved `bytes`. Concurrent reservations serialize on this row and cannot
   exceed the frozen execution-derived budget.
+- `bookletSettings` (checkpoint 10-chat-version): one row,
+  `{_id: "default-package", catalogId, updatedAt}`, names the published consumption
+  catalog that conversations quote and start. The `/admin/booklets` editor checks
+  the publication, current workflow policy and package capacity before saving.
+  It rejects stale edits and records changes as `booklet-default-package-updated`
+  audit events. An absent or unavailable package leaves the entry unavailable.
+  Orders already saved keep their accepted terms. The row has no creative, order or
+  billing state. Its shape is unchanged, and it remains outside both Mermaid
+  diagrams and the booklet document example.
 - `bookletWorkflowPolicies`: a unique execution profile/revision and orchestrator/
   configuration-revision binding to `reviewer {id, revision, publicationId}`.
   Trusted T19/T20 integration owns publication verification and immutable provisioning;
-  no workflow tool may edit it.
+  no workflow tool may edit it. Checkpoint 10.1 adds two application settings read only
+  by the private booklet facade (`src/lib/server/booklets/application.ts`):
+  `capacity` (an `executionCapacitySchema` value whose `id/revision` must equal
+  `profileId/profileRevision`; immutable per profile revision) and `retryDefaults
+  {paidLlm, paidImage, nonPaid}` (integers 0-10, all required). Creation resolves
+  exactly one enabled, validated booklet v2 orchestrator at its current revision with
+  a row for the frozen profile; absent, duplicate or mismatched rows make the package
+  unavailable, and nothing is inferred. New productions snapshot `retryDefaults` into
+  `retryPolicy`; existing productions keep their snapshot. Existing MCP readers ignore
+  these fields, so earlier rows stay readable but cannot admit new productions.
+  Checkpoint 10.6's `/admin/booklets` edits only `retryDefaults`: it shows the stored state
+  (valid, missing or invalid) and a version hash of the raw stored value, and an update
+  must present that version (stale edits conflict; missing or malformed values can be
+  repaired). Row `_id` may be an ObjectId or a string. Each edit writes a
+  `booklet-retry-defaults-updated` audit event; capacity, suite, provider and reviewer
+  fields are never changed there.
 
 These records are not customer orders, creative revisions or provider measurements.
 Interrupted transfers survive continuation; no TTL erases unresolved work. Image and

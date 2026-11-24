@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  bookletContentV2Schema,
+  bookletAssessmentV2Schema,
+  bookletRetryPolicySchema,
+  defaultBookletRetryPolicy,
+} from "../src/project/booklets/contracts-v2";
+import {
   bookletPackageSchema,
   validatePackageCapacity,
   productionSchema,
@@ -16,6 +22,150 @@ import {
 } from "../src/project/booklets/workflow-contracts";
 
 const sha256 = "a".repeat(64);
+
+test("v2 content preserves native manuscript text and creative extension fields", () => {
+  const exact = "  \u0645\u0631\u062d\u0628\u0627 e\u0301 \ud83d\ude00\n";
+  const manuscript = {
+    kind: "manuscript",
+    units: [
+      {
+        id: "unit-1",
+        action: "A wave",
+        subjects: [],
+        texts: [
+          {
+            id: "text-1",
+            kind: "dialogue",
+            text: exact,
+            speaker: "character-1",
+          },
+        ],
+      },
+    ],
+    notes: { continuity: "Keep this useful creative field" },
+  };
+  assert.deepEqual(bookletContentV2Schema.parse(manuscript), manuscript);
+  assert.equal(
+    bookletContentV2Schema.safeParse({
+      ...manuscript,
+      units: [manuscript.units[0], manuscript.units[0]],
+    }).success,
+    false,
+  );
+  assert.equal(artifactContentSchema.safeParse(manuscript).success, false);
+  const lettering = {
+    textId: "text-1",
+    kind: "dialogue",
+    text: exact,
+    start: 0,
+    end: [...exact].length,
+  };
+  const page = {
+    kind: "page-spec",
+    pageId: "page-1",
+    panels: [{ id: "panel-1", noText: false, lettering: [lettering] }],
+  };
+  assert.deepEqual(bookletContentV2Schema.parse(page), page);
+  lettering.end--;
+  assert.equal(bookletContentV2Schema.safeParse(page).success, false);
+  assert.equal(
+    bookletContentV2Schema.safeParse({ kind: "roster", subjectIds: ["a", "a"] })
+      .success,
+    false,
+  );
+  assert.equal(
+    bookletContentV2Schema.safeParse({
+      kind: "book-manifest",
+      pages: [{ pageId: "page-1", assetId: "asset-1" }],
+      continuityPairs: [],
+    }).success,
+    true,
+  );
+  assert.equal(
+    bookletContentV2Schema.safeParse({
+      kind: "book-manifest",
+      pages: [
+        { pageId: "page-1", assetId: "asset-1" },
+        { pageId: "page-1", assetId: "asset-2" },
+      ],
+      continuityPairs: [],
+    }).success,
+    false,
+  );
+});
+
+test("v2 assessment preserves all modes and rejects invented pass or repair", () => {
+  const assessment = {
+    mode: "text",
+    targetHash: sha256,
+    requestHash: null,
+    sources: [],
+    disposition: "pass",
+    coverage: { targetIds: ["text-1"], referencePositions: [], assetIds: [] },
+    findings: [],
+    limitations: [],
+  };
+  for (const mode of [
+    "text",
+    "specification",
+    "image_request",
+    "image",
+    "whole_book",
+    "correction",
+  ])
+    assert.equal(
+      bookletAssessmentV2Schema.parse({ ...assessment, mode }).mode,
+      mode,
+    );
+  assert.equal(
+    bookletAssessmentV2Schema.safeParse({
+      ...assessment,
+      limitations: ["Not inspected"],
+    }).success,
+    false,
+  );
+  assert.equal(
+    bookletAssessmentV2Schema.safeParse({
+      ...assessment,
+      disposition: "repair",
+    }).success,
+    false,
+  );
+  assert.equal(
+    bookletAssessmentV2Schema.safeParse({
+      ...assessment,
+      findings: [
+        {
+          id: "finding",
+          criterion: "lettering",
+          classification: "confirmed",
+          targetId: "other",
+          expected: "Exact text",
+          observed: "Changed text",
+        },
+      ],
+    }).success,
+    false,
+  );
+});
+
+test("action retry defaults are explicit and reject invalid configuration", () => {
+  assert.deepEqual(defaultBookletRetryPolicy, {
+    paidLlm: 2,
+    paidImage: 0,
+    nonPaid: 3,
+  });
+  assert.deepEqual(bookletRetryPolicySchema.parse({ paidLlm: 0 }), {
+    paidLlm: 0,
+    paidImage: 0,
+    nonPaid: 3,
+  });
+  for (const paidLlm of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1, "2", true])
+    assert.equal(
+      bookletRetryPolicySchema.safeParse({ paidLlm }).success,
+      false,
+    );
+});
 const language = { tag: "en", direction: "ltr" };
 const canvas = { width: 1024, height: 1024, mime: "image/png" };
 // Fixtures only. No catalog seeding or advertised production capacity.

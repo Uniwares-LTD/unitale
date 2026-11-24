@@ -21,11 +21,20 @@ setting, paid call or checkpoint 10 implementation is included.
 
 ## Prepared local launch
 
-The operator-prepared ignored `.env.local` retains Firebase project `uniwares-base`
-and the scoped `unitale_staging` database, with payments/Dify/MCP/persona execution disabled.
-Local and staging operation share those Unitale records. Credentials remain outside Git
-under `%USERPROFILE%\.config\unitale`; preserve the private bindings.
-Automated regressions use disposable fixtures, never that shared database.
+The operator-prepared ignored `.env.local` uses Firebase project `uniwares-base`
+and the `unitale_staging` database. On 2026-11-24 the owner confirmed that the
+manual local environment and the future staging deployment use the same Firebase,
+database and application service bindings. Keep credentials in the approved
+private configuration outside Git. The local HTTPS origin and the hosted staging
+origin have their own environment settings. Automated fixture suites continue to
+use the disposable databases their runners create.
+
+The prepared local launch starts with payments, Dify, MCP and persona execution
+disabled. The shared AI queue leases eligible jobs without filtering by runtime
+mode. Before enabling execution, confirm which worker serves the shared queue and
+which environment owns the registered Dify publication. A local live Dify setup
+also needs a reachable HTTPS `/api/mcp` endpoint and the matching service client.
+See the [Booklet handoff](../booklet-generation/implementation-plan.md#12---final-approvals-and-staging-acceptance).
 
 Keep the private origin `https://localhost:3100` and approved local CA. From the root:
 
@@ -56,5 +65,5 @@ session/redirect guards retain their previously verified behavior.
 
 Current main-based build and affected verification are recorded with its PR. They
 establish this integration separately from earlier feature-branch test results.
-After the PR merges, propagate `main` into issue #10, preserving its Booklet work and
-updating its import record to the same exact source. Checkpoint 10 remains unimplemented.
+The Booklet [delivery map](../booklet-generation/implementation-plan.md#issue-10-deliverables-and-dependency-map)
+records progress after this adoption.

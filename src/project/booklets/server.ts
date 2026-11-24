@@ -3,9 +3,13 @@ import { defineServerExtension } from "../../lib/server/extensions";
 import { createBookletIndexes } from "../../lib/server/booklets/repository";
 import { createBookletServiceIndexes } from "../../lib/server/booklets/lifecycle";
 import { createBookletMediaIndexes } from "../../lib/server/booklets/media";
-import { bookletDomain } from "./domain";
+import { bookletDomain, bookletDomainV2 } from "./domain";
 import { bookletMcpTools } from "../../lib/server/booklets/mcp-tools";
+import { bookletMcpToolsV2 } from "../../lib/server/booklets/mcp-tools-v2";
 import { createBookletMcpIndexes } from "../../lib/server/booklets/mcp-transfers";
+import { createBookletV2Indexes } from "../../lib/server/booklets/repository-v2";
+import { reconcileOneBookletWorkV2 } from "../../lib/server/booklets/reconcile-v2";
+import { creativeFieldsSchema } from "../../lib/server/booklets/documents";
 async function indexes(db: Parameters<typeof createBookletIndexes>[0]) {
   await createBookletIndexes(db);
   await createBookletServiceIndexes(db);
@@ -13,12 +17,15 @@ async function indexes(db: Parameters<typeof createBookletIndexes>[0]) {
 }
 export const bookletsServerExtension = defineServerExtension({
   module: "booklets",
+  reconcile: reconcileOneBookletWorkV2,
+  productTypes: [{ id: "booklet", schemaVersion: 1, fields: creativeFieldsSchema }],
   indexes: async (db) => {
     await indexes(db);
     await createBookletMcpIndexes(db);
+    await createBookletV2Indexes(db);
   },
-  domainAdapters: [bookletDomain],
-  mcpTools: bookletMcpTools,
+  domainAdapters: [bookletDomain, bookletDomainV2],
+  mcpTools: [...bookletMcpTools, ...bookletMcpToolsV2],
   migrations: [
     {
       id: "booklets:0001-repositories",
@@ -37,6 +44,12 @@ export const bookletsServerExtension = defineServerExtension({
       description:
         "Add bounded booklet MCP transfer and trusted publication binding indexes.",
       run: createBookletMcpIndexes,
+    },
+    {
+      id: "booklets:0004-manager-state",
+      description:
+        "Add v2 Manager work, assessment and acceptance indexes without converting records.",
+      run: createBookletV2Indexes,
     },
   ],
 });

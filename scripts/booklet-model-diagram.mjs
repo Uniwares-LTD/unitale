@@ -16,6 +16,9 @@ const coreNames = new Set([
   "Operation",
   "Review request",
   "Quality review",
+  "Work attempt",
+  "Scoped assessment",
+  "Manager acceptance",
   "Original asset receipt",
   "Consumption order",
 ]);

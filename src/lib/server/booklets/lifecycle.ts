@@ -73,7 +73,7 @@ export const revisionRequestSchema = z.strictObject({
   subjects: z.array(id).max(100),
   inputHash: hash,
 });
-type RevisionRequest = z.infer<typeof revisionRequestSchema>;
+export type RevisionRequest = z.infer<typeof revisionRequestSchema>;
 
 export async function createBookletServiceIndexes(db: Db) {
   await db
@@ -96,6 +96,53 @@ export async function createBookletServiceIndexes(db: Db) {
     .createIndex(
       { ownerId: 1, productionId: 1, "value.target.revisionId": 1 },
       { unique: true },
+    );
+}
+
+export function validateBookletRevisionScope(
+  p: Pick<ProductionDocument, "version" | "stageLocks"> & {
+    subjects: readonly { id: string; kind: string }[];
+  },
+  value: RevisionRequest,
+) {
+  if (p.version !== value.expectedVersion)
+    throw bookletConflict("Production changed; refresh the revision quote.");
+  const lock = value.category === "reference" ? "references" : value.category;
+  if (lock !== "page" && p.stageLocks[lock])
+    throw bookletConflict(
+      "This revision stage is locked. Start a new paid production.",
+    );
+  if (value.category === "story") {
+    if (value.subjects.length)
+      throw bookletConflict("Story revisions consume one round.");
+    return;
+  }
+  if (
+    !value.subjects.length ||
+    new Set(value.subjects).size !== value.subjects.length
+  )
+    throw bookletConflict("Select distinct revision subjects.");
+  const allowed =
+    value.category === "style"
+      ? ["style-sample"]
+      : value.category === "reference"
+        ? ["character", "location"]
+        : ["page"];
+  for (const subjectId of value.subjects)
+    if (!p.subjects.some((s) => s.id === subjectId && allowed.includes(s.kind)))
+      throw bookletMissing();
+  if (
+    value.category === "style" &&
+    fingerprint([...value.subjects].sort()) !==
+      fingerprint(
+        p.subjects
+          .filter((s) => s.kind === "style-sample")
+          .map((s) => s.id)
+          .sort(),
+      )
+  )
+    throw bookletConflict(
+      "Shared style revisions must quote every affected style sample.",
     );
 }
 
@@ -215,49 +262,7 @@ export function bookletLifecycle(
     )
       throw bookletConflict("Required visual quality review has not passed.");
   }
-  function revisionGate(p: ProductionDocument, value: RevisionRequest) {
-    if (p.version !== value.expectedVersion)
-      throw bookletConflict("Production changed; refresh the revision quote.");
-    const lock = value.category === "reference" ? "references" : value.category;
-    if (lock !== "page" && p.stageLocks[lock])
-      throw bookletConflict(
-        "This revision stage is locked. Start a new paid production.",
-      );
-    if (value.category === "story") {
-      if (value.subjects.length)
-        throw bookletConflict("Story revisions consume one round.");
-      return;
-    }
-    if (
-      !value.subjects.length ||
-      new Set(value.subjects).size !== value.subjects.length
-    )
-      throw bookletConflict("Select distinct revision subjects.");
-    const allowed =
-      value.category === "style"
-        ? ["style-sample"]
-        : value.category === "reference"
-          ? ["character", "location"]
-          : ["page"];
-    for (const subjectId of value.subjects)
-      if (
-        !p.subjects.some((s) => s.id === subjectId && allowed.includes(s.kind))
-      )
-        throw bookletMissing();
-    if (
-      value.category === "style" &&
-      fingerprint([...value.subjects].sort()) !==
-        fingerprint(
-          p.subjects
-            .filter((s) => s.kind === "style-sample")
-            .map((s) => s.id)
-            .sort(),
-        )
-    )
-      throw bookletConflict(
-        "Shared style revisions must quote every affected style sample.",
-      );
-  }
+
   return {
     async inspectGeneration(productionId: string, operationId: string) {
       id.parse(operationId);
@@ -426,7 +431,7 @@ export function bookletLifecycle(
       const p = await c.transaction(async (s) => {
         const p = await c.owned(productionId, s);
         await c.entitled(p, s);
-        revisionGate(p, value);
+        validateBookletRevisionScope(p, value);
         return p;
       });
       const { expectedVersion, ...request } = value;
@@ -457,7 +462,7 @@ export function bookletLifecycle(
         async (session) => {
           const live = await c.owned(productionId, session);
           await c.entitled(live, session);
-          revisionGate(live, value);
+          validateBookletRevisionScope(live, value);
           // Persist the entitlement origin separately from the active Run's
           // workflow. Continuations retain it; only a new revision replaces it.
           live.revisionChargeId = fingerprint([

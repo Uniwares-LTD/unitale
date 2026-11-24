@@ -1,0 +1,653 @@
+diff --git a/models/openai/README.md b/models/openai/README.md
+index c8e5a80e..7ef80f4f 100644
+--- a/models/openai/README.md
++++ b/models/openai/README.md
+@@ -37,6 +37,14 @@ Add an OpenAI API key and, when needed, an Organization ID or custom API base UR
+ 
+ The API base may be entered with or without the trailing `/v1`.
+ 
++`Maximum SDK retries` and `Request timeout in seconds` are optional in both provider
++and custom-model credentials. Leave them blank to preserve the SDK defaults. Set
++`max_retries` to `0` to disable automatic SDK retries, or a non-negative integer to
++select a retry count. `request_timeout` must be positive finite seconds and is passed
++to the SDK's network timeout setting; it is not a total workflow deadline. These
++controls apply to clients constructed with the configured credentials, including
++credential validation. Dify node/outer retries must be configured separately.
++
+ Responses is the recommended protocol and the default for official models that support it.
+ 
+ Choose Chat Completions only for a compatible endpoint or a model whose documented API surface requires it.
+diff --git a/models/openai/manifest.yaml b/models/openai/manifest.yaml
+index 2165b5ca..796eae64 100644
+--- a/models/openai/manifest.yaml
++++ b/models/openai/manifest.yaml
+@@ -1,4 +1,4 @@
+-version: 1.1.0
++version: 1.1.1
+ type: plugin
+ author: "langgenius"
+ name: "openai"
+diff --git a/models/openai/models/common_openai.py b/models/openai/models/common_openai.py
+index d28d6d93..fd380fb9 100644
+--- a/models/openai/models/common_openai.py
++++ b/models/openai/models/common_openai.py
+@@ -1,4 +1,5 @@
+ import hashlib
++import math
+ import re
+ from collections.abc import Generator, Iterable, Mapping
+ from typing import TypeVar
+@@ -93,6 +94,26 @@ class _CommonOpenAI:
+         if organization := credentials.get("openai_organization"):
+             credentials_kwargs["organization"] = organization
+ 
++        value = credentials.get("max_retries")
++        if value not in (None, ""):
++            try:
++                retries = int(value)
++                if isinstance(value, bool) or retries < 0 or retries != float(value):
++                    raise ValueError
++            except (TypeError, ValueError, OverflowError) as error:
++                raise ValueError("max_retries must be a non-negative integer") from error
++            credentials_kwargs["max_retries"] = retries
++
++        value = credentials.get("request_timeout")
++        if value not in (None, ""):
++            try:
++                timeout = float(value)
++                if isinstance(value, bool) or not math.isfinite(timeout) or timeout <= 0:
++                    raise ValueError
++            except (TypeError, ValueError, OverflowError) as error:
++                raise ValueError("request_timeout must be positive finite seconds") from error
++            credentials_kwargs["timeout"] = timeout
++
+         return credentials_kwargs
+ 
+     def _stream_with_error_mapping(
+diff --git a/models/openai/provider/openai.yaml b/models/openai/provider/openai.yaml
+index d22df9d7..a8a37011 100644
+--- a/models/openai/provider/openai.yaml
++++ b/models/openai/provider/openai.yaml
+@@ -45,6 +45,24 @@ model_credential_schema:
+       placeholder:
+         zh_Hans: 在此输入您的 API Key
+         en_US: Enter your API Key
++    - variable: max_retries
++      label:
++        en_US: Maximum SDK retries (optional)
++        zh_Hans: SDK 最大重试次数（可选）
++      type: text-input
++      required: false
++      help:
++        en_US: Non-negative integer. Set 0 to disable SDK retries; leave blank for the SDK default.
++        zh_Hans: 非负整数。设为 0 可禁用 SDK 重试；留空则使用 SDK 默认值。
++    - variable: request_timeout
++      label:
++        en_US: Request timeout in seconds (optional)
++        zh_Hans: 请求超时秒数（可选）
++      type: text-input
++      required: false
++      help:
++        en_US: Positive finite seconds for SDK network timeouts, not a total workflow deadline. Leave blank for the SDK default.
++        zh_Hans: SDK 网络超时的正有限秒数，并非工作流总时限。留空则使用 SDK 默认值。
+     - variable: openai_organization
+       label:
+         zh_Hans: 组织 ID
+@@ -111,6 +129,24 @@ provider_credential_schema:
+       placeholder:
+         zh_Hans: 在此输入您的 API Key
+         en_US: Enter your API Key
++    - variable: max_retries
++      label:
++        en_US: Maximum SDK retries (optional)
++        zh_Hans: SDK 最大重试次数（可选）
++      type: text-input
++      required: false
++      help:
++        en_US: Non-negative integer. Set 0 to disable SDK retries; leave blank for the SDK default.
++        zh_Hans: 非负整数。设为 0 可禁用 SDK 重试；留空则使用 SDK 默认值。
++    - variable: request_timeout
++      label:
++        en_US: Request timeout in seconds (optional)
++        zh_Hans: 请求超时秒数（可选）
++      type: text-input
++      required: false
++      help:
++        en_US: Positive finite seconds for SDK network timeouts, not a total workflow deadline. Leave blank for the SDK default.
++        zh_Hans: SDK 网络超时的正有限秒数，并非工作流总时限。留空则使用 SDK 默认值。
+     - variable: openai_organization
+       label:
+         zh_Hans: 组织 ID
+diff --git a/models/openai/pyproject.toml b/models/openai/pyproject.toml
+index e99c3325..36237dea 100644
+--- a/models/openai/pyproject.toml
++++ b/models/openai/pyproject.toml
+@@ -1,6 +1,6 @@
+ [project]
+ name = "dify-openai"
+-version = "1.1.0"
++version = "1.1.1"
+ description = "OpenAI models for Dify"
+ readme = "README.md"
+ requires-python = ">=3.12"
+diff --git a/models/openai/tests/test_transport.py b/models/openai/tests/test_transport.py
+new file mode 100644
+index 00000000..f51cbc7b
+--- /dev/null
++++ b/models/openai/tests/test_transport.py
+@@ -0,0 +1,69 @@
++import json
++
++import httpx
++import openai
++import pytest
++
++from models.common_openai import _CommonOpenAI
++
++
++@pytest.mark.parametrize(
++    ("controls", "expected"),
++    [
++        ({}, {}),
++        ({"max_retries": "", "request_timeout": None}, {}),
++        ({"max_retries": "0", "request_timeout": "12.5"}, {"max_retries": 0, "timeout": 12.5}),
++    ],
++)
++def test_transport_credentials_preserve_defaults_and_explicit_zero(controls, expected):
++    assert _CommonOpenAI()._to_credential_kwargs({"openai_api_key": "key", **controls}) == {
++        "api_key": "key",
++        **expected,
++    }
++
++
++@pytest.mark.parametrize(
++    ("name", "value"),
++    [("max_retries", v) for v in (-1, 0.5, True, "bad", float("inf"))]
++    + [("request_timeout", v) for v in (0, -1, True, "bad", float("nan"), float("inf"))],
++)
++def test_invalid_transport_credentials_fail_before_client_creation(name, value):
++    with pytest.raises(ValueError, match=name):
++        _CommonOpenAI()._to_credential_kwargs({"openai_api_key": "key", name: value})
++
++
++@pytest.mark.parametrize("protocol", ["responses", "chat"])
++@pytest.mark.parametrize("failure", [500, 429, "timeout"])
++@pytest.mark.parametrize(("retries", "attempts"), [(0, 1), (1, 2), (None, 3)])
++def test_actual_sdk_transport_obeys_retry_and_timeout_controls(
++    protocol, failure, retries, attempts, llm, mocker, prompt_messages
++):
++    observed = []
++
++    def handle(request):
++        observed.append(request)
++        assert request.extensions["timeout"]["read"] == 12.5
++        assert json.loads(request.content)["model"] == "gpt-6-luna"
++        if failure == "timeout":
++            raise httpx.ReadTimeout("controlled timeout", request=request)
++        return httpx.Response(failure, json={"error": {"message": "controlled failure"}})
++
++    credentials = {
++        "openai_api_key": "local-test-key",
++        "openai_api_base": "https://example.test/v1",
++        "api_protocol": protocol,
++        "request_timeout": "12.5",
++    }
++    if retries is not None:
++        credentials["max_retries"] = str(retries)
++    mocker.patch("openai._base_client.time.sleep")
++    with httpx.Client(transport=httpx.MockTransport(handle)) as http_client:
++        mocker.patch(
++            "models.llm.llm.OpenAI",
++            side_effect=lambda **kwargs: openai.OpenAI(http_client=http_client, **kwargs),
++        )
++        with pytest.raises(openai.APIError):
++            llm._chat_generate(
++                "gpt-6-luna", credentials, prompt_messages, {}, None, None, False, None
++            )
++    assert len(observed) == attempts
+diff --git a/models/openai/uv.lock b/models/openai/uv.lock
+index 3094d12c..921055e9 100644
+--- a/models/openai/uv.lock
++++ b/models/openai/uv.lock
+@@ -228,7 +228,7 @@ wheels = [
+ 
+ [[package]]
+ name = "dify-openai"
+-version = "1.1.0"
++version = "1.1.1"
+ source = { virtual = "." }
+ dependencies = [
+     { name = "dify-plugin" },
+diff --git a/tests/tools/openai/test_openai_tool.py b/tests/tools/openai/test_openai_tool.py
+index 4ee93645..5b89c580 100644
+--- a/tests/tools/openai/test_openai_tool.py
++++ b/tests/tools/openai/test_openai_tool.py
+@@ -1,10 +1,14 @@
++import base64
+ import importlib.util
+ import io
++import json
+ import sys
+ import types
+ from pathlib import Path
+ from unittest.mock import MagicMock, patch
+ 
++import httpx
++import openai
+ import pytest
+ 
+ PLUGIN_DIR = Path("tools") / "openai"
+@@ -113,6 +117,126 @@ def test_normalize_openai_base_url(raw_url, expected):
+     assert helpers.normalize_openai_base_url(raw_url) == expected
+ 
+ 
++def test_unset_image_transport_controls_preserve_sdk_defaults():
++    helpers = import_plugin_module("openai_helpers", "openai_client.py")
++    assert helpers.request_options({}) == {}
++    assert helpers.request_options({"max_retries": None, "request_timeout": ""}) == {}
++    assert helpers.request_options({"max_retries": 0, "request_timeout": 12.5}) == {
++        "max_retries": 0,
++        "timeout": 12.5,
++    }
++
++
++@pytest.mark.parametrize("operation", ["generate", "edit"])
++@pytest.mark.parametrize("failure", [500, 429, "timeout"])
++def test_image_sdk_makes_one_attempt_when_retries_disabled(operation, failure):
++    module = import_plugin_module(
++        f"gpt_image_2_{operation}_tool", f"tools/gpt_image_2_{operation}.py"
++    )
++    tool = create_tool_instance(getattr(module, f"GPTImage2{operation.title()}Tool"))
++    tool.runtime.credentials = {
++        "openai_api_key": "local-test-key",
++        "openai_base_url": "https://example.test/v1",
++    }
++    observed = []
++
++    def handle(request):
++        observed.append(request)
++        assert request.extensions["timeout"]["read"] == 12.5
++        if failure == "timeout":
++            raise httpx.ReadTimeout("controlled timeout", request=request)
++        return httpx.Response(failure, json={"error": {"message": "controlled failure"}})
++
++    parameters = {
++        "prompt": "exact request",
++        "model": "gpt-image-2.5-sunburst-2026-09-08",
++        "max_retries": 0,
++        "request_timeout": 12.5,
++    }
++    if operation == "edit":
++        parameters["image"] = [FakeFile(b"original-a"), FakeFile(b"original-b")]
++    with httpx.Client(transport=httpx.MockTransport(handle)) as http_client:
++        with patch.object(
++            module, "OpenAI", side_effect=lambda **kw: openai.OpenAI(http_client=http_client, **kw)
++        ):
++            result = list(tool._invoke(parameters))
++    assert len(observed) == 1
++    assert len(result) == 1 and "Failed to" in result[0]
++
++
++@pytest.mark.parametrize("operation", ["generate", "edit"])
++def test_image_sdk_preserves_snapshot_prompt_settings_originals_and_usage(operation):
++    module = import_plugin_module(
++        f"gpt_image_2_{operation}_tool", f"tools/gpt_image_2_{operation}.py"
++    )
++    tool = create_tool_instance(getattr(module, f"GPTImage2{operation.title()}Tool"))
++    tool.runtime.credentials = {
++        "openai_api_key": "local-test-key",
++        "openai_base_url": "https://example.test/v1",
++    }
++    output_bytes = [b"unchanged-output-a", b"unchanged-output-b"]
++    prompt = "  Exact lettering: مرحبا e\u0301 😀\n  "
++    model = "gpt-image-2.5-sunburst-2026-09-08"
++    observed = []
++
++    def handle(request):
++        observed.append(request)
++        assert request.url.path == "/v1/images/" + (
++            "generations" if operation == "generate" else "edits"
++        )
++        if operation == "generate":
++            body = json.loads(request.content)
++            for key, value in {
++                "model": model,
++                "prompt": prompt,
++                "n": 2,
++                "size": "1024x1536",
++                "quality": "high",
++                "background": "opaque",
++                "output_format": "png",
++            }.items():
++                assert body[key] == value
++            assert "max_retries" not in body and "request_timeout" not in body
++        else:
++            body = request.read()
++            assert prompt.encode("utf-8") in body and model.encode() in body
++            assert body.index(b"original-a") < body.index(b"original-b")
++            for value in (b"1024x1536", b"high", b"opaque", b"png"):
++                assert value in body
++        return httpx.Response(
++            200,
++            json={
++                "created": 1,
++                "data": [{"b64_json": base64.b64encode(b).decode()} for b in output_bytes],
++                "usage": {"total_tokens": 15, "input_tokens": 10, "output_tokens": 5},
++            },
++        )
++
++    parameters = {
++        "model": model,
++        "prompt": prompt,
++        "n": 2,
++        "size": "1024x1536",
++        "quality": "high",
++        "background": "opaque",
++        "output_format": "png",
++        "max_retries": 0,
++        "request_timeout": 12.5,
++    }
++    if operation == "edit":
++        parameters["image"] = [FakeFile(b"original-a", "a.png"), FakeFile(b"original-b", "b.png")]
++    with httpx.Client(transport=httpx.MockTransport(handle)) as http_client:
++        with patch.object(
++            module, "OpenAI", side_effect=lambda **kw: openai.OpenAI(http_client=http_client, **kw)
++        ):
++            result = list(tool._invoke(parameters))
++    assert len(observed) == 1
++    assert [x["blob"] for x in result[:2]] == output_bytes
++    assert all(x["meta"]["mime_type"] == "image/png" for x in result[:2])
++    assert result[2]["data"][0]["model"] == model
++    assert result[2]["data"][0]["usage"]["total_tokens"] == 15
++
++
+ def test_provider_validate_credentials_uses_models_list():
+     provider_module = import_plugin_module("openai_provider", "provider/openai.py")
+     provider = provider_module.OpenAIProvider.__new__(provider_module.OpenAIProvider)
+@@ -178,6 +302,7 @@ def test_gpt_image_2_generate_uses_normalized_base_url():
+         (None, "high", "png", "transparent", "1024x1024"),
+         ("gpt-image-2.5-flare", "xhigh", "webp", "transparent", "3840x2160"),
+         ("gpt-image-2.5-sunburst", "max", "jpeg", "opaque", "1024x640"),
++        ("gpt-image-2.5-sunburst-2026-09-08", "max", "png", "opaque", "1024x1536"),
+         ("gpt-image-2.5-flare", "auto", "auto", "transparent", "auto"),
+     ],
+ )
+@@ -282,6 +407,14 @@ def test_gpt_image_requests_and_outputs(operation, model, quality, output_format
+         {"n": 11},
+         {"n": True},
+         {"n": 1.5},
++        {"max_retries": -1},
++        {"max_retries": 0.5},
++        {"max_retries": True},
++        {"max_retries": float("inf")},
++        {"request_timeout": 0},
++        {"request_timeout": True},
++        {"request_timeout": float("nan")},
++        {"request_timeout": float("inf")},
+     ],
+ )
+ def test_gpt_image_rejects_invalid_parameters_without_api_calls(operation, invalid):
+diff --git a/tools/openai/.difyignore b/tools/openai/.difyignore
+new file mode 100644
+index 00000000..af6c7c78
+--- /dev/null
++++ b/tools/openai/.difyignore
+@@ -0,0 +1,7 @@
++.venv/
++__pycache__/
++*.py[cod]
++.pytest_cache/
++.ruff_cache/
++.env
++*.difypkg
+diff --git a/tools/openai/README.md b/tools/openai/README.md
+index 7d4c2a83..e627a808 100644
+--- a/tools/openai/README.md
++++ b/tools/openai/README.md
+@@ -50,7 +50,9 @@ Choose a GPT Image 2.5 model explicitly in the **Model** field to use the new mo
+ | [`gpt-image-2.5-flare`](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare) | Fast, high-quality generation and editing. | `gpt-image-2.5-flare-2026-09-08` |
+ | [`gpt-image-2.5-sunburst`](https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst) | Detailed creative work and precise editing. | `gpt-image-2.5-sunburst-2026-09-08` |
+ 
+-The model selector uses the API model IDs; the snapshot IDs are reference metadata.
++The model selector supports the undated IDs and the dated Sunburst snapshot
++`gpt-image-2.5-sunburst-2026-09-08`. The selected ID is sent unchanged to the API;
++the default remains `gpt-image-2`.
+ The Generate tool sends a text prompt to the Images API, while Edit sends a prompt and image files.
+ For another editing pass, feed a previous image output into the next Edit call.
+ 
+@@ -69,6 +71,12 @@ For another editing pass, feed a previous image output into the next Edit call.
+ | `moderation` | `auto` | Generate only: `auto` or `low`. |
+ | `image` | Required for Edit | One or more Dify image files, up to 16. |
+ | `mask` | Unset | Edit only: an optional PNG mask for localized changes. |
++| `max_retries` | SDK default | Optional non-negative integer; `0` disables SDK retries for this Generate/Edit invocation. |
++| `request_timeout` | SDK default | Optional positive finite seconds for SDK network timeouts, not a total workflow deadline. |
++
++Unset transport controls preserve the SDK defaults. Configure Dify node and outer
++workflow retries separately. These options apply to the GPT Image 2 / 2.5 tools only;
++they are not image API parameters or provider-wide settings for other tools.
+ 
+ Custom dimensions must satisfy all of these conditions:
+ 
+diff --git a/tools/openai/manifest.yaml b/tools/openai/manifest.yaml
+index 08e9004d..390ad565 100644
+--- a/tools/openai/manifest.yaml
++++ b/tools/openai/manifest.yaml
+@@ -33,4 +33,4 @@ tags:
+ - image
+ - productivity
+ type: plugin
+-version: 0.2.2
++version: 0.2.3
+diff --git a/tools/openai/openai_client.py b/tools/openai/openai_client.py
+index ce0a8ac8..38925003 100644
+--- a/tools/openai/openai_client.py
++++ b/tools/openai/openai_client.py
+@@ -1,3 +1,31 @@
++import math
++
++
++def request_options(parameters: dict) -> dict:
++    """Omit unset controls to preserve the OpenAI SDK defaults."""
++    options = {}
++    value = parameters.get("max_retries")
++    if value not in (None, ""):
++        try:
++            retries = int(value)
++            if isinstance(value, bool) or retries < 0 or retries != float(value):
++                raise ValueError
++        except (TypeError, ValueError, OverflowError) as error:
++            raise ValueError("max_retries must be a non-negative integer") from error
++        options["max_retries"] = retries
++
++    value = parameters.get("request_timeout")
++    if value not in (None, ""):
++        try:
++            timeout = float(value)
++            if isinstance(value, bool) or not math.isfinite(timeout) or timeout <= 0:
++                raise ValueError
++        except (TypeError, ValueError, OverflowError) as error:
++            raise ValueError("request_timeout must be positive finite seconds") from error
++        options["timeout"] = timeout
++    return options
++
++
+ def normalize_openai_base_url(base_url: str | None) -> str | None:
+     if not base_url:
+         return None
+diff --git a/tools/openai/pyproject.toml b/tools/openai/pyproject.toml
+index 82112360..bb123232 100644
+--- a/tools/openai/pyproject.toml
++++ b/tools/openai/pyproject.toml
+@@ -1,6 +1,6 @@
+ [project]
+ name = "dify-openai"
+-version = "0.2.1"
++version = "0.2.3"
+ description = "Add your description here"
+ readme = "README.md"
+ requires-python = ">=3.12"
+diff --git a/tools/openai/tools/_image_utils.py b/tools/openai/tools/_image_utils.py
+index fa9543cf..e7075db7 100644
+--- a/tools/openai/tools/_image_utils.py
++++ b/tools/openai/tools/_image_utils.py
+@@ -9,6 +9,7 @@ def build_image_args(parameters: dict[str, Any]) -> dict[str, Any]:
+         "gpt-image-2",
+         "gpt-image-2.5-flare",
+         "gpt-image-2.5-sunburst",
++        "gpt-image-2.5-sunburst-2026-09-08",
+     }:
+         raise ValueError("Invalid model. Choose GPT Image 2, GPT Image 2.5 Flare, or Sunburst.")
+ 
+diff --git a/tools/openai/tools/gpt_image_2_edit.py b/tools/openai/tools/gpt_image_2_edit.py
+index 734ed6b4..60d0c63c 100644
+--- a/tools/openai/tools/gpt_image_2_edit.py
++++ b/tools/openai/tools/gpt_image_2_edit.py
+@@ -6,7 +6,7 @@ from dify_plugin import Tool
+ from dify_plugin.entities.tool import ToolInvokeMessage
+ from dify_plugin.file.file import File
+ from openai import OpenAI
+-from openai_client import normalize_openai_base_url
++from openai_client import normalize_openai_base_url, request_options
+ from tools._image_utils import (
+     build_image_args,
+     build_usage_metadata,
+@@ -21,6 +21,7 @@ class GPTImage2EditTool(Tool):
+     def _invoke(self, tool_parameters: dict) -> Generator[ToolInvokeMessage, None, None]:
+         try:
+             edit_args = build_image_args(tool_parameters)
++            client_options = request_options(tool_parameters)
+         except ValueError as e:
+             yield self.create_text_message(str(e))
+             return
+@@ -72,6 +73,7 @@ class GPTImage2EditTool(Tool):
+                 api_key=self.runtime.credentials["openai_api_key"],
+                 base_url=normalize_openai_base_url(self.runtime.credentials.get("openai_base_url")),
+                 organization=self.runtime.credentials.get("openai_organization_id") or None,
++                **client_options,
+             )
+             logger.info(
+                 "image edit: model=%s size=%s quality=%s n=%s has_mask=%s",
+diff --git a/tools/openai/tools/gpt_image_2_edit.yaml b/tools/openai/tools/gpt_image_2_edit.yaml
+index a803a3cc..39963cc0 100644
+--- a/tools/openai/tools/gpt_image_2_edit.yaml
++++ b/tools/openai/tools/gpt_image_2_edit.yaml
+@@ -38,6 +38,10 @@ parameters:
+       en_US: GPT Image 2.5 Sunburst
+       zh_Hans: GPT Image 2.5 Sunburst
+     value: gpt-image-2.5-sunburst
++  - label:
++      en_US: GPT Image 2.5 Sunburst (2026-09-08)
++      zh_Hans: GPT Image 2.5 Sunburst (2026-09-08)
++    value: gpt-image-2.5-sunburst-2026-09-08
+   required: false
+   type: select
+ - form: llm
+@@ -197,3 +201,25 @@ parameters:
+   min: 0
+   required: false
+   type: number
++
++- form: form
++  human_description:
++    en_US: Non-negative integer. Set 0 to disable SDK retries; leave unset for the SDK default.
++    zh_Hans: 非负整数。设为 0 可禁用 SDK 重试；不设置则使用 SDK 默认值。
++  label:
++    en_US: Maximum SDK retries
++    zh_Hans: SDK 最大重试次数
++  name: max_retries
++  required: false
++  type: number
++  min: 0
++- form: form
++  human_description:
++    en_US: Positive finite seconds for SDK network timeouts, not a total workflow deadline. Leave unset for the SDK default.
++    zh_Hans: SDK 网络超时的正有限秒数，并非工作流总时限。不设置则使用 SDK 默认值。
++  label:
++    en_US: Request timeout (seconds)
++    zh_Hans: 请求超时（秒）
++  name: request_timeout
++  required: false
++  type: number
+diff --git a/tools/openai/tools/gpt_image_2_generate.py b/tools/openai/tools/gpt_image_2_generate.py
+index 5a2fda7d..1d0a253d 100644
+--- a/tools/openai/tools/gpt_image_2_generate.py
++++ b/tools/openai/tools/gpt_image_2_generate.py
+@@ -4,7 +4,7 @@ from collections.abc import Generator
+ from dify_plugin import Tool
+ from dify_plugin.entities.tool import ToolInvokeMessage
+ from openai import OpenAI
+-from openai_client import normalize_openai_base_url
++from openai_client import normalize_openai_base_url, request_options
+ from tools._image_utils import (
+     build_image_args,
+     build_usage_metadata,
+@@ -19,6 +19,7 @@ class GPTImage2GenerateTool(Tool):
+     def _invoke(self, tool_parameters: dict) -> Generator[ToolInvokeMessage, None, None]:
+         try:
+             generation_args = build_image_args(tool_parameters)
++            client_options = request_options(tool_parameters)
+             moderation = tool_parameters.get("moderation", "auto")
+             if moderation not in ("auto", "low"):
+                 raise ValueError("Invalid moderation. Choose low or auto.")
+@@ -35,6 +36,7 @@ class GPTImage2GenerateTool(Tool):
+                 api_key=self.runtime.credentials["openai_api_key"],
+                 base_url=normalize_openai_base_url(self.runtime.credentials.get("openai_base_url")),
+                 organization=self.runtime.credentials.get("openai_organization_id") or None,
++                **client_options,
+             )
+             logger.info(
+                 "%s generate: size=%s quality=%s n=%s",
+diff --git a/tools/openai/tools/gpt_image_2_generate.yaml b/tools/openai/tools/gpt_image_2_generate.yaml
+index 6f19bc0c..dfd1fb31 100644
+--- a/tools/openai/tools/gpt_image_2_generate.yaml
++++ b/tools/openai/tools/gpt_image_2_generate.yaml
+@@ -38,6 +38,10 @@ parameters:
+       en_US: GPT Image 2.5 Sunburst
+       zh_Hans: GPT Image 2.5 Sunburst
+     value: gpt-image-2.5-sunburst
++  - label:
++      en_US: GPT Image 2.5 Sunburst (2026-09-08)
++      zh_Hans: GPT Image 2.5 Sunburst (2026-09-08)
++    value: gpt-image-2.5-sunburst-2026-09-08
+   required: false
+   type: select
+ - form: llm
+@@ -197,3 +201,25 @@ parameters:
+     value: low
+   required: false
+   type: select
++
++- form: form
++  human_description:
++    en_US: Non-negative integer. Set 0 to disable SDK retries; leave unset for the SDK default.
++    zh_Hans: 非负整数。设为 0 可禁用 SDK 重试；不设置则使用 SDK 默认值。
++  label:
++    en_US: Maximum SDK retries
++    zh_Hans: SDK 最大重试次数
++  name: max_retries
++  required: false
++  type: number
++  min: 0
++- form: form
++  human_description:
++    en_US: Positive finite seconds for SDK network timeouts, not a total workflow deadline. Leave unset for the SDK default.
++    zh_Hans: SDK 网络超时的正有限秒数，并非工作流总时限。不设置则使用 SDK 默认值。
++  label:
++    en_US: Request timeout (seconds)
++    zh_Hans: 请求超时（秒）
++  name: request_timeout
++  required: false
++  type: number
+diff --git a/tools/openai/uv.lock b/tools/openai/uv.lock
+index d03ce318..8cb72cfe 100644
+--- a/tools/openai/uv.lock
++++ b/tools/openai/uv.lock
+@@ -219,7 +219,7 @@ wheels = [
+ 
+ [[package]]
+ name = "dify-openai"
+-version = "0.2.1"
++version = "0.2.3"
+ source = { virtual = "." }
+ dependencies = [
+     { name = "dify-plugin" },

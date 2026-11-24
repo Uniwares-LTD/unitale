@@ -31,6 +31,7 @@ export function renderMermaid(documents, relationships, complete) {
         fields = [
           "_id / bookletId / orderId / revisionChargeId? / version",
           "brief {} / creativeConfigSnapshot {}",
+          "v2: retryPolicy {} / checkpointVersion / checkpoint?",
           "subjects[] {",
           "  id / kind / label",
           "  artifacts[] {id, kind, currentRevisionId, acceptedRevisionId}",

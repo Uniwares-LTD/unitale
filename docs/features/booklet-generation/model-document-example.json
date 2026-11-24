@@ -3,12 +3,17 @@
     "status": "T14 draft plus T15-T17 independent service-record examples; not seed data",
     "notes": [
       "collections groups independent documents; only subjects and artifact entries are embedded in Production.",
+      "V2 revisions may additionally carry revalidatedFrom, identifying the prior immutable revision whose content/assets are preserved under replacement sources. Existing examples omit this optional field.",
+      "For a new v2 production, revalidatedFrom may identify a selected direct owned v2 predecessor revision in the same booklet. Exact content/assets copy into an empty matching responsibility as an unaccepted candidate; original storage gains an attachment without duplicate bytes. Replacement dependencies stay local and current-manifest review is not inherited.",
       "This is a draft production. No human approval, image generation, charge or completion is implied. Accepted pointers stay null.",
       "Prices and package quantities are synthetic fixtures. The authoritative order remains in Unibase.",
       "Database Date values are represented as ISO strings. Revision hashes follow hashVersion 1.",
       "Only a repository receipt excerpt is shown; earlier create/index/lease receipts are omitted.",
       "Provenance IDs are external service references, not proof of execution or approval.",
-      "serviceRecordExamples illustrate persisted fields at later stages independently from the draft collections; they do not claim this draft has executed or passed review."
+      "serviceRecordExamples illustrate persisted fields at later stages independently from the draft collections; they do not claim this draft has executed or passed review.",
+      "The unchanged bookletAssets format also stores v2 originals: operationId is the observed Generate work callId, outputKey identifies each returned original, and sourceRevisions.sha256 carries its source contentHash. The illustrated v1 receipt remains independent.",
+      "A latest confirmed retriable failed v2 work attempt may carry retryAuthorization {key, authorizedAt, consumedByCallId}; one authenticated owner grant permits one extra registration without resetting retry/correction counters. The successful work example omits it.",
+      "Confirmed retriable failed/registered retry v2 work may carry retryNotBefore, an ISO representation of the stored Date derived from the original Run timing snapshot and retry ordinal. The successful work example omits it."
     ]
   },
   "externalReferences": [
@@ -62,7 +67,9 @@
             "tag": "en",
             "direction": "ltr"
           },
-          "characters": ["Mira, a child with a yellow raincoat"],
+          "characters": [
+            "Mira, a child with a yellow raincoat"
+          ],
           "locations": [],
           "visualPreferences": "Warm watercolor"
         },
@@ -175,7 +182,9 @@
             {
               "id": "unit_1",
               "prose": "Mira follows a lantern.",
-              "characterIds": ["subject_mira"],
+              "characterIds": [
+                "subject_mira"
+              ],
               "locationIds": []
             }
           ]
@@ -185,7 +194,9 @@
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": ["evidence_external_001"]
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
         },
         "contentHash": "baecd155311e35601a91f6b9a65679306753faf34bb8f5d2dde7718d70bd1459",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -205,7 +216,9 @@
             {
               "id": "unit_1",
               "prose": "Mira pauses and asks for help finding the lantern.",
-              "characterIds": ["subject_mira"],
+              "characterIds": [
+                "subject_mira"
+              ],
               "locationIds": []
             }
           ]
@@ -221,7 +234,9 @@
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": ["evidence_external_001"]
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
         },
         "contentHash": "f53761e7c60622bade8768c286a52080bdee9f0a9c175174aaa021266f77a086",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -239,14 +254,18 @@
           "kind": "description",
           "name": "Mira",
           "description": "A child with a yellow raincoat.",
-          "continuityRules": ["Keep the raincoat yellow."]
+          "continuityRules": [
+            "Keep the raincoat yellow."
+          ]
         },
         "sources": [],
         "assets": [],
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": ["evidence_external_001"]
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
         },
         "contentHash": "713c336394f520a5a272b6396c4ba2befa22b3881b6388d8638fd4a44da392d5",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -272,9 +291,13 @@
                 "height": 1
               },
               "action": "Mira asks for help.",
-              "characterIds": ["subject_mira"],
+              "characterIds": [
+                "subject_mira"
+              ],
               "locationIds": [],
-              "manuscriptUnitIds": ["unit_1"],
+              "manuscriptUnitIds": [
+                "unit_1"
+              ],
               "lettering": [
                 {
                   "id": "lettering_1",
@@ -303,7 +326,9 @@
         "provenance": {
           "operationId": "operation_external_001",
           "runId": "run_external_001",
-          "evidenceIds": ["evidence_external_001"]
+          "evidenceIds": [
+            "evidence_external_001"
+          ]
         },
         "contentHash": "e6b46756c0e51a33d4efdac35b15f25c9f8612ba7e7b84b0321dbc404de3a693",
         "createdAt": "2026-11-07T09:00:00.000Z"
@@ -343,7 +368,12 @@
       "transferId": "transfer_fingerprint",
       "index": 0,
       "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-      "data": { "$binary": { "base64": "e30=", "subType": "00" } }
+      "data": {
+        "$binary": {
+          "base64": "e30=",
+          "subType": "00"
+        }
+      }
     },
     "bookletMcpTransferBudgets": {
       "_id": "budget_fingerprint",
@@ -360,7 +390,20 @@
         "id": "visual-review",
         "revision": 1,
         "publicationId": "example-only-not-published"
-      }
+      },
+      "capacity": {
+        "id": "profile_demo",
+        "revision": 1,
+        "maxStoryPages": 12,
+        "coverSupported": true,
+        "maxCharacters": 4,
+        "maxLocations": 4,
+        "maxPanelsPerPage": 4,
+        "maxStyleSamples": 3,
+        "canvases": [{ "width": 1024, "height": 1024, "mime": "image/png" }],
+        "languages": [{ "tag": "en", "direction": "ltr" }]
+      },
+      "retryDefaults": { "paidLlm": 2, "paidImage": 0, "nonPaid": 3 }
     },
     "bookletReviewRequests": {
       "_id": "12345678-1234-4234-9234-123456789abc",
@@ -489,9 +532,375 @@
             "action": "Repair the lettering using the approved page plan."
           }
         ],
-        "evidenceIds": ["review_input", "review_output"],
+        "evidenceIds": [
+          "review_input",
+          "review_output"
+        ],
         "createdAt": "2026-11-07T10:00:00.000Z"
       }
+    }
+  },
+  "v2StorageExamples": {
+    "status": "Implemented v2 storage shapes; synthetic records, not chronological execution evidence or seed data",
+    "production": {
+      "_id": "production_v2_example",
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "bookletId": "booklet_001",
+      "orderId": "order_external_001",
+      "sourceProductionId": null,
+      "revisionChargeId": null,
+      "brief": {
+        "idea": "A child follows a lantern trail.",
+        "audience": "Ages 6 to 8",
+        "language": {
+          "tag": "en",
+          "direction": "ltr"
+        },
+        "characters": [
+          "Mira, a child with a yellow raincoat"
+        ],
+        "locations": [],
+        "visualPreferences": "Warm watercolor"
+      },
+      "creativeConfigSnapshot": {
+        "executionProfileId": "fixture",
+        "executionProfileRevision": 1,
+        "storyPages": 1,
+        "includeCover": false,
+        "maxCharacters": 1,
+        "maxLocations": 1,
+        "maxPanelsPerPage": 2,
+        "styleSamples": 1,
+        "canvas": {
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/png"
+        },
+        "languages": [
+          {
+            "tag": "en",
+            "direction": "ltr"
+          }
+        ],
+        "repairLimitPerOutput": 1,
+        "execution": {
+          "maxTextCalls": 20,
+          "maxImageCalls": 10,
+          "maxWorkflowSteps": 60,
+          "maxElapsedSeconds": 600,
+          "spendingCeiling": {
+            "amountMinor": 100,
+            "currency": "USD"
+          }
+        },
+        "id": "fixture-package",
+        "revision": 1
+      },
+      "lifecycleState": "draft",
+      "subjects": [
+        {
+          "id": "book_subject_v2",
+          "kind": "book",
+          "label": "Book",
+          "pageRole": null,
+          "artifacts": [
+            {
+              "id": "manuscript_v2",
+              "kind": "manuscript",
+              "currentRevisionId": "revision_v2_example",
+              "acceptedRevisionId": "revision_v2_example"
+            }
+          ]
+        }
+      ],
+      "stageLocks": {
+        "story": null,
+        "style": null,
+        "references": null
+      },
+      "mutationLease": null,
+      "fenceCounter": 0,
+      "version": 4,
+      "currentManifestRevisionId": null,
+      "createdAt": "2026-11-07T09:00:00.000Z",
+      "updatedAt": "2026-11-07T09:00:00.000Z",
+      "expiresAt": null,
+      "creationHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "retryPolicy": {
+        "paidLlm": 2,
+        "paidImage": 0,
+        "nonPaid": 3
+      },
+      "checkpointVersion": 0,
+      "checkpoint": null
+    },
+    "revision": {
+      "_id": "revision_v2_example",
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "artifactId": "manuscript_v2",
+      "subjectId": "book_subject_v2",
+      "kind": "manuscript",
+      "ordinal": 1,
+      "content": {
+        "kind": "manuscript",
+        "units": [
+          {
+            "id": "unit_v2",
+            "action": "A wave",
+            "texts": [
+              {
+                "id": "text_v2",
+                "kind": "dialogue",
+                "text": "  é 😀\n"
+              }
+            ]
+          }
+        ]
+      },
+      "sources": [],
+      "assets": [],
+      "provenance": {
+        "operationId": "operation_v2_example",
+        "runId": "run_v2_example",
+        "evidenceIds": []
+      },
+      "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+      "createdAt": "2026-11-07T09:00:00.000Z"
+    },
+    "work": {
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "createdAt": "2026-11-07T09:00:00.000Z",
+      "_id": "f2bee7706e163c567d95a4dde99c2f5137cc19ae0ff46b7faf42f76fd346cebd",
+      "callId": "review_v2_example",
+      "runId": "run_v2_example",
+      "actionKey": "5ae05143cdd87149c4b7086471188a086594739d942a532e8293fcf4ce5eabc7",
+      "requestHash": "d7c47e951891055ee5818b5b6e52bc4b386e8fd4ebc67c09faca5602f11aeac7",
+      "service": "quality-reviewer",
+      "operation": "text",
+      "targetIds": [
+        "manuscript_v2"
+      ],
+      "sources": [
+        {
+          "artifactId": "manuscript_v2",
+          "revisionId": "revision_v2_example",
+          "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+        }
+      ],
+      "category": "paidLlm",
+      "retryOf": null,
+      "reviewScope": {
+        "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+        "referencePositions": [],
+        "assetIds": [],
+        "continuityPairs": []
+      },
+      "correction": null,
+      "correctionRootId": "f8261f03c95bbda29daee46fcc9bf28ad7f0a57e62d8c8271e60a213d169610e",
+      "status": "succeeded",
+      "retryOrdinal": 0,
+      "retryable": false,
+      "evidenceIds": [
+        "observed_review_v2"
+      ],
+      "updatedAt": "2026-11-07T09:00:00.000Z",
+      "requestPayload": {
+        "contractVersion": 2,
+        "invocationId": "invocation_v2_example",
+        "callId": "review_v2_example",
+        "service": "quality-reviewer",
+        "operation": "text",
+        "intent": "create",
+        "items": [
+          {
+            "itemId": "item_v2_example",
+            "input": {
+              "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+              "targetIds": [
+                "manuscript_v2"
+              ],
+              "referencePositions": []
+            }
+          }
+        ],
+        "sources": [
+          {
+            "artifactId": "manuscript_v2",
+            "revisionId": "revision_v2_example",
+            "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+            "content": {
+              "kind": "manuscript",
+              "units": [
+                {
+                  "id": "unit_v2",
+                  "action": "A wave",
+                  "texts": [
+                    {
+                      "id": "text_v2",
+                      "kind": "dialogue",
+                      "text": "  é 😀\n"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "references": [],
+        "constraints": {}
+      },
+      "resultPayload": {
+        "contractVersion": 2,
+        "invocationId": "invocation_v2_example",
+        "callId": "review_v2_example",
+        "service": "quality-reviewer",
+        "operation": "text",
+        "status": "succeeded",
+        "items": [
+          {
+            "itemId": "item_v2_example",
+            "status": "succeeded",
+            "proposals": [
+              {
+                "kind": "assessment",
+                "subjectId": "book_subject_v2",
+                "content": {
+                  "mode": "text",
+                  "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+                  "requestHash": null,
+                  "sources": [
+                    {
+                      "artifactId": "manuscript_v2",
+                      "revisionId": "revision_v2_example",
+                      "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+                    }
+                  ],
+                  "coverage": {
+                    "targetIds": [
+                      "manuscript_v2"
+                    ],
+                    "referencePositions": []
+                  },
+                  "disposition": "pass",
+                  "findings": [],
+                  "limitations": []
+                },
+                "sources": [
+                  {
+                    "artifactId": "manuscript_v2",
+                    "revisionId": "revision_v2_example",
+                    "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "resultObservation": {
+        "runId": "native_manager_v2_example",
+        "nodeId": "child-quality-reviewer",
+        "executionId": "native_child_execution_example",
+        "retryIndex": 0,
+        "iterationId": null,
+        "loopId": "manager_iteration_example"
+      },
+      "reconciliation": {
+        "nextAt": null,
+        "failedReads": 1,
+        "leaseId": null,
+        "leaseUntil": "1970-01-01T00:00:00.000Z",
+        "reason": "result_retained"
+      }
+    },
+    "assessment": {
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "createdAt": "2026-11-07T09:00:00.000Z",
+      "_id": "4769c2611ec2e860eba71f7f8ed567c91d39d1df0eede5af1156d45c92e16d4e",
+      "callId": "review_v2_example",
+      "policyBinding": "policy_v2",
+      "reviewerBinding": "reviewer_v2",
+      "assessment": {
+        "mode": "text",
+        "targetHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+        "requestHash": null,
+        "sources": [
+          {
+            "artifactId": "manuscript_v2",
+            "revisionId": "revision_v2_example",
+            "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+          }
+        ],
+        "coverage": {
+          "targetIds": [
+            "manuscript_v2"
+          ],
+          "referencePositions": []
+        },
+        "disposition": "pass",
+        "findings": [],
+        "limitations": []
+      },
+      "complete": true,
+      "evidenceIds": [
+        "observed_review_v2"
+      ]
+    },
+    "acceptance": {
+      "documentVersion": 2,
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "createdAt": "2026-11-07T09:00:00.000Z",
+      "_id": "df5d2acc97511a87fb59224e61bb725470dd122cfaba61435e633f0fdb15d108",
+      "runId": "manager_v2",
+      "revisionId": "revision_v2_example",
+      "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9",
+      "targetIds": [
+        "manuscript_v2"
+      ],
+      "assetIds": [],
+      "evidenceIds": [
+        "observed_review_v2"
+      ]
+    },
+    "humanRequestReceipt": {
+      "_id": "ca3568d39af58e5624fbbfed96d5bff5a2f1282e4e4ae9f10252759171b92896",
+      "ownerId": "owner_demo",
+      "productionId": "production_v2_example",
+      "scope": "production-v2:production_v2_example",
+      "key": "ask-human",
+      "inputHash": "a444d2b183b18d24c4009a9f5dc65da271860c045cd8e1e025be314107af03ab",
+      "result": {
+        "id": "production_v2_example",
+        "version": 13,
+        "checkpointVersion": 1,
+        "fence": 12,
+        "humanRequest": {
+          "requestId": "60000000-0000-4000-8000-000000000001",
+          "runId": "manager_v2",
+          "targets": [
+            {
+              "artifactId": "manuscript_v2",
+              "revisionId": "revision_v2_example",
+              "contentHash": "ed658c3455f19feceb4fd1cdb29e4b3d589149f53a4b5705b70086ea81a262b9"
+            }
+          ],
+          "responseContract": {
+            "mode": "raw-v1"
+          },
+          "turn": null,
+          "presentationHash": "7e1b0cd06ea8edd9d13e117d061b4f14446452a0430c841454ddf065d658baf7",
+          "formContent": "```unibase-ui\n{\"version\":1,\"cards\":[{\"id\":\"request-60000000-0000-4000-8000-000000000001\",\"content\":{\"type\":\"summary\",\"version\":1,\"data\":{\"title\":\"Keep this direction, or tell us what to change?\",\"body\":\"\"}}}]}\n```"
+        }
+      },
+      "createdAt": "2026-11-11T09:00:00.000Z"
     }
   }
 }

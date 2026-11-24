@@ -136,6 +136,24 @@ authorization as other publication.
 The initializer gives the new product an empty implementation plan; record its
 own accepted work there.
 
+## Unitale local app with shared staging data
+
+The [project adoption and prepared launch guide](docs/features/local-google-popup/adoption.md)
+owns the private shared-staging setup, exact template revision, HTTPS command,
+approved CA identity and real Google acceptance. Keep port 3000 and the existing
+Base emulator services untouched. Readiness verifies configuration and database
+connectivity; it does not prove sign-in, admin permission or a provider run.
+Shared Firebase membership does not grant Unitale administration; appointing an
+administrator requires a selected verified user and explicit permission.
+
+### Local Google sign-in callback
+
+Local real-Firebase uses the hosted popup helper; the canonical guide records the
+main-first import and confirmed account acceptance. This setup does not deploy
+staging or implement Booklet checkpoint 10. Keep the URL aligned with the private
+origin. If an old tab shows the offline fallback, open the account URL directly;
+preserve unrelated browser storage, approved CA and TLS/CSP validation.
+
 ## Dify environment connections
 
 Each Dify app belongs to one project/environment. In Administration → Orchestrators,

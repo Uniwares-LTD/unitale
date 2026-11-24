@@ -1,0 +1,718 @@
+version: 0.6.0
+kind: app
+app:
+  name: 'Unitale: Image Executor'
+  mode: workflow
+  description: DSL-first local candidate. Binding/import/execution pending; see package README.
+  icon: 📖
+  icon_background: "#E8F2FF"
+  use_icon_as_answer_icon: false
+dependencies: []
+workflow:
+  conversation_variables: []
+  environment_variables:
+    - id: execution-ready
+      name: execution_ready
+      value_type: string
+      value: "false"
+      description: Activation gate. Set only after E1-E4 are verified and activation is separately authorized.
+  features:
+    file_upload:
+      enabled: false
+  graph:
+    nodes:
+      - id: start
+        type: custom
+        position:
+          x: 60
+          y: 80
+        data:
+          type: start
+          title: start
+          desc: ""
+          selected: false
+          variables:
+            - variable: request
+              label: request
+              type: paragraph
+              required: true
+              max_length: 262144
+            - variable: references
+              label: Ordered original images
+              type: file-list
+              required: false
+              allowed_file_types:
+                - image
+              allowed_file_upload_methods:
+                - local_file
+                - remote_url
+      - id: validate
+        type: custom
+        position:
+          x: 370
+          y: 80
+        data:
+          type: code
+          title: validate
+          desc: ""
+          selected: false
+          code_language: python3
+          code: |
+            import json, hashlib
+            def canonical(value):
+                import math
+                from decimal import Decimal
+                if value is None:
+                    return "null"
+                if isinstance(value, bool):
+                    return "true" if value else "false"
+                if isinstance(value, str):
+                    return json.dumps(value, ensure_ascii=False)
+                if isinstance(value, (int, float)):
+                    number = float(value)
+                    if not math.isfinite(number):
+                        raise ValueError("Non-finite JSON number")
+                    if number == 0:
+                        return "0"
+                    negative = "-" if number < 0 else ""
+                    absolute = abs(number)
+                    decimal = Decimal(repr(absolute))
+                    if 1e-6 <= absolute < 1e21:
+                        text = format(decimal, "f")
+                        return negative + (text.rstrip("0").rstrip(".") if "." in text else text)
+                    digits = format(decimal.normalize(), "e").split("e")
+                    exponent = int(digits[1])
+                    return negative + digits[0] + "e" + ("+" if exponent >= 0 else "-") + str(abs(exponent))
+                if isinstance(value, list):
+                    return "[" + ",".join(canonical(x) for x in value) + "]"
+                if isinstance(value, dict):
+                    keys = sorted(value, key=lambda key: key.encode("utf-16-be"))
+                    return "{" + ",".join(canonical(key) + ":" + canonical(value[key]) for key in keys) + "}"
+                raise ValueError("Unsupported JSON value")
+            def digest(value):
+                return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
+            def identity(ref):
+                return {k: v for k, v in ref.items() if k not in ("nativeFileId", "url")}
+            def main(request, references=None, execution_ready="false"):
+                r = json.loads(request)
+                if len(request.encode("utf-8")) > 262144 or r.get("contractVersion") != 2 or r.get("service") != "image-executor":
+                    raise ValueError("Invalid image request/version/capacity")
+                if set(r) - {"contractVersion", "invocationId", "callId", "service", "operation", "intent", "items", "sources", "references", "constraints"}:
+                    raise ValueError("Private/unsupported child fields")
+                if not r.get("invocationId") or not r.get("callId") or r.get("intent") not in ("create", "revise"):
+                    raise ValueError("Image invocation identity/intent required")
+                if len(r.get("items", [])) != 1:
+                    raise ValueError("Capacity: initial image workflow handles one explicitly scoped call; Manager may invoke again for independent items")
+                item = r["items"][0]
+                data = item["input"]
+                refs = r.get("references", [])
+                files = references or []
+                if len(files) != len(refs) or len(refs) > 16:
+                    raise ValueError("Original reference capacity/count mismatch")
+                seen = set()
+                for i, ref in enumerate(refs):
+                    key = (ref["assetId"], ref["sha256"])
+                    if not all(ref.get(k) for k in ("assetId", "sha256", "nativeFileId")) or type(ref.get("bytes")) is not int or not 0 < ref["bytes"] <= 8388608 or key in seen or ref.get("nativeFileId") not in (files[i].get("id"), files[i].get("related_id")):
+                        raise ValueError("Duplicate/oversized/wrong ordered original")
+                    seen.add(key)
+                sources = [{k: s[k] for k in ("artifactId", "revisionId", "contentHash")} for s in r.get("sources", [])]
+                if r["operation"] == "prepare":
+                    if not sources or not all(data.get(k) for k in ("specification", "style", "settings", "imageKind")):
+                        raise ValueError("Selected specification/style/settings/source identities required")
+                    contents = [s.get("content") for s in r.get("sources", [])]
+                    for source in r.get("sources", []):
+                        if source.get("content") is None or digest(source["content"]) != source["contentHash"]:
+                            raise ValueError("Image source content/hash mismatch")
+                    if data["specification"] not in contents or data["style"] not in contents:
+                        raise ValueError("Prepare requires exact selected specification/style content")
+                    spec = data["specification"]
+                    if data["style"].get("kind") != "style":
+                        raise ValueError("Style source kind required")
+                    if data["imageKind"] == "page":
+                        layouts = [x for x in contents if x.get("kind") == "book-layout"]
+                        if len(layouts) != 1 or spec.get("kind") != "page-spec":
+                            raise ValueError("Selected page layout/specification required")
+                        page = next((p for p in layouts[0]["pages"] if p["id"] == spec["pageId"]), None)
+                        if page is None or len(page["panels"]) != len(spec["panels"]):
+                            raise ValueError("Page not in selected layout")
+                        for panel, baseline in zip(spec["panels"], page["panels"]):
+                            if any(panel[k] != baseline[k] for k in ("id", "lettering", "noText")):
+                                raise ValueError("Prepared page changed exact layout/lettering")
+                        exact = [span for panel in spec["panels"] for span in panel["lettering"]]
+                        if data.get("lettering", []) != exact or data["settings"]["canvas"] != layouts[0]["canvas"]:
+                            raise ValueError("Prepared lettering/canvas differs from selected page")
+                    elif spec.get("kind") != "image-spec" or data.get("lettering"):
+                        raise ValueError("Reference/sample specification must not invent lettering")
+                    settings = data["settings"]
+                    if settings["mode"] != ("edit" if refs else "generate"):
+                        raise ValueError("Generate/edit original mismatch")
+                    prompt = "Illustrate the supplied specification. Metadata IDs are not visible lettering.\n"
+                    prompt += "Immutable style:\n" + canonical(data["style"]) + "\nSpecification:\n" + canonical(data["specification"])
+                    prompt += "\nOrdered original identities:\n" + canonical([identity(ref) for ref in refs])
+                    lettering = data.get("lettering", [])
+                    prompt += "\nRender only the following exact visible lettering, preserving Unicode and whitespace. No added labels or IDs.\n"
+                    for text in lettering:
+                        prompt += "Exact text begins:\n" + text["text"] + "\nExact text ends.\n"
+                    if not lettering:
+                        prompt += "No visible lettering or speech bubbles.\n"
+                    prepared = {"callId": r["callId"], "imageKind": data["imageKind"], "prompt": prompt, "settings": settings, "sources": sources, "references": [identity(ref) for ref in refs]}
+                    prepared["requestHash"] = digest(prepared)
+                    result = {"contractVersion": 2, "invocationId": r["invocationId"], "callId": r["callId"], "service": r["service"], "operation": "prepare", "status": "succeeded", "items": [{"itemId": item["itemId"], "status": "succeeded", "prepared": prepared}]}
+                    return {"route": "prepare", "result": canonical(result), "prompt": "", "model": "", "size": "", "count": 0, "quality": "", "background": "", "format": ""}
+                if r["operation"] != "generate":
+                    raise ValueError("Unsupported image operation")
+                prepared = data["prepared"]
+                if digest({k: v for k, v in prepared.items() if k != "requestHash"}) != prepared["requestHash"]:
+                    raise ValueError("Prepared request changed")
+                if not prepared.get("callId") or prepared["callId"] == r["callId"]:
+                    raise ValueError("Generate requires a distinct callId from its retained Prepare")
+                if prepared["sources"] != sources or prepared["references"] != [identity(ref) for ref in refs]:
+                    raise ValueError("Prepared source/original identity changed")
+                settings = prepared["settings"]
+                if settings["mode"] != ("edit" if refs else "generate") or not 1 <= settings["count"] <= 10:
+                    raise ValueError("Image mode/count mismatch")
+                if execution_ready != "true":
+                    raise ValueError("Activation blocked: accepted-provider/native-file integration pending")
+                if settings["model"] not in ("gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst", "gpt-image-2.5-sunburst-2026-09-08"):
+                    raise ValueError("Unsupported exact image model; no silent substitution")
+                width, height = settings["canvas"]["width"], settings["canvas"]["height"]
+                if width % 16 or height % 16 or min(width, height) <= 0 or max(width, height) > 3840 or max(width, height) > 3 * min(width, height) or not 655360 <= width * height <= 8294400:
+                    raise ValueError("Unsupported original canvas; do not resize")
+                return {"route": settings["mode"], "result": "", "prompt": prepared["prompt"], "model": settings["model"], "size": str(width) + "x" + str(height), "count": settings["count"], "quality": settings["quality"], "background": settings["background"], "format": settings["format"]}
+          variables:
+            - variable: request
+              value_selector:
+                - start
+                - request
+            - variable: references
+              value_selector:
+                - start
+                - references
+            - variable: execution_ready
+              value_selector:
+                - env
+                - execution_ready
+          outputs:
+            route:
+              type: string
+            result:
+              type: string
+            prompt:
+              type: string
+            model:
+              type: string
+            size:
+              type: string
+            quality:
+              type: string
+            background:
+              type: string
+            format:
+              type: string
+            count:
+              type: number
+      - id: operation
+        type: custom
+        position:
+          x: 680
+          y: 80
+        data:
+          type: if-else
+          title: operation
+          desc: ""
+          selected: false
+          cases:
+            - case_id: prepare
+              logical_operator: and
+              conditions:
+                - id: prepare
+                  variable_selector:
+                    - validate
+                    - route
+                  varType: string
+                  comparison_operator: is
+                  value: prepare
+            - case_id: generate
+              logical_operator: and
+              conditions:
+                - id: generate
+                  variable_selector:
+                    - validate
+                    - route
+                  varType: string
+                  comparison_operator: is
+                  value: generate
+            - case_id: edit
+              logical_operator: and
+              conditions:
+                - id: edit
+                  variable_selector:
+                    - validate
+                    - route
+                  varType: string
+                  comparison_operator: is
+                  value: edit
+      - id: generate
+        type: custom
+        position:
+          x: 990
+          y: 80
+        data:
+          type: tool
+          title: generate
+          desc: ""
+          selected: false
+          provider_type: builtin
+          provider_id: langgenius/openai_tool/openai
+          provider_name: langgenius/openai_tool/openai
+          tool_name: gpt_image_2_generate
+          tool_label: gpt_image_2_generate
+          tool_parameters:
+            prompt:
+              type: variable
+              value:
+                - validate
+                - prompt
+          tool_configurations:
+            model:
+              type: variable
+              value:
+                - validate
+                - model
+            size:
+              type: variable
+              value:
+                - validate
+                - size
+            quality:
+              type: variable
+              value:
+                - validate
+                - quality
+            background:
+              type: variable
+              value:
+                - validate
+                - background
+            n:
+              type: variable
+              value:
+                - validate
+                - count
+            output_format:
+              type: variable
+              value:
+                - validate
+                - format
+          tool_node_version: "2"
+          retry_config:
+            retry_enabled: false
+            max_retries: 0
+            retry_interval: 0
+          error_strategy: fail-branch
+      - id: generate-result
+        type: custom
+        position:
+          x: 1300
+          y: 80
+        data:
+          type: code
+          title: generate-result
+          desc: ""
+          selected: false
+          code_language: python3
+          code: |
+            import json
+            def main(request, files=None, usage=None):
+                r = json.loads(request)
+                files = files or []
+                count = r["items"][0]["input"]["prepared"]["settings"]["count"]
+                if len(files) > count:
+                    raise ValueError("Unexpected output images")
+                status = "succeeded" if len(files) == count else ("partial" if files else "unknown")
+                outputs = [{"outputKey": r["callId"] + ":" + str(i), "nativeFile": f} for i, f in enumerate(files)]
+                result = {"contractVersion": 2, "invocationId": r["invocationId"], "callId": r["callId"], "service": r["service"], "operation": "generate", "status": status, "items": [{"itemId": r["items"][0]["itemId"], "status": status, "outputs": outputs}], "providerOutput": usage or [], "limitations": ["Provider output is not an application retention receipt or independently verified cost. Reconcile unknown/missing output slots before replay."]}
+                return {"result": json.dumps(result, ensure_ascii=False)}
+          variables:
+            - variable: request
+              value_selector:
+                - start
+                - request
+            - variable: files
+              value_selector:
+                - generate
+                - files
+            - variable: usage
+              value_selector:
+                - generate
+                - json
+          outputs:
+            result:
+              type: string
+      - id: generate-end
+        type: custom
+        position:
+          x: 60
+          y: 290
+        data:
+          type: end
+          title: generate-end
+          desc: ""
+          selected: false
+          outputs:
+            - variable: result
+              value_selector:
+                - generate-result
+                - result
+            - variable: files
+              value_selector:
+                - generate
+                - files
+      - id: generate-unknown
+        type: custom
+        position:
+          x: 370
+          y: 290
+        data:
+          type: code
+          title: generate-unknown
+          desc: ""
+          selected: false
+          code_language: python3
+          code: |
+            import json
+            def main(request):
+                r = json.loads(request)
+                return {"result": json.dumps({"contractVersion": 2, "invocationId": r["invocationId"], "callId": r["callId"], "service": r["service"], "operation": r["operation"], "status": "unknown", "items": [{"itemId": i["itemId"], "status": "unknown", "proposals": [], "limitations": ["Execution/result uncertain; reconcile before replay"]} for i in r["items"]]})}
+          variables:
+            - variable: request
+              value_selector:
+                - start
+                - request
+          outputs:
+            result:
+              type: string
+      - id: generate-unknown-end
+        type: custom
+        position:
+          x: 680
+          y: 290
+        data:
+          type: end
+          title: generate-unknown-end
+          desc: ""
+          selected: false
+          outputs:
+            - variable: result
+              value_selector:
+                - generate-unknown
+                - result
+      - id: edit
+        type: custom
+        position:
+          x: 990
+          y: 290
+        data:
+          type: tool
+          title: edit
+          desc: ""
+          selected: false
+          provider_type: builtin
+          provider_id: langgenius/openai_tool/openai
+          provider_name: langgenius/openai_tool/openai
+          tool_name: gpt_image_2_edit
+          tool_label: gpt_image_2_edit
+          tool_parameters:
+            prompt:
+              type: variable
+              value:
+                - validate
+                - prompt
+            image:
+              type: variable
+              value:
+                - start
+                - references
+          tool_configurations:
+            model:
+              type: variable
+              value:
+                - validate
+                - model
+            size:
+              type: variable
+              value:
+                - validate
+                - size
+            quality:
+              type: variable
+              value:
+                - validate
+                - quality
+            background:
+              type: variable
+              value:
+                - validate
+                - background
+            n:
+              type: variable
+              value:
+                - validate
+                - count
+            output_format:
+              type: variable
+              value:
+                - validate
+                - format
+          tool_node_version: "2"
+          retry_config:
+            retry_enabled: false
+            max_retries: 0
+            retry_interval: 0
+          error_strategy: fail-branch
+      - id: edit-result
+        type: custom
+        position:
+          x: 1300
+          y: 290
+        data:
+          type: code
+          title: edit-result
+          desc: ""
+          selected: false
+          code_language: python3
+          code: |
+            import json
+            def main(request, files=None, usage=None):
+                r = json.loads(request)
+                files = files or []
+                count = r["items"][0]["input"]["prepared"]["settings"]["count"]
+                if len(files) > count:
+                    raise ValueError("Unexpected output images")
+                status = "succeeded" if len(files) == count else ("partial" if files else "unknown")
+                outputs = [{"outputKey": r["callId"] + ":" + str(i), "nativeFile": f} for i, f in enumerate(files)]
+                result = {"contractVersion": 2, "invocationId": r["invocationId"], "callId": r["callId"], "service": r["service"], "operation": "generate", "status": status, "items": [{"itemId": r["items"][0]["itemId"], "status": status, "outputs": outputs}], "providerOutput": usage or [], "limitations": ["Provider output is not an application retention receipt or independently verified cost. Reconcile unknown/missing output slots before replay."]}
+                return {"result": json.dumps(result, ensure_ascii=False)}
+          variables:
+            - variable: request
+              value_selector:
+                - start
+                - request
+            - variable: files
+              value_selector:
+                - edit
+                - files
+            - variable: usage
+              value_selector:
+                - edit
+                - json
+          outputs:
+            result:
+              type: string
+      - id: edit-end
+        type: custom
+        position:
+          x: 60
+          y: 500
+        data:
+          type: end
+          title: edit-end
+          desc: ""
+          selected: false
+          outputs:
+            - variable: result
+              value_selector:
+                - edit-result
+                - result
+            - variable: files
+              value_selector:
+                - edit
+                - files
+      - id: edit-unknown
+        type: custom
+        position:
+          x: 370
+          y: 500
+        data:
+          type: code
+          title: edit-unknown
+          desc: ""
+          selected: false
+          code_language: python3
+          code: |
+            import json
+            def main(request):
+                r = json.loads(request)
+                return {"result": json.dumps({"contractVersion": 2, "invocationId": r["invocationId"], "callId": r["callId"], "service": r["service"], "operation": r["operation"], "status": "unknown", "items": [{"itemId": i["itemId"], "status": "unknown", "proposals": [], "limitations": ["Execution/result uncertain; reconcile before replay"]} for i in r["items"]]})}
+          variables:
+            - variable: request
+              value_selector:
+                - start
+                - request
+          outputs:
+            result:
+              type: string
+      - id: edit-unknown-end
+        type: custom
+        position:
+          x: 680
+          y: 500
+        data:
+          type: end
+          title: edit-unknown-end
+          desc: ""
+          selected: false
+          outputs:
+            - variable: result
+              value_selector:
+                - edit-unknown
+                - result
+      - id: prepared-end
+        type: custom
+        position:
+          x: 990
+          y: 500
+        data:
+          type: end
+          title: prepared-end
+          desc: ""
+          selected: false
+          outputs:
+            - variable: result
+              value_selector:
+                - validate
+                - result
+      - id: unsupported
+        type: custom
+        position:
+          x: 1300
+          y: 500
+        data:
+          type: code
+          title: unsupported
+          desc: ""
+          selected: false
+          code_language: python3
+          code: |
+            import json
+            def main(request):
+                r = json.loads(request)
+                return {"result": json.dumps({"contractVersion": 2, "invocationId": r["invocationId"], "callId": r["callId"], "service": r["service"], "operation": r["operation"], "status": "unknown", "items": [{"itemId": i["itemId"], "status": "unknown", "proposals": [], "limitations": ["Execution/result uncertain; reconcile before replay"]} for i in r["items"]]})}
+          variables:
+            - variable: request
+              value_selector:
+                - start
+                - request
+          outputs:
+            result:
+              type: string
+      - id: unsupported-end
+        type: custom
+        position:
+          x: 60
+          y: 710
+        data:
+          type: end
+          title: unsupported-end
+          desc: ""
+          selected: false
+          outputs:
+            - variable: result
+              value_selector:
+                - unsupported
+                - result
+    edges:
+      - id: start-source-validate
+        type: custom
+        source: start
+        target: validate
+        sourceHandle: source
+        targetHandle: target
+      - id: validate-source-operation
+        type: custom
+        source: validate
+        target: operation
+        sourceHandle: source
+        targetHandle: target
+      - id: operation-generate-generate
+        type: custom
+        source: operation
+        target: generate
+        sourceHandle: generate
+        targetHandle: target
+      - id: generate-source-generate-result
+        type: custom
+        source: generate
+        target: generate-result
+        sourceHandle: source
+        targetHandle: target
+      - id: generate-fail-branch-generate-unknown
+        type: custom
+        source: generate
+        target: generate-unknown
+        sourceHandle: fail-branch
+        targetHandle: target
+      - id: generate-result-source-generate-end
+        type: custom
+        source: generate-result
+        target: generate-end
+        sourceHandle: source
+        targetHandle: target
+      - id: generate-unknown-source-generate-unknown-end
+        type: custom
+        source: generate-unknown
+        target: generate-unknown-end
+        sourceHandle: source
+        targetHandle: target
+      - id: operation-edit-edit
+        type: custom
+        source: operation
+        target: edit
+        sourceHandle: edit
+        targetHandle: target
+      - id: edit-source-edit-result
+        type: custom
+        source: edit
+        target: edit-result
+        sourceHandle: source
+        targetHandle: target
+      - id: edit-fail-branch-edit-unknown
+        type: custom
+        source: edit
+        target: edit-unknown
+        sourceHandle: fail-branch
+        targetHandle: target
+      - id: edit-result-source-edit-end
+        type: custom
+        source: edit-result
+        target: edit-end
+        sourceHandle: source
+        targetHandle: target
+      - id: edit-unknown-source-edit-unknown-end
+        type: custom
+        source: edit-unknown
+        target: edit-unknown-end
+        sourceHandle: source
+        targetHandle: target
+      - id: operation-prepare-prepared-end
+        type: custom
+        source: operation
+        target: prepared-end
+        sourceHandle: prepare
+        targetHandle: target
+      - id: operation-false-unsupported
+        type: custom
+        source: operation
+        target: unsupported
+        sourceHandle: "false"
+        targetHandle: target
+      - id: unsupported-source-unsupported-end
+        type: custom
+        source: unsupported
+        target: unsupported-end
+        sourceHandle: source
+        targetHandle: target
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.5

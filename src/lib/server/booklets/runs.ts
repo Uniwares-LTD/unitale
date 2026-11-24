@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import type { Db } from "mongodb";
+import type { ClientSession, Db } from "mongodb";
 import { createAiJob, aiJobs } from "../ai/jobs";
 import { fingerprint } from "../foundation/canonical";
 import { executionBinding } from "../runs/provider";
@@ -29,12 +29,27 @@ export async function enqueueBookletRun(
 ) {
   const input = inputSchema.parse(raw);
   const c = bookletContext(db, actor);
-  const p = await c.transaction((s) => c.owned(productionId, s));
+  async function owned(session: ClientSession) {
+    const row = await db
+      .collection("bookletProductions")
+      .findOne(
+        { _id: id.parse(productionId) as never, ownerId: actor.uid },
+        { projection: { documentVersion: 1 }, session },
+      );
+    if (!row) throw bookletMissing();
+    return row.documentVersion === 2
+      ? c.owned(productionId, session, 2)
+      : c.owned(productionId, session);
+  }
+  const p = await c.transaction(owned);
+  const domainVersion = String(p.documentVersion);
   const jobId = fingerprint([actor.uid, input.key]);
   const previous = await aiJobs(db).findOne({ _id: jobId, uid: actor.uid });
   if (previous) {
     if (
       previous.run?.target?.id !== productionId ||
+      previous.run.target.adapter !== "booklet" ||
+      previous.run.target.version !== domainVersion ||
       previous.consumption?.orderId !== p.orderId ||
       previous.consumption.workflowId !== input.workflowId ||
       previous.run.orchestrator.id !== input.orchestratorId ||
@@ -56,7 +71,7 @@ export async function enqueueBookletRun(
   if (
     !record ||
     record.definition.domainAdapter?.id !== "booklet" ||
-    record.definition.domainAdapter.version !== "1" ||
+    record.definition.domainAdapter.version !== domainVersion ||
     record.definition.responseMode !== "raw-v1" ||
     (record.definition.legacyInputs?.length ?? 0)
   )
@@ -93,6 +108,8 @@ export async function enqueueBookletRun(
     ? await aiJobs(db).findOne({
         _id: input.predecessorId,
         uid: actor.uid,
+        "run.target.adapter": "booklet",
+        "run.target.version": domainVersion,
         "run.target.id": productionId,
         "consumption.orderId": p.orderId,
       })
@@ -117,7 +134,7 @@ export async function enqueueBookletRun(
         predecessorId: input.predecessorId,
         target: {
           adapter: "booklet",
-          version: "1",
+          version: domainVersion,
           kind: "booklet-production",
           id: productionId,
         },
@@ -132,11 +149,13 @@ export async function enqueueBookletRun(
     new Date(),
     async (session) => {
       await guardOrchestratorAdmission(db, record, session);
-      const live = await c.owned(productionId, session);
+      const live = await owned(session);
       const order = await c.entitled(live, session);
       if (
         order.activeWorkflow !== input.workflowId ||
-        live.lifecycleState !== "in-progress"
+        live.lifecycleState !== "in-progress" ||
+        live.documentVersion !== p.documentVersion ||
+        (live.expiresAt && live.expiresAt <= new Date())
       )
         throw bookletConflict("Paid workflow admission changed.");
       await c.save(live, live.version, session);

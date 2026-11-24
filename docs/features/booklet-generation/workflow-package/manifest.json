@@ -1,0 +1,132 @@
+{
+  "packageVersion": "0.2.0",
+  "contractVersion": 2,
+  "status": "locally-validated-candidate",
+  "implementationBase": "713da2d2c3730686504627f3ba76724d07a57768",
+  "handbookRevision": "0048c32a98060bb094eb3010aa0f4f407e97796e",
+  "sourceRepository": "karpishe-experiments/agentic-poc",
+  "sourcePublicationCommit": "587f1b7775e316f4c58461dd3fda773af6d5dc2e",
+  "sourceExtractionCommit": "1d4cc02307edad21aadefc244bcc4e286396b88f",
+  "sourceSelectors": "fixtures/source-selectors.json",
+  "workflowSourceOfTruth": "native YAML; edit in Dify and review secret-free exports",
+  "executionEnabled": false,
+  "officialPluginSourceRevision": "3326464451bbbb6d2060ef6645d826b6f82aa15b",
+  "requiredPlugins": [
+    {
+      "id": "langgenius/openai",
+      "versionInInspectedSource": "1.0.7-dev7",
+      "installedPackageIdentifier": "langgenius/openai:1.0.7-dev7@aa245c63d95bee61fbd250e86b5ab7da4accec08144e075e4a4d8dd94bf5eba2"
+    },
+    {
+      "id": "langgenius/openai_tool",
+      "versionInInspectedSource": "0.2.2-dev3",
+      "installedPackageIdentifier": "langgenius/openai_tool:0.2.2-dev3@8a7f865a47ce9e25260bd7d7cade70d4712506d945a7a2a66607f9f324160f05"
+    }
+  ],
+  "managedMcpProvider": null,
+  "workflows": [
+    {
+      "service": "manager",
+      "path": "manager/workflow.yaml",
+      "sha256": "a057c687a9c7f39141232918ce9d789179ae7e1ea6b913108bbd08eff8622c5c",
+      "bytes": 120457,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "story-planner",
+      "path": "story-planner/workflow.yaml",
+      "sha256": "85a705689d3c84797e852b58f71193a50ef4fdaa5c15edbce8c6418478bf1dfe",
+      "bytes": 19776,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "manuscript",
+      "path": "manuscript/workflow.yaml",
+      "sha256": "0c3df778fb761a9b215f34464e4fc6d08625df5d51ad635bf8f608330f5d0d3d",
+      "bytes": 19289,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "art-director",
+      "path": "art-director/workflow.yaml",
+      "sha256": "526d715e74bf54d5847355a8bea313da5d33d2e89c593dd3aaa39beec99443c8",
+      "bytes": 20077,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "page-composer",
+      "path": "page-composer/workflow.yaml",
+      "sha256": "b2acafcb789a05ed8f9b93efdcceb8479dbbb4d1dc1707b019639896d5215dfb",
+      "bytes": 24244,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "image-executor",
+      "path": "image-executor/workflow.yaml",
+      "sha256": "e8426bf49ecabf16128463f164b0c49b118dacfab2aef95be3a0b128e2e5d593",
+      "bytes": 27920,
+      "publicationId": null,
+      "workflowToolId": null
+    },
+    {
+      "service": "quality-reviewer",
+      "path": "quality-reviewer/workflow.yaml",
+      "sha256": "c3a7d04b75f49e7377334f2c917c849ece4d3e6dd26d2dbf11f44e41c9fb638c",
+      "bytes": 21901,
+      "publicationId": null,
+      "workflowToolId": null
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "fixtures/source-selectors.json",
+      "sha256": "2acf59c4de1cd9e5a744bb13890cff44db86d08a4e02013dcccded6bb7b17771"
+    },
+    {
+      "path": "fixtures/correction-limits.json",
+      "sha256": "d2ccc6955217dbb7ee35467004f9f2a09df15a646281f900ce18eebd6e699a6d"
+    },
+    {
+      "path": "fixtures/behavior-cases.json",
+      "sha256": "850c641705852cf72a4b810c0131ed1be04350c9edc1b9e9c4c1854927984ef5"
+    },
+    {
+      "path": "fixtures/original-a.png",
+      "sha256": "85f4e38d333e174ced79217c90a564699fcd589be0d376a91629dc96d48ada49"
+    },
+    {
+      "path": "fixtures/original-b.png",
+      "sha256": "6ba39f5e8928a00b6396ff8a91144123175fd201e1065c996eadf9d4cb363523"
+    }
+  ],
+  "pendingEvidence": [
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "E5"
+  ],
+  "activationBlockers": [
+    "Shared-provider import/configuration/export readback passed for all seven disabled candidates; revised-binding execution and full application acceptance remain pending.",
+    "Local Unitale MCP/retention, authenticated responses, durable continuation and trusted observations pass fixtures; actual application-connected Dify Manager execution and deployed image conversion remain unverified."
+  ],
+  "stagingEvidence": "README.md#historical-no-money-staging-evidence",
+  "localCheckpointCompletion": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "review": {
+    "mode": "10C.3 scoped local review; earlier whole-package reviews cover the 09 baseline",
+    "implementationSha256": "b10028f3205c200e78bae889767cfdfafebc03ad1b51cb540e0cb0268a9cae70",
+    "independentAgentReview": false
+  }
+}

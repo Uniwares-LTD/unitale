@@ -5,7 +5,8 @@ implementation without a new issue; add them here as they are agreed.
 
 ## Current state
 
-Created from template 0.4.0.
+Created from template 0.4.0; current exact template adoption is recorded in
+`project.source.json` (0.5.0).
 
 ## Unibase 0.5.0 candidate import
 
@@ -18,7 +19,9 @@ Unitale `main`. Preserve the separate Booklet work branch.
 The local import includes the optional runtime/MCP extension seams, generated
 design foundation, shared UI helpers, Sonner 2.0.8 and its exact stylesheet CSP
 hashes. Unitale identity, modules, tracking and deployment bindings are retained;
-project theming remains disabled. The offline page is regenerated from its source.
+project theming was disabled at import. The separately authorized 2026-11-22
+[Unitale theme adoption](design-system-extension.md#unitale-adoption-before-checkpoint-10)
+enables its project-owned theme before checkpoint 10. The offline page is regenerated from its source.
 No Booklet model, schema, storage or persistence contract changes, so its model
 guide, JSON example and Mermaid diagrams are unaffected. No new migration or
 provider activation is required by this delta.
@@ -78,14 +81,45 @@ Handbook baseline: `D:\misc\code\uniwares\handbook` at
 
 The [Unitale adoption record](features/local-google-popup/adoption.md) owns the
 main-first import of exact reviewed Unibase `02517797c9ecd1d8e9696cd1b68c9b976f2105db`,
-local setup and acceptance. The popup runtime retains existing session handling and
-emulator/staging/production redirects. Upstream implementation evidence remains in
-the adjacent Unibase plan. Active issue branches receive the import by merging
-Unitale `main`; their Booklet implementation is outside this import.
+local setup and acceptance. Unitale [PR #15](https://github.com/Uniwares-LTD/unitale/pull/15)
+merged it into `main` at `528d0a1cf340bad28369bc467776492f2ade6b12`; this normal main
+merge brings it into issue #10. The earlier PR #14 import and its Booklet regression
+evidence remain [historical adoption evidence](features/booklet-generation/implementation-plan.md#local-google-popup-adoption).
+Existing session handling, emulator/staging/production redirects, private configuration
+and the separately preserved setup baseline `141eb33` remain unchanged.
+This adoption preceded checkpoint 10.
 
 ## Open work
 
-Booklet generation is accepted for implementation. The [PRD](features/booklet-generation/prd.md)
-owns requirements; the [delivery plan](features/booklet-generation/implementation-plan.md)
-owns task dependencies, verification and the resume point. No production packages
-are seeded. Publication, provider activation and paid acceptance remain separate gates.
+Issue #10 delivered the seven-workflow package and locally verified creator journey.
+The [Booklet delivery map](features/booklet-generation/implementation-plan.md#issue-10-deliverables-and-dependency-map)
+owns T01–T28 status and remaining outcomes. The
+[PRD](features/booklet-generation/prd.md) owns requirements. The
+[workflow package README](features/booklet-generation/workflow-package/README.md)
+and [provider handoff](features/booklet-generation/workflow-package/integration-handoff.md#next-step-runbook)
+own the package identity, feasibility evidence and target binding procedure.
+
+[Checkpoint 11](features/booklet-generation/implementation-plan.md#11---integrated-verification-and-handoff)
+is complete locally, including production HTTP, browser verification and two clean
+read-only reviews. Manual real-login testing is deferred.
+[Checkpoint 12](features/booklet-generation/implementation-plan.md#12---final-approvals-and-staging-acceptance)
+owns staging deployment, managed Dify and MCP bindings, and application-connected
+acceptance. Scope C and provider spend remain pending separate approval.
+
+Three follow-ups can proceed in parallel. T23 PDF and T24 sharing follow as distinct
+delivery milestones.
+
+- Parham leads the phone-first creator and admin review with Sina. [Issue #20](https://github.com/Uniwares-LTD/unitale/issues/20)
+- `uniwares-uk` owns staging preparation and checkpoint 12 acceptance. [Issue #21](https://github.com/Uniwares-LTD/unitale/issues/21)
+- `uniwares-uk` owns the private reader's T22 owner download action. [Issue #22](https://github.com/Uniwares-LTD/unitale/issues/22)
+
+## Booklet plan refresh after Unibase 0.5.0 merge
+
+On 2026-11-21 issue branch merge `dfa8d30` incorporated main `99cb6b5`.
+The [remaining Booklet plan](features/booklet-generation/implementation-plan.md#refreshed-baseline-and-design-handoff-2026-11-21)
+now maps the pinned Unitale design reference to the existing 10.1-10.7 tasks and
+11/12 verification/approval gates. That planning refresh reused adopted UI helpers
+without enabling a project theme. The separately authorized 2026-11-22 theme adoption
+is recorded in the project extension guide. The local-popup adoption supplied a
+passing production build, typecheck and lint. That planning refresh preceded the
+booklet UI and conversation checkpoints.

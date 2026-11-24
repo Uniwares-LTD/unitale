@@ -1,0 +1,215 @@
+import "server-only";
+import type { Db, ClientSession } from "mongodb";
+import { z } from "zod";
+import type { AiJob, AiUsage } from "../ai/jobs";
+import type { ProductionV2 } from "./documents-v2";
+import { bookletConflict } from "./context";
+
+// Native Dify decimals have at most 18 fractional digits. Keep money arithmetic
+// exact; these are reported subtotals, not a guarantee of provider spending.
+const scale = BigInt(10) ** BigInt(18);
+function amount(value: string) {
+  if (!/^(0|[1-9]\d*)(\.\d{1,18})?$/.test(value)) return null;
+  const [whole, fraction = ""] = value.split(".");
+  return BigInt(whole) * scale + BigInt(fraction.padEnd(18, "0"));
+}
+function decimal(value: bigint) {
+  const fraction = (value % scale)
+    .toString()
+    .padStart(18, "0")
+    .replace(/0+$/, "");
+  return (value / scale).toString() + (fraction ? "." + fraction : "");
+}
+
+export async function bookletNativeCostsV2(
+  db: Db,
+  production: ProductionV2,
+  session?: ClientSession,
+) {
+  const jobs = await db
+    .collection<AiJob>("aiJobs")
+    .find(
+      {
+        uid: production.ownerId,
+        "run.target.adapter": "booklet",
+        "run.target.version": "2",
+        "run.target.id": production._id,
+      },
+      { projection: { _id: 1 }, session },
+    )
+    .toArray();
+  const totals = new Map<string, { summary: bigint | null; nodes: bigint }>();
+  let unknownNativeRecords = 0,
+    otherCurrencyRecords = 0;
+  const currency =
+    production.creativeConfigSnapshot.execution.spendingCeiling.currency;
+  for await (const row of db.collection<AiUsage>("aiUsage").find(
+    {
+      uid: production.ownerId,
+      jobId: { $in: jobs.map((job) => job._id) },
+      scope: { $in: ["node", "execution"] },
+    },
+    { session, projection: { _id: 0, jobId: 1, scope: 1, cost: 1 } },
+  )) {
+    const current = totals.get(row.jobId) ?? {
+      summary: null,
+      nodes: BigInt(0),
+    };
+    totals.set(row.jobId, current);
+    const parsed = row.cost ? amount(row.cost.amount) : null;
+    if (parsed === null) {
+      unknownNativeRecords++;
+      continue;
+    }
+    if (row.cost!.currency !== currency) {
+      otherCurrencyRecords++;
+      continue;
+    }
+    if (row.scope === "execution") current.summary = parsed;
+    else if (row.scope === "node") current.nodes += parsed;
+  }
+  let subtotal = BigInt(0);
+  for (const total of totals.values())
+    subtotal +=
+      total.summary !== null && total.summary > total.nodes
+        ? total.summary
+        : total.nodes;
+  const digits = new Intl.NumberFormat("en", {
+    style: "currency",
+    currency,
+  }).resolvedOptions().maximumFractionDigits;
+  if (digits === undefined || digits > 18)
+    throw bookletConflict("Unsupported currency precision.");
+  const ceiling =
+    BigInt(
+      production.creativeConfigSnapshot.execution.spendingCeiling.amountMinor,
+    ) *
+    (scale / BigInt(10) ** BigInt(digits));
+  return {
+    currency,
+    reportedSubtotal: decimal(subtotal),
+    unknownNativeRecords,
+    otherCurrencyRecords,
+    overCeiling: subtotal >= ceiling,
+    coverage: "native-run-reports" as const,
+    // Nested providers/SDK retries can be absent even when every row has a price.
+    complete: false,
+  };
+}
+
+/** App attempt facts, independent of context preview size. Provider-internal
+ * attempts and unregistered native reasoning are not inferred from these rows. */
+export async function bookletWorkUsageV2(
+  db: Db,
+  production: ProductionV2,
+  session?: ClientSession,
+) {
+  const rows = await db
+    .collection("bookletWork")
+    .aggregate<{
+      _id: "paidLlm" | "paidImage" | "nonPaid";
+      attempts: number;
+      unresolved: number;
+      active: number;
+    }>(
+      [
+        {
+          $match: {
+            ownerId: production.ownerId,
+            productionId: production._id,
+            documentVersion: 2,
+            status: { $ne: "registered" },
+          },
+        },
+        {
+          $group: {
+            _id: "$category",
+            attempts: { $sum: 1 },
+            unresolved: {
+              $sum: { $cond: [{ $eq: ["$status", "unknown"] }, 1, 0] },
+            },
+            active: {
+              $sum: { $cond: [{ $eq: ["$status", "dispatching"] }, 1, 0] },
+            },
+          },
+        },
+      ],
+      { session },
+    )
+    .toArray();
+  const totals = {
+    paidLlm: 0,
+    paidImage: 0,
+    nonPaid: 0,
+    unresolved: 0,
+    active: 0,
+  };
+  for (const row of rows) {
+    const category = z.enum(["paidLlm", "paidImage", "nonPaid"]).parse(row._id);
+    totals[category] = z
+      .number()
+      .int()
+      .nonnegative()
+      .safe()
+      .parse(row.attempts);
+    totals.unresolved += row.unresolved;
+    totals.active += row.active;
+  }
+  return totals;
+}
+
+/** Reported native bounds across owned continuation Runs. Observations are
+ * asynchronous: these are dispatch safeguards, not a provider cancellation SLA. */
+export async function bookletRunBoundsV2(
+  db: Db,
+  production: ProductionV2,
+  session?: ClientSession,
+) {
+  const jobs = await db.collection<AiJob>("aiJobs").find({
+    uid: production.ownerId,
+    "run.target.adapter": "booklet", "run.target.version": "2", "run.target.id": production._id,
+  }, { session, projection: { _id: 1 } }).toArray();
+  const owned = { uid: production.ownerId, jobId: { $in: jobs.map((job) => job._id) } };
+  const stages = new Map<string, { jobId: string; elapsedMs: number | null }>();
+  for await (const row of db.collection("runEvents").find({ ...owned, "event.type": "stage" },
+    { session, projection: { jobId: 1, "event.id": 1, "event.elapsedMs": 1 } })) {
+    const key = JSON.stringify([row.jobId, row.event.id]);
+    const prior = stages.get(key);
+    const elapsed = z.number().nonnegative().finite().safeParse(row.event.elapsedMs).data ?? null;
+    stages.set(key, { jobId: row.jobId, elapsedMs: elapsed === null ? prior?.elapsedMs ?? null : Math.max(elapsed, prior?.elapsedMs ?? 0) });
+  }
+  const elapsedByJob = new Map<string, { nodes: number | null; summary: number | null }>();
+  for await (const row of db.collection<AiUsage>("aiUsage").find({ ...owned, scope: { $in: ["node", "execution"] } },
+    { session, projection: { jobId: 1, scope: 1, id: 1, elapsedMs: 1 } })) {
+    const elapsed = z.number().nonnegative().finite().safeParse(row.elapsedMs).data ?? null;
+    if (row.scope === "node") {
+      // The existing accounting ledger survives activity-log cleanup.
+      const key = JSON.stringify([row.jobId, row.id]);
+      const prior = stages.get(key);
+      stages.set(key, { jobId: row.jobId, elapsedMs: elapsed === null ? prior?.elapsedMs ?? null : Math.max(elapsed, prior?.elapsedMs ?? 0) });
+      continue;
+    }
+    const current = elapsedByJob.get(row.jobId) ?? { nodes: null, summary: null };
+    if (elapsed !== null) current.summary = Math.max(elapsed, current.summary ?? 0);
+    elapsedByJob.set(row.jobId, current);
+  }
+  for (const stage of stages.values()) {
+    const current = elapsedByJob.get(stage.jobId) ?? { nodes: null, summary: null };
+    // Container/tool durations can include nested nodes. A node maximum is a
+    // known lower bound until a whole-execution duration becomes available.
+    if (stage.elapsedMs !== null) current.nodes = Math.max(current.nodes ?? 0, stage.elapsedMs);
+    elapsedByJob.set(stage.jobId, current);
+  }
+  let reportedElapsedMs: number | null = null;
+  for (const value of elapsedByJob.values())
+    if (value.nodes !== null || value.summary !== null)
+      reportedElapsedMs = (reportedElapsedMs ?? 0) + Math.max(value.nodes ?? 0, value.summary ?? 0);
+  const limits = production.creativeConfigSnapshot.execution;
+  return {
+    steps: stages.size,
+    reportedElapsedMs,
+    overLimit: stages.size >= limits.maxWorkflowSteps ||
+      (reportedElapsedMs !== null && reportedElapsedMs >= limits.maxElapsedSeconds * 1000),
+    complete: false,
+  };
+}

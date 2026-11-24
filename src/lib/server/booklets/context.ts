@@ -3,6 +3,7 @@ import { BSON, type ClientSession, type Db } from "mongodb";
 import { AppError } from "../../auth-policy";
 import { readWallet } from "../store/credits";
 import type { CreditActor } from "../store/credit-types";
+import { productionV2Schema, type ProductionV2 } from "./documents-v2";
 import { fingerprint } from "../foundation/canonical";
 import {
   bookDocumentSchema,
@@ -28,8 +29,23 @@ export function bookletContext(
   actor: CreditActor,
   now = () => new Date(),
 ) {
-  const productions = db.collection<ProductionDocument>("bookletProductions");
-  async function owned(productionId: string, session?: ClientSession) {
+  const productions = db.collection<ProductionDocument | ProductionV2>(
+    "bookletProductions",
+  );
+  async function owned(
+    productionId: string,
+    session?: ClientSession,
+  ): Promise<ProductionDocument>;
+  async function owned(
+    productionId: string,
+    session: ClientSession | undefined,
+    version: 2,
+  ): Promise<ProductionV2>;
+  async function owned(
+    productionId: string,
+    session?: ClientSession,
+    version: 1 | 2 = 1,
+  ) {
     const row = await productions.findOne(
       { _id: productionId, ownerId: actor.uid },
       { session },
@@ -45,7 +61,9 @@ export function bookletContext(
     );
     if (!book) throw bookletMissing();
     bookDocumentSchema.parse(book);
-    return productionDocumentSchema.parse(row);
+    return version === 2
+      ? productionV2Schema.parse(row)
+      : productionDocumentSchema.parse(row);
   }
   async function transaction<T>(
     effect: (session: ClientSession) => Promise<T>,
@@ -80,7 +98,10 @@ export function bookletContext(
     }
     throw bookletMissing();
   }
-  async function entitled(p: ProductionDocument, session: ClientSession) {
+  async function entitled(
+    p: Pick<ProductionDocument, "_id" | "orderId" | "lifecycleState">,
+    session: ClientSession,
+  ) {
     const order = await db
       .collection<OrderDocument>("consumptionOrders")
       .findOne(
@@ -101,7 +122,11 @@ export function bookletContext(
     consumptionOrderSchema.parse(order.value);
     return order;
   }
-  function fence(p: ProductionDocument, value: Mutation, checkState = true) {
+  function fence(
+    p: Pick<ProductionDocument, "lifecycleState" | "version" | "mutationLease">,
+    value: Mutation,
+    checkState = true,
+  ) {
     if (
       (checkState && p.lifecycleState !== "in-progress") ||
       p.version !== value.expectedVersion ||
@@ -112,7 +137,7 @@ export function bookletContext(
       throw bookletConflict("Production changed or mutation lease expired.");
   }
   async function save(
-    p: ProductionDocument,
+    p: ProductionDocument | ProductionV2,
     version: number,
     session: ClientSession,
     mutation?: Mutation,
@@ -120,7 +145,8 @@ export function bookletContext(
     if (mutation) fence(p, mutation, false);
     p.version = version + 1;
     p.updatedAt = now();
-    productionDocumentSchema.parse(p);
+    if (p.documentVersion === 2) productionV2Schema.parse(p);
+    else productionDocumentSchema.parse(p);
     if (BSON.calculateObjectSize(p) > 1024 * 1024)
       throw new AppError(
         "BOOKLET_TOO_LARGE",
@@ -130,7 +156,12 @@ export function bookletContext(
     if (
       !(
         await productions.replaceOne(
-          { _id: p._id, ownerId: actor.uid, version },
+          {
+            _id: p._id,
+            ownerId: actor.uid,
+            version,
+            documentVersion: p.documentVersion,
+          },
           p,
           { session },
         )

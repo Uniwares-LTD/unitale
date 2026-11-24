@@ -2,13 +2,14 @@ import { PageMessages } from "@/components/page-messages";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AppError } from "@/lib/auth-policy";
 import { runIdSchema } from "@/lib/contracts/runs";
 import { RunDetail } from "@/components/runs/run-ui";
 import { runDetail } from "@/lib/server/runs/service";
 import { PageHeader } from "@/components/page-patterns";
 import { getSession } from "@/lib/server/session";
+import { moduleEnabled } from "@/lib/project";
 
 // Shared by metadata and the page so one request reads the run once.
 const load = cache(async (id: string) => {
@@ -38,6 +39,12 @@ export default async function Page({
   const translate = await getTranslations("ui");
 
   const data = await load((await params).id);
+  if (
+    moduleEnabled("booklets") &&
+    data.target?.adapter === "booklet" &&
+    data.target.version === "2"
+  )
+    redirect(`/books/${encodeURIComponent(data.target.id)}`);
   return (
     <PageMessages path="/runs/[id]">
       <div className="page-stack">

@@ -1,0 +1,386 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/client/api";
+import { signInPath } from "@/lib/return-path";
+import { Notice, SubmitButton } from "@/components/page-patterns";
+import { useLeaveGuard } from "@/components/leave-guard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Composer } from "@/project/components/conversation/composer";
+import { InspirationList } from "@/project/components/conversation/inspiration-list";
+import {
+  bookletEntrySchema,
+  bookletIdeaStartCommandSchema,
+  bookletRunReferenceSchema,
+  type BookletEntry,
+  type BookletIdeaStartCommand,
+} from "../application-contract";
+
+// The idea survives the sign-in round trip in this tab only.
+const draftKey = "unitale-book-idea";
+function readDraft() {
+  try {
+    return sessionStorage.getItem(draftKey) ?? "";
+  } catch {
+    return "";
+  }
+}
+function writeDraft(value: string | null) {
+  try {
+    if (value === null) sessionStorage.removeItem(draftKey);
+    else sessionStorage.setItem(draftKey, value);
+  } catch {
+    /* Storage unavailable: the idea simply is not kept. */
+  }
+}
+
+type Problem = "failed" | "pending" | "price" | "credits" | "unavailable";
+
+function readPendingStart(storageKey: string | null) {
+  if (!storageKey) return null;
+  try {
+    const saved = sessionStorage.getItem(storageKey);
+    return saved ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved)) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function BookEntry({ ownerId }: { ownerId: string | null }) {
+  const signedIn = ownerId !== null;
+  const storageKey = ownerId ? `unitale-book-start:${ownerId}` : null;
+  const t = useTranslations("ui");
+  const locale = useLocale();
+  const router = useRouter();
+  const field = useRef<HTMLTextAreaElement>(null);
+  const submitting = useRef(false);
+  const [idea, setIdea] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [entry, setEntry] = useState<BookletEntry | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [problem, setProblem] = useState<Problem | null>(null);
+  const [pendingStart, setPendingStart] =
+    useState<BookletIdeaStartCommand | null>(null);
+  useLeaveGuard({ dirty: !pendingStart && !!idea.trim() });
+
+  useEffect(() => {
+    const saved = readDraft();
+    const pending = readPendingStart(storageKey);
+    queueMicrotask(() => {
+      if (pending) {
+        setPendingStart(pending);
+        setIdea(pending.idea);
+        setConsent(true);
+      } else if (saved) {
+        setIdea(saved);
+        if (storageKey) setConsent(true);
+      }
+    });
+  }, [storageKey]);
+
+  function loadEntry() {
+    api("/api/booklets?section=default", bookletEntrySchema).then(
+      (value) => {
+        setEntry(value);
+        setLoadFailed(false);
+      },
+      () => setLoadFailed(true),
+    );
+  }
+  useEffect(() => {
+    if (consent && !entry && !pendingStart) loadEntry();
+  }, [consent, entry, pendingStart]);
+
+  const inspirations = [
+    {
+      title: t("meb672e0170f0"),
+      hint: t("m491b6c85f933"),
+      text: t("mc6fa1a75fbe8"),
+    },
+    {
+      title: t("ma140c531b8a3"),
+      hint: t("mbf8d890060df"),
+      text: t("mdf95364616ae"),
+    },
+    {
+      title: t("m886dae665bb5"),
+      hint: t("m0bfea2d8af37"),
+      text: t("m451fd4729617"),
+    },
+  ];
+
+  function send() {
+    const text = idea.trim();
+    if (!text || starting) return;
+    if (!signedIn) {
+      writeDraft(text);
+      router.push(signInPath("/books/new"));
+      return;
+    }
+    writeDraft(text);
+    setConsent(true);
+    setProblem(null);
+  }
+
+  function edit() {
+    setConsent(false);
+    setProblem(null);
+    field.current?.focus();
+  }
+
+  async function start() {
+    if (!storageKey || submitting.current) return;
+    const pack = entry?.package;
+    let request = pendingStart;
+    if (!request) {
+      if (!pack) return;
+      request = {
+        action: "start-idea",
+        key: crypto.randomUUID(),
+        catalogId: pack.catalogId,
+        revision: pack.revision,
+        quoteHash: pack.quoteHash,
+        acceptedCredits: pack.credits,
+        idea: idea.trim(),
+        language: locale === "ar" ? "ar" : "en",
+      };
+      // Save before sending. A reload must replay the exact consented request.
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify(request));
+      } catch {
+        setProblem("failed");
+        return;
+      }
+      setPendingStart(request);
+      setProblem(null);
+    }
+    const clearPending = () => {
+      try {
+        sessionStorage.removeItem(storageKey);
+      } catch {
+        // The retained request is still safe to replay with the same key.
+      }
+      setPendingStart(null);
+    };
+    submitting.current = true;
+    setStarting(true);
+    try {
+      const run = await api("/api/booklets", bookletRunReferenceSchema, {
+        method: "POST",
+        timeoutMs: 60000,
+        body: request,
+      });
+      writeDraft(null);
+      clearPending();
+      router.push(`/books/${encodeURIComponent(run.productionId)}`);
+    } catch (error) {
+      const code = error instanceof ApiError ? error.code : "";
+      // Transient refusals such as rate limiting cannot settle an earlier attempt.
+      if (
+        [
+          "INVALID_INPUT",
+          "BOOKLET_CONFLICT",
+          "BOOKLET_UNAVAILABLE",
+          "BOOKLET_INVALID",
+          "INSUFFICIENT_CREDITS",
+        ].includes(code)
+      ) {
+        clearPending();
+        setEntry(null);
+      }
+      if (code === "BOOKLET_START_PENDING") setProblem("pending");
+      else if (code === "INSUFFICIENT_CREDITS") setProblem("credits");
+      else if (code === "BOOKLET_CONFLICT") setProblem("price");
+      else if (code === "BOOKLET_UNAVAILABLE") setProblem("unavailable");
+      else setProblem("failed");
+      submitting.current = false;
+      setStarting(false);
+    }
+  }
+
+  const pack = entry?.package ?? null;
+  const missing = pack ? pack.credits - (entry?.availableCredits ?? 0) : 0;
+  const recovering = pendingStart && (!entry || problem !== null);
+  return (
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 py-6 sm:py-12">
+      <header className="text-center">
+        <h1 className="font-heading text-display">
+          <span className="block">{t("m262c2d549b96")}</span>
+          <span className="block">{t("me524c3dd7e43")}</span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-md text-reading text-muted-foreground">
+          {t("mec401c187075")}
+        </p>
+      </header>
+
+      <div className="relative">
+        {/* Static mascot face only (decorative); the 3D mascot is deferred. */}
+        <Image
+          src="/images/unitale-mascot-face.svg"
+          alt=""
+          aria-hidden="true"
+          width={64}
+          height={64}
+          className="absolute -top-14 end-8 size-16 sm:end-12"
+        />
+        <Composer
+          id="book-idea"
+          size="entry"
+          inputRef={field}
+          value={idea}
+          onChange={setIdea}
+          onSend={send}
+          canSend={!consent && !!idea.trim()}
+          readOnly={consent}
+          maxLength={4000}
+          label={t("mb3ba025e2ecd")}
+          placeholder={t("m4966873a89fb")}
+          sendLabel={t("mf6f4688ff23d")}
+          footer={
+            consent && !pendingStart ? (
+              <Button variant="ghost" onClick={edit} disabled={starting}>
+                {t("mfd1d3a3672ed")}
+              </Button>
+            ) : !consent ? (
+              <p className="text-supporting text-muted-foreground">
+                {t("m79a2b7be2cdc")}
+              </p>
+            ) : null
+          }
+        />
+      </div>
+
+      {recovering && (
+        <Notice
+          tone="warning"
+          title={t(
+            problem === "pending" ? "me079e4adcff9" : "m08d20ade842d",
+          )}
+        >
+          <SubmitButton
+            pending={starting}
+            onClick={start}
+            className="mt-3 min-h-(--control-touch-sm)"
+          >
+            {t("md8b8392e2c54")}
+          </SubmitButton>
+        </Notice>
+      )}
+      {consent && !recovering && (
+        // Accepted exception (2026-11-23): an inline consent card that states
+        // pages, price and balance instead of an AlertDialog.
+        <Card
+          aria-labelledby="book-consent-title"
+          className="motion-safe:animate-in motion-safe:fade-in"
+        >
+          <CardHeader>
+            <CardTitle
+              id="book-consent-title"
+              className="font-heading text-card-title font-(number:--text-card-title--font-weight)"
+            >
+              {t("mee15ab57a7fb")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!entry && !loadFailed && (
+              <div className="space-y-2" aria-label={t("mba3bbbe10d8b")}>
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            )}
+            {loadFailed && (
+              <>
+                <Notice tone="error" title={t("mb99fbb363d5b")} />
+                <Button variant="outline" onClick={loadEntry}>
+                  {t("md8b8392e2c54")}
+                </Button>
+              </>
+            )}
+            {entry && !pack && (
+              <Notice tone="warning" title={t("m391e8b97689b")} />
+            )}
+            {pack && (
+              <>
+                <div>
+                  <p className="text-reading">
+                    {pack.includeCover
+                      ? t("m2625981f6078", { pages: pack.storyPages })
+                      : t("me047ec3372f2", { pages: pack.storyPages })}
+                  </p>
+                  <p className="text-supporting text-muted-foreground">
+                    {t("mcc1d89950812", {
+                      credits: pack.credits,
+                      available: entry!.availableCredits,
+                    })}
+                  </p>
+                </div>
+                {problem && (
+                  <Notice
+                    tone={problem === "pending" ? "warning" : "error"}
+                    title={
+                      problem === "pending"
+                        ? t("me079e4adcff9")
+                        : problem === "price"
+                          ? t("m589bd2ada19a")
+                          : problem === "credits"
+                            ? t("m06db853045c4", {
+                                missing: Math.max(1, missing),
+                              })
+                            : problem === "unavailable"
+                              ? t("m391e8b97689b")
+                              : t("m3d3a090b7c87")
+                    }
+                  />
+                )}
+                <div className="flex flex-wrap gap-3">
+                  {missing > 0 ? (
+                    <Button asChild className="min-h-(--control-touch-sm)">
+                      <Link href="/credits">{t("m040985b8ff7e")}</Link>
+                    </Button>
+                  ) : (
+                    // Pending keeps the label; the request key makes a retry safe.
+                    <SubmitButton
+                      pending={starting}
+                      onClick={start}
+                      className="min-h-(--control-touch-sm)"
+                    >
+                      {problem === "pending" || problem === "failed"
+                        ? t("md8b8392e2c54")
+                        : t("m6d9b2dbc225a")}
+                    </SubmitButton>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {!consent && (
+        <InspirationList
+          headingId="book-inspiration-title"
+          heading={t("m288f7ad20405")}
+          items={inspirations}
+          onPick={(index) => {
+            // Fills the composer only; sending stays a deliberate action.
+            setIdea(inspirations[index].text);
+            field.current?.focus();
+          }}
+        />
+      )}
+
+      {!signedIn && idea.trim() && (
+        <p className="text-center text-supporting text-muted-foreground">
+          {t("mcd5053d9a549")}
+        </p>
+      )}
+    </div>
+  );
+}

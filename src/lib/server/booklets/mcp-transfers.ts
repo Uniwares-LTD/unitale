@@ -1,5 +1,5 @@
 import "server-only";
-import { Binary, type Db } from "mongodb";
+import { Binary, type ClientSession, type Db } from "mongodb";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { fingerprint } from "../foundation/canonical";
@@ -67,13 +67,20 @@ export function bookletTransfers(
   db: Db,
   actor: CreditActor,
   productionId: string,
+  version: 1 | 2 = 1,
 ) {
   const c = bookletContext(db, actor);
+  const production = (session: ClientSession) =>
+    version === 2
+      ? c.owned(productionId, session, 2)
+      : c.owned(productionId, session);
   const records = db.collection<Transfer>("bookletMcpTransfers");
   const parts = db.collection<Part>("bookletMcpTransferParts");
   const budgets = db.collection<Budget>("bookletMcpTransferBudgets");
   async function owned(transferId: string) {
-    await c.transaction((s) => c.owned(productionId, s));
+    await c.transaction(async (session) => {
+      await production(session);
+    });
     const row = await records.findOne({
       _id: transferId,
       ownerId: actor.uid,
@@ -91,7 +98,7 @@ export function bookletTransfers(
         throw bookletConflict("Split evidence into records of at most 1 MiB.");
       const transferId = fingerprint([actor.uid, productionId, input.key]);
       await c.transaction(async (s) => {
-        const p = await c.owned(productionId, s);
+        const p = await production(s);
         await c.entitled(p, s);
         const old = await records.findOne({ _id: transferId }, { session: s });
         if (old) {
@@ -158,7 +165,7 @@ export function bookletTransfers(
         throw bookletConflict("Invalid transfer chunk.");
       await c.transaction(async (s) => {
         signal.throwIfAborted();
-        await c.entitled(await c.owned(productionId, s), s);
+        await c.entitled(await production(s), s);
         await records.updateOne(
           { _id: transferId },
           { $inc: { fence: 1 } },
@@ -201,7 +208,7 @@ export function bookletTransfers(
     },
     async evidenceReceipt(transferId: string, inputHash: string) {
       return c.transaction(async (s) => {
-        await c.entitled(await c.owned(productionId, s), s);
+        await c.entitled(await production(s), s);
         const row = await records.findOne(
           { _id: transferId, ownerId: actor.uid, productionId },
           { session: s },
@@ -225,7 +232,7 @@ export function bookletTransfers(
       result: unknown,
     ) {
       await c.transaction(async (s) => {
-        await c.entitled(await c.owned(productionId, s), s);
+        await c.entitled(await production(s), s);
         const row = await records.findOne(
           { _id: transferId, ownerId: actor.uid, productionId },
           { session: s },
