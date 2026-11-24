@@ -210,18 +210,30 @@ Unibase work is none; local project integration is verified through 09.6.
 
 ### Current gap disposition
 
-The [09 evidence summary](implementation-plan.md#delivered-foundation-and-current-evidence)
-and candidate README own current check totals; 09.7 final reviews pass locally.
+The [checkpoint identity and acceptance map](implementation-plan.md#checkpoint-11-evidence-map)
+pin the local application and package. Each row identifies the exercised boundary
+and the remaining target verification. Earlier foundation checks and reviews are
+recorded in the [09 evidence summary](implementation-plan.md#delivered-foundation-and-current-evidence).
 
-| Gaps | Verified local disposition | Remaining evidence/work |
+| Gap | Local verification | Checkpoint 12 evidence |
 | --- | --- | --- |
-| G01-G06 | V2 typed revisions/specifications, separate assessments/selection, structural completion, exact Prepare/Generate and durable correction accounting | Actual target execution and quality in 12 |
-| G07-G09 | Trusted bounded usage, authentic decisions/recovery, complete-payload transfers and owned cursor reads | Public decisions/history in 10; target observations in 12; hidden SDK attempts/cost remain accepted unknowns |
-| G10 | Ordered original MCP blocks, native file mapping and exact private bytes/hash locally verified | Actual deployed Dify conversion/capacity/expiry in 12; URL renewal beyond current evidence is an accepted limitation |
-| G11-G12 | Product registration, prepaid admission, terminal release, continuation and revision services with local one-charge journeys | Public package/consent/recovery facade in 10; real configured package in 12 |
-| G13 | Authentic bounded cards and owned media services exist | Creator views and owned media HTTP bridge in 10; browser proof in 10/11 |
-| G14-G15 | Server-owned suite/Reviewer identity validation, prepared tools and fresh local checks; historical isolated/shared-provider import evidence | Current exact application-connected bindings and execution in 12 |
-| G16-G17 | Independently retained original outputs and per-kind execution/canvas guards verified locally | Target original transport and configured profile acceptance in 12 |
+| G01 | Native grouped-result checks retain successful siblings and reject duplicate or missing item identities. Repository revisions bind exact text and hashes. | Confirm these results from the published tools. |
+| G02 | The prepaid MCP journey publishes immutable style, layout, image and page specifications. | Verify the selected staging profiles and original-source fidelity. |
+| G03 | The MCP specification, image, correction and whole-book cases verify retained coverage, exact originals and separate acceptance. | Observe configured Reviewer output and actual quality. |
+| G04 | The prepaid and structural MCP completion cases reject partial coverage, complete a selected manifest and preserve v1 state. | Run complete approved creation and revision journeys. |
+| G05 | Native Prepare/Generate and MCP exact-preflight tests reject changed requests and unresolved prior work before dispatch. | Verify the effective settings and paid image dispatches. |
+| G06 | Repository correction-allowance and MCP retry tests keep technical retries separate from durable creative counters. | Observe limits on the target Manager, including after resume. |
+| G07 | Native cost and execution-bound MCP cases de-duplicate observations, retain unknowns and enforce the production budget. | Record provider-observed settings, usage and costs where available. Hidden SDK attempts and costs remain accepted unknowns. |
+| G08 | Real MCP first-wins and repository readback cases authenticate the response and recover from late or unresolved outcomes. | Verify same-run Human Input and durable resume with the target Manager. |
+| G09 | Hash-bound immutable chunk transfers and owned history cases exercise payloads larger than the inline transport boundaries. | Check deployed limits and real application access. |
+| G10 | The ordered-original MCP case compares two byte streams, validates native handle order and checks immutable source identity. | Run target Dify file conversion, expiry and capacity probes. URL renewal beyond recorded evidence remains an accepted limitation. |
+| G11 | Application consent and start tests cover catalog updates, paid admission and one debit. The served response-loss result is tracked in the plan. | Select and verify a real configured catalog package. |
+| G12 | Paid continuation and revision tests verify Run chain ownership, recovery and exact saved charges. | Verify terminal evidence and continuation on the deployed worker. |
+| G13 | Application and MCP ownership tests cover views, history and originals. Served conversation, reader and media evidence is tracked in the plan. | Run the deferred manual acceptance and accessibility checks. |
+| G14 | MCP rejects foreign or mismatched suite bindings and verifies exact authenticated reviewer observations. | Record owned Manager registration, tool bindings and least permissions. |
+| G15 | Native compatibility and disposable application suites establish the local baseline. | Confirm exact target engine, dependencies and connected execution. |
+| G16 | MCP image-output cases retain individual originals and reuse successful results. | Check the target file outputs and measured dispatches. |
+| G17 | Repository and connected MCP tests verify per-kind constraints, canvas rejection and unchanged retained bytes. | Verify the selected target profile with actual outputs. |
 
 ## Contract design working decisions
 

@@ -100,8 +100,9 @@ and [provider handoff](features/booklet-generation/workflow-package/integration-
 own the package identity, feasibility evidence and target binding procedure.
 
 [Checkpoint 11](features/booklet-generation/implementation-plan.md#11---integrated-verification-and-handoff)
-is next, using deterministic providers and disposable persistence. Manual real-login
-testing is deferred. [Checkpoint 12](features/booklet-generation/implementation-plan.md#12---final-approvals-and-staging-acceptance)
+is complete locally, including production HTTP, browser verification and two clean
+read-only reviews. Manual real-login testing is deferred.
+[Checkpoint 12](features/booklet-generation/implementation-plan.md#12---final-approvals-and-staging-acceptance)
 owns staging deployment, managed Dify and MCP bindings, and application-connected
 acceptance. Scope C and provider spend remain pending separate approval.
 

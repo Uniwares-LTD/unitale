@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -2694,10 +2694,18 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           const jpeg = await sharp(bytes).jpeg().toBuffer();
           await assert.rejects(media.retainOriginal(production._id, { ...input, outputKey: generation.callId + ":1",
             sha256: sha(jpeg), mime: "image/jpeg" }, jpeg), /format differs/);
-          // Storage must finish after cancellation without creating dispatch or publication authority.
+          // A known result can finish storage when its Manager can no longer dispatch.
+          const expiredToken = randomBytes(32).toString("base64url");
+          await db.collection("runCapabilities").insertOne({
+            _id: sha(expiredToken) as never, uid: "owner", jobId: "run-v2", clientId: "fixture",
+            operations: bookletMcpToolsV2.map((tool) => tool.name), expiresAt: new Date(0),
+          });
+          const workCount = await db.collection("bookletWork").countDocuments({ productionId: production._id });
+          assert.equal((await invoke("begin_work", JSON.parse(imageReady.dispatch), expiredToken)).isError, true);
           await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { cancelRequested: true } });
           let first;
           try {
+            assert.equal((await invoke("begin_work", JSON.parse(imageReady.dispatch))).isError, true);
             first = await media.retainOriginal(production._id, input, bytes);
             assert.deepEqual(await media.retainOriginal(production._id, input, bytes), first);
             assert.deepEqual((await media.read(production._id, first.id)).bytes, bytes);
@@ -2712,6 +2720,7 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
               .read(production._id, first.id));
             assert.equal(await db.collection("bookletAssets").countDocuments({ productionId: production._id,
               operationId: generation.callId, originalAssetId: null }), 2);
+            assert.equal(await db.collection("bookletWork").countDocuments({ productionId: production._id }), workCount);
           } finally {
             await db.collection("aiJobs").updateOne({ _id: "run-v2" as never }, { $set: { cancelRequested: false } });
           }

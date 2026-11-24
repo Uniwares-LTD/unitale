@@ -129,10 +129,8 @@ engine for tests. Code size is a review signal, never permission to omit require
 
 ### Issue #10 deliverables and dependency map
 
-**Status as of 2026-11-24.** Implementation is complete locally through
-[10-chat-version](#10-chat-version---conversational-booklet-experience). The latest
-app revision is `8fe1837`, which includes the lost-start debit and reader direction
-fixes. Checkpoint 11 is next. Checkpoint 12 requires staging approval.
+**Status as of 2026-11-24.** [Checkpoint 11](#11---integrated-verification-and-handoff)
+is complete locally on app revision `8e21512`. Checkpoint 12 requires staging approval.
 
 | Checkpoint | Status | Deliverable and acceptance |
 | --- | --- | --- |
@@ -147,13 +145,12 @@ fixes. Checkpoint 11 is next. Checkpoint 12 requires staging approval.
 | 09 - Unitale Gateway & Recovery | Complete locally | Booklet MCP, prepaid admission, usage, originals and guarded recovery. Actual handlers and repositories passed failure-path checks. |
 | 10 - Run UI Integration | Complete locally | Creator quotes and consent, progress, decisions, revisions and history, plus admin settings. Booklet navigation was later replaced by the focused conversation. |
 | 10-chat-version - Conversation | Complete locally | Focused entry and chat, typed Manager turns, default-package editor, reader and recovery. The served browser suite covered the conversation and one-time debits. |
-| 11 - Integrated Verification | Next | Exercise actual YAML boundaries and application handlers with deterministic dependencies, close evidence gaps and complete two clean read-only reviews. |
+| 11 - Integrated Verification | Complete locally | Actual YAML Code and application handlers passed with deterministic providers. Production HTTP and browser checks passed, followed by two clean read-only reviews. |
 | 12 - Staging Publication & Acceptance | Pending approval | Deploy the reviewed app and worker, verify Dify publications and MCP bindings, run bounded real acceptance and retain evidence and secret-free exports. |
 
-**Remaining effort estimate.** Allow **2–4 engineer-days** for [11](#11---integrated-verification-and-handoff)
-and **2–3 engineer-days** for [12](#12---final-approvals-and-staging-acceptance) once
-the staging inputs are available. The **4–7 engineer-day** total excludes time
-waiting for access and approvals.
+**Remaining effort estimate.** Allow **2–3 engineer-days** for
+[checkpoint 12](#12---final-approvals-and-staging-acceptance) once the staging
+inputs and approvals are available.
 
 ### Remaining implementation: kickoff and ownership
 
@@ -1619,45 +1616,192 @@ form; their scope is otherwise unchanged.
 
 ### 11 - Integrated verification and handoff
 
-The owner deferred manual real-login testing on the shared environment until after
-the remaining checkpoint work. Checkpoint 11 keeps its automated integration and
-browser checks on disposable fixtures.
+**Outcome.** Verify T18–T21 through actual native YAML Code boundaries, real Unitale
+handlers and deterministic provider fixtures on disposable persistence. Repair only
+demonstrated local acceptance gaps. Prepare one versioned handoff for checkpoint 12.
+The owner deferred manual real-login testing on shared staging data. The shared
+Firebase/database setup, live Dify bindings, deployment, and provider spend are outside
+this checkpoint. The scripted browser Manager proves UI behavior and app transactions.
+Native workflow fixtures provide the separate evidence for YAML and MCP behavior.
 
-Use actual YAML boundaries and real app handlers with deterministic providers/disposable
-persistence, not a Dify execution engine emulator. Cover:
+#### 11.1 - Baseline and evidence map
 
-- Creation, all six review modes, exact text/originals and structural completion.
-- Retry defaults, settings snapshots, non-retriable errors, distinct correction counts,
-  durable limits, backoff eligibility and no duplicate/whole-flow paid replay.
-- Partial siblings, retained-save retry, late results and reconciliation success/failure/
-  uncertainty; missing locators, exhausted reads and deadline do not imply safe replay.
-- Crash after dispatch, after retention and before checkpoint; conflicting workers and
-  expired leases; cancellation/capability expiry permits retention, not new dispatch.
-- Same-run Human Input, authentic first-wins answers, stale decisions and successor
-  continuation with no duplicate charge; repeated user retry/continue clicks.
-- Quote changes, one-time consent/consumption, locks, revision scope and owned history.
-- Preserved v1 behavior and optional shared hooks disabled for unrelated projects.
+- Confirm the issue branch `feature/10-dify-workflow-design`, record the full starting
+  commit, retained Handbook revision, and [workflow package digest](workflow-package/README.md#current-integration-slice).
+  The checkpoint starts after `8e21512`, with app evidence at `8fe1837`. Preserve any
+  unrelated changes. Start from the existing [10C.5 evidence](#10c5-local-verification-2026-11-23)
+  and the fresh prepaid production test in `tests/accounts/booklet-mcp.test.ts`.
+- Map each acceptance group below and [G01–G17](workflow-design.md#integration-gap-assessment)
+  to a named test, its input revision and observed assertions, or a specific missing
+  assertion. Mark evidence as reusable, needs rerun, missing, or staging-only. Reuse
+  results only where the code, fixtures and effective test settings still match.
+  Record [E1–E5](workflow-package/integration-handoff.md#acceptance-probes-and-stop-conditions)
+  separately from E6, which tracks local checks and reviews.
+- Preflight prepared Node/npm and Python, MongoDB, disposable Auth and browser tooling.
+  On Windows use `npm.cmd` and `npx.cmd` if needed and set `BOOKLET_PYTHON` to a real
+  interpreter when a Store alias shadows it. Confirm fixture-only configuration before
+  any database command. Use the existing runners and their loopback disposable services.
+  Run database and browser fixtures serially. Use a workspace with real dependencies
+  for builds on Windows, and stop only dev or preview processes owned by this run.
+  An occupied port or locked `.next/standalone` calls for identifying its owner and
+  using an available fixture setup before escalating.
 
-Run affected `test:booklet-compat`, `test:booklet-repositories`,
-`test:booklet-lifecycle-media`, `test:booklet-mcp`, MCP/Run/AI/commerce suites and contract
-fixtures using prepared npm. Run typecheck, scoped ESLint, build for runtime inputs,
-and applicable check:env, check:docs, check:i18n, check:skills. Persistence changes run
-`docs:booklet-model` before `check:docs`; shared changes add template and initialized-
-project checks. Browser proof covers desktop/390px en/ar, keyboard, admin language
-isolation, media ownership and served-document CSP. Use a production build for toast
-stylesheet/CSP evidence, stop dev before building, and run typecheck after build. For
-affected surfaces follow build-ui's three presets, light/dark, 390px/1440px, public Arabic,
-keyboard, 200% zoom and reduced-motion checks. Include draft preservation on known/unknown
-failure, invalid-field focus, leave/return behavior, enlarged-media close/focus restoration
-and non-disruptive history updates. Physical-device/screen-reader and final visual
-acceptance are explicitly recorded as pending where not actually exercised; do not claim
-specimen parity from unit tests. No paid calls for local checks.
+#### 11.2 - Close integration gaps
 
-Every checkpoint requires two consecutive clean read-only reviews on the same state;
-fixes reset the affected count. Slices require affected checks, not extra review pairs.
-Without delegation authorization label separate same-agent review passes. Update exact
-artifact/revision evidence, G01-G17 resolutions and E1-E6 status; local tests never prove
-Dify runtime acceptance. Preserve bounded evidence when an external gate remains open.
+Extend the nearest existing tests where the evidence map finds a gap. Repair the smallest
+affected Unitale or package boundary and keep v1 behavior and established product decisions.
+Use saved application records and exact provider outcomes in assertions. Keep corrections
+outside the read-only reviews.
+
+| Acceptance group | Required evidence |
+| --- | --- |
+| Creation and delivery | Start a prepaid production, exercise all six review modes and structural completion, and verify exact text, source identity, original bytes and manifest page order. Check ordered originals through the local native/MCP boundary. |
+| Retries, reuse and accounting | Verify snapshotted settings, correctable versus non-retriable errors, durable limits and backoff. Exercise partial siblings, reuse of retained successes, and distinct technical and creative correction counters. Prove that retries and continuation cause no duplicate paid dispatch or charge. |
+| Recovery and concurrency | Cover interruptions after dispatch, after retention, and before checkpoint save, including competing workers and expired leases. Exercise late success, confirmed failure and unresolved outcomes. Missing locators, exhausted reads and deadlines leave work unresolved. Cancellation or capability expiry permits retention of a known result and prevents new dispatch. |
+| Owner actions and compatibility | Verify same-run Human Input, authenticated first-wins and stale decisions, successor continuation and repeated retry/continue actions. Cover quote changes, one-time consent and debit, locks, revision scope and owned history. Verify v1 and the module-disabled path for unrelated projects. |
+
+Run `test:booklet-compat`, `test:booklet-application`, `test:booklet-repositories`,
+`test:booklet-lifecycle-media`, `test:booklet-mcp`, `test:booklet-foundation`,
+`test:booklet-modules`, `test:mcp`, and `test:commerce` via the package scripts.
+Run the affected shared Run and AI account tests using the existing entries:
+
+```powershell
+node --conditions=react-server --import tsx --test --test-concurrency=1 tests/accounts/runs.test.ts tests/accounts/ai-jobs.test.ts tests/accounts/ai-files.test.ts tests/accounts/ai-pricing.test.ts
+```
+
+After a repair rerun the affected evidence on the new state.
+
+##### Checkpoint 11 evidence map
+
+The starting commit is `8e21512bbb20ef293893f306bb4a28caf9018461` on
+`feature/10-dify-workflow-design`. The issue diff uses merge base
+`496dd01795f1cdd857c625c6e28926ecc5e605b6`. The application and fixtures at
+`8fe183770ca324c8d57980784f2d61b922f23f8f` match the starting commit because the
+intervening commit changed documentation only. The Handbook check retained the usable
+cached revision `c1b6166437ba729b59723a7dd4066c78e2f15185` at
+`D:\misc\code\uniwares\handbook`. The local YAML, fixtures and compatibility test
+recompute to `b10028f3205c200e78bae889767cfdfafebc03ad1b51cb540e0cb0268a9cae70`.
+All twelve separately recorded manifest hashes match.
+
+| Acceptance group | Matching evidence and limits |
+| --- | --- |
+| Creation and delivery | `test:booklet-mcp` exercises the fresh prepaid five-page production through native Manager and child Code, the real MCP gateway and persisted selection/completion. The same suite's image-output case exercises correction review through Reviewer Code and MCP. Its ordered-byte case compares two distinct originals and native bindings. Native validation, grouped item identity, exact Unicode pagination and coverage rejection also pass `test:booklet-compat`. The provider pixels are fixtures. |
+| Retries, reuse and accounting | The MCP confirmed-failure case exercises native retry and the actual retry worker, including backoff and the unchanged successful action. The connected production's successor, purchased revision and predecessor reuse verify saved charges, policies, immutable prior content and retained output. Repository tests cover technical retries separately from creative correction allowances. Application tests cover repeat commands, quote changes, consent, and recovery after committed start effects. |
+| Recovery and concurrency | The repository readback test covers competing claims, expiry, late success, confirmed failure, exhausted reads and deadlines. The retained-proposal and lifecycle continuation cases recover committed work through the successor. MCP fence and cancelled-Prepare cases verify stale writes fail and retention can finish after cancellation. The application start test verifies the debit and recovered admission at each interruption. |
+| Owner actions and compatibility | The MCP first-wins case checks the correlated form, stale and foreign decisions and authenticated reads. Application and lifecycle cover revision scope, locks and history. `test:booklet-compat` covers the preserved v1 path, and `test:booklet-modules` covers the disabled entry points. |
+| Served behavior | Checkpoint 10C.5 is reusable for the unchanged app and its checked fixture settings. The extended conversation, matrix and response-loss scripts need fresh served results. Actual browser zoom, physical devices, screen readers and final visual acceptance have separate evidence requirements. |
+| Staging | The exact deployed stack, current bindings, Dify engine, provider attempts and creative quality require checkpoint 12 evidence. The [gap disposition](workflow-design.md#current-gap-disposition) and [provider probes](workflow-package/integration-handoff.md#acceptance-probes-and-stop-conditions) track those remaining inputs. |
+
+#### 11.3 - Verify the served app
+
+- Build with `npm run build` in the prepared local test environment, then run
+  `npm run typecheck`. Run the existing production HTTP AI and pricing suites with
+  disposable Auth via `node --conditions=react-server --import tsx scripts/integration.mjs --owned-auth --ai`
+  and the same command with `--ai-pricing` appended. Finish these before starting the
+  [browser fixture](#new-session-goal-prompt). Execute
+  `booklet-conversation-browser.js`, `booklet-conversation-matrix.js`, and
+  `booklet-start-recovery.js` from `tests/integration` through the Playwright CLI.
+- Use the existing matrix as the starting point. Verify narrow (~390px) and 1440px,
+  English and Arabic, light and dark, and the adopted presets where relevant. Confirm
+  keyboard, reduced motion, 200% zoom, English/LTR admin with the public Arabic
+  preference preserved, owned media, and served-document CSP including toast styles
+  where affected. Record CSS viewport approximations separately from actual browser zoom.
+- Fill only uncovered interaction checks. Cover known and unknown failures with draft
+  preservation, invalid-field focus, leave/return, artwork close and focus restoration,
+  and history updates while reading older content. Confirm sign-in return, explicit
+  consent, one debit after a lost start response, and recovery of a lost reply without
+  retrying automatically. Record physical-device, screen-reader and final visual
+  acceptance as pending wherever they were not exercised.
+
+#### 11.4 - Review and hand off
+
+Run `npm test`, scoped ESLint, `check:env` against the test settings, `check:docs`,
+`check:i18n` and `check:skills`. If persistence changed, document the model decision and
+run `docs:booklet-model` before `check:docs`. If an authorized shared change entered the
+checkpoint, run its template and initialized-project checks. For final acceptance, use
+evidence from the same final state or carried forward from unchanged inputs.
+
+Freeze the final app revision or diff identity and the workflow digest. Complete two
+consecutive read-only reviews on that same state against the issue base. Check runtime
+behavior, owner and financial boundaries, remaining scenarios and whether each result
+supports the claim made for it. Label separate same-agent reviews when delegation is
+unavailable or unauthorized. Fix actionable in-scope blockers outside the review, rerun
+affected checks and restart the clean-review count. Slices need affected verification.
+
+Record results and limits in this plan, [G01–G17](workflow-design.md#current-gap-disposition)
+in the workflow design, and E1–E6 in the provider handoff. Include exact app and package identities, commands and results,
+review count, and remaining staging inputs. Update issue evidence if authorized.
+Checkpoint 11 is complete when required local evidence and both reviews are clean.
+Staging-only results retain their open status until checkpoint 12 supplies evidence.
+
+##### Checkpoint 11 local validation
+
+All fixtures used loopback or process-local providers and disposable persistence.
+The native Code tests ran with the prepared Python 3.12 interpreter. The full unit
+suite passed with the prepared Git 2.56.0 after the PATH Git failed two fixtures
+that use `git init -b`.
+
+The verified application inputs come from `8e21512bbb20ef293893f306bb4a28caf9018461`.
+The checkpoint changed tests and documentation. The package digest is unchanged.
+To reproduce the reviewed test diff after publication, replace `<checkpoint-11-commit>`
+with the commit that publishes these checkpoint fixtures and hash the raw command output.
+
+```text
+git diff --no-ext-diff --binary 8e21512bbb20ef293893f306bb4a28caf9018461 <checkpoint-11-commit> -- tests
+```
+
+The expected SHA-256 is `8fed1030aeb06542aec503b188e996b1c51461e5226894feef4fd8334cc484e3`.
+
+| Check | Result |
+| --- | --- |
+| `npm run test:booklet-compat` | 48 passed, including preserved v1 and native Code. |
+| `npm run test:booklet-application` | 15 passed. |
+| `npm run test:booklet-repositories` | 38 passed. |
+| `npm run test:booklet-lifecycle-media` | 17 passed. |
+| `npm run test:booklet-mcp` | 33 passed after adding capability-expiry and cancellation assertions around retained paid work. |
+| `npm run test:booklet-foundation`, `test:booklet-modules`, `test:mcp`, `test:commerce` | 8, 1, 8 and 31 passed respectively. |
+| Run, AI jobs, AI files and AI pricing account batch in 11.2 | 40 passed. |
+| `npm test` | 143 passed. |
+| `npm run check:env` | Passed with local test settings. |
+| Scoped ESLint against the issue base | Zero errors and five existing warnings on Playwright CLI function expressions. |
+| `npm run check:i18n`, `npm run check:skills` | Passed. |
+| `npm run check:docs` | Passed. Links, anchors and commands verified across 88 documents, and both generated model diagrams matched. |
+| `npm run build`, then `npm run typecheck` | Passed in the isolated copy. 491 tracked application and build inputs matched the issue worktree byte-for-byte. |
+| Production HTTP with `--owned-auth --ai` | Passed the Run, decision, recovery, ownership and billing assertions when the ignored runner supplied loopback Console discovery. Bundled maintenance and readiness/liveness checks passed. |
+| Production HTTP with `--owned-auth --ai --ai-pricing` | Passed the five pricing modes, changed consent, reservations and replay settlement. Bundled maintenance and readiness/liveness checks passed. |
+| Production Playwright conversation | Passed six accepted replies and one injected, schema-valid refusal. Preserved the draft, choices and focus after refusal. New content left an earlier reading position in place. Artwork and reader navigation passed. |
+| Production Playwright matrix | Passed 16 entry/conversation configurations at 393 and 1440 CSS px in English and Arabic, light and dark, with reduced motion. Unitale's project theme was active. Reader direction, focus trap/restore and owned original access passed. Admin invalid-field focus, English/LTR, return to Arabic and styled confirmation toasts passed. Served HTML rejected injected unnonced script and style. |
+| Production response loss | The accepted start charged 20 fixture credits. Reload made no start request. Explicit retry used the exact request, returned the same booklet and charged zero. The accepted reply was submitted once, preserved its pending draft during confirmation and recovered without replay. |
+| Sign-in and zoom | Emulator sign-in restored the idea. Keep editing and reload preserved it without starting a booklet. CSS reflow passed at 640 and 720 px. Separately, Chrome's 200% page zoom reduced a 1440 px viewport to 720 CSS px with device pixel ratio 2 and no overflow on entry, conversation or admin. |
+
+The pre-existing preview held `.next/standalone` and loopback port 3101. This run
+used an isolated copy with real dependencies and loopback port 13101. Only the
+ignored test copies used the alternate port. The AI suite initially returned 503
+at discovery with no Console environment identity. The optional `--dify-keys`
+extension supplied a loopback Console but also attempted to register its unmanaged
+fixture apps, which correctly returned 409. For the successful 11.3 run, the ignored
+runner's `--dify-discovery` switch used the existing `difyKeysFixture()` loopback
+environment and omitted its `DIFY_KEYS_TEST` marker, retaining the original `--ai`
+assertions. Physical-device, screen-reader and final visual acceptance remain pending.
+
+##### Checkpoint 11 final reviews
+
+Two consecutive read-only passes against the issue merge base reviewed the same
+app revision, test diff and package digest above. Both used the same-agent review
+fallback and passed without blocking findings.
+
+1. Traced ownership, financial admission, dispatch denial, retained results and
+   browser response recovery to the exercised handlers and assertions.
+2. Rechecked the exact package hashes and disabled bindings, preserved v1 paths,
+   suite totals, final browser results, and the G01–G17 and E1–E6 evidence.
+
+The checkpoint 12 gate now owns the outstanding staging inputs and approvals.
+
+**Unattended continuation.** After kickoff, continue through 11.1–11.4 without
+routine approval questions. If a check fails, diagnose and repair in-scope defects or
+retry a recoverable fixture with the same assertions. Pause only the dependent work
+for a required capability, access or material scope decision, and record the precise
+resume point. Keep independent work moving. Hand off at the checkpoint 12 approval gate.
 
 ### 12 - Final approvals and staging acceptance
 
@@ -1785,12 +1929,9 @@ Names do not change service/tool identifiers; live renaming/tagging has not occu
 
 **Session handoff (2026-11-24):** see the [current delivery map](#issue-10-deliverables-and-dependency-map)
 and the [conversation checkpoint verification](#10c5-local-verification-2026-11-23).
-Next is **[11, Integrated verification and handoff](#11---integrated-verification-and-handoff)**.
-Start by mapping exact revisions and existing evidence to the checkpoint 11 journeys
-and G01–G17/E1–E6 gates. Use deterministic providers and disposable persistence to
-cover missing cross-boundary cases, then run the integrated checks and two consecutive
-read-only reviews. The separate staging and live acceptance gates belong to checkpoint 12.
-Manual testing with real Firebase and shared staging data is deferred.
+[Checkpoint 11](#11---integrated-verification-and-handoff) is complete locally.
+Resume at the [checkpoint 12 approval gate](#12---final-approvals-and-staging-acceptance)
+after approval. Manual testing with real Firebase and shared staging data is deferred.
 
 The user confirmed that `/books/new` keeps the focused frame. The actual Manager YAML
 emits `request_human.turn`; the [workflow package](workflow-package/README.md) records its
@@ -1813,7 +1954,7 @@ Notes:
 - Turbopack refuses to build through a `node_modules` junction, for example in a
   worktree.
 
-**Continuation prompt:**
+**Retained checkpoint 11 execution prompt:**
 
 > Continue Uniwares-LTD/unitale issue #10, checkpoint **11**, on branch
 > `feature/10-dify-workflow-design`. Follow AGENTS.md: run the handbook check, read
@@ -1829,9 +1970,10 @@ Notes:
 >
 > The user confirmed that `/books/new` keeps the focused frame.
 >
-> Reconcile the exact artifacts, G01–G17 and E1–E6 with the evidence, cover the
-> remaining local integration gaps, and complete two consecutive clean whole-checkpoint
-> reviews before handoff. Keep staging and live acceptance in checkpoint 12.
+> Execute 11.1–11.4 unattended against the disposable fixtures. Reuse evidence where
+> the inputs match, repair confirmed in-scope gaps, and complete two consecutive clean
+> reviews on the same state. Pause only blocked dependent work. Stop at the checkpoint
+> 12 approval gate. Manual real-login testing remains deferred.
 >
 > Keep the Unibase/Unitale design rules from the conformance review: type roles,
 > tokens, existing primitives, and reusable components in

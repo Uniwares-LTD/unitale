@@ -45,16 +45,14 @@ remain disabled; guarded application action retries are locally fixture-tested; 
 The image candidates omit unsupported retry/timeout configuration fields.
 
 Historical patched-provider probes passed and their disposable resources were removed.
-They do not establish execution of the revised shared-provider binding. [Shared-provider import/readback](integration-handoff.md#shared-provider-importreadback-evidence)
-now passes for all seven disabled candidates; actual revised-binding execution and
-full application integration remain pending.
-Activation remains disabled. Scope B for minimal 07-11 implementation is approved;
-07-08 and 09.1-09.6 are locally verified; 09.7 is locally complete; 10 creator UI and 11 validation remain. The [approval register](integration-handoff.md#approval-register)
-records no tunnel, scope C pending and a future US$3 ceiling (not current spend approval).
-The [remaining T18-T21 plan](../implementation-plan.md#remaining-implementation-kickoff-and-ownership)
-is being executed under scope B. Its [retry/reconciliation policy](../implementation-plan.md#action-retries-and-automatic-reconciliation)
-has local application/native-wait evidence described below. Target execution remains
-pending and all execution gates stay disabled. Current candidate hashes are below.
+[Shared-provider import/readback](integration-handoff.md#shared-provider-importreadback-evidence)
+passed for all seven disabled candidates. Local application integration and
+retry/reconciliation verification are complete through
+[checkpoint 11](../implementation-plan.md#11---integrated-verification-and-handoff).
+Execution through the revised shared-provider binding and deployed application belongs
+to [checkpoint 12](../implementation-plan.md#12---final-approvals-and-staging-acceptance).
+Activation stays disabled. The [approval register](integration-handoff.md#approval-register)
+records the tunnel decision, pending scope C and the proposed US$3 ceiling awaiting approval.
 The retained upstream patch and isolated-build proposal are optional historical evidence.
 
 Local capacities: child JSON 256 KiB; original 8 MiB; one to sixteen explicit creative
@@ -123,7 +121,10 @@ without a creator question, paid polling, another scheduler or an automatic succ
 Creator questions remain separate. Unknown outcomes and unisolatable paid failures
 stop deterministically for reconciliation; successful siblings are preserved.
 
-Current checks: **46 compatibility tests** (11 preserved v1 and 35 native), **32 MCP**
+The [checkpoint 11 validation record](../implementation-plan.md#checkpoint-11-local-validation)
+tracks the current local application and package evidence.
+
+Checkpoint 09 checks: **46 compatibility tests** (11 preserved v1 and 35 native), **32 MCP**
 and **38 repository tests** pass, plus production build, post-build typecheck,
 scoped ESLint, model generation, docs/i18n/skills checks and hash/disabled-gate audit.
 Two consecutive clean same-agent read-only whole-package review passes found no

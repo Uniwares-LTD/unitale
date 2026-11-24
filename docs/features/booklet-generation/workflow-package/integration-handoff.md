@@ -999,9 +999,24 @@ Human Input and durable resume; continuation keeps correction roots and call ide
 E4: owned Manager registration, least-permission managed MCP, suite/observer/reviewer binding.
 E5: exact brief/languages/products/configuration and approved finite paid cap.
 
-Pending target probes are not local failures or successes. Do not activate while they
-are unresolved. Local evidence is in the candidate README; checkpoint 07 remains
-gated on separate application authorization despite established provider feasibility.
+### Checkpoint 11 gate evidence
+
+| Gate | Status at local handoff | Evidence needed at checkpoint 12 |
+| --- | --- | --- |
+| E1 | Open. Native Code and real MCP fixtures verify exact request binding, bounded retry and no blind paid replay. | Verify effective published settings, actual provider results, available usage and the accepted limits on retry visibility. |
+| E2 | Open. The ordered-original MCP test delivers and compares two distinct originals through the local native boundary. Media tests cover interrupted retention. | Verify actual Dify file conversion, exact hashes, dimensions, MIME and order, expiry and bounded storage recovery. |
+| E3 | Open. The prepaid, retry and Human Input tests exercise native Code and real handlers, including retained results, authenticated first-wins decisions and successor state. | Observe actual Dify Loop execution, child calls, scoped corrections and durable native resume. |
+| E4 | Open. The local suite validates capability scope, suite identity and trusted observations. Historical import/readback is partial target evidence. | Confirm the deployed Unitale origin, owned Manager registration, child publications/tool IDs, managed MCP permissions and Reviewer/observer bindings. |
+| E5 | Pending owner approval. Test inputs are disposable. | Approve the exact staging brief, languages, product and capacity, identities, configuration and bounded spend. The proposed US$3 ceiling awaits confirmation. |
+| E6 | Complete locally. The [checkpoint 11 validation](../implementation-plan.md#checkpoint-11-local-validation) and [two read-only reviews](../implementation-plan.md#checkpoint-11-final-reviews) cover the same final app and package. | Carry forward evidence with matching inputs and record target verification against the deployed state. |
+
+The approval gate also needs the staging release and migration destination, shared
+Firebase and database identities through secure configuration, worker ownership,
+test accounts and authority for Dify publication and live calls. Manual testing
+against shared staging data remains deferred.
+
+Activation stays disabled pending target probes and checkpoint 12 approval. The
+[candidate README](README.md) links the current local evidence.
 
 ## Dify/provider compatibility procedure
 

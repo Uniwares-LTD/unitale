@@ -54,7 +54,35 @@ async (page) => {
     require(JSON.stringify(second.body) === JSON.stringify(first.body), "Retry changed the consented request");
     require(second.productionId === first.productionId, "Retry opened a second booklet");
     require(await balance() === afterFirst, "Retry charged again");
-    return { firstDebit: before - afterFirst, retryDebit: 0, sameProduction: true };
+
+    const replies = [];
+    const productionApi = `${origin}/api/booklets/${first.productionId}`;
+    await entry.route(productionApi, async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      const response = await route.fetch();
+      replies.push(response.status());
+      await route.abort("failed");
+    });
+    await entry.getByRole("button", { name: "My child", exact: true }).waitFor();
+    const conversationApi = `${productionApi}?section=conversation`;
+    const openResponse = await entry.request.get(conversationApi);
+    require(openResponse.ok(), "Could not read the outstanding reply turn");
+    const openView = await openResponse.json();
+    const holdAcknowledgement = (route) => route.fulfill({ json: openView });
+    await entry.route(conversationApi, holdAcknowledgement);
+    const reply = entry.locator("#book-reply");
+    await reply.fill("My cousin");
+    await reply.press("Enter");
+    await entry.getByText("A reply is being confirmed", { exact: true }).waitFor();
+    require(await reply.inputValue() === "My cousin" && !(await reply.isEditable()), "An unconfirmed reply did not preserve its pending draft");
+    require(replies.length === 1 && replies[0] === 202, "The reply was missing or replayed during confirmation");
+    await entry.unroute(conversationApi, holdAcknowledgement);
+    await entry.getByText("My cousin", { exact: true }).waitFor();
+    await entry.getByRole("button", { name: /^4.5$/ }).waitFor();
+    require(replies.length === 1 && replies[0] === 202, "The accepted reply was missing or automatically replayed");
+    require(await reply.inputValue() === "", "Confirmed reply did not clear the submitted draft");
+    require(await balance() === afterFirst, "Reply recovery changed the credit balance");
+    return { firstDebit: before - afterFirst, retryDebit: 0, sameProduction: true, pendingReplyPreserved: true, replySubmissions: replies.length };
   } finally {
     await context.close();
   }
