@@ -65,7 +65,8 @@ export function ChoiceGroup({
                 aria-pressed={mode === "multiple" ? pressed : undefined}
                 onClick={() => onChoose(option.id)}
                 className={cn(
-                  "h-auto min-h-(--control-touch-sm) whitespace-normal text-body",
+                  "h-auto min-h-(--control-touch-sm) rounded-(--x-unitale-radius-card) shadow-none whitespace-normal text-body",
+                  !pressed && "bg-muted/20 hover:bg-muted/40",
                   option.image
                     ? "w-full flex-col items-stretch gap-0 overflow-hidden p-0 text-start"
                     : "px-4 py-2.5",
@@ -81,9 +82,9 @@ export function ChoiceGroup({
                     className="aspect-square w-full object-cover"
                   />
                 )}
-                <span dir="auto" className={cn(option.image && "px-3 py-2")}>
+                <bdi className={cn(option.image && "px-3 py-2")}>
                   {option.label}
-                </span>
+                </bdi>
               </Button>
             );
             return (

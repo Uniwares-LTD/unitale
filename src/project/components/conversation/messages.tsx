@@ -13,12 +13,25 @@ const mascot = "/images/unitale-mascot-face.svg";
 
 function MascotFace() {
   return (
-    <Image src={mascot} alt="" aria-hidden="true" width={28} height={28} className="size-7 shrink-0" />
+    <Image
+      src={mascot}
+      alt=""
+      aria-hidden="true"
+      width={28}
+      height={28}
+      className="size-7 shrink-0"
+    />
   );
 }
 
 /** One agent turn; reveals with the package's reveal timing, instantly under reduced motion. */
-export function AgentMessage({ name, children }: { name: string; children: ReactNode }) {
+export function AgentMessage({
+  name,
+  children,
+}: {
+  name: string;
+  children: ReactNode;
+}) {
   return (
     <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-(--x-unitale-duration-reveal)">
       <div className="mb-2 flex items-center gap-2">
@@ -33,11 +46,20 @@ export function AgentMessage({ name, children }: { name: string; children: React
 }
 
 /** The owner's message, aligned to the end edge. Past messages are not editable. */
-export function UserMessage({ author, children }: { author: string; children: ReactNode }) {
+export function UserMessage({
+  author,
+  children,
+}: {
+  author: string;
+  children: ReactNode;
+}) {
   return (
     <div className="flex flex-col items-end">
       <span className="mb-1 text-caption text-muted-foreground">{author}</span>
-      <div className="max-w-[min(32rem,85%)] rounded-(--x-unitale-radius-card) border bg-secondary px-4 py-3 text-reading whitespace-pre-line text-secondary-foreground [overflow-wrap:anywhere]">
+      <div
+        data-slot="user-message"
+        className="max-w-[min(32rem,85%)] rounded-(--x-unitale-radius-card) bg-muted/60 px-4 py-3 text-body whitespace-pre-line text-foreground [overflow-wrap:anywhere]"
+      >
         {children}
       </div>
     </div>
@@ -47,7 +69,7 @@ export function UserMessage({ author, children }: { author: string; children: Re
 /** Current-work line while the agent works. Copy must describe real activity; no percentages. */
 export function WaitRow({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center gap-3 text-supporting text-muted-foreground">
+    <div className="flex min-h-(--control-touch-sm) items-center gap-3 text-supporting text-muted-foreground">
       <MascotFace />
       <span>{children}</span>
       <span aria-hidden="true" className="flex gap-1">
@@ -60,9 +82,20 @@ export function WaitRow({ children }: { children: ReactNode }) {
 }
 
 /** Offered instead of moving a reader who is looking at earlier messages. */
-export function NewResponseButton({ label, onClick }: { label: string; onClick: () => void }) {
+export function NewResponseButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
   return (
-    <Button type="button" variant="outline" className="min-h-(--control-touch-sm)" onClick={onClick}>
+    <Button
+      type="button"
+      variant="outline"
+      className="min-h-(--control-touch-sm) rounded-full bg-card text-supporting shadow-none"
+      onClick={onClick}
+    >
       <ArrowDown aria-hidden="true" />
       {label}
     </Button>
@@ -72,7 +105,11 @@ export function NewResponseButton({ label, onClick }: { label: string; onClick: 
 /** A Manager-chosen section label in the transcript; it claims no progress. */
 export function MilestoneDivider({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 pt-2" role="separator" aria-label={label}>
+    <div
+      className="flex items-center gap-3 pt-2"
+      role="separator"
+      aria-label={label}
+    >
       <span className="h-px flex-1 bg-border" />
       <span className="text-label text-muted-foreground">{label}</span>
       <span className="h-px flex-1 bg-border" />

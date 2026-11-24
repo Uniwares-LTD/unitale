@@ -52,7 +52,7 @@ export function ConversationDock({ children }: { children: ReactNode }) {
   return (
     <div
       data-slot="conversation-dock"
-      className="space-y-3 rounded-(--x-unitale-radius-dialog) border bg-card p-3 text-card-foreground shadow-(--x-unitale-shadow-raised)"
+      className="space-y-3 rounded-(--x-unitale-radius-dialog) bg-card p-3 text-card-foreground sm:p-4"
     >
       {children}
     </div>
@@ -149,7 +149,7 @@ export function Composer({
       data-slot="composer"
       data-size={size}
       className={cn(
-        "border",
+        "border border-input shadow-none",
         "has-[textarea:focus-visible]:outline-(length:--x-unitale-focus-width) has-[textarea:focus-visible]:outline-offset-(--x-unitale-focus-offset) has-[textarea:focus-visible]:outline-ring has-[textarea:focus-visible]:outline-solid",
         // Entry is a raised surface; the dock composer is an inset field inside
         // the ConversationDock surface.
@@ -184,7 +184,7 @@ export function Composer({
             "resize-none border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 dark:bg-transparent",
             // Override the large field's own spacing; its 1rem text is the field role.
             size === "entry"
-              ? "max-h-56 ring-0 data-[size=lg]:px-0"
+              ? "max-h-56 data-[size=lg]:px-0"
               : "max-h-36 data-[size=lg]:min-h-(--control-touch-sm) data-[size=lg]:px-0 data-[size=lg]:py-2.5",
           )}
         />

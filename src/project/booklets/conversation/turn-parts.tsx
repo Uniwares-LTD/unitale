@@ -18,7 +18,8 @@ import type {
 export const assetUrl = (productionId: string, assetId: string) =>
   `/api/booklets/${encodeURIComponent(productionId)}/assets/${encodeURIComponent(assetId)}`;
 
-const prose = "text-reading whitespace-pre-line [overflow-wrap:anywhere]";
+const prose = "text-body whitespace-pre-line [overflow-wrap:anywhere]";
+const reviewCard = "gap-3 bg-muted/20 shadow-none ring-0";
 // The role's weight replaces CardTitle's own font-medium.
 const cardTitle =
   "font-heading text-card-title font-(number:--text-card-title--font-weight)";
@@ -97,7 +98,7 @@ function Part({
       return <MilestoneDivider label={part.label} />;
     case "overview":
       return (
-        <Card>
+        <Card className={reviewCard}>
           <CardHeader>
             <CardTitle dir="auto" className={cardTitle}>
               {part.title}
@@ -111,7 +112,7 @@ function Part({
                     {fact.label}
                   </dt>
                   <dd dir="auto" className="text-body [overflow-wrap:anywhere]">
-                    {fact.value}
+                    <ReplyValue value={fact.value} />
                   </dd>
                 </div>
               ))}
@@ -121,7 +122,7 @@ function Part({
       );
     case "synopsis":
       return (
-        <Card>
+        <Card className={reviewCard}>
           <CardHeader>
             <CardTitle dir="auto" className={cardTitle}>
               {part.title}
@@ -137,7 +138,7 @@ function Part({
     case "character":
     case "location":
       return (
-        <Card>
+        <Card className={reviewCard}>
           <CardContent className="grid gap-4 sm:grid-cols-[10rem_1fr]">
             {part.assetId && (
               <ArtworkViewer
@@ -212,7 +213,7 @@ export function ReplyText({
         <span className="mb-1 block text-caption text-muted-foreground">
           {t("mf63615fc3c6f", { subject })}
         </span>
-        <span dir="auto">{reply.text}</span>
+        <ReplyValue value={reply.text} />
       </>
     );
   const options =
@@ -226,7 +227,24 @@ export function ReplyText({
         (id) => options.find((o) => o.id === id)?.label ?? id,
       ),
       ...(reply.text ? [reply.text] : []),
-    ],
+    ].map((value, index) => <ReplyValue key={index} value={value} />),
     { type: "unit" },
+  );
+}
+
+/** Keep each answer independent of the surrounding sentence and numeric ranges LTR. */
+function ReplyValue({ value }: { value: string }) {
+  return (
+    <bdi>
+      {value.split(/(\p{N}+(?:\s*[-–—]\s*\p{N}+)+)/u).map((part, index) =>
+        index % 2 ? (
+          <bdi key={index} dir="ltr">
+            {part}
+          </bdi>
+        ) : (
+          part
+        ),
+      )}
+    </bdi>
   );
 }

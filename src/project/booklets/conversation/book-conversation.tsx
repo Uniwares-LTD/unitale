@@ -286,7 +286,12 @@ export function BookConversation({
       }
       if (
         error instanceof ApiError &&
-        ["INVALID_INPUT", "BOOKLET_INVALID", "BOOKLET_REPLY_INVALID", "RATE_LIMITED"].includes(code)
+        [
+          "INVALID_INPUT",
+          "BOOKLET_INVALID",
+          "BOOKLET_REPLY_INVALID",
+          "RATE_LIMITED",
+        ].includes(code)
       )
         return "failed" as const;
       pendingReply.current = { turn, reply };
@@ -688,10 +693,30 @@ function ReplyDock({
         />
       )}
       {approval && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p
+              id="book-change-target"
+              className="min-w-0 text-supporting text-muted-foreground [overflow-wrap:anywhere]"
+            >
+              {t("mf77904fc58de", { subject: isolate(approval.subject) })}
+            </p>
+            {previousReview && !currentReview && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="min-h-(--control-touch-sm) shrink-0"
+                disabled={!answerable}
+                onClick={() => setKeepDraft(false)}
+              >
+                {t("mc6e5edcb50eb")}
+              </Button>
+            )}
+          </div>
           <Button
             type="button"
-            className="min-h-(--control-touch-sm)"
+            className="min-h-(--control-touch-md) w-full rounded-(--x-unitale-radius-card) text-body font-semibold shadow-none"
+            aria-describedby="book-change-target"
             disabled={!answerable}
             onClick={() =>
               void submit({
@@ -703,30 +728,7 @@ function ReplyDock({
           >
             {t("mb3f9b4ef46c3")}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-(--control-touch-sm)"
-            disabled={!answerable}
-            onClick={() =>
-              previousReview && !currentReview
-                ? setKeepDraft(false)
-                : field.current?.focus()
-            }
-          >
-            {previousReview && !currentReview
-              ? t("mc6e5edcb50eb")
-              : t("mcb5d9f987803")}
-          </Button>
         </div>
-      )}
-      {approval && (
-        <p
-          id="book-change-target"
-          className="text-supporting text-muted-foreground"
-        >
-          {t("mf63615fc3c6f", { subject: isolate(approval.subject) })}
-        </p>
       )}
       {problem && (
         <div className="flex flex-wrap items-center gap-2" role="alert">
@@ -758,13 +760,12 @@ function ReplyDock({
         readOnly={movingDraft || unconfirmed}
         disabled={!typingAllowed}
         maxLength={2000}
-        label={t("m74a41190a3b4")}
+        label={approval ? t("m5801a5064e61") : t("m74a41190a3b4")}
+        describedBy={approval ? "book-change-target" : undefined}
         labelledBy={
-          approval
-            ? "book-change-target"
-            : interaction && interaction.type !== "approval"
-              ? "book-question"
-              : undefined
+          interaction && interaction.type !== "approval"
+            ? "book-question"
+            : undefined
         }
         sendLabel={t("mf6f4688ff23d")}
         placeholder={

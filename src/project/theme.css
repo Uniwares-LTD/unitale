@@ -145,6 +145,11 @@ html[data-project="unitale"].dark body {
   background-attachment: fixed;
 }
 /* The input boundary stays identifiable; decorative surfaces use quieter edges. */
+/* Override the global textarea outline here; Composer owns the visible focus. */
+html[data-project="unitale"] [data-slot="composer"] textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
 html[data-project="unitale"] [data-slot="book-entry"] [data-slot="composer"] {
   border-color: var(--input);
   box-shadow: none;
