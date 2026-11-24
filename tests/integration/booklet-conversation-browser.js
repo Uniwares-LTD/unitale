@@ -62,7 +62,7 @@ async (page) => {
   const approve = button("Approve this version");
   await approve.waitFor();
   await capture("outline");
-  await button("Request changes").click();
+  await reply.click();
   await reply.fill("Set the story by the sea.");
   await reply.press("Enter");
   await page.getByText(/Updated with your note/).waitFor();
@@ -96,7 +96,7 @@ async (page) => {
   require(await reply.inputValue() === "Please keep the stars very bright.", "Opening artwork cleared the draft");
   // Request a second cover. The fixture retains original-a for the first
   // version and original-b for the revised illustration.
-  await button("Request changes").click();
+  await reply.click();
   await reply.fill("Brighten the sky in the opening illustration.");
   await reply.press("Enter");
   await illustration.nth(1).waitFor();
