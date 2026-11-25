@@ -93,6 +93,7 @@ export function BookConversation({
   const [awaiting, setAwaiting] = useState(false);
   const [offline, setOffline] = useState(false);
   const [unread, setUnread] = useState(false);
+  const [completionReady, setCompletionReady] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   // The draft survives while the agent works and across turns until sent.
   const [draft, setDraft] = useState("");
@@ -238,16 +239,21 @@ export function BookConversation({
     toLatest();
   }, []);
   useLayoutEffect(() => {
-    const grew =
-      data.turns.length > transcript.current.turns ||
-      (data.completed && !transcript.current.completed);
+    const completed = data.completed && !transcript.current.completed;
+    const grew = data.turns.length > transcript.current.turns || completed;
     transcript.current = {
       turns: data.turns.length,
       completed: data.completed,
     };
     if (!grew && !working && !revealing) return;
+    const showUnread = grew && !pinned.current;
     if (pinned.current) toLatest();
-    else if (grew) queueMicrotask(() => setUnread(true));
+    // Decide unread state before permitting the completion popup to open.
+    if (showUnread || completed)
+      queueMicrotask(() => {
+        if (showUnread) setUnread(true);
+        if (completed) setCompletionReady(true);
+      });
   }, [data.turns.length, working, count, data.completed, revealing]);
 
   async function sendReply(turn: Turn, reply: BookletReply) {
@@ -382,7 +388,9 @@ export function BookConversation({
               nextLabel={t("mca000000000f")}
               direction={reader.direction}
               hasCover={!!cover}
-              autoOpen={data.completed && !initial.completed && !unread}
+              autoOpen={
+                data.completed && !initial.completed && completionReady && !unread
+              }
               onRequestChanges={() => setDetailsOpen(true)}
               pageLabel={(index) =>
                 reader.pages[index].cover
