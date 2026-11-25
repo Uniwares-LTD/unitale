@@ -25,6 +25,13 @@ class HostTests(unittest.TestCase):
         assert not ROOT.exists() and not CONFIG.exists() and not STATE.exists()
         cls.bin = Path("/tmp/unibase-mock-bin")
         cls.bin.mkdir()
+        gate = cls.bin / 'data-operation-gate.py'
+        gate.write_text('''import json,os,sys
+from pathlib import Path
+expected=json.loads(Path('/tmp/pulled-candidate.json').read_text())
+if sys.argv[1:] != expected or os.environ.get('REJECT_ACTIVATION') == '1':
+    sys.exit('Fixture activation rejected')
+''')
         maintenance = Path('/usr/local/sbin/uniwares-image-maintenance')
         assert not maintenance.exists()
         Path('/var/lib/uniwares-infrastructure').mkdir(exist_ok=True)
@@ -87,6 +94,9 @@ if 'pull' in args and os.environ.get('FAIL_PULL')=='1': sys.exit(1)
 if 'pull' in args:
     values=dict(line.split('=',1) for line in env.read_text().splitlines())
     Path('/tmp/pulled-commit').write_text(values['RELEASE_COMMIT'])
+    slug=json.loads(Path('/repo/project.config.json').read_text())['slug']
+    candidate=[slug,project.removeprefix(slug+'-'),values['IMAGE_DIGEST'],values['RELEASE_COMMIT']]
+    Path('/tmp/pulled-candidate.json').write_text(json.dumps(candidate))
 if 'up' in args:
     if os.environ.get('HOLD_UP')=='1':
         Path('/tmp/hold-up-started').touch()
@@ -172,7 +182,7 @@ from pathlib import Path
 r=json.load(sys.stdin)
 slug=os.environ['DEPLOY_TEST_PROJECT']
 if r['action']=='capabilities':
-    print(json.dumps({'version':2,'capabilities':['operation-lock-v1','image-retention-v1']})); sys.exit(0)
+    print(json.dumps({'version':2,'capabilities':['operation-lock-v1','image-retention-v1','data-operations-v1']})); sys.exit(0)
 if os.environ.get('LEGACY_DISPATCHER')=='1':
     print('legacy private failure'); sys.exit(1)
 config=json.loads(Path('/repo/deploy/environments/staging.json').read_text())
@@ -182,6 +192,16 @@ if os.environ.get('MISMATCH_CONFIG')=='1' or (os.environ.get('CHANGE_AFTER_PREFL
 digest=hashlib.sha256(json.dumps(config,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 with open('/tmp/dispatch-actions','a') as f: f.write(r['action']+'\\n')
 real=Path('/infrastructure/scripts/deploy-dispatch.py')
+if r['action']=='migrations':
+    # This host fixture owns the candidate and its empty migration ledger.
+    assert set(r)=={'version','project','environment','action','image','commit','requiredCapabilities','configurationHash'}
+    assert r['version']==2 and r['environment']=='staging' and r['configurationHash']==digest
+    assert r['project']==json.loads(Path('/repo/project.config.json').read_text())['slug']
+    assert r['requiredCapabilities']==['data-operations-v1']
+    assert r['image']=='ghcr.io/'+os.environ['GITHUB_REPOSITORY']+'@sha256:'+'b'*64
+    assert r['commit']==os.environ['GITHUB_SHA']
+    print(json.dumps(dict(activationDecision='proceed',image=r['image'],sourceCommit=r['commit'],pending=[])))
+    sys.exit(0)
 if real.exists():
     spec=importlib.util.spec_from_file_location('dispatcher',real)
     d=importlib.util.module_from_spec(spec); spec.loader.exec_module(d)
@@ -191,7 +211,11 @@ if real.exists():
     (source/'deploy/contract.json').write_text(Path('/repo/deploy/contract.json').read_text())
     (source/'project.config.json').write_text(json.dumps({'slug':slug}))
     (source/'scripts/deploy').mkdir(parents=True,exist_ok=True)
-    (source/'scripts/deploy/vps.sh').write_text('#!/bin/bash\\nexec bash /repo/scripts/deploy/vps.sh "$@"\\n')
+    # Verify that the dispatcher supplied its gate before substituting the fixture.
+    (source/'scripts/deploy/vps.sh').write_text(
+        '#!/bin/bash\\n[[ "$UNIWARES_DATA_GATE" == /infrastructure/scripts/data-operation-gate.py ]] || exit 2\\n'
+        'export UNIWARES_DATA_GATE=/tmp/unibase-mock-bin/data-operation-gate.py\\n'
+        'exec bash /repo/scripts/deploy/vps.sh "$@"\\n')
     (registry/(slug+'.json')).write_text(json.dumps({'revision':'b'*64}))
     d.REGISTRY=registry; d.CONTROL=root/'control'
     d.trusted=lambda path: None  # Temporary fixture ownership; protocol/hash validation stays real.
@@ -207,6 +231,7 @@ assert r['action']=='deploy'
 sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging','--apply',r['image'],r['commit']]).returncode)
 """)
         cls.env = dict(os.environ, PATH=f"{cls.bin}:" + os.environ["PATH"], DEPLOY_TEST_PROJECT=SLUG)
+        cls.env['UNIWARES_DATA_GATE'] = str(gate)
         # Preview must not create directories or contact Docker.
         result = subprocess.run(["bash", SCRIPT, "setup", "staging"], env=cls.env, capture_output=True)
         assert result.returncode == 0 and not ROOT.exists()
@@ -290,6 +315,17 @@ sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging'
         result = self.run_host("deploy", commit=commit, **extra)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return (ROOT / "staging/current").resolve()
+
+    def test_rejected_activation_keeps_current_release_running(self):
+        previous = self.release("a" * 40)
+        operations = Path("/tmp/docker-operations")
+        operations.write_text("")
+        result = self.run_host("deploy", commit="b" * 40, REJECT_ACTIVATION="1")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Fixture activation rejected", result.stderr)
+        self.assertEqual((ROOT / "staging/current").resolve(), previous)
+        self.assertNotIn('"up"', operations.read_text())
+        self.assertNotIn('"down"', operations.read_text())
 
     def test_failed_readiness_restores_matching_configuration_and_image(self):
         previous = self.release("a" * 40)
@@ -401,7 +437,9 @@ sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging'
     def test_commit_changed_during_build_never_deploys(self):
         result = self.run_release(STALE_AFTER_BUILD="1")
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(Path("/tmp/dispatch-actions").read_text(), "preflight\n")
+        self.assertIn("Release commit is no longer branch head", result.stderr)
+        self.assertEqual(Path("/tmp/dispatch-actions").read_text(), "preflight\nmigrations\n")
+        self.assertFalse((ROOT / "staging/current").exists())
 
     def test_private_package_is_rejected_without_changing_visibility(self):
         result = self.run_release(MOCK_VISIBILITY="private")

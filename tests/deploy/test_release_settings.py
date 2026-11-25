@@ -52,7 +52,7 @@ class ReleaseSettingsTests(unittest.TestCase):
         self.assertEqual(request['version'], 2)
         self.assertNotIn('runtimeSettings', request)
         self.assertEqual(set(request), {'version','project','environment','action','configurationHash','image','commit','requiredCapabilities'})
-        self.assertEqual(request['requiredCapabilities'], ['operation-lock-v1', 'image-retention-v1'])
+        self.assertEqual(request['requiredCapabilities'], ['operation-lock-v1', 'image-retention-v1', 'data-operations-v1'])
         self.assertEqual(request['configurationHash'], configuration_hash(self.config))
         check = json.loads(subprocess.check_output([sys.executable, str(REPO / 'scripts/deploy/dispatch-request.py'), 'check', 'staging'], text=True))
         self.assertNotIn('runtimeSettings', check)
