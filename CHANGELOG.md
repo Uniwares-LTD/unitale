@@ -20,6 +20,8 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Deployment tests now exercise the candidate migration report and host activation gate in the disposable Linux fixture.
+
 - Publish the immutable candidate in a separate job so a targeted release retry
   after verified migrations can reuse the original image. Rerun only the
   `release` job when continuing a blocked release.
