@@ -69,13 +69,10 @@ export function UserMessage({
 /** Current-work line while the agent works. Copy must describe real activity; no percentages. */
 export function WaitRow({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-(--control-touch-sm) items-center gap-3 text-supporting text-muted-foreground">
+    <div className="flex min-h-(--control-touch-sm) items-center gap-2 text-supporting text-muted-foreground">
       <MascotFace />
-      <span>{children}</span>
-      <span aria-hidden="true" className="flex gap-1">
-        <span className="size-1.5 rounded-full bg-muted-foreground motion-safe:animate-pulse" />
-        <span className="size-1.5 rounded-full bg-muted-foreground motion-safe:animate-pulse motion-safe:[animation-delay:200ms]" />
-        <span className="size-1.5 rounded-full bg-muted-foreground motion-safe:animate-pulse motion-safe:[animation-delay:400ms]" />
+      <span data-unitale-activity className="min-w-0">
+        {children}
       </span>
     </div>
   );

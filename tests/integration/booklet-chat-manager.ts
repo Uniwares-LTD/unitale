@@ -8,9 +8,11 @@
 //     tests/integration/booklet-chat-manager.ts <mongodb-uri>
 // It only accepts loopback URIs and the fixture's database prefix.
 import { createHash, randomUUID } from "node:crypto";
+import { demoStory } from "./booklet-demo-story";
 import { readFile } from "node:fs/promises";
 import { Binary, MongoClient, type Db } from "mongodb";
 import { fixtureDatabasePrefix } from "./project-fixture.mjs";
+import { bookletLifecycleV2 } from "../../src/lib/server/booklets/lifecycle-v2";
 import { bookletRepositoryV2 } from "../../src/lib/server/booklets/repository-v2";
 import { persistAiEvent, type AiJob } from "../../src/lib/server/ai/jobs";
 import { fingerprint } from "../../src/lib/server/foundation/canonical";
@@ -26,8 +28,16 @@ const uri = process.argv[2] ?? "";
 if (!/^mongodb:\/\/(127\.0\.0\.1|localhost):\d+\//.test(uri))
   throw new Error("Pass the fixture's loopback MongoDB URI.");
 const lease = "local-scripted-manager";
+const illustratedDemo = process.env.UNITALE_DEMO_STORYBOOK === "1";
 type Step =
-  "audience" | "age" | "themes" | "story" | "production" | "artwork" | "done";
+  | "revision"
+  | "audience"
+  | "age"
+  | "themes"
+  | "story"
+  | "production"
+  | "artwork"
+  | "done";
 type State = {
   _id: string;
   step: Step;
@@ -35,6 +45,8 @@ type State = {
   answers: Record<string, string>;
   outline: number;
   producingSince?: Date;
+  jobId?: string;
+  revisionCategory?: string;
 };
 
 async function main() {
@@ -48,7 +60,19 @@ async function main() {
   console.log("Scripted local Manager watching " + names[0]);
   for (;;) {
     try {
-      await tick(db);
+      if (illustratedDemo) {
+        const jobs = await db
+          .collection<AiJob>("aiJobs")
+          .find({
+            "run.target.adapter": "booklet",
+            "run.target.version": "2",
+            status: { $in: ["queued", "dispatching", "running", "paused"] },
+          })
+          .sort({ createdAt: 1 })
+          .limit(50)
+          .toArray();
+        for (const job of jobs) await tick(db, job);
+      } else await tick(db);
     } catch (error) {
       console.error(error);
     }
@@ -56,15 +80,17 @@ async function main() {
   }
 }
 
-async function tick(db: Db) {
-  const job = await db.collection<AiJob>("aiJobs").findOne(
-    {
-      "run.target.adapter": "booklet",
-      "run.target.version": "2",
-      status: { $in: ["queued", "dispatching", "running", "paused"] },
-    },
-    { sort: { createdAt: -1 } },
-  );
+async function tick(db: Db, selected?: AiJob) {
+  const job =
+    selected ??
+    (await db.collection<AiJob>("aiJobs").findOne(
+      {
+        "run.target.adapter": "booklet",
+        "run.target.version": "2",
+        status: { $in: ["queued", "dispatching", "running", "paused"] },
+      },
+      { sort: { createdAt: -1 } },
+    ));
   if (!job) return;
   const productionId = job.run!.target!.id;
   const states = db.collection<State>("localScriptedManager");
@@ -103,6 +129,30 @@ async function tick(db: Db) {
     .findOne({ _id: job._id }))!;
   const actor = { uid: current.uid, authTime: Math.floor(Date.now() / 1000) };
   const repo = bookletRepositoryV2(db, actor);
+  if (
+    illustratedDemo &&
+    state?.step === "done" &&
+    state.jobId !== current._id
+  ) {
+    const production = await repo.getProduction(productionId);
+    const allocation = await db
+      .collection("consumptionAllocations")
+      .findOne({ chargeId: production.revisionChargeId });
+    if (!allocation)
+      throw new Error("Demo revision must have an approved allocation.");
+    await states.updateOne(
+      { _id: productionId },
+      {
+        $set: {
+          step: "revision",
+          requestId: null,
+          jobId: current._id,
+          revisionCategory: allocation.category,
+        },
+      },
+    );
+    state = await states.findOne({ _id: productionId });
+  }
   if (!state) {
     state = {
       _id: productionId,
@@ -110,6 +160,7 @@ async function tick(db: Db) {
       requestId: null,
       answers: {},
       outline: 0,
+      jobId: current._id,
     };
     await states.insertOne(state);
   }
@@ -122,13 +173,11 @@ async function tick(db: Db) {
     });
     const form =
       receipt!.result.humanRequest.formContent + "\n{{#$output.response#}}";
-    const decision = await db
-      .collection<Decision>("runDecisions")
-      .findOne({
-        jobId: current._id,
-        nodeId: "human",
-        "form.form_content": form,
-      });
+    const decision = await db.collection<Decision>("runDecisions").findOne({
+      jobId: current._id,
+      nodeId: "human",
+      "form.form_content": form,
+    });
     if (decision?.status !== "submitted") return;
     reply = bookletReplySchema.parse(decision.intent!.response);
   }
@@ -174,30 +223,66 @@ async function tick(db: Db) {
     revisionId: string;
     contentHash: string;
   }[] = [];
+  const demo = illustratedDemo ? demoStory(p.brief.language.tag) : null;
+  const ar = illustratedDemo && p.brief.language.tag === "ar";
+  const copy = (en: string, arabic: string) => (ar ? arabic : en);
   const audience = {
-    child: "My child",
-    friend: "A friend's child",
-    group: "A class or group",
+    child: copy("My child", "طفلي"),
+    friend: copy("A friend's child", "طفل صديق"),
+    group: copy("A class or group", "فصل أو مجموعة"),
   };
-  const ages = { a2: "2–3", a4: "4–5", a6: "6–7", a8: "8 or older" };
+  const ages = {
+    a2: "2–3",
+    a4: "4–5",
+    a6: "6–7",
+    a8: copy("8 or older", "٨ سنوات أو أكثر"),
+  };
   const themes = {
-    kind: "Kindness",
-    brave: "Courage",
-    curious: "Curiosity",
-    friends: "Friendship",
+    kind: copy("Kindness", "اللطف"),
+    brave: copy("Courage", "الشجاعة"),
+    curious: copy("Curiosity", "الفضول"),
+    friends: copy("Friendship", "الصداقة"),
   };
-  if (state.step === "audience" && !reply) {
+  if (state.step === "revision") {
+    // The real allocation/quote owns scope and credits. The offline preview can
+    // collect feedback, but must not manufacture an out-of-scope creative result.
+    if (reply?.kind === "answer") state.answers.changes = reply.text;
     turn = {
       version: 1,
       parts: [
         {
           type: "prose",
-          text: "What a lovely idea! Let's shape it together. A few quick questions first.",
+          text: copy(
+            "This is the prepared local demo. Revision pricing and consent use the real application rules; no live rewriting or illustration generation runs here. Your feedback is saved in this conversation. The existing finished book stays available.",
+            "هذه تجربة محلية مُعدّة مسبقًا. الأسعار والموافقة تتبع قواعد التطبيق؛ لا تتم إعادة كتابة القصة أو إنشاء رسوم مباشرة هنا. تُحفظ ملاحظاتك في المحادثة ويبقى الكتاب الحالي متاحًا.",
+          ),
+        },
+        {
+          type: "question",
+          kind: "text",
+          prompt: copy(
+            "What would you like to change?",
+            "ما التغييرات التي ترغب بها؟",
+          ),
+          freeText: true,
+          options: [],
+        },
+      ],
+    };
+  } else if (state.step === "audience" && !reply) {
+    turn = {
+      version: 1,
+      parts: [
+        {
+          type: "prose",
+          text:
+            demo?.notice ??
+            "What a lovely idea! Let's shape it together. A few quick questions first.",
         },
         {
           type: "question",
           kind: "single",
-          prompt: "Who is this book for?",
+          prompt: copy("Who is this book for?", "لمن هذا الكتاب؟"),
           freeText: true,
           options: Object.entries(audience).map(([id, label]) => ({
             id,
@@ -215,7 +300,7 @@ async function tick(db: Db) {
         {
           type: "question",
           kind: "single",
-          prompt: "How old are they?",
+          prompt: copy("How old are they?", "كم عمر الطفل؟"),
           freeText: true,
           options: Object.entries(ages).map(([id, label]) => ({ id, label })),
         },
@@ -229,12 +314,18 @@ async function tick(db: Db) {
       parts: [
         {
           type: "prose",
-          text: "Lovely. One more and I'll draft the story direction.",
+          text: copy(
+            "Lovely. One more and I'll draft the story direction.",
+            "رائع. سؤال أخير قبل عرض فكرة القصة.",
+          ),
         },
         {
           type: "question",
           kind: "multiple",
-          prompt: "What should the story celebrate?",
+          prompt: copy(
+            "What should the story celebrate?",
+            "ما القيم التي تحتفي بها القصة؟",
+          ),
           freeText: true,
           options: Object.entries(themes).map(([id, label]) => ({ id, label })),
         },
@@ -269,16 +360,19 @@ async function tick(db: Db) {
     if (!current2Maybe(p, "concept"))
       await localRevision(db, p, "concept", {
         kind: "concept",
-        title: "The Little Dragon Who Shared",
+        title: demo?.title ?? "The Little Dragon Who Shared",
         premise: p.brief.idea,
         audience: `${state.answers.audience}, ${state.answers.age}`,
         tone: "Warm and playful",
         constraints: [state.answers.themes].filter(Boolean),
       });
     state.outline += 1;
+    const baseSummary =
+      demo?.summary ??
+      "A little dragon learns that sharing makes the sky brighter.";
     const summary = change
-      ? `A little dragon learns that sharing makes the sky brighter. Updated with your note: “${change}”.`
-      : "A little dragon learns that sharing makes the sky brighter.";
+      ? `${baseSummary} Updated with your note: “${change}”.`
+      : baseSummary;
     await localRevision(db, p, "outline", {
       kind: "outline",
       summary,
@@ -309,22 +403,34 @@ async function tick(db: Db) {
     turn = {
       version: 1,
       parts: [
-        { type: "milestone", label: "Story" },
+        { type: "milestone", label: copy("Story", "القصة") },
         {
           type: "prose",
           text: change
-            ? "I've updated the outline with your note."
-            : "Here's the story direction I'd suggest.",
+            ? copy(
+                "I've updated the outline with your note.",
+                "أضفت ملاحظتك إلى مخطط القصة.",
+              )
+            : copy(
+                "Here's the story direction I'd suggest.",
+                "إليك فكرة القصة المقترحة.",
+              ),
         },
         {
           type: "overview",
           target: concept,
-          title: "The Little Dragon Who Shared",
+          title: demo?.title ?? "The Little Dragon Who Shared",
           facts: [
-            { label: "For", value: state.answers.audience || "Not stated" },
-            { label: "Age", value: state.answers.age || "Not stated" },
             {
-              label: "Celebrates",
+              label: copy("For", "لمن"),
+              value: state.answers.audience || "Not stated",
+            },
+            {
+              label: copy("Age", "العمر"),
+              value: state.answers.age || "Not stated",
+            },
+            {
+              label: copy("Celebrates", "تحتفي بـ"),
               value: state.answers.themes || "Not stated",
             },
           ],
@@ -332,30 +438,35 @@ async function tick(db: Db) {
         {
           type: "synopsis",
           target: outline,
-          title: "The story",
+          title: copy("The story", "القصة"),
           body:
             summary +
-            "\n\n1. A dragon hoards every shining star.\n2. A lonely night shows the sky is dim without friends.\n3. Sharing the stars, the whole valley glows.",
+            (demo
+              ? "\n\n" +
+                demo.beats.map((beat, i) => `${i + 1}. ${beat}`).join("\n")
+              : "\n\n1. A dragon hoards every shining star.\n2. A lonely night shows the sky is dim without friends.\n3. Sharing the stars, the whole valley glows."),
         },
-        { type: "approval", target: outline, subject: "the story outline" },
+        {
+          type: "approval",
+          target: outline,
+          subject: copy("the story outline", "مخطط القصة"),
+        },
       ],
     };
   } else if (state.step === "story") {
     const callId = fingerprint([productionId, "local-artwork"]);
-    await db
-      .collection("bookletWork")
-      .updateOne(
-        { callId, productionId, ownerId: p.ownerId },
-        {
-          $set: {
-            runId: current._id,
-            service: "image-executor",
-            status: "dispatching",
-            updatedAt: now,
-          },
+    await db.collection("bookletWork").updateOne(
+      { callId, productionId, ownerId: p.ownerId },
+      {
+        $set: {
+          runId: current._id,
+          service: "image-executor",
+          status: "dispatching",
+          updatedAt: now,
         },
-        { upsert: true },
-      );
+      },
+      { upsert: true },
+    );
     await db
       .collection<AiJob>("aiJobs")
       .updateOne({ _id: current._id }, { $set: { status: "running" } });
@@ -411,16 +522,14 @@ async function tick(db: Db) {
       [asset],
     );
     p = await repo.getProduction(productionId);
-    await db
-      .collection("bookletWork")
-      .updateOne(
-        {
-          callId: fingerprint([productionId, "local-artwork"]),
-          productionId,
-          ownerId: p.ownerId,
-        },
-        { $set: { status: "succeeded", updatedAt: now } },
-      );
+    await db.collection("bookletWork").updateOne(
+      {
+        callId: fingerprint([productionId, "local-artwork"]),
+        productionId,
+        ownerId: p.ownerId,
+      },
+      { $set: { status: "succeeded", updatedAt: now } },
+    );
     targets = [artwork];
     next = "artwork";
     turn = {
@@ -428,18 +537,24 @@ async function tick(db: Db) {
       parts: [
         {
           type: "prose",
-          text: "Here is the illustration for the opening of your book.",
+          text:
+            demo && (reply?.kind === "changes" || state.revisionCategory)
+              ? demo.artNote
+              : copy(
+                  "Here is the illustration for the opening of your book.",
+                  "إليك الرسم الافتتاحي لكتابك.",
+                ),
         },
         {
           type: "image",
           target: artwork,
           assetId: asset.assetId,
-          alt: "The opening illustration",
+          alt: copy("The opening illustration", "الرسم الافتتاحي"),
         },
         {
           type: "approval",
           target: artwork,
-          subject: "the opening illustration",
+          subject: copy("the opening illustration", "الرسم الافتتاحي"),
         },
       ],
     };
@@ -535,9 +650,13 @@ async function localAsset(
   key: string,
   alternate = false,
 ): Promise<LocalAsset> {
+  const pageNumber = Number(key.match(/local-page-(\d+)/)?.[1] ?? 0);
+  const filename = pageNumber ? `page-${Math.min(pageNumber, 4)}` : "cover";
   const image = await readFile(
     new URL(
-      `../../docs/features/booklet-generation/workflow-package/fixtures/original-${alternate ? "b" : "a"}.png`,
+      illustratedDemo
+        ? `./fixtures/mina/${filename}.webp`
+        : `../../docs/features/booklet-generation/workflow-package/fixtures/original-${alternate ? "b" : "a"}.png`,
       import.meta.url,
     ),
   );
@@ -556,9 +675,9 @@ async function localAsset(
         inputHash: fingerprint([key]),
         sha256,
         bytes: image.length,
-        mime: "image/png",
-        width: p.creativeConfigSnapshot.canvas.width,
-        height: p.creativeConfigSnapshot.canvas.height,
+        mime: illustratedDemo ? "image/webp" : "image/png",
+        width: illustratedDemo ? 1024 : p.creativeConfigSnapshot.canvas.width,
+        height: illustratedDemo ? 1536 : p.creativeConfigSnapshot.canvas.height,
         state: "ready",
         storage: { kind: "mongo" },
         sourceRevisions: [],
@@ -591,20 +710,21 @@ async function deliverLocalBook(db: Db, p: ProductionV2, job: AiJob) {
   const config = p.creativeConfigSnapshot;
   const subjects = structuredClone(p.subjects);
   const book = subjects.find((subject) => subject.id === "book")!;
-  book.artifacts.push(
-    {
-      id: "local-layout",
-      kind: "book-layout",
-      currentRevisionId: null,
-      acceptedRevisionId: null,
-    },
-    {
-      id: "local-manifest",
-      kind: "book-manifest",
-      currentRevisionId: null,
-      acceptedRevisionId: null,
-    },
-  );
+  if (!book.artifacts.some((a) => a.id === "local-layout"))
+    book.artifacts.push(
+      {
+        id: "local-layout",
+        kind: "book-layout",
+        currentRevisionId: null,
+        acceptedRevisionId: null,
+      },
+      {
+        id: "local-manifest",
+        kind: "book-manifest",
+        currentRevisionId: null,
+        acceptedRevisionId: null,
+      },
+    );
   const pageRows = [
     ...(config.includeCover
       ? [{ id: "local-cover", role: "cover" as const }]
@@ -631,7 +751,11 @@ async function deliverLocalBook(db: Db, p: ProductionV2, job: AiJob) {
     canvas: config.canvas,
     direction: p.brief.language.direction,
     pages: pageRows.map((page, index) => {
-      const text = `The stars lit up the valley on page ${index + 1}.`;
+      const text = illustratedDemo
+        ? demoStory(p.brief.language.tag).pages[
+            Math.max(0, index - Number(config.includeCover)) % 4
+          ]
+        : `The stars lit up the valley on page ${index + 1}.`;
       return {
         ...page,
         panels:
@@ -701,6 +825,11 @@ async function deliverLocalBook(db: Db, p: ProductionV2, job: AiJob) {
       },
     },
   );
+  if (illustratedDemo)
+    await bookletLifecycleV2(db, {
+      uid: p.ownerId,
+      authTime: Math.floor(Date.now() / 1000),
+    }).finishRun(p._id, job.consumption!.workflowId);
 }
 
 // Creative revisions are synthetic; each authored turn still passes requestHuman.

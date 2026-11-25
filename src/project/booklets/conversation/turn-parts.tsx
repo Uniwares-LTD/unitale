@@ -172,7 +172,7 @@ function Part({
             height: 640,
           }}
           labels={artwork}
-          className="max-w-md"
+          className="mx-auto w-full [&_img]:max-h-[65svh]"
         />
       );
     case "question":

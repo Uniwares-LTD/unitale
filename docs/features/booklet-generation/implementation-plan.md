@@ -2257,3 +2257,26 @@ Mongo fixture emitted its forced-stop cleanup warning. This correction adds no
 persistence fields. The separate 100-item manifest source/asset transport limit
 finding remains unchanged, as requested; it still needs resolution before accepting
 larger packages through the complete MCP production path.
+
+
+## Issue 20 local component preview — 2026-11-25
+
+Parham approved an additional local-only interaction pass on the existing component
+branch. Move technical progress/history into a header dialog, keep truthful working
+status visible with reduced-motion-safe emphasis, and centre conversation artwork.
+Extend the artwork dialog with fit, stepped zoom, pan and native fullscreen. Extend
+the reader with a completion popup, scrollable pages and cover-aware RTL book spreads;
+retain native original-image downloads and mounted-page position restoration.
+
+Completed-book changes still enter the existing revision quote
+and explicit consent controls. This does not change credit rules, storage schemas,
+public command/response contracts, provider behavior or accepted production policy.
+
+An opt-in disposable local fixture uses one authored English/Arabic sample story and
+five original illustrations. It visibly discloses prepared content and records change
+notes without claiming new AI-generated art. Default regression image bytes stay
+unchanged. Existing local user books are preserved; sample books are additive.
+
+Physical phones, assistive-technology acceptance and live Dify/staging remain separate
+checks. No push, PR update, deployment or live provider activation is authorized by
+this local preview request.

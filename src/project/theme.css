@@ -223,3 +223,57 @@ html[data-project="unitale"]
   :is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
   border-radius: var(--x-unitale-radius-dialog);
 }
+
+/* Conversation components only; the shared palette remains the PR #25 tokens. */
+html[data-project="unitale"]
+  [data-unitale-book-details]
+  > [data-slot="dialog-close"] {
+  min-width: var(--control-touch-sm);
+  min-height: var(--control-touch-sm);
+}
+/* A light passes over steady text; it indicates activity, never progress. */
+@media screen and (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  html[data-project="unitale"] [data-unitale-activity] {
+    background-image: linear-gradient(
+      90deg,
+      var(--muted-foreground) 46%,
+      var(--foreground) 50%,
+      var(--muted-foreground) 54%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: unitale-activity 2.6s linear infinite;
+  }
+  html[data-project="unitale"] [data-unitale-activity]:dir(rtl) {
+    animation-direction: reverse;
+  }
+}
+@keyframes unitale-activity {
+  from {
+    background-position: 100% 0;
+  }
+  70%,
+  to {
+    background-position: 0% 0;
+  }
+}
+html[data-project="unitale"] [data-unitale-artwork-viewer]:fullscreen {
+  inset: 0;
+  --tw-translate-x: 0px;
+  --tw-translate-y: 0px;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100svh;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+}
+html[data-project="unitale"]
+  [data-unitale-artwork-viewer]:fullscreen
+  > [tabindex] {
+  flex: 1;
+  max-height: none;
+}

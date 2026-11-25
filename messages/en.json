@@ -679,7 +679,19 @@
     "m572a32cc7d3a": "Move draft",
     "mc6e5edcb50eb": "Review draft",
     "m92ef50192b46": "A reply is being confirmed",
-    "m8fec81657ba8": "Check reply"
+    "m8fec81657ba8": "Check reply",
+    "mee06dd885c12": "Fullscreen is not available in this browser.",
+    "m32bb0d298ca1": "Fit to screen",
+    "m37fd4e355ba3": "Exit fullscreen",
+    "mc461dbb2bab7": "Fullscreen",
+    "m4535cee1ed67": "Drag to pan when zoomed. Double-click to fit.",
+    "mf9a050170cd9": "Saved to your library",
+    "mbc34ad4a9d8c": "Reading view",
+    "m6c9b2e0e1629": "Single page",
+    "m70aa44634ac4": "Book view",
+    "m1ad84286274b": "Your library",
+    "m3566cb095669": "Make changes",
+    "m9f17d3680bca": "Book details"
   },
   "locale": {
     "heading": "Language and region",

@@ -60,6 +60,8 @@ import {
   useBookArtworkLabels,
 } from "./turn-parts";
 import { BookDetails } from "./book-details";
+import Link from "next/link";
+import { Library } from "lucide-react";
 
 type Turn = BookletConversation["turns"][number];
 type Interaction = Extract<
@@ -91,6 +93,7 @@ export function BookConversation({
   const [awaiting, setAwaiting] = useState(false);
   const [offline, setOffline] = useState(false);
   const [unread, setUnread] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   // The draft survives while the agent works and across turns until sent.
   const [draft, setDraft] = useState("");
   const [reviewDrafts, setReviewDrafts] = useState<ReviewDrafts>({});
@@ -124,7 +127,8 @@ export function BookConversation({
   const open = data.turns.findLast((turn) => turn.status === "open") ?? null;
   const last = data.turns.at(-1) ?? null;
   const preparing = data.turns.some((turn) => turn.status === "preparing");
-  const working = !data.completed && (data.working || preparing || awaiting);
+  // A saved manifest stays readable while a paid/included revision is active.
+  const working = data.working || preparing || awaiting;
   const confirming = data.activity === "confirming";
   const reader = data.reader;
   const cover = Number(reader?.pages[0].cover ?? false);
@@ -313,9 +317,32 @@ export function BookConversation({
   return (
     // The focused frame supplies Back and the theme toggle; the page owns its h1.
     <div className="mx-auto flex min-h-[calc(100svh-6rem)] w-full max-w-3xl flex-col">
-      <h1 dir="auto" className="mb-6 truncate font-heading text-section-title">
+      <h1
+        dir="auto"
+        className="mb-2 font-heading text-section-title [overflow-wrap:anywhere]"
+      >
         {data.title}
       </h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+        <Button
+          asChild
+          variant="ghost"
+          className="min-h-11 text-muted-foreground"
+        >
+          <Link href="/books">
+            <Library aria-hidden="true" />
+            {t("m1ad84286274b")}
+          </Link>
+        </Button>
+        <BookDetails
+          productionId={data.productionId}
+          runId={data.runId}
+          refreshKey={`${data.runId}:${data.activity}:${data.completed}:${data.turns.length}`}
+          refreshConversation={() => void refresh()}
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+        />
+      </div>
 
       <ol className="flex-1 space-y-8 pb-6" aria-label={t("mccca18175753")}>
         <li>
@@ -354,6 +381,9 @@ export function BookConversation({
               previousLabel={t("m1208ec01f223")}
               nextLabel={t("mca000000000f")}
               direction={reader.direction}
+              hasCover={!!cover}
+              autoOpen={data.completed && !initial.completed && !unread}
+              onRequestChanges={() => setDetailsOpen(true)}
               pageLabel={(index) =>
                 reader.pages[index].cover
                   ? t("mfa8d84566676")
@@ -372,11 +402,6 @@ export function BookConversation({
                 text: page.text,
               }))}
             />
-          </li>
-        )}
-        {working && !open && !confirming && (
-          <li aria-live="polite">
-            <WaitRow>{waitCopy[data.activity ?? "working"]}</WaitRow>
           </li>
         )}
       </ol>
@@ -413,14 +438,6 @@ export function BookConversation({
           )}
         </div>
       )}
-      <div className="mb-3">
-        <BookDetails
-          productionId={data.productionId}
-          runId={data.runId}
-          refreshKey={`${data.runId}:${data.activity}:${data.completed}:${data.turns.length}`}
-          refreshConversation={() => void refresh()}
-        />
-      </div>
       {unconfirmed && (
         <div className="mb-3">
           <Notice tone="warning" title={t("m92ef50192b46")}>
@@ -448,6 +465,11 @@ export function BookConversation({
 
       {/* Unitale dock layer (20); the dock stays above the transcript. */}
       <div className="sticky bottom-0 z-20 bg-background pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {(working || revealing) && !confirming && (
+          <div className="mb-2" role="status" aria-live="polite">
+            <WaitRow>{waitCopy[data.activity ?? "working"]}</WaitRow>
+          </div>
+        )}
         {unread && (
           <div className="mb-2 flex justify-center">
             <NewResponseButton
@@ -460,7 +482,7 @@ export function BookConversation({
             />
           </div>
         )}
-        {!data.completed && (
+        {(!data.completed || open || working || confirming) && (
           <ReplyDock
             key={open?.requestId ?? "none"}
             productionId={data.productionId}
