@@ -137,18 +137,8 @@ html[data-project="unitale"].dark {
   --x-unitale-selected-foreground: #ede9fe;
 }
 html[data-project="unitale"].dark body {
-  background-image: radial-gradient(
-    ellipse at 50% 0%,
-    #7c3aed14,
-    transparent 65%
-  );
+  background-image: radial-gradient(ellipse at 50% 0%, #7c3aed14, transparent 65%);
   background-attachment: fixed;
-}
-/* The input boundary stays identifiable; decorative surfaces use quieter edges. */
-/* Override the global textarea outline here; Composer owns the visible focus. */
-html[data-project="unitale"] [data-slot="composer"] textarea:focus-visible {
-  outline: none;
-  box-shadow: none;
 }
 html[data-project="unitale"]
   :is([data-unitale-reader], [data-unitale-artwork-viewer])
@@ -224,6 +214,10 @@ html[data-project="unitale"] {
 }
 html[data-project="unitale"] [data-slot="card"] {
   border-radius: var(--x-unitale-radius-card);
+}
+html[data-project="unitale"] [data-slot="composer"] textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 html[data-project="unitale"]
   :is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
