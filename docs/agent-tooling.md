@@ -72,6 +72,15 @@ and continue unrelated work under local guidance; pause only Handbook-dependent 
 Ancient helpers without refresh/diagnose exports need explicit bootstrap reconciliation.
 After an interrupted lock, inspect its PID and remove it only after confirming no active refresh.
 
+## Advisory validation
+
+`npm run validate` runs checks sequentially, streams their progress and records each
+completed result in `output/validation/`. A check that exceeds five minutes is stopped
+with its process tree and reported as a warning; remaining checks continue. Local
+investigations can set `VALIDATE_CHECK_TIMEOUT_MS` to a positive integer in milliseconds.
+CI job timeouts still bound the overall run. Build failures remain separate failures.
+The runner regression is `node --test tests/validate.test.ts`.
+
 ## Clients and lightweight acceptance
 
 Codex discovery uses .agents/skills. Claude uses CLAUDE.md imports and .claude/skills.
