@@ -15,7 +15,10 @@ const load = cache(async (id: string) => {
   return requestBookletApplication(session)
     .conversation(id)
     .catch((error) => {
-      if (error instanceof AppError && (error.status === 404 || error.status === 400))
+      if (
+        error instanceof AppError &&
+        (error.status === 404 || error.status === 400)
+      )
         notFound();
       throw error;
     });
@@ -27,10 +30,16 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const data = await load((await params).id);
-  return { title: data?.title ?? (await getTranslations("ui"))("mdf4bb1fa43af") };
+  return {
+    title: data?.title ?? (await getTranslations("ui"))("mdf4bb1fa43af"),
+  };
 }
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const data = await load((await params).id);
   if (!data) return signInRedirect();
   return (

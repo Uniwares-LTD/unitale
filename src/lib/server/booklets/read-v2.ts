@@ -49,19 +49,34 @@ type Json = z.infer<ReturnType<typeof z.json>>;
 const bodyBytes = 8192;
 const replyBytes = 20 * 1024;
 
-export function confirmedHumanResponse(decision?: Decision):
+export function confirmedHumanResponse(
+  decision?: Decision,
+):
   | { status: "unconfirmed" | "inconsistent" }
   | { status: "submitted"; response: Json } {
-  if (decision?.status !== "submitted" || decision.answerSource?.type !== "user" || !decision.intent)
+  if (
+    decision?.status !== "submitted" ||
+    decision.answerSource?.type !== "user" ||
+    !decision.intent
+  )
     return { status: "unconfirmed" };
   const intent = decision.intent;
-  const original = "response" in intent ? intent.response : intent.inputs.response;
+  const original =
+    "response" in intent ? intent.response : intent.inputs.response;
   const response = z.json().safeParse(original);
   const sent = rawResponseTextSchema.safeParse(original);
-  const confirmed = z.object({ response: z.string() }).safeParse(decision.confirmedInputs);
-  if (!response.success || !sent.success || intent.action !== "continue" ||
-      (decision.confirmedAction ?? intent.action) !== "continue" || intent.inputs.response !== sent.data ||
-      (decision.confirmedInputs !== undefined && (!confirmed.success || confirmed.data.response !== sent.data)))
+  const confirmed = z
+    .object({ response: z.string() })
+    .safeParse(decision.confirmedInputs);
+  if (
+    !response.success ||
+    !sent.success ||
+    intent.action !== "continue" ||
+    (decision.confirmedAction ?? intent.action) !== "continue" ||
+    intent.inputs.response !== sent.data ||
+    (decision.confirmedInputs !== undefined &&
+      (!confirmed.success || confirmed.data.response !== sent.data))
+  )
     return { status: "inconsistent" };
   return { status: "submitted", response: response.data };
 }
@@ -394,8 +409,15 @@ export async function readBookletDocumentV2(
     };
   } else if (request.kind === "production") {
     const current = await repo.getProduction(productionId);
-    if (request.id !== productionId && request.id !== current.sourceProductionId) throw bookletMissing();
-    const row = request.id === productionId ? current : await repo.getProduction(request.id);
+    if (
+      request.id !== productionId &&
+      request.id !== current.sourceProductionId
+    )
+      throw bookletMissing();
+    const row =
+      request.id === productionId
+        ? current
+        : await repo.getProduction(request.id);
     if (row.bookletId !== current.bookletId) throw bookletMissing();
     document = {
       productionId: row._id,
@@ -406,8 +428,12 @@ export async function readBookletDocumentV2(
       brief: row.brief,
       creativeConfig: row.creativeConfigSnapshot,
       subjects: row.subjects,
-      stageLocks: Object.fromEntries(Object.entries(row.stageLocks).map(([stage, lock]) =>
-        [stage, lock ? { ...lock, lockedAt: lock.lockedAt.toISOString() } : null])),
+      stageLocks: Object.fromEntries(
+        Object.entries(row.stageLocks).map(([stage, lock]) => [
+          stage,
+          lock ? { ...lock, lockedAt: lock.lockedAt.toISOString() } : null,
+        ]),
+      ),
       currentManifestRevisionId: row.currentManifestRevisionId,
       expiresAt: row.expiresAt?.toISOString() ?? null,
     };
@@ -442,20 +468,29 @@ export async function readBookletDocumentV2(
       retryOrdinal: row.retryOrdinal,
       retryNotBefore: row.retryNotBefore?.toISOString() ?? null,
       retryable: row.retryable,
-      ...(row.retryAuthorization ? { retryAuthorization: {
-        authorizedAt: row.retryAuthorization.authorizedAt.toISOString(),
-        consumedByCallId: row.retryAuthorization.consumedByCallId,
-      } } : {}),
+      ...(row.retryAuthorization
+        ? {
+            retryAuthorization: {
+              authorizedAt: row.retryAuthorization.authorizedAt.toISOString(),
+              consumedByCallId: row.retryAuthorization.consumedByCallId,
+            },
+          }
+        : {}),
       sources: row.sources,
       targetIds: row.targetIds,
       correctionRootId: row.correctionRootId,
       correction: row.correction,
       reviewScope: row.reviewScope,
       evidenceIds: row.evidenceIds,
-      ...(row.reconciliation ? { reconciliation: {
-        nextAt: row.reconciliation.nextAt?.toISOString() ?? null,
-        failedReads: row.reconciliation.failedReads, reason: row.reconciliation.reason,
-      } } : {}),
+      ...(row.reconciliation
+        ? {
+            reconciliation: {
+              nextAt: row.reconciliation.nextAt?.toISOString() ?? null,
+              failedReads: row.reconciliation.failedReads,
+              reason: row.reconciliation.reason,
+            },
+          }
+        : {}),
       ...(row.resultPayload === undefined
         ? {}
         : { resultPayload: row.resultPayload }),
@@ -467,15 +502,13 @@ export async function readBookletDocumentV2(
     };
   } else if (request.kind === "execution") {
     await repo.getProduction(productionId);
-    const row = await db
-      .collection<AiJob>("aiJobs")
-      .findOne({
-        _id: request.id,
-        uid: actor.uid,
-        "run.target.adapter": "booklet",
-        "run.target.version": "2",
-        "run.target.id": productionId,
-      });
+    const row = await db.collection<AiJob>("aiJobs").findOne({
+      _id: request.id,
+      uid: actor.uid,
+      "run.target.adapter": "booklet",
+      "run.target.version": "2",
+      "run.target.id": productionId,
+    });
     if (!row) throw bookletMissing();
     const usage = row.execution?.usage;
     document = {
@@ -510,41 +543,80 @@ export async function readBookletDocumentV2(
   } else if (request.kind === "human_response") {
     const production = await repo.getProduction(productionId);
     const receipt = await db.collection("bookletRepositoryWrites").findOne({
-      ownerId: actor.uid, productionId, "result.humanRequest.requestId": request.id,
+      ownerId: actor.uid,
+      productionId,
+      "result.humanRequest.requestId": request.id,
     });
     if (!receipt) throw bookletMissing();
     const human = humanRequestV2Schema.parse(receipt.result.humanRequest);
-    const stale = human.targets.some((target) => !production.subjects.some((subject) =>
-      subject.artifacts.some((artifact) => artifact.id === target.artifactId && artifact.currentRevisionId === target.revisionId)));
-    const matches = await db.collection<Decision>("runDecisions").find({
-      uid: actor.uid, jobId: human.runId, nodeId: "human",
-      "form.form_content": human.formContent + "\n{{#$output.response#}}",
-    }).limit(2).toArray();
-    if (matches.length > 1) throw bookletConflict("Human presentation has ambiguous native decisions; reconcile before reuse.");
+    const stale = human.targets.some(
+      (target) =>
+        !production.subjects.some((subject) =>
+          subject.artifacts.some(
+            (artifact) =>
+              artifact.id === target.artifactId &&
+              artifact.currentRevisionId === target.revisionId,
+          ),
+        ),
+    );
+    const matches = await db
+      .collection<Decision>("runDecisions")
+      .find({
+        uid: actor.uid,
+        jobId: human.runId,
+        nodeId: "human",
+        "form.form_content": human.formContent + "\n{{#$output.response#}}",
+      })
+      .limit(2)
+      .toArray();
+    if (matches.length > 1)
+      throw bookletConflict(
+        "Human presentation has ambiguous native decisions; reconcile before reuse.",
+      );
     const decision = matches[0];
     let status = stale ? "stale" : "pending";
     let response: Json = null;
     if (!stale) {
       const answer = confirmedHumanResponse(decision);
       if (answer.status === "inconsistent")
-        throw bookletConflict("Human response differs from its authenticated submission.");
+        throw bookletConflict(
+          "Human response differs from its authenticated submission.",
+        );
       if (answer.status === "submitted") {
         status = "submitted";
         response = answer.response;
-      } else if (decision?.status === "expired" ||
-        (decision?.form?.expiration_time && decision.form.expiration_time * 1000 < Date.now())) status = "expired";
+      } else if (
+        decision?.status === "expired" ||
+        (decision?.form?.expiration_time &&
+          decision.form.expiration_time * 1000 < Date.now())
+      )
+        status = "expired";
     }
-    document = { ...human, status, decisionId: decision?._id ?? null, response };
+    document = {
+      ...human,
+      status,
+      decisionId: decision?._id ?? null,
+      response,
+    };
   } else if (request.kind === "acceptance") {
     await repo.getProduction(productionId);
     const stored = await db.collection("bookletAcceptances").findOne({
-      _id: request.id as never, ownerId: actor.uid, productionId,
+      _id: request.id as never,
+      ownerId: actor.uid,
+      productionId,
     });
     if (!stored) throw bookletMissing();
     const row = acceptanceDocumentV2Schema.parse(stored);
-    document = { acceptanceId: row._id, runId: row.runId, revisionId: row.revisionId,
-      contentHash: row.contentHash, targetIds: row.targetIds, assetIds: row.assetIds,
-      evidenceIds: row.evidenceIds, createdAt: row.createdAt.toISOString() };
+    document = {
+      acceptanceId: row._id,
+      runId: row.runId,
+      revisionId: row.revisionId,
+      contentHash: row.contentHash,
+      targetIds: row.targetIds,
+      assetIds: row.assetIds,
+      evidenceIds: row.evidenceIds,
+      createdAt: row.createdAt.toISOString(),
+    };
   } else {
     await repo.getProduction(productionId);
     const stored = await db.collection("bookletAssessments").findOne({

@@ -192,19 +192,23 @@ export const workV2Schema = workRegistrationV2Schema.extend({
   retryNotBefore: z.date().optional(),
   evidenceIds: ids,
   updatedAt: z.date(),
-  retryAuthorization: z.strictObject({
-    key: id,
-    authorizedAt: z.date(),
-    consumedByCallId: id.nullable(),
-  }).optional(),
+  retryAuthorization: z
+    .strictObject({
+      key: id,
+      authorizedAt: z.date(),
+      consumedByCallId: id.nullable(),
+    })
+    .optional(),
   // Worker-only readback scheduling; never authorizes another provider attempt.
-  reconciliation: z.strictObject({
-    nextAt: z.date().nullable(),
-    failedReads: z.number().int().nonnegative().safe(),
-    leaseId: z.string().uuid().nullable(),
-    leaseUntil: z.date(),
-    reason: z.string().max(100).nullable(),
-  }).optional(),
+  reconciliation: z
+    .strictObject({
+      nextAt: z.date().nullable(),
+      failedReads: z.number().int().nonnegative().safe(),
+      leaseId: z.string().uuid().nullable(),
+      leaseUntil: z.date(),
+      reason: z.string().max(100).nullable(),
+    })
+    .optional(),
 });
 export const assessmentDocumentV2Schema = z.strictObject({
   ...scope,
@@ -235,11 +239,15 @@ export const humanRequestInputV2Schema = z.strictObject({
   question: z.string().trim().min(1).max(4000),
   targets: z.array(bookletSourceV2Schema).max(100),
   responseContract: z.strictObject({ mode: z.literal("raw-v1") }),
-  presentation: z.strictObject({ version: z.literal(1), cards: uiPayloadSchema.shape.cards.max(19) }),
+  presentation: z.strictObject({
+    version: z.literal(1),
+    cards: uiPayloadSchema.shape.cards.max(19),
+  }),
   turn: bookletTurnSchema.optional(),
 });
 export const humanRequestV2Schema = z.strictObject({
-  requestId: z.string().uuid(), runId: id,
+  requestId: z.string().uuid(),
+  runId: id,
   targets: z.array(bookletSourceV2Schema).max(100),
   responseContract: z.strictObject({ mode: z.literal("raw-v1") }),
   turn: bookletTurnSchema.nullable().default(null),

@@ -36,14 +36,12 @@ test("status reader is read-only, environment scoped, bounded and never infers c
     database: "fixture_staging",
   };
   try {
-    await db
-      .collection("migrations")
-      .insertOne({
-        _id: fixture.pending[0].id as never,
-        checksum: fixture.pending[0].checksum,
-        appliedAt: new Date(0),
-        durationMs: 1,
-      });
+    await db.collection("migrations").insertOne({
+      _id: fixture.pending[0].id as never,
+      checksum: fixture.pending[0].checksum,
+      appliedAt: new Date(0),
+      durationMs: 1,
+    });
     const before = await db.listCollections().toArray();
     const empty = await readDataOperations(db, scope, {}, { manifest });
     assert.equal(empty.reports.length, 0);
@@ -52,28 +50,24 @@ test("status reader is read-only, environment scoped, bounded and never infers c
     assert.deepEqual(await db.listCollections().toArray(), before);
     for (let i = 0; i < 22; i++) {
       const id = i.toString(16).padStart(64, "0");
-      await db
-        .collection("deploymentOperations")
-        .insertOne({
-          ...fixture,
-          _id: id as never,
-          operationId: id,
-          planDigest: id,
-        });
+      await db.collection("deploymentOperations").insertOne({
+        ...fixture,
+        _id: id as never,
+        operationId: id,
+        planDigest: id,
+      });
     }
     const entries = Array.from({ length: 123 }, (_, i) => ({
       id: `core:${String(i + 1).padStart(4, "0")}-test`,
       checksum: "a".repeat(64),
     }));
-    await db
-      .collection("deploymentOperations")
-      .insertOne({
-        ...fixture,
-        _id: fixture.operationId as never,
-        pending: entries,
-        applied: entries,
-        verification: entries,
-      });
+    await db.collection("deploymentOperations").insertOne({
+      ...fixture,
+      _id: fixture.operationId as never,
+      pending: entries,
+      applied: entries,
+      verification: entries,
+    });
     const list = await readDataOperations(db, scope, {}, { manifest });
     assert.equal(list.reports.length, 20);
     const first = await readDataOperations(

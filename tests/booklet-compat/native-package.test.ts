@@ -119,8 +119,10 @@ function retained(r: any, c = context()) {
   register(r, c);
   c.checkpoint = JSON.parse(guard(r.service, r, c).checkpoint).state;
   Object.assign(c.work.at(-1), {
-    service: r.service, operation: r.operation,
-    status: "partial", resultAvailable: true,
+    service: r.service,
+    operation: r.operation,
+    status: "partial",
+    resultAvailable: true,
   });
   return c;
 }
@@ -129,12 +131,24 @@ test("Manager context preserves a complete large checkpoint within its separate 
   c.checkpoint = { keep: "x".repeat(64000) };
   c.work = [{ note: "w".repeat(6000) }];
   assert.ok(Buffer.byteLength(JSON.stringify(c)) > 65536);
-  const facts = run("manager", "facts", { raw: JSON.stringify({ result: c }), execution_ready: "false" });
+  const facts = run("manager", "facts", {
+    raw: JSON.stringify({ result: c }),
+    execution_ready: "false",
+  });
   assert.deepEqual(JSON.parse(facts.context).checkpoint, c.checkpoint);
-  const checkpoint = JSON.parse(guard("read_document", { kind: "work", id: "known-call" }, c).checkpoint);
+  const checkpoint = JSON.parse(
+    guard("read_document", { kind: "work", id: "known-call" }, c).checkpoint,
+  );
   assert.deepEqual(checkpoint.state.keep, c.checkpoint.keep);
   c.work = [{ note: "w".repeat(131072) }];
-  assert.throws(() => run("manager", "facts", { raw: JSON.stringify({ result: c }), execution_ready: "false" }), /Context capacity/);
+  assert.throws(
+    () =>
+      run("manager", "facts", {
+        raw: JSON.stringify({ result: c }),
+        execution_ready: "false",
+      }),
+    /Context capacity/,
+  );
 });
 test("Manager terminal view uses the Run contract without exposing domain evidence", () => {
   for (const [status, outcome] of [
@@ -173,12 +187,20 @@ test("Manager terminal view uses the Run contract without exposing domain eviden
   });
   const confirmed = run("manager", "consume", {
     raw: [{ result: { status: "complete" } }],
-    action: "complete", request: "{}",
-    context: JSON.stringify(context()), version: 4,
+    action: "complete",
+    request: "{}",
+    context: JSON.stringify(context()),
+    version: 4,
   });
-  assert.equal(parseResult(run("manager", "finish", {
-    result: confirmed.result, done: confirmed.done,
-  })).outcome, "success");
+  assert.equal(
+    parseResult(
+      run("manager", "finish", {
+        result: confirmed.result,
+        done: confirmed.done,
+      }),
+    ).outcome,
+    "success",
+  );
   assert.throws(
     () => run("manager", "finish", { result: "[]", done: true }),
     /outcome object/,
@@ -199,67 +221,153 @@ test("Manager terminal view uses the Run contract without exposing domain eviden
 });
 test("Manager resumes committed completion without reasoning or trusting stale checkpoint intent", () => {
   const c = context();
-  c.checkpoint = { pending: { action: "complete" }, lastResult: { status: "complete" } };
+  c.checkpoint = {
+    pending: { action: "complete" },
+    lastResult: { status: "complete" },
+  };
   c.usage.canDispatch = false;
   const gate = (state: string, enabled: string) => {
-    const facts = run("manager", "facts", { raw: { result: { ...c, state } }, execution_ready: enabled });
+    const facts = run("manager", "facts", {
+      raw: { result: { ...c, state } },
+      execution_ready: enabled,
+    });
     assert.equal(facts.route, "pause");
     const gated = run("manager", "gated", { reason: facts.result });
-    return parseResult(run("manager", "finish", { result: gated.result, done: gated.done }));
+    return parseResult(
+      run("manager", "finish", { result: gated.result, done: gated.done }),
+    );
   };
   assert.equal(gate("in-progress", "true").outcome, "partial");
   assert.equal(gate("completed", "true").outcome, "success");
   assert.equal(gate("completed", "false").outcome, "success");
-  assert.throws(() => run("manager", "gated", { reason: '{"status":"invented"}' }), /gate outcome/);
+  assert.throws(
+    () => run("manager", "gated", { reason: '{"status":"invented"}' }),
+    /gate outcome/,
+  );
 });
 
 test("Manager registers the complete hash-bound child payload rather than a claimed identity", () => {
   const childRequest = request();
-  const registration = { action: "register", childRequest, requestHash: hash(childRequest), targets: ["target-1"], fence: 7 };
+  const registration = {
+    action: "register",
+    childRequest,
+    requestHash: hash(childRequest),
+    targets: ["target-1"],
+    fence: 7,
+  };
   const planned = guard("begin_work", registration);
   assert.deepEqual(JSON.parse(planned.request), registration);
   const pending = JSON.parse(planned.checkpoint).state.pending;
   assert.equal(pending.callId, childRequest.callId);
   assert.equal(pending.invocationId, childRequest.invocationId);
   assert.deepEqual(pending.itemIds, ["item-1"]);
-  assert.throws(() => guard("begin_work", { ...registration, childRequest: undefined }), /Complete child request/);
-  assert.throws(() => guard("begin_work", { ...registration, requestHash: "0".repeat(64) }), /actual child request/);
-  assert.throws(() => guard("begin_work", { ...registration, childRequest: { ...childRequest, constraints: { credentials: "private" } } }), /private bindings/);
+  assert.throws(
+    () => guard("begin_work", { ...registration, childRequest: undefined }),
+    /Complete child request/,
+  );
+  assert.throws(
+    () => guard("begin_work", { ...registration, requestHash: "0".repeat(64) }),
+    /actual child request/,
+  );
+  assert.throws(
+    () =>
+      guard("begin_work", {
+        ...registration,
+        childRequest: {
+          ...childRequest,
+          constraints: { credentials: "private" },
+        },
+      }),
+    /private bindings/,
+  );
 });
 test("Manager action branches use the fence confirmed by the pre-action checkpoint", () => {
   const c = context();
-  const planned = guard("index", { subjects: [], artifacts: [], fence: c.fence }, c);
-  const args = { raw: [{ result: { checkpointVersion: 5, fence: 8 } }], context: JSON.stringify(c), request: planned.request, dispatch: planned.dispatch, action: "index" };
+  const planned = guard(
+    "index",
+    { subjects: [], artifacts: [], fence: c.fence },
+    c,
+  );
+  const args = {
+    raw: [{ result: { checkpointVersion: 5, fence: 8 } }],
+    context: JSON.stringify(c),
+    request: planned.request,
+    dispatch: planned.dispatch,
+    action: "index",
+  };
   const saved = run("manager", "saved", args);
   const bound = JSON.parse(saved.request);
   assert.equal(bound.fence, 8);
   assert.equal(JSON.parse(saved.dispatch).fence, 8);
-  assert.equal(JSON.parse(planned.checkpoint).state.pending.requestHash, hash({ subjects: [], artifacts: [] }));
+  assert.equal(
+    JSON.parse(planned.checkpoint).state.pending.requestHash,
+    hash({ subjects: [], artifacts: [] }),
+  );
   assert.equal(saved.version, 5);
   for (const fence of [undefined, true, 6, 8.5, Number.MAX_SAFE_INTEGER + 1])
-    assert.throws(() => run("manager", "saved", { ...args, raw: [{ result: { checkpointVersion: 5, fence } }] }), /fence was not confirmed/);
-  const read = run("manager", "saved", { ...args, request: JSON.stringify({ kind: "history" }) });
+    assert.throws(
+      () =>
+        run("manager", "saved", {
+          ...args,
+          raw: [{ result: { checkpointVersion: 5, fence } }],
+        }),
+      /fence was not confirmed/,
+    );
+  const read = run("manager", "saved", {
+    ...args,
+    request: JSON.stringify({ kind: "history" }),
+  });
   assert.deepEqual(JSON.parse(read.request), { kind: "history" });
-  const lease = run("manager", "saved", { ...args, action: "lease", request: JSON.stringify({ action: "acquire" }) });
+  const lease = run("manager", "saved", {
+    ...args,
+    action: "lease",
+    request: JSON.stringify({ action: "acquire" }),
+  });
   assert.deepEqual(JSON.parse(lease.request), { action: "acquire", fence: 8 });
-  assert.throws(() => run("manager", "saved", { ...args, context: JSON.stringify({ ...c, checkpointVersion: 0 }), raw: [{ result: { checkpointVersion: true, fence: 8 } }] }), /not durably/);
+  assert.throws(
+    () =>
+      run("manager", "saved", {
+        ...args,
+        context: JSON.stringify({ ...c, checkpointVersion: 0 }),
+        raw: [{ result: { checkpointVersion: true, fence: 8 } }],
+      }),
+    /not durably/,
+  );
   const nodes = apps.manager.workflow.graph.nodes;
   const branches = nodes.filter((node: any) => node.id.startsWith("app-"));
   assert.equal(branches.length, 14);
   for (const node of branches)
-    assert.deepEqual(node.data.tool_parameters.request.value, ["saved", "request"]);
-  assert.deepEqual(nodes.find((node: any) => node.id === "dispatch").data.tool_parameters.request.value, ["saved", "dispatch"]);
-  assert.deepEqual(nodes.find((node: any) => node.id === "before").data.tool_parameters.request.value, ["guard", "checkpoint"]);
+    assert.deepEqual(node.data.tool_parameters.request.value, [
+      "saved",
+      "request",
+    ]);
+  assert.deepEqual(
+    nodes.find((node: any) => node.id === "dispatch").data.tool_parameters
+      .request.value,
+    ["saved", "dispatch"],
+  );
+  assert.deepEqual(
+    nodes.find((node: any) => node.id === "before").data.tool_parameters.request
+      .value,
+    ["guard", "checkpoint"],
+  );
 });
 test("Manager private Start is recognized by existing Run capability inspection", () => {
   const nodes = apps.manager.workflow.graph.nodes;
   // Isolate actual exported nodes: other planned tools are not registered yet.
   // This proves private-input compatibility, not full candidate registration.
-  const graph = { nodes: ["start", "app-save_revision", "end"].map(id => nodes.find((node: any) => node.id === id)) };
+  const graph = {
+    nodes: ["start", "app-save_revision", "end"].map((id) =>
+      nodes.find((node: any) => node.id === id),
+    ),
+  };
   const inspected = inspectDifyWorkflow(graph, "raw-v1");
   assert.equal(inspected.contextInputName, "context");
   assert.equal(inspected.contextInput, true);
-  assert.deepEqual(inspected.inputs.map(field => field.name), ["request"]);
+  assert.deepEqual(
+    inspected.inputs.map((field) => field.name),
+    ["request"],
+  );
   assert.deepEqual(inspected.privateTools, ["booklet_save_revision_v2"]);
 });
 
@@ -278,7 +386,11 @@ test("seven readable native candidates preserve private bindings and disable nod
   for (const role of roles) {
     const source = readFileSync(resolve(root, role, "workflow.yaml"), "utf8");
     // PyYAML resolves these words as booleans, while our local YAML 1.2 parser does not.
-    assert.doesNotMatch(source, /:\s*(?:yes|no|on|off)\s*$/gim, `${role}: quote ambiguous Dify YAML scalars`);
+    assert.doesNotMatch(
+      source,
+      /:\s*(?:yes|no|on|off)\s*$/gim,
+      `${role}: quote ambiguous Dify YAML scalars`,
+    );
     const { graph, environment_variables } = apps[role].workflow;
     assert.equal(
       environment_variables.find((v: any) => v.name === "execution_ready")
@@ -392,40 +504,89 @@ test("seven readable native candidates preserve private bindings and disable nod
 });
 
 test("native retry wait binds only a registered call and leaves retry authority in the application", () => {
-  const r = request(), c = register(r);
+  const r = request(),
+    c = register(r);
   c.work[0].retryNotBefore = "2030-01-01T00:00:00.000Z";
   c.work[0].dispatchReady = false;
   const planned = guard("wait", { callId: r.callId }, c);
   assert.equal(planned.paid, "no");
   assert.equal(planned.dispatchChild, "no");
   assert.equal(JSON.parse(planned.checkpoint).state.pending.callId, r.callId);
-  assert.equal(planned.waitForm, "Booklet retry wait " + hash(["booklet-retry-wait", r.callId]));
-  assert.throws(() => guard("wait", { callId: "foreign" }, c), /owned registered retry/);
+  assert.equal(
+    planned.waitForm,
+    "Booklet retry wait " + hash(["booklet-retry-wait", r.callId]),
+  );
+  assert.throws(
+    () => guard("wait", { callId: "foreign" }, c),
+    /owned registered retry/,
+  );
   c.work[0].status = "unknown";
-  assert.throws(() => guard("wait", { callId: r.callId }, c), /owned registered retry/);
+  assert.throws(
+    () => guard("wait", { callId: r.callId }, c),
+    /owned registered retry/,
+  );
   const graph = apps.manager.workflow.graph;
   const node = graph.nodes.find((node: any) => node.id === "retry-wait");
   assert.equal(node.data.type, "human-input");
   assert.match(node.data.form_content, /guard.waitForm/);
-  assert.equal(graph.edges.find((edge: any) => edge.source === node.id && edge.sourceHandle === "continue").target, "retry-resumed");
-  assert.equal(graph.edges.find((edge: any) => edge.source === node.id && edge.sourceHandle === "__timeout").target, "uncertain");
+  assert.equal(
+    graph.edges.find(
+      (edge: any) =>
+        edge.source === node.id && edge.sourceHandle === "continue",
+    ).target,
+    "retry-resumed",
+  );
+  assert.equal(
+    graph.edges.find(
+      (edge: any) =>
+        edge.source === node.id && edge.sourceHandle === "__timeout",
+    ).target,
+    "uncertain",
+  );
 });
 
 test("native failure branches stop deterministically without another reasoning call or implicit retry", () => {
   const graph = apps.manager.workflow.graph;
-  for (const node of graph.nodes.filter((node: any) => ["tool", "llm"].includes(node.data.type))) {
+  for (const node of graph.nodes.filter((node: any) =>
+    ["tool", "llm"].includes(node.data.type),
+  )) {
     assert.equal(node.data.retry_config.retry_enabled, false);
-    assert.equal(graph.edges.find((edge: any) => edge.source === node.id && edge.sourceHandle === "fail-branch")?.target, "uncertain");
+    assert.equal(
+      graph.edges.find(
+        (edge: any) =>
+          edge.source === node.id && edge.sourceHandle === "fail-branch",
+      )?.target,
+      "uncertain",
+    );
   }
   const stopped = run("manager", "uncertain", {});
   assert.equal(stopped.done, true);
   assert.equal(JSON.parse(stopped.result).status, "unknown");
-  assert.equal(parseResult(run("manager", "finish", { result: stopped.result, done: stopped.done })).outcome, "partial");
+  assert.equal(
+    parseResult(
+      run("manager", "finish", { result: stopped.result, done: stopped.done }),
+    ).outcome,
+    "partial",
+  );
   const store = graph.nodes.find((node: any) => node.id === "uncertain-store");
-  assert.deepEqual(store.data.items.find((item: any) => item.variable_selector[1] === "done").value, ["uncertain", "done"]);
-  assert.equal(graph.edges.find((edge: any) => edge.source === "uncertain")?.target, "uncertain-store");
-  assert.equal(graph.edges.some((edge: any) => edge.source === "uncertain-store"), false);
-  assert.equal(graph.nodes.find((node: any) => node.id === "actions").data.break_conditions[0].value, true);
+  assert.deepEqual(
+    store.data.items.find((item: any) => item.variable_selector[1] === "done")
+      .value,
+    ["uncertain", "done"],
+  );
+  assert.equal(
+    graph.edges.find((edge: any) => edge.source === "uncertain")?.target,
+    "uncertain-store",
+  );
+  assert.equal(
+    graph.edges.some((edge: any) => edge.source === "uncertain-store"),
+    false,
+  );
+  assert.equal(
+    graph.nodes.find((node: any) => node.id === "actions").data
+      .break_conditions[0].value,
+    true,
+  );
 });
 
 test("every inline Python node compiles without running a workflow", () => {
@@ -559,32 +720,111 @@ test("strict model content carrier decodes before existing content validation", 
     tone: "gentle",
     constraints: [],
   };
-  const proposal = { kind: "concept", subjectId: "concept-1", content: JSON.stringify(content) };
-  const response = { items: [{ itemId: "item-1", status: "succeeded", proposals: [proposal], limitations: [] }] };
-  const result = JSON.parse(run("story-planner", "pack", { request: JSON.stringify(r), response }).result);
-  assert.deepEqual(result.items[0].proposals[0].content, { ...content, kind: "concept" });
+  const proposal = {
+    kind: "concept",
+    subjectId: "concept-1",
+    content: JSON.stringify(content),
+  };
+  const response = {
+    items: [
+      {
+        itemId: "item-1",
+        status: "succeeded",
+        proposals: [proposal],
+        limitations: [],
+      },
+    ],
+  };
+  const result = JSON.parse(
+    run("story-planner", "pack", { request: JSON.stringify(r), response })
+      .result,
+  );
+  assert.deepEqual(result.items[0].proposals[0].content, {
+    ...content,
+    kind: "concept",
+  });
   proposal.content = "not JSON";
-  assert.throws(() => run("story-planner", "pack", { request: JSON.stringify(r), response }));
+  assert.throws(() =>
+    run("story-planner", "pack", { request: JSON.stringify(r), response }),
+  );
   proposal.content = "[]";
-  assert.throws(() => run("story-planner", "pack", { request: JSON.stringify(r), response }), /Typed identified content/);
+  assert.throws(
+    () =>
+      run("story-planner", "pack", { request: JSON.stringify(r), response }),
+    /Typed identified content/,
+  );
 });
 
 test("composition uses its selected layout without duplicating manuscript text and rejects lettering changes", () => {
   const r = request("page-composer", "compose");
   r.items[0].input = { pageIds: ["page-1"] };
-  const panel = { id: "panel-1", noText: false, lettering: [{ textId: "text-1", kind: "narration",
-    start: 0, end: [...fixture.exactText].length, text: fixture.exactText }] };
-  const layout = { kind: "book-layout", canvas: { width: 1024, height: 1536 }, direction: "rtl",
-    pages: [{ id: "page-1", role: "story", panels: [panel] }] };
-  r.sources = [{ artifactId: "layout", revisionId: "layout-1", contentHash: hash(layout), content: layout }];
-  const response = { items: [{ itemId: "item-1", status: "succeeded", proposals: [{ kind: "page-spec", subjectId: "page-1",
-    content: { kind: "page-spec", pageId: "page-1", panels: [structuredClone(panel)] } }] }] };
-  const result = JSON.parse(run("page-composer", "pack", { request: JSON.stringify(r), response }).result);
-  assert.deepEqual(result.items[0].proposals[0].content.panels[0].lettering, panel.lettering);
-  response.items[0].proposals[0].content.panels[0].lettering[0].text = "changed";
-  assert.throws(() => run("page-composer", "pack", { request: JSON.stringify(r), response }), /immutable text/);
+  const panel = {
+    id: "panel-1",
+    noText: false,
+    lettering: [
+      {
+        textId: "text-1",
+        kind: "narration",
+        start: 0,
+        end: [...fixture.exactText].length,
+        text: fixture.exactText,
+      },
+    ],
+  };
+  const layout = {
+    kind: "book-layout",
+    canvas: { width: 1024, height: 1536 },
+    direction: "rtl",
+    pages: [{ id: "page-1", role: "story", panels: [panel] }],
+  };
+  r.sources = [
+    {
+      artifactId: "layout",
+      revisionId: "layout-1",
+      contentHash: hash(layout),
+      content: layout,
+    },
+  ];
+  const response = {
+    items: [
+      {
+        itemId: "item-1",
+        status: "succeeded",
+        proposals: [
+          {
+            kind: "page-spec",
+            subjectId: "page-1",
+            content: {
+              kind: "page-spec",
+              pageId: "page-1",
+              panels: [structuredClone(panel)],
+            },
+          },
+        ],
+      },
+    ],
+  };
+  const result = JSON.parse(
+    run("page-composer", "pack", { request: JSON.stringify(r), response })
+      .result,
+  );
+  assert.deepEqual(
+    result.items[0].proposals[0].content.panels[0].lettering,
+    panel.lettering,
+  );
+  response.items[0].proposals[0].content.panels[0].lettering[0].text =
+    "changed";
+  assert.throws(
+    () =>
+      run("page-composer", "pack", { request: JSON.stringify(r), response }),
+    /immutable text/,
+  );
   r.sources = [];
-  assert.throws(() => run("page-composer", "pack", { request: JSON.stringify(r), response }), /selected layout/);
+  assert.throws(
+    () =>
+      run("page-composer", "pack", { request: JSON.stringify(r), response }),
+    /selected layout/,
+  );
 });
 
 test("pagination preserves exact Unicode/code-point spans and rejects omissions and duplication", () => {
@@ -667,21 +907,37 @@ test("pagination preserves exact Unicode/code-point spans and rejects omissions 
   invalidLayout.content.pages[0].panels[0].lettering[0].text = "changed";
   extraLayout.items[0].proposals.push(invalidLayout);
   assert.throws(
-    () => run("page-composer", "pack", { request: JSON.stringify(r), response: extraLayout }),
+    () =>
+      run("page-composer", "pack", {
+        request: JSON.stringify(r),
+        response: extraLayout,
+      }),
     /lettering/,
   );
   const invalidRole = structuredClone(response);
   invalidRole.items[0].proposals[0].content.pages.push({
-    ...structuredClone(content.pages[0]), id: "extra", role: "unrecognized",
+    ...structuredClone(content.pages[0]),
+    id: "extra",
+    role: "unrecognized",
   });
   assert.throws(
-    () => run("page-composer", "pack", { request: JSON.stringify(r), response: invalidRole }),
+    () =>
+      run("page-composer", "pack", {
+        request: JSON.stringify(r),
+        response: invalidRole,
+      }),
     /page role/,
   );
   const duplicatePanel = structuredClone(response);
-  duplicatePanel.items[0].proposals[0].content.pages[0].panels.push(structuredClone(content.pages[0].panels[0]));
+  duplicatePanel.items[0].proposals[0].content.pages[0].panels.push(
+    structuredClone(content.pages[0].panels[0]),
+  );
   assert.throws(
-    () => run("page-composer", "pack", { request: JSON.stringify(r), response: duplicatePanel }),
+    () =>
+      run("page-composer", "pack", {
+        request: JSON.stringify(r),
+        response: duplicatePanel,
+      }),
     /Duplicate panel/,
   );
   content.pages[0].panels[0].lettering.push(span);
@@ -800,9 +1056,11 @@ test("deterministic Prepare preserves text and meaningful hash while Generate re
   r.operation = "generate";
   r.items[0].input = { prepared };
   assert.throws(
-    () => run("image-executor", "validate", {
-      request: JSON.stringify(r), execution_ready: "true",
-    }),
+    () =>
+      run("image-executor", "validate", {
+        request: JSON.stringify(r),
+        execution_ready: "true",
+      }),
     /distinct callId/,
   );
   r.callId = "generate-1";
@@ -810,15 +1068,24 @@ test("deterministic Prepare preserves text and meaningful hash while Generate re
     () => run("image-executor", "validate", { request: JSON.stringify(r) }),
     /Activation blocked/,
   );
-  assert.equal(run("image-executor", "validate", {
-    request: JSON.stringify(r), execution_ready: "true",
-  }).model, "gpt-image-2.5-sunburst");
+  assert.equal(
+    run("image-executor", "validate", {
+      request: JSON.stringify(r),
+      execution_ready: "true",
+    }).model,
+    "gpt-image-2.5-sunburst",
+  );
   assert.equal(prepared.callId, "call-1");
   const changedSources = structuredClone(r);
   changedSources.sources[0].revisionId = "different-revision";
-  assert.throws(() => run("image-executor", "validate", {
-    request: JSON.stringify(changedSources), execution_ready: "true",
-  }), /source\/original identity changed/);
+  assert.throws(
+    () =>
+      run("image-executor", "validate", {
+        request: JSON.stringify(changedSources),
+        execution_ready: "true",
+      }),
+    /source\/original identity changed/,
+  );
   prepared.prompt += "changed";
   assert.throws(
     () => run("image-executor", "validate", { request: JSON.stringify(r) }),
@@ -836,13 +1103,28 @@ test("unpaid Prepare requires durable registration and checkpoints a retained wo
   assert.equal(planned.dispatchChild, "yes");
   assert.equal(JSON.parse(planned.dispatch).callId, r.callId);
   c.checkpoint = JSON.parse(planned.checkpoint).state;
-  const result = JSON.parse(run("image-executor", "validate", { request: JSON.stringify(r) }).result);
-  const consume = () => run("manager", "consume", { raw: { result }, action: r.service,
-    request: JSON.stringify(r), context: { result: c }, version: c.checkpointVersion });
+  const result = JSON.parse(
+    run("image-executor", "validate", { request: JSON.stringify(r) }).result,
+  );
+  const consume = () =>
+    run("manager", "consume", {
+      raw: { result },
+      action: r.service,
+      request: JSON.stringify(r),
+      context: { result: c },
+      version: c.checkpointVersion,
+    });
   assert.throws(consume, /not confirmed in retained work/);
-  Object.assign(c.work[0], { service: r.service, operation: r.operation, status: "succeeded", resultAvailable: true });
+  Object.assign(c.work[0], {
+    service: r.service,
+    operation: r.operation,
+    status: "succeeded",
+    resultAvailable: true,
+  });
   assert.deepEqual(JSON.parse(consume().checkpoint).state.lastResult, {
-    document: { kind: "work", id: r.callId }, requestHash: hash(r), status: "succeeded",
+    document: { kind: "work", id: r.callId },
+    requestHash: hash(r),
+    status: "succeeded",
   });
   assert.throws(() => guard(r.service, r, c), /already dispatched/);
 });
@@ -941,14 +1223,21 @@ test("Manager preserves native original order; transport-handle renewal does not
 
 test("Manager never replays unknown/completed work or dispatches modified source content", () => {
   const many = request();
-  many.sources = Array.from({ length: 20 }, (_, i) => ({ artifactId: "source-" + i,
-    revisionId: "revision-" + i, contentHash: hash({ title: "owned source" }), content: { title: "owned source" } }));
+  many.sources = Array.from({ length: 20 }, (_, i) => ({
+    artifactId: "source-" + i,
+    revisionId: "revision-" + i,
+    contentHash: hash({ title: "owned source" }),
+    content: { title: "owned source" },
+  }));
   const registered = register(many);
   registered.sources = [];
   registered.sourcesComplete = false;
   assert.equal(guard(many.service, many, registered).paid, "yes");
   many.sources[0].revisionId = "changed-after-registration";
-  assert.throws(() => guard(many.service, many, registered), /Unregistered\/changed/);
+  assert.throws(
+    () => guard(many.service, many, registered),
+    /Unregistered\/changed/,
+  );
   const r = request();
   const c = register(r);
   assert.equal(guard(r.service, r, c).paid, "yes");
@@ -1026,7 +1315,10 @@ test("Manager requires exact preflight and whole-book actual-pixel coverage", ()
   c.work[0].preflight = c.assessments[0];
   c.assessments = [];
   assert.equal(guard(r.service, r, c).paid, "yes");
-  c.work[0].preflight = { ...c.work[0].preflight, policyBinding: "wrong-policy" };
+  c.work[0].preflight = {
+    ...c.work[0].preflight,
+    policyBinding: "wrong-policy",
+  };
   assert.throws(() => guard(r.service, r, c), /preflight/);
   c.work[0].preflight.policyBinding = c.policyBinding;
   c.usage.canDispatchImage = false;
@@ -1038,14 +1330,33 @@ test("Manager requires exact preflight and whole-book actual-pixel coverage", ()
     () => guard("complete", { manifestRevisionId: "selected-manifest" }, c),
     /coverage incomplete/,
   );
-  c.manifestReview = { manifestRevisionId: "selected-manifest", manifestHash: "exact-hash",
-    policyBinding: c.policyBinding, reviewerBinding: c.reviewerBinding,
-    required: { pages: 2, originals: 2, comparisons: 1 }, covered: { pages: 2, originals: 2, comparisons: 0 } };
-  assert.throws(() => guard("complete", { manifestRevisionId: "selected-manifest" }, c), /coverage incomplete/);
+  c.manifestReview = {
+    manifestRevisionId: "selected-manifest",
+    manifestHash: "exact-hash",
+    policyBinding: c.policyBinding,
+    reviewerBinding: c.reviewerBinding,
+    required: { pages: 2, originals: 2, comparisons: 1 },
+    covered: { pages: 2, originals: 2, comparisons: 0 },
+  };
+  assert.throws(
+    () => guard("complete", { manifestRevisionId: "selected-manifest" }, c),
+    /coverage incomplete/,
+  );
   c.manifestReview.covered.comparisons = 1;
   c.assessments = [];
-  assert.equal(guard("complete", { manifestRevisionId: "selected-manifest" }, c).action, "complete");
-  assert.throws(() => guard("complete", { manifestRevisionId: "another-same-hash-revision" }, c), /coverage incomplete/);
+  assert.equal(
+    guard("complete", { manifestRevisionId: "selected-manifest" }, c).action,
+    "complete",
+  );
+  assert.throws(
+    () =>
+      guard(
+        "complete",
+        { manifestRevisionId: "another-same-hash-revision" },
+        c,
+      ),
+    /coverage incomplete/,
+  );
 });
 
 test("durable checkpoint confirmation is required; version races and fabricated completion fail", () => {
@@ -1055,7 +1366,9 @@ test("durable checkpoint confirmation is required; version races and fabricated 
       run("manager", "saved", {
         raw: [{ result: { checkpointVersion: 4 } }],
         context: JSON.stringify(c),
-        request: "{}", dispatch: "{}", action: "index",
+        request: "{}",
+        dispatch: "{}",
+        action: "index",
       }),
     /not durably/,
   );
@@ -1063,7 +1376,9 @@ test("durable checkpoint confirmation is required; version races and fabricated 
     run("manager", "saved", {
       raw: [{ result: { checkpointVersion: 5, fence: 8 } }],
       context: JSON.stringify(c),
-      request: "{}", dispatch: "{}", action: "index",
+      request: "{}",
+      dispatch: "{}",
+      action: "index",
     }).version,
     5,
   );
@@ -1113,7 +1428,10 @@ test("fresh post-call context supplies the new fence; checkpoint races stop resu
   };
   const consumed = run("manager", "consume", args);
   assert.equal(JSON.parse(consumed.checkpoint).fence, 11);
-  assert.deepEqual(JSON.parse(consumed.checkpoint).state.lastResult.document, { kind: "work", id: r.callId });
+  assert.deepEqual(JSON.parse(consumed.checkpoint).state.lastResult.document, {
+    kind: "work",
+    id: r.callId,
+  });
   assert.equal(consumed.done, false);
   c.checkpointVersion = 6;
   assert.throws(
@@ -1144,14 +1462,19 @@ test("Human Input uses the actual correlated presentation and cannot fabricate o
   const retained = run("manager", "consume", args);
   assert.equal(retained.form, args.raw[0].result.formContent);
   assert.ok(Buffer.byteLength(retained.checkpoint) < 1024);
-  assert.deepEqual(JSON.parse(retained.checkpoint).state.lastResult.document,
-    { kind: "human_response", id: "human-1" });
+  assert.deepEqual(JSON.parse(retained.checkpoint).state.lastResult.document, {
+    kind: "human_response",
+    id: "human-1",
+  });
   const human = apps.manager.workflow.graph.nodes.find(
     (n: any) => n.id === "human",
   );
   assert.ok(human.data.form_content.includes("{{#consume.form#}}"));
   for (const method of human.data.delivery_methods)
-    assert.match(method.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    assert.match(
+      method.id,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
   delete (args.raw[0].result as any).presentationHash;
   assert.throws(() => run("manager", "consume", args), /presentation missing/);
 });
@@ -1547,7 +1870,11 @@ test("request identities match existing JavaScript canonical JSON for fractional
 
 test("Manager capacity measures UTF-8 bytes without overcounting escaped RTL text", () => {
   const r = request();
-  const c = retained(r, { ...context(), checkpointVersion: 5, note: "ا".repeat(20000) });
+  const c = retained(r, {
+    ...context(),
+    checkpointVersion: 5,
+    note: "ا".repeat(20000),
+  });
   const facts = run("manager", "facts", {
     raw: [{ result: c }],
     execution_ready: "true",
@@ -1574,35 +1901,73 @@ test("Manager capacity measures UTF-8 bytes without overcounting escaped RTL tex
 test("paid child results checkpoint retained references, including oversized partial text", () => {
   const r = request("manuscript", "write");
   const c = retained(r, { ...context(), checkpointVersion: 5 });
-  const result = { ...r, status: "partial", items: [{ itemId: "item-1", status: "succeeded",
-    proposals: [{ kind: "manuscript", content: { exactText: "ا🙂".repeat(30000) } }] }] };
+  const result = {
+    ...r,
+    status: "partial",
+    items: [
+      {
+        itemId: "item-1",
+        status: "succeeded",
+        proposals: [
+          { kind: "manuscript", content: { exactText: "ا🙂".repeat(30000) } },
+        ],
+      },
+    ],
+  };
   assert.ok(Buffer.byteLength(JSON.stringify(result)) > 65536);
-  const args = { raw: [{ result }], action: r.service, request: JSON.stringify(r), context: c, version: 5 };
+  const args = {
+    raw: [{ result }],
+    action: r.service,
+    request: JSON.stringify(r),
+    context: c,
+    version: 5,
+  };
   const consumed = run("manager", "consume", args);
   assert.ok(Buffer.byteLength(consumed.checkpoint) < 1024);
   const state = JSON.parse(consumed.checkpoint).state;
   assert.equal(state.pending, null);
-  assert.deepEqual(state.lastResult, { document: { kind: "work", id: r.callId }, requestHash: hash(r), status: "partial" });
+  assert.deepEqual(state.lastResult, {
+    document: { kind: "work", id: r.callId },
+    requestHash: hash(r),
+    status: "partial",
+  });
   for (const change of [
-    { resultAvailable: false }, { requestHash: "changed" }, { service: "story-planner" },
-    { operation: "other" }, { status: "dispatching" }, { status: "unknown" },
+    { resultAvailable: false },
+    { requestHash: "changed" },
+    { service: "story-planner" },
+    { operation: "other" },
+    { status: "dispatching" },
+    { status: "unknown" },
   ]) {
     const changed = structuredClone(c);
     Object.assign(changed.work[0], change);
-    assert.throws(() => run("manager", "consume", { ...args, context: changed }), /reconcile before advancing/);
+    assert.throws(
+      () => run("manager", "consume", { ...args, context: changed }),
+      /reconcile before advancing/,
+    );
     assert.equal(changed.checkpoint.pending.callId, r.callId);
   }
-  assert.throws(() => run("manager", "consume", { ...args, context: { ...c, work: [] } }), /reconcile before advancing/);
+  assert.throws(
+    () => run("manager", "consume", { ...args, context: { ...c, work: [] } }),
+    /reconcile before advancing/,
+  );
 });
 
 test("post-action checkpoint preserves intent and uses only the authoritative fence", () => {
-  const c = { ...context(), checkpointVersion: 5, checkpoint: {
-    intent: { selectedCandidate: "candidate-2", remainingPages: ["page-3"] },
-    pending: { action: "read_document" },
-  } };
+  const c = {
+    ...context(),
+    checkpointVersion: 5,
+    checkpoint: {
+      intent: { selectedCandidate: "candidate-2", remainingPages: ["page-3"] },
+      pending: { action: "read_document" },
+    },
+  };
   const result = run("manager", "consume", {
     raw: [{ result: { content: "artifact data", fence: 999 } }],
-    action: "read_document", request: "{}", context: JSON.stringify(c), version: 5,
+    action: "read_document",
+    request: "{}",
+    context: JSON.stringify(c),
+    version: 5,
   });
   const saved = JSON.parse(result.checkpoint);
   assert.deepEqual(saved.state.intent, c.checkpoint.intent);
@@ -1614,16 +1979,34 @@ test("image originals require a real handle and preflight binds the prepared tar
   const image = imageRequest();
   image.references = [{ assetId: "a", sha256: "hash", bytes: 100 }];
   image.items[0].input.settings.mode = "edit";
-  assert.throws(() => run("image-executor", "validate", {
-    request: JSON.stringify(image), references: [{}],
-  }), /wrong ordered original/);
+  assert.throws(
+    () =>
+      run("image-executor", "validate", {
+        request: JSON.stringify(image),
+        references: [{}],
+      }),
+    /wrong ordered original/,
+  );
   const review = request("quality-reviewer", "image_request");
-  review.items[0].input = { targetIds: ["request"], targetHash: "other-request", prepared: { requestHash: "actual-request" } };
-  assert.throws(() => run("quality-reviewer", "validate", {
-    request: JSON.stringify(review), execution_ready: "true",
-  }), /Exact prepared request/);
+  review.items[0].input = {
+    targetIds: ["request"],
+    targetHash: "other-request",
+    prepared: { requestHash: "actual-request" },
+  };
+  assert.throws(
+    () =>
+      run("quality-reviewer", "validate", {
+        request: JSON.stringify(review),
+        execution_ready: "true",
+      }),
+    /Exact prepared request/,
+  );
   review.items[0].input.targetHash = "actual-request";
-  assert.equal(run("quality-reviewer", "validate", {
-    request: JSON.stringify(review), execution_ready: "true",
-  }).request, JSON.stringify(review));
+  assert.equal(
+    run("quality-reviewer", "validate", {
+      request: JSON.stringify(review),
+      execution_ready: "true",
+    }).request,
+    JSON.stringify(review),
+  );
 });

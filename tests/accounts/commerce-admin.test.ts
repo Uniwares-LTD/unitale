@@ -47,15 +47,13 @@ test("commerce admin service authorization, publication and refund paths", async
     await createCreditIndexes(db);
     await createCatalogIndexes(db);
     await createConsumptionIndexes(db);
-    await db
-      .collection("accountAccess")
-      .insertOne({
-        _id: "admin" as never,
-        role: "admin",
-        status: "active",
-        notBefore: 0,
-        revision: 0,
-      });
+    await db.collection("accountAccess").insertOne({
+      _id: "admin" as never,
+      role: "admin",
+      status: "active",
+      notBefore: 0,
+      revision: 0,
+    });
     const product = {
       kind: "consumption",
       terms: {

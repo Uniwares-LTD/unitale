@@ -286,7 +286,12 @@ export function BookConversation({
       }
       if (
         error instanceof ApiError &&
-        ["INVALID_INPUT", "BOOKLET_INVALID", "BOOKLET_REPLY_INVALID", "RATE_LIMITED"].includes(code)
+        [
+          "INVALID_INPUT",
+          "BOOKLET_INVALID",
+          "BOOKLET_REPLY_INVALID",
+          "RATE_LIMITED",
+        ].includes(code)
       )
         return "failed" as const;
       pendingReply.current = { turn, reply };

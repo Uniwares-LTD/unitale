@@ -614,20 +614,18 @@ export async function resolveConsumptionWorkflow(
       if (
         await releaseWorkflow(db, uid, orderId, workflowId, "either", session)
       )
-        await db
-          .collection("auditEvents")
-          .insertOne(
-            {
-              event: "consumption-workflow-release",
-              actorUid: admin.uid,
-              targetUid: uid,
-              orderId,
-              workflowId,
-              reason,
-              timestamp: new Date(),
-            },
-            { session },
-          );
+        await db.collection("auditEvents").insertOne(
+          {
+            event: "consumption-workflow-release",
+            actorUid: admin.uid,
+            targetUid: uid,
+            orderId,
+            workflowId,
+            reason,
+            timestamp: new Date(),
+          },
+          { session },
+        );
     },
     admin.authTime,
   );

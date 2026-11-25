@@ -19,12 +19,12 @@ export async function GET(
       query.get("section") === "conversation"
         ? await app.conversation(productionId)
         : query.get("section") === "history"
-        ? await app.history(productionId, {
-            kind: query.get("kind"),
-            artifactId: query.get("artifactId"),
-            cursor: query.get("cursor"),
-          })
-        : await app.view(productionId),
+          ? await app.history(productionId, {
+              kind: query.get("kind"),
+              artifactId: query.get("artifactId"),
+              cursor: query.get("cursor"),
+            })
+          : await app.view(productionId),
     );
   });
 }

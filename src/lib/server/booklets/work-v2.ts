@@ -59,14 +59,25 @@ const ids = z
   .refine((values) => new Set(values).size === values.length);
 // Actual child/source-tool boundary. Bound the whole native-image transfer, not
 // product size; Manager must repartition requests that exceed this carrier.
-export const bookletReferencesV2Schema = z.array(z.strictObject({
-  assetId: id,
-  sha256: hash,
-  bytes: z.number().int().positive().max(8 * 1024 * 1024),
-  nativeFileId: id.optional(),
-  url: z.string().max(4096).optional(),
-})).max(16).refine((refs) => refs.reduce((sum, ref) => sum + ref.bytes, 0) <= 8 * 1024 * 1024,
-  "Original transfer exceeds 8 MiB; repartition without resizing.");
+export const bookletReferencesV2Schema = z
+  .array(
+    z.strictObject({
+      assetId: id,
+      sha256: hash,
+      bytes: z
+        .number()
+        .int()
+        .positive()
+        .max(8 * 1024 * 1024),
+      nativeFileId: id.optional(),
+      url: z.string().max(4096).optional(),
+    }),
+  )
+  .max(16)
+  .refine(
+    (refs) => refs.reduce((sum, ref) => sum + ref.bytes, 0) <= 8 * 1024 * 1024,
+    "Original transfer exceeds 8 MiB; repartition without resizing.",
+  );
 const childRequest = z.strictObject({
   contractVersion: z.literal(2),
   invocationId: id,
@@ -142,8 +153,10 @@ export async function registerBookletWorkV2(
   if (Buffer.byteLength(JSON.stringify(request)) > 256 * 1024)
     throw bookletConflict("Child request exceeds its accepted capacity.");
   const review = request.service === "quality-reviewer";
-  const prepare = request.service === "image-executor" && request.operation === "prepare";
-  const generate = request.service === "image-executor" && request.operation === "generate";
+  const prepare =
+    request.service === "image-executor" && request.operation === "prepare";
+  const generate =
+    request.service === "image-executor" && request.operation === "generate";
   const supported = (
     review ? {} : operations[request.service as keyof typeof operations]
   ) as Record<string, Readonly<Record<string, readonly string[]>>>;
@@ -167,11 +180,19 @@ export async function registerBookletWorkV2(
     const data = request.items[0].input;
     const specification = bookletContentV2Schema.parse(data.specification);
     const style = bookletContentV2Schema.parse(data.style);
-    if (style.kind !== "style" ||
-      (specification.kind !== "image-spec" && specification.kind !== "page-spec") ||
-      ![specification, style].every((content) => request.sources.some((source) =>
-        source.contentHash === fingerprint(content))))
-      throw bookletConflict("Prepare requires exact selected image specification and style sources.");
+    if (
+      style.kind !== "style" ||
+      (specification.kind !== "image-spec" &&
+        specification.kind !== "page-spec") ||
+      ![specification, style].every((content) =>
+        request.sources.some(
+          (source) => source.contentHash === fingerprint(content),
+        ),
+      )
+    )
+      throw bookletConflict(
+        "Prepare requires exact selected image specification and style sources.",
+      );
   }
   if (
     new Set(request.items.map((item) => item.itemId)).size !==
@@ -221,29 +242,56 @@ export async function registerBookletWorkV2(
   if (p.lifecycleState !== "in-progress")
     throw bookletConflict("Child work requires an admitted production.");
   async function requirePreparation(raw: unknown, targets: string[]) {
-    const prepared = z.object({ callId: id, requestHash: hash }).catchall(z.json()).parse(raw);
+    const prepared = z
+      .object({ callId: id, requestHash: hash })
+      .catchall(z.json())
+      .parse(raw);
     const { requestHash, ...body } = prepared;
     const preparation = await db.collection<WorkV2>("bookletWork").findOne({
-      ownerId: actor.uid, productionId: p._id, callId: prepared.callId,
-      service: "image-executor", operation: "prepare", category: "nonPaid", status: "succeeded",
+      ownerId: actor.uid,
+      productionId: p._id,
+      callId: prepared.callId,
+      service: "image-executor",
+      operation: "prepare",
+      category: "nonPaid",
+      status: "succeeded",
     });
-    const retained = z.object({ items: z.array(z.object({ prepared: z.json() })).length(1) })
+    const retained = z
+      .object({ items: z.array(z.object({ prepared: z.json() })).length(1) })
       .safeParse(preparation?.resultPayload);
-    if (fingerprint(body) !== requestHash || !preparation?.resultObservation || !retained.success ||
+    if (
+      fingerprint(body) !== requestHash ||
+      !preparation?.resultObservation ||
+      !retained.success ||
       fingerprint(retained.data.items[0].prepared) !== fingerprint(prepared) ||
-      fingerprint([...preparation.targetIds].sort()) !== fingerprint([...targets].sort()) ||
-      fingerprint(prepared.sources) !== fingerprint(request.sources.map(({ artifactId, revisionId, contentHash }) =>
-        ({ artifactId, revisionId, contentHash }))) ||
-      fingerprint(prepared.references) !== fingerprint(meaningful.references))
-      throw bookletConflict("Use the exact retained preparation, target, sources and ordered originals.");
+      fingerprint([...preparation.targetIds].sort()) !==
+        fingerprint([...targets].sort()) ||
+      fingerprint(prepared.sources) !==
+        fingerprint(
+          request.sources.map(({ artifactId, revisionId, contentHash }) => ({
+            artifactId,
+            revisionId,
+            contentHash,
+          })),
+        ) ||
+      fingerprint(prepared.references) !== fingerprint(meaningful.references)
+    )
+      throw bookletConflict(
+        "Use the exact retained preparation, target, sources and ordered originals.",
+      );
     return prepared;
   }
   if (generate) {
     if (request.items.length !== 1 || value.targets.length !== 1)
       throw bookletConflict("Generate requires one image target.");
-    const prepared = await requirePreparation(request.items[0].input.prepared, value.targets);
+    const prepared = await requirePreparation(
+      request.items[0].input.prepared,
+      value.targets,
+    );
     if (prepared.callId === request.callId)
-      throw bookletConflict("Generate requires a distinct call identity from Prepare.");
+      throw bookletConflict(
+        "Generate requires a distinct call identity from Prepare.",
+      );
   }
   const targetSubjects = new Set<string>();
   let allowLocalSubjects = false;
@@ -259,13 +307,18 @@ export async function registerBookletWorkV2(
       sha256: ref.sha256,
       bytes: ref.bytes,
     });
-    if (!original || (original.productionId !== p._id && !await db.collection<RevisionV2>("bookletRevisions").findOne({
-      ownerId: actor.uid, productionId: p._id, documentVersion: 2, _id: { $in: original.attachments as string[] },
-      assets: { $elemMatch: { assetId: ref.assetId, sha256: ref.sha256 } },
-    })))
-      throw bookletConflict(
-        "Original identity differs from owned bytes.",
-      );
+    if (
+      !original ||
+      (original.productionId !== p._id &&
+        !(await db.collection<RevisionV2>("bookletRevisions").findOne({
+          ownerId: actor.uid,
+          productionId: p._id,
+          documentVersion: 2,
+          _id: { $in: original.attachments as string[] },
+          assets: { $elemMatch: { assetId: ref.assetId, sha256: ref.sha256 } },
+        })))
+    )
+      throw bookletConflict("Original identity differs from owned bytes.");
   }
   if (review) {
     const requested = [
@@ -288,15 +341,22 @@ export async function registerBookletWorkV2(
           "Actual original pixels are required for this review.",
         );
       if (request.operation === "image_request") {
-        const prepared = await requirePreparation(scope.prepared, scope.targetIds);
+        const prepared = await requirePreparation(
+          scope.prepared,
+          scope.targetIds,
+        );
         if (prepared.requestHash !== scope.targetHash)
           throw bookletConflict("Review requires the exact prepared request.");
       } else if (request.operation === "whole_book") {
         const selectedManifest = request.sources.find(
-          (source) => source.content.kind === "book-manifest" && source.contentHash === scope.targetHash,
+          (source) =>
+            source.content.kind === "book-manifest" &&
+            source.contentHash === scope.targetHash,
         );
         if (!selectedManifest)
-          throw bookletConflict("Whole-book review requires its selected immutable manifest source.");
+          throw bookletConflict(
+            "Whole-book review requires its selected immutable manifest source.",
+          );
         const manifest = await db.collection("bookletRevisions").findOne({
           _id: selectedManifest.revisionId as never,
           ownerId: actor.uid,
@@ -316,11 +376,23 @@ export async function registerBookletWorkV2(
           ) ||
           scope.pageIds.some((pageId) => {
             const page = pages.find((page) => page.pageId === pageId);
-            const original = request.references.find((ref) => ref.assetId === page?.assetId);
-            const subject = p.subjects.find((subject) => subject.id === pageId && subject.kind === "page");
-            return !request.sources.some((source) => source.content.kind === "page-image" &&
-              source.content.asset.assetId === page?.assetId && source.content.asset.sha256 === original?.sha256 &&
-              subject?.artifacts.some((artifact) => artifact.id === source.artifactId && artifact.kind === "page-image"));
+            const original = request.references.find(
+              (ref) => ref.assetId === page?.assetId,
+            );
+            const subject = p.subjects.find(
+              (subject) => subject.id === pageId && subject.kind === "page",
+            );
+            return !request.sources.some(
+              (source) =>
+                source.content.kind === "page-image" &&
+                source.content.asset.assetId === page?.assetId &&
+                source.content.asset.sha256 === original?.sha256 &&
+                subject?.artifacts.some(
+                  (artifact) =>
+                    artifact.id === source.artifactId &&
+                    artifact.kind === "page-image",
+                ),
+            );
           }) ||
           scope.pageIds.some(
             (pageId) =>
@@ -411,13 +483,27 @@ export async function registerBookletWorkV2(
             "Correction review needs exact before/after sources and original findings.",
           );
         if (request.operation === "correction") {
-          const before = request.sources.filter((source) => source.contentHash === fingerprint(scope.before));
-          for (const finding of bookletAssessmentV2Schema.shape.findings.parse(scope.findings)) {
-            const original = await requireCorrectionFindingV2(db, p, finding.id, scope.targetIds, before.map(
-              ({ artifactId, revisionId, contentHash }) => ({ artifactId, revisionId, contentHash }),
-            ));
+          const before = request.sources.filter(
+            (source) => source.contentHash === fingerprint(scope.before),
+          );
+          for (const finding of bookletAssessmentV2Schema.shape.findings.parse(
+            scope.findings,
+          )) {
+            const original = await requireCorrectionFindingV2(
+              db,
+              p,
+              finding.id,
+              scope.targetIds,
+              before.map(({ artifactId, revisionId, contentHash }) => ({
+                artifactId,
+                revisionId,
+                contentHash,
+              })),
+            );
             if (fingerprint(finding) !== fingerprint(original.finding))
-              throw bookletConflict("Correction review changed its original confirmed finding.");
+              throw bookletConflict(
+                "Correction review changed its original confirmed finding.",
+              );
           }
         }
       }
@@ -439,7 +525,9 @@ export async function registerBookletWorkV2(
         "Creative target must identify an artifact responsibility for the selected operation.",
       );
     if (prepare && request.items[0].input.imageKind !== subject.kind)
-      throw bookletConflict("Prepared image kind differs from its registered target.");
+      throw bookletConflict(
+        "Prepared image kind differs from its registered target.",
+      );
     targetSubjects.add(subject.id);
     if (request.intent === "create" && artifact.kind === "roster")
       allowLocalSubjects = true;

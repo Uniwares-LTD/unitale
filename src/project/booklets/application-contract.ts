@@ -74,7 +74,9 @@ export const bookletProductionCommandSchema = z.discriminatedUnion("action", [
 ]);
 
 export type BookletStartCommand = z.infer<typeof bookletStartCommandSchema>;
-export type BookletIdeaStartCommand = z.infer<typeof bookletIdeaStartCommandSchema>;
+export type BookletIdeaStartCommand = z.infer<
+  typeof bookletIdeaStartCommandSchema
+>;
 export type BookletProductionCommand = z.infer<
   typeof bookletProductionCommandSchema
 >;

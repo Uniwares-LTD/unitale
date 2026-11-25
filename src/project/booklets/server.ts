@@ -18,7 +18,9 @@ async function indexes(db: Parameters<typeof createBookletIndexes>[0]) {
 export const bookletsServerExtension = defineServerExtension({
   module: "booklets",
   reconcile: reconcileOneBookletWorkV2,
-  productTypes: [{ id: "booklet", schemaVersion: 1, fields: creativeFieldsSchema }],
+  productTypes: [
+    { id: "booklet", schemaVersion: 1, fields: creativeFieldsSchema },
+  ],
   indexes: async (db) => {
     await indexes(db);
     await createBookletMcpIndexes(db);

@@ -122,13 +122,11 @@ async function tick(db: Db) {
     });
     const form =
       receipt!.result.humanRequest.formContent + "\n{{#$output.response#}}";
-    const decision = await db
-      .collection<Decision>("runDecisions")
-      .findOne({
-        jobId: current._id,
-        nodeId: "human",
-        "form.form_content": form,
-      });
+    const decision = await db.collection<Decision>("runDecisions").findOne({
+      jobId: current._id,
+      nodeId: "human",
+      "form.form_content": form,
+    });
     if (decision?.status !== "submitted") return;
     reply = bookletReplySchema.parse(decision.intent!.response);
   }
@@ -342,20 +340,18 @@ async function tick(db: Db) {
     };
   } else if (state.step === "story") {
     const callId = fingerprint([productionId, "local-artwork"]);
-    await db
-      .collection("bookletWork")
-      .updateOne(
-        { callId, productionId, ownerId: p.ownerId },
-        {
-          $set: {
-            runId: current._id,
-            service: "image-executor",
-            status: "dispatching",
-            updatedAt: now,
-          },
+    await db.collection("bookletWork").updateOne(
+      { callId, productionId, ownerId: p.ownerId },
+      {
+        $set: {
+          runId: current._id,
+          service: "image-executor",
+          status: "dispatching",
+          updatedAt: now,
         },
-        { upsert: true },
-      );
+      },
+      { upsert: true },
+    );
     await db
       .collection<AiJob>("aiJobs")
       .updateOne({ _id: current._id }, { $set: { status: "running" } });
@@ -411,16 +407,14 @@ async function tick(db: Db) {
       [asset],
     );
     p = await repo.getProduction(productionId);
-    await db
-      .collection("bookletWork")
-      .updateOne(
-        {
-          callId: fingerprint([productionId, "local-artwork"]),
-          productionId,
-          ownerId: p.ownerId,
-        },
-        { $set: { status: "succeeded", updatedAt: now } },
-      );
+    await db.collection("bookletWork").updateOne(
+      {
+        callId: fingerprint([productionId, "local-artwork"]),
+        productionId,
+        ownerId: p.ownerId,
+      },
+      { $set: { status: "succeeded", updatedAt: now } },
+    );
     targets = [artwork];
     next = "artwork";
     turn = {

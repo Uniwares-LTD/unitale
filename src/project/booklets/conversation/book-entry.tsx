@@ -46,7 +46,9 @@ function readPendingStart(storageKey: string | null) {
   if (!storageKey) return null;
   try {
     const saved = sessionStorage.getItem(storageKey);
-    return saved ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved)) : null;
+    return saved
+      ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved))
+      : null;
   } catch {
     return null;
   }
@@ -260,9 +262,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
       {recovering && (
         <Notice
           tone="warning"
-          title={t(
-            problem === "pending" ? "me079e4adcff9" : "m08d20ade842d",
-          )}
+          title={t(problem === "pending" ? "me079e4adcff9" : "m08d20ade842d")}
         >
           <SubmitButton
             pending={starting}

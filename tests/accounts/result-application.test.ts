@@ -312,13 +312,11 @@ test("artifact publication stages payloads before its owned metadata transaction
       "only images in the accepted saved result receive product references",
       async () => {
         const { db, uid, jobId, artifactId, images } = await fixture(2);
-        await db
-          .collection("runResults")
-          .updateOne({ _id: jobId } as never, {
-            $set: {
-              "result.images": [{ id: images[0]._id, name: "Selected" }],
-            },
-          });
+        await db.collection("runResults").updateOne({ _id: jobId } as never, {
+          $set: {
+            "result.images": [{ id: images[0]._id, name: "Selected" }],
+          },
+        });
         await processOneResultApplication(db);
         assert.deepEqual(
           (await db.collection("artifacts").findOne({ id: artifactId }))

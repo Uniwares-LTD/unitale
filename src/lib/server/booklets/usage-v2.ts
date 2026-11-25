@@ -165,51 +165,101 @@ export async function bookletRunBoundsV2(
   production: ProductionV2,
   session?: ClientSession,
 ) {
-  const jobs = await db.collection<AiJob>("aiJobs").find({
+  const jobs = await db
+    .collection<AiJob>("aiJobs")
+    .find(
+      {
+        uid: production.ownerId,
+        "run.target.adapter": "booklet",
+        "run.target.version": "2",
+        "run.target.id": production._id,
+      },
+      { session, projection: { _id: 1 } },
+    )
+    .toArray();
+  const owned = {
     uid: production.ownerId,
-    "run.target.adapter": "booklet", "run.target.version": "2", "run.target.id": production._id,
-  }, { session, projection: { _id: 1 } }).toArray();
-  const owned = { uid: production.ownerId, jobId: { $in: jobs.map((job) => job._id) } };
+    jobId: { $in: jobs.map((job) => job._id) },
+  };
   const stages = new Map<string, { jobId: string; elapsedMs: number | null }>();
-  for await (const row of db.collection("runEvents").find({ ...owned, "event.type": "stage" },
-    { session, projection: { jobId: 1, "event.id": 1, "event.elapsedMs": 1 } })) {
+  for await (const row of db.collection("runEvents").find(
+    { ...owned, "event.type": "stage" },
+    {
+      session,
+      projection: { jobId: 1, "event.id": 1, "event.elapsedMs": 1 },
+    },
+  )) {
     const key = JSON.stringify([row.jobId, row.event.id]);
     const prior = stages.get(key);
-    const elapsed = z.number().nonnegative().finite().safeParse(row.event.elapsedMs).data ?? null;
-    stages.set(key, { jobId: row.jobId, elapsedMs: elapsed === null ? prior?.elapsedMs ?? null : Math.max(elapsed, prior?.elapsedMs ?? 0) });
+    const elapsed =
+      z.number().nonnegative().finite().safeParse(row.event.elapsedMs).data ??
+      null;
+    stages.set(key, {
+      jobId: row.jobId,
+      elapsedMs:
+        elapsed === null
+          ? (prior?.elapsedMs ?? null)
+          : Math.max(elapsed, prior?.elapsedMs ?? 0),
+    });
   }
-  const elapsedByJob = new Map<string, { nodes: number | null; summary: number | null }>();
-  for await (const row of db.collection<AiUsage>("aiUsage").find({ ...owned, scope: { $in: ["node", "execution"] } },
-    { session, projection: { jobId: 1, scope: 1, id: 1, elapsedMs: 1 } })) {
-    const elapsed = z.number().nonnegative().finite().safeParse(row.elapsedMs).data ?? null;
+  const elapsedByJob = new Map<
+    string,
+    { nodes: number | null; summary: number | null }
+  >();
+  for await (const row of db
+    .collection<AiUsage>("aiUsage")
+    .find(
+      { ...owned, scope: { $in: ["node", "execution"] } },
+      { session, projection: { jobId: 1, scope: 1, id: 1, elapsedMs: 1 } },
+    )) {
+    const elapsed =
+      z.number().nonnegative().finite().safeParse(row.elapsedMs).data ?? null;
     if (row.scope === "node") {
       // The existing accounting ledger survives activity-log cleanup.
       const key = JSON.stringify([row.jobId, row.id]);
       const prior = stages.get(key);
-      stages.set(key, { jobId: row.jobId, elapsedMs: elapsed === null ? prior?.elapsedMs ?? null : Math.max(elapsed, prior?.elapsedMs ?? 0) });
+      stages.set(key, {
+        jobId: row.jobId,
+        elapsedMs:
+          elapsed === null
+            ? (prior?.elapsedMs ?? null)
+            : Math.max(elapsed, prior?.elapsedMs ?? 0),
+      });
       continue;
     }
-    const current = elapsedByJob.get(row.jobId) ?? { nodes: null, summary: null };
-    if (elapsed !== null) current.summary = Math.max(elapsed, current.summary ?? 0);
+    const current = elapsedByJob.get(row.jobId) ?? {
+      nodes: null,
+      summary: null,
+    };
+    if (elapsed !== null)
+      current.summary = Math.max(elapsed, current.summary ?? 0);
     elapsedByJob.set(row.jobId, current);
   }
   for (const stage of stages.values()) {
-    const current = elapsedByJob.get(stage.jobId) ?? { nodes: null, summary: null };
+    const current = elapsedByJob.get(stage.jobId) ?? {
+      nodes: null,
+      summary: null,
+    };
     // Container/tool durations can include nested nodes. A node maximum is a
     // known lower bound until a whole-execution duration becomes available.
-    if (stage.elapsedMs !== null) current.nodes = Math.max(current.nodes ?? 0, stage.elapsedMs);
+    if (stage.elapsedMs !== null)
+      current.nodes = Math.max(current.nodes ?? 0, stage.elapsedMs);
     elapsedByJob.set(stage.jobId, current);
   }
   let reportedElapsedMs: number | null = null;
   for (const value of elapsedByJob.values())
     if (value.nodes !== null || value.summary !== null)
-      reportedElapsedMs = (reportedElapsedMs ?? 0) + Math.max(value.nodes ?? 0, value.summary ?? 0);
+      reportedElapsedMs =
+        (reportedElapsedMs ?? 0) +
+        Math.max(value.nodes ?? 0, value.summary ?? 0);
   const limits = production.creativeConfigSnapshot.execution;
   return {
     steps: stages.size,
     reportedElapsedMs,
-    overLimit: stages.size >= limits.maxWorkflowSteps ||
-      (reportedElapsedMs !== null && reportedElapsedMs >= limits.maxElapsedSeconds * 1000),
+    overLimit:
+      stages.size >= limits.maxWorkflowSteps ||
+      (reportedElapsedMs !== null &&
+        reportedElapsedMs >= limits.maxElapsedSeconds * 1000),
     complete: false,
   };
 }

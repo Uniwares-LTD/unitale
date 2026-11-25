@@ -383,7 +383,11 @@ test("booklet application facade", async (t) => {
         };
         // A stale quote or price is refused before anything is created.
         await assert.rejects(
-          app.startIdea({ ...command, key: randomUUID(), quoteHash: "0".repeat(64) }),
+          app.startIdea({
+            ...command,
+            key: randomUUID(),
+            quoteHash: "0".repeat(64),
+          }),
           /package changed/,
         );
         await assert.rejects(

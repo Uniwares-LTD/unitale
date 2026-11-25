@@ -35,9 +35,7 @@ export function json(data: unknown, status = 200) {
     },
   });
 }
-type Session = Awaited<
-  ReturnType<typeof import("./session").requireSession>
->;
+type Session = Awaited<ReturnType<typeof import("./session").requireSession>>;
 // Request endpoints pass their verified session to the action, so handlers
 // need not verify the session cookie a second time.
 export async function endpoint(

@@ -236,22 +236,18 @@ export async function reconcileOneBookletWorkV2(
   );
   if (!claimed) return false;
   const row = workV2Schema.parse(claimed);
-  const job = await db
-    .collection<AiJob>("aiJobs")
-    .findOne({
-      _id: row.runId,
-      uid: row.ownerId,
-      "run.target.adapter": "booklet",
-      "run.target.version": "2",
-      "run.target.id": row.productionId,
-    });
-  const stored = await db
-    .collection("bookletProductions")
-    .findOne({
-      _id: row.productionId as never,
-      ownerId: row.ownerId,
-      documentVersion: 2,
-    });
+  const job = await db.collection<AiJob>("aiJobs").findOne({
+    _id: row.runId,
+    uid: row.ownerId,
+    "run.target.adapter": "booklet",
+    "run.target.version": "2",
+    "run.target.id": row.productionId,
+  });
+  const stored = await db.collection("bookletProductions").findOne({
+    _id: row.productionId as never,
+    ownerId: row.ownerId,
+    documentVersion: 2,
+  });
   const production = stored ? productionV2Schema.parse(stored) : null;
   const deadline =
     job?.reviewAfter ??

@@ -43,7 +43,9 @@ export function ConversationReader({
     event.preventDefault();
     const navigationDirection = getComputedStyle(event.currentTarget).direction;
     move(
-      event.key === (navigationDirection === "rtl" ? "ArrowLeft" : "ArrowRight") ? 1 : -1,
+      event.key === (navigationDirection === "rtl" ? "ArrowLeft" : "ArrowRight")
+        ? 1
+        : -1,
     );
   };
   if (!pages.length) return null;
@@ -118,10 +120,7 @@ export function ConversationReader({
                 className="min-h-(--control-touch-sm)"
                 onClick={() => move(-1)}
               >
-                <ArrowLeft
-                  aria-hidden="true"
-                  className="rtl:rotate-180"
-                />
+                <ArrowLeft aria-hidden="true" className="rtl:rotate-180" />
                 <span className="hidden min-[700px]:inline">
                   {previousLabel}
                 </span>
@@ -142,10 +141,7 @@ export function ConversationReader({
                 onClick={() => move(1)}
               >
                 <span className="hidden min-[700px]:inline">{nextLabel}</span>
-                <ArrowRight
-                  aria-hidden="true"
-                  className="rtl:rotate-180"
-                />
+                <ArrowRight aria-hidden="true" className="rtl:rotate-180" />
               </Button>
             </div>
           </DialogContent>

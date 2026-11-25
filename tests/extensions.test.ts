@@ -139,7 +139,10 @@ test("focused routes stay inside the extension's own pages", () => {
     ["/Notes"],
     ["/notes", "/notes"],
   ])
-    assert.throws(() => validateExtensions(core, [focused(paths)]), paths.join());
+    assert.throws(
+      () => validateExtensions(core, [focused(paths)]),
+      paths.join(),
+    );
   const extensions = [focused(["/notes/write"])];
   assert.equal(isFocusedPath(extensions, "/notes/write"), true);
   assert.equal(isFocusedPath(extensions, "/notes/write/1"), true);

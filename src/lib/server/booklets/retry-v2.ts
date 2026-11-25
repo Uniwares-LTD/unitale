@@ -52,30 +52,28 @@ export async function resumeBookletRetryV2(
   });
   if (!selected) return;
   const blocked = async (code: string) => {
-    await db
-      .collection("auditEvents")
-      .updateOne(
-        {
-          _id: fingerprint([
-            job._id,
-            selected.callId,
-            "retry-wait",
-            code,
-          ]) as never,
+    await db.collection("auditEvents").updateOne(
+      {
+        _id: fingerprint([
+          job._id,
+          selected.callId,
+          "retry-wait",
+          code,
+        ]) as never,
+      },
+      {
+        $setOnInsert: {
+          event: "booklet-retry-wait-blocked",
+          code,
+          actorUid: job.uid,
+          jobId: job._id,
+          productionId: target.id,
+          callId: selected.callId,
+          timestamp: now,
         },
-        {
-          $setOnInsert: {
-            event: "booklet-retry-wait-blocked",
-            code,
-            actorUid: job.uid,
-            jobId: job._id,
-            productionId: target.id,
-            callId: selected.callId,
-            timestamp: now,
-          },
-        },
-        { upsert: true },
-      );
+      },
+      { upsert: true },
+    );
     return job.reviewAfter;
   };
   const formContent =

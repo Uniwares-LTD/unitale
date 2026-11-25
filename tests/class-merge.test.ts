@@ -12,12 +12,18 @@ test("typography roles replace a primitive's own font size", () => {
   assert.equal(cn("text-sm", "text-body"), "text-body");
   assert.equal(cn("text-reading", "text-sm"), "text-sm");
   // Colours and other utilities keep their usual merging.
-  assert.equal(cn("text-sm text-muted-foreground", "text-destructive"), "text-sm text-destructive");
+  assert.equal(
+    cn("text-sm text-muted-foreground", "text-destructive"),
+    "text-sm text-destructive",
+  );
   assert.equal(cn("px-2 py-1", "px-4"), "py-1 px-4");
 });
 
 test("every foundation role is registered with cn", () => {
-  const css = readFileSync("src/styles/design-system/tailwind-theme.css", "utf8");
+  const css = readFileSync(
+    "src/styles/design-system/tailwind-theme.css",
+    "utf8",
+  );
   const declared = [...css.matchAll(/^\s+--text-([a-z-]+):/gm)]
     .map((m) => m[1])
     .filter((name) => !/--/.test(name));

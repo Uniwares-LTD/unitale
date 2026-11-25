@@ -35,7 +35,9 @@ export function InspirationList({
               className="h-auto min-h-(--control-touch-sm) w-full flex-col items-start gap-1 rounded-(--x-unitale-radius-card) px-4 py-3 text-start whitespace-normal"
             >
               <span className="text-body font-medium">{item.title}</span>
-              <span className="text-caption text-muted-foreground">{item.hint}</span>
+              <span className="text-caption text-muted-foreground">
+                {item.hint}
+              </span>
             </Button>
           </li>
         ))}

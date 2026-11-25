@@ -25,6 +25,16 @@ class HostTests(unittest.TestCase):
         assert not ROOT.exists() and not CONFIG.exists() and not STATE.exists()
         cls.bin = Path("/tmp/unibase-mock-bin")
         cls.bin.mkdir()
+        # Model the controller-owned data gate only inside this disposable host.
+        # The real application gate remains required and fails closed.
+        gate = cls.bin / 'data-operation-gate.py'
+        gate.write_text('''import os,sys
+project,environment,image,commit=sys.argv[1:]
+assert project==os.environ['DEPLOY_TEST_PROJECT']
+assert environment in ('staging','production')
+assert image.endswith('@sha256:'+'b'*64) and len(commit)==40
+sys.exit(3 if os.environ.get('FAIL_DATA_GATE')=='1' else 0)
+''')
         maintenance = Path('/usr/local/sbin/uniwares-image-maintenance')
         assert not maintenance.exists()
         Path('/var/lib/uniwares-infrastructure').mkdir(exist_ok=True)
@@ -172,7 +182,7 @@ from pathlib import Path
 r=json.load(sys.stdin)
 slug=os.environ['DEPLOY_TEST_PROJECT']
 if r['action']=='capabilities':
-    print(json.dumps({'version':2,'capabilities':['operation-lock-v1','image-retention-v1']})); sys.exit(0)
+    print(json.dumps({'version':2,'capabilities':['operation-lock-v1','image-retention-v1','data-operations-v1']})); sys.exit(0)
 if os.environ.get('LEGACY_DISPATCHER')=='1':
     print('legacy private failure'); sys.exit(1)
 config=json.loads(Path('/repo/deploy/environments/staging.json').read_text())
@@ -181,6 +191,14 @@ if os.environ.get('MISMATCH_CONFIG')=='1' or (os.environ.get('CHANGE_AFTER_PREFL
     config['runtime']['MCP_CLIENTS_JSON']='[]'
 digest=hashlib.sha256(json.dumps(config,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 with open('/tmp/dispatch-actions','a') as f: f.write(r['action']+'\\n')
+# This suite mocks data evidence, just as it mocks Docker and provider calls.
+if r['action']=='migrations':
+    assert set(r)=={'version','project','environment','action','configurationHash','requiredCapabilities','image','commit'}
+    assert r['project']==slug and r['environment']=='staging' and r['version']==2
+    assert r['requiredCapabilities']==['data-operations-v1']
+    assert r['configurationHash']==digest
+    print(json.dumps(dict(version=1,sourceCommit=r['commit'],image=r['image'],activationDecision='proceed')))
+    sys.exit(0)
 real=Path('/infrastructure/scripts/deploy-dispatch.py')
 if real.exists():
     spec=importlib.util.spec_from_file_location('dispatcher',real)
@@ -196,6 +214,13 @@ if real.exists():
     d.REGISTRY=registry; d.CONTROL=root/'control'
     d.trusted=lambda path: None  # Temporary fixture ownership; protocol/hash validation stays real.
     d.ENV=dict(os.environ)  # Keep the disposable container's mocked provider executables.
+    # Retain real dispatch/lock handling while isolating its external data gate.
+    popen=d.subprocess.Popen
+    def host_process(*args,**kwargs):
+        if 'UNIWARES_DATA_GATE' in kwargs.get('env',{}):
+            kwargs['env']['UNIWARES_DATA_GATE']=os.environ['UNIWARES_DATA_GATE']
+        return popen(*args,**kwargs)
+    d.subprocess.Popen=host_process
     sys.exit(d.handle(r))
 assert set(r)=={'version','project','environment','action','configurationHash','requiredCapabilities'} | ({'image','commit'} if r['action']=='deploy' else set())
 assert r['version']==2 and r['environment']=='staging' and r['project']==slug
@@ -206,7 +231,8 @@ if r['action']=='preflight' or not compatible:
 assert r['action']=='deploy'
 sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging','--apply',r['image'],r['commit']]).returncode)
 """)
-        cls.env = dict(os.environ, PATH=f"{cls.bin}:" + os.environ["PATH"], DEPLOY_TEST_PROJECT=SLUG)
+        cls.env = dict(os.environ, PATH=f"{cls.bin}:" + os.environ["PATH"], DEPLOY_TEST_PROJECT=SLUG,
+                       UNIWARES_DATA_GATE=str(gate))
         # Preview must not create directories or contact Docker.
         result = subprocess.run(["bash", SCRIPT, "setup", "staging"], env=cls.env, capture_output=True)
         assert result.returncode == 0 and not ROOT.exists()
@@ -264,6 +290,16 @@ sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging'
         Path("/tmp/hold-up-started").unlink(missing_ok=True)
         Path('/tmp/pulled-commit').unlink(missing_ok=True)
         Path('/tmp/maintenance-operations').write_text('')
+
+    def test_missing_or_blocked_data_gate_never_replaces_existing_release(self):
+        previous = self.release('a'*40)
+        for extra in ({'UNIWARES_DATA_GATE': ''}, {'FAIL_DATA_GATE': '1'}):
+            with self.subTest(extra=extra):
+                Path('/tmp/docker-operations').write_text('')
+                result = self.run_host('deploy', commit='b'*40, **extra)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual((ROOT/'staging/current').resolve(), previous)
+                self.assertNotIn('"up"', Path('/tmp/docker-operations').read_text())
 
     def test_disk_failure_before_pull_keeps_services_untouched(self):
         result = self.run_host('deploy', commit='a'*40, FAIL_DISK='1')
@@ -401,7 +437,8 @@ sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging'
     def test_commit_changed_during_build_never_deploys(self):
         result = self.run_release(STALE_AFTER_BUILD="1")
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(Path("/tmp/dispatch-actions").read_text(), "preflight\n")
+        self.assertEqual(Path("/tmp/dispatch-actions").read_text(), "preflight\nmigrations\n")
+        self.assertFalse((ROOT / "staging/current").exists())
 
     def test_private_package_is_rejected_without_changing_visibility(self):
         result = self.run_release(MOCK_VISIBILITY="private")

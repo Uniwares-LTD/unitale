@@ -341,7 +341,10 @@ export function createDifyWorkflow(
             if (started.success) {
               await emit({
                 type: "execution",
-                execution: checked({ ...started.data, status: "running", outputs: null }, runId),
+                execution: checked(
+                  { ...started.data, status: "running", outputs: null },
+                  runId,
+                ),
               });
             }
           }
@@ -441,14 +444,23 @@ export function createDifyWorkflow(
               .safeParse(envelope.data);
             if (node.success) {
               // Container metadata repeats child usage, not another billable call.
-              const container = ["loop", "iteration"].includes(node.data.node_type ?? "");
+              const container = ["loop", "iteration"].includes(
+                node.data.node_type ?? "",
+              );
               const reported = parseUsage(
-                container ? undefined : node.data.outputs?.usage ?? node.data.execution_metadata,
+                container
+                  ? undefined
+                  : (node.data.outputs?.usage ?? node.data.execution_metadata),
                 "node",
                 node.data.id,
               );
-              const elapsed = z.number().finite().nonnegative().safeParse(node.data.elapsed_time).data;
-              reported.elapsedMs = elapsed === undefined ? null : Math.round(elapsed * 1000);
+              const elapsed = z
+                .number()
+                .finite()
+                .nonnegative()
+                .safeParse(node.data.elapsed_time).data;
+              reported.elapsedMs =
+                elapsed === undefined ? null : Math.round(elapsed * 1000);
               await emit({ type: "usage", usage: reported });
             }
           }

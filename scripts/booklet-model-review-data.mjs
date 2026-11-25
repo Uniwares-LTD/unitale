@@ -557,7 +557,11 @@ export const relationships = [
     "Artifact revision",
     "sources[] exact immutable dependencies",
   ],
-  ["Artifact revision", "Artifact revision", "v2 revalidatedFrom; unchanged content/assets with replacement sources"],
+  [
+    "Artifact revision",
+    "Artifact revision",
+    "v2 revalidatedFrom; unchanged content/assets with replacement sources",
+  ],
   ["Production", "Operation", "productionId on each operation"],
   ["Operation", "Artifact revision", "revisionId"],
   [
@@ -618,14 +622,22 @@ export const relationships = [
   ["Review request", "Production", "productionId"],
   ["Review request", "Artifact revision", "targets[] exact revisions"],
   ["Review request", "Human decision", "appliedDecisionId"],
-  ["Repository write receipt", "Human decision", "v2 humanRequest: original Run, native human node and exact presentation"],
+  [
+    "Repository write receipt",
+    "Human decision",
+    "v2 humanRequest: original Run, native human node and exact presentation",
+  ],
   ["Review request", "Run", "runId"],
   ["Reuse acceptance", "Review request", "requestId"],
   ["Reuse acceptance", "Artifact revision", "revisionId in source production"],
   ["Reuse acceptance", "Production", "paid destination productionId"],
   ["Service write receipt", "Production", "productionId"],
   ["Original asset receipt", "Artifact revision", "attachments[]"],
-  ["Original asset receipt", "Work attempt", "v2 operationId = observed Generate callId; one receipt per outputKey"],
+  [
+    "Original asset receipt",
+    "Work attempt",
+    "v2 operationId = observed Generate callId; one receipt per outputKey",
+  ],
   [
     "Original asset receipt",
     "Original asset receipt",

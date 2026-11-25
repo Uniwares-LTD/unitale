@@ -239,7 +239,9 @@ export function AppShell({
       </main>
     </div>
   );
-  const shell = focused ? focusedShell : (
+  const shell = focused ? (
+    focusedShell
+  ) : (
     <div className="min-h-svh">
       {skipLink}
       <aside className="shell-surface fixed inset-y-0 start-0 hidden w-64 flex-col border-e bg-sidebar p-6 text-sidebar-foreground md:flex">

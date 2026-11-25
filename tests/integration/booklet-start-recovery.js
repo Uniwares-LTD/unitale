@@ -2,10 +2,13 @@
 // Run in the production browser fixture with its storage state loaded.
 async (page) => {
   const origin = "http://127.0.0.1:3101";
-  const context = await page.context().browser().newContext({
-    serviceWorkers: "block",
-    storageState: await page.context().storageState(),
-  });
+  const context = await page
+    .context()
+    .browser()
+    .newContext({
+      serviceWorkers: "block",
+      storageState: await page.context().storageState(),
+    });
   const require = (condition, message) => {
     if (!condition) throw new Error(message);
   };
@@ -13,7 +16,9 @@ async (page) => {
     await context.clearCookies({ name: "unitale-locale" });
     const entry = await context.newPage();
     const balance = async () => {
-      const response = await entry.request.get(`${origin}/api/booklets?section=default`);
+      const response = await entry.request.get(
+        `${origin}/api/booklets?section=default`,
+      );
       require(response.ok(), "Could not read the fixture balance");
       return (await response.json()).availableCredits;
     };
@@ -36,24 +41,34 @@ async (page) => {
     const retry = entry.getByRole("button", { name: "Try again", exact: true });
     await composer.fill(idea);
     await composer.press("Enter");
-    await entry.getByRole("button", { name: "Start my book", exact: true }).click();
+    await entry
+      .getByRole("button", { name: "Start my book", exact: true })
+      .click();
     await retry.waitFor();
     const first = submissions[0];
-    require(first?.status === 202 && first.productionId, "First start was not accepted before its response was lost");
+    require(first?.status === 202 &&
+      first.productionId, "First start was not accepted before its response was lost");
     const afterFirst = await balance();
-    require(before - afterFirst === first.body.acceptedCredits, "First start did not charge the accepted price");
+    require(before - afterFirst ===
+      first.body
+        .acceptedCredits, "First start did not charge the accepted price");
 
     await entry.reload();
     await retry.waitFor();
-    require(submissions.length === 1, "Reload automatically submitted the paid request again");
-    require(await composer.inputValue() === idea && !(await composer.isEditable()), "Restored pending idea was missing or editable");
+    require(submissions.length ===
+      1, "Reload automatically submitted the paid request again");
+    require((await composer.inputValue()) === idea &&
+      !(await composer.isEditable()), "Restored pending idea was missing or editable");
     await retry.click();
     await entry.waitForURL(`${origin}/books/${first.productionId}`);
     const second = submissions[1];
-    require(submissions.length === 2 && second.status === 202, "Expected exactly one successful retry");
-    require(JSON.stringify(second.body) === JSON.stringify(first.body), "Retry changed the consented request");
-    require(second.productionId === first.productionId, "Retry opened a second booklet");
-    require(await balance() === afterFirst, "Retry charged again");
+    require(submissions.length === 2 &&
+      second.status === 202, "Expected exactly one successful retry");
+    require(JSON.stringify(second.body) ===
+      JSON.stringify(first.body), "Retry changed the consented request");
+    require(second.productionId ===
+      first.productionId, "Retry opened a second booklet");
+    require((await balance()) === afterFirst, "Retry charged again");
 
     const replies = [];
     const productionApi = `${origin}/api/booklets/${first.productionId}`;
@@ -63,7 +78,9 @@ async (page) => {
       replies.push(response.status());
       await route.abort("failed");
     });
-    await entry.getByRole("button", { name: "My child", exact: true }).waitFor();
+    await entry
+      .getByRole("button", { name: "My child", exact: true })
+      .waitFor();
     const conversationApi = `${productionApi}?section=conversation`;
     const openResponse = await entry.request.get(conversationApi);
     require(openResponse.ok(), "Could not read the outstanding reply turn");
@@ -73,17 +90,32 @@ async (page) => {
     const reply = entry.locator("#book-reply");
     await reply.fill("My cousin");
     await reply.press("Enter");
-    await entry.getByText("A reply is being confirmed", { exact: true }).waitFor();
-    require(await reply.inputValue() === "My cousin" && !(await reply.isEditable()), "An unconfirmed reply did not preserve its pending draft");
-    require(replies.length === 1 && replies[0] === 202, "The reply was missing or replayed during confirmation");
+    await entry
+      .getByText("A reply is being confirmed", { exact: true })
+      .waitFor();
+    require((await reply.inputValue()) === "My cousin" &&
+      !(await reply.isEditable()), "An unconfirmed reply did not preserve its pending draft");
+    require(replies.length === 1 &&
+      replies[0] ===
+        202, "The reply was missing or replayed during confirmation");
     await entry.unroute(conversationApi, holdAcknowledgement);
     await entry.getByText("My cousin", { exact: true }).waitFor();
     await entry.getByRole("button", { name: /^4.5$/ }).waitFor();
-    require(replies.length === 1 && replies[0] === 202, "The accepted reply was missing or automatically replayed");
-    require(await reply.inputValue() === "", "Confirmed reply did not clear the submitted draft");
-    require(await balance() === afterFirst, "Reply recovery changed the credit balance");
-    return { firstDebit: before - afterFirst, retryDebit: 0, sameProduction: true, pendingReplyPreserved: true, replySubmissions: replies.length };
+    require(replies.length === 1 &&
+      replies[0] ===
+        202, "The accepted reply was missing or automatically replayed");
+    require((await reply.inputValue()) ===
+      "", "Confirmed reply did not clear the submitted draft");
+    require((await balance()) ===
+      afterFirst, "Reply recovery changed the credit balance");
+    return {
+      firstDebit: before - afterFirst,
+      retryDebit: 0,
+      sameProduction: true,
+      pendingReplyPreserved: true,
+      replySubmissions: replies.length,
+    };
   } finally {
     await context.close();
   }
-}
+};

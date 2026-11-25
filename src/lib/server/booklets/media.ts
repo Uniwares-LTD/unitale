@@ -93,7 +93,9 @@ export function bookletMedia(
 ) {
   const c = bookletContext(db, actor);
   const ownedProduction = (productionId: string, session?: ClientSession) =>
-    options.documentVersion === 2 ? c.owned(productionId, session, 2) : c.owned(productionId, session);
+    options.documentVersion === 2
+      ? c.owned(productionId, session, 2)
+      : c.owned(productionId, session);
   const records = db.collection<BookletAsset>("bookletAssets");
   const chunks = db.collection<Chunk>("bookletAssetBytes");
   const maxBytes = options.maxBytes ?? 64 * 1024 * 1024;
@@ -272,28 +274,89 @@ export function bookletMedia(
       }
       let operation: Pick<Generation, "_id" | "sources">;
       if (options.documentVersion === 2) {
-        const work = await db.collection<WorkV2>("bookletWork").findOne({
-          ownerId: actor.uid, productionId, callId: input.operationId, service: "image-executor",
-          operation: "generate", category: "paidImage", status: { $in: ["succeeded", "partial"] },
-        }, { session: s });
-        const result = z.object({ items: z.array(z.object({ outputs: z.array(z.object({ outputKey: id })) })).length(1) })
+        const work = await db.collection<WorkV2>("bookletWork").findOne(
+          {
+            ownerId: actor.uid,
+            productionId,
+            callId: input.operationId,
+            service: "image-executor",
+            operation: "generate",
+            category: "paidImage",
+            status: { $in: ["succeeded", "partial"] },
+          },
+          { session: s },
+        );
+        const result = z
+          .object({
+            items: z
+              .array(
+                z.object({ outputs: z.array(z.object({ outputKey: id })) }),
+              )
+              .length(1),
+          })
           .safeParse(work?.resultPayload);
-        const request = z.object({ items: z.array(z.object({ input: z.object({ prepared: z.object({
-          settings: z.object({ count: z.number().int().min(1).max(10), format: z.enum(["png", "jpeg", "webp"]),
-            canvas: z.object({ width: z.number().int().positive(), height: z.number().int().positive() }),
-          }),
-        }) }) })).length(1) }).safeParse(work?.requestPayload);
-        if (!work?.resultObservation || !result.success || !request.success ||
-          result.data.items[0].outputs.length > request.data.items[0].input.prepared.settings.count ||
-          (!originalAssetId && result.data.items[0].outputs.filter((output) => output.outputKey === input.outputKey).length !== 1))
-          throw bookletConflict("An observed image output is required for original retention.");
+        const request = z
+          .object({
+            items: z
+              .array(
+                z.object({
+                  input: z.object({
+                    prepared: z.object({
+                      settings: z.object({
+                        count: z.number().int().min(1).max(10),
+                        format: z.enum(["png", "jpeg", "webp"]),
+                        canvas: z.object({
+                          width: z.number().int().positive(),
+                          height: z.number().int().positive(),
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              )
+              .length(1),
+          })
+          .safeParse(work?.requestPayload);
+        if (
+          !work?.resultObservation ||
+          !result.success ||
+          !request.success ||
+          result.data.items[0].outputs.length >
+            request.data.items[0].input.prepared.settings.count ||
+          (!originalAssetId &&
+            result.data.items[0].outputs.filter(
+              (output) => output.outputKey === input.outputKey,
+            ).length !== 1)
+        )
+          throw bookletConflict(
+            "An observed image output is required for original retention.",
+          );
         const canvas = request.data.items[0].input.prepared.settings.canvas;
-        if (!originalAssetId && (meta.width !== canvas.width || meta.height !== canvas.height))
-          throw bookletConflict("Original dimensions differ from the exact prepared request; do not resize.");
-        if (!originalAssetId && input.mime !== `image/${request.data.items[0].input.prepared.settings.format}`)
-          throw bookletConflict("Original format differs from the exact prepared request.");
-        operation = { _id: work.callId, sources: work.sources.map(({ artifactId, revisionId, contentHash }) =>
-          ({ artifactId, revisionId, sha256: contentHash })) };
+        if (
+          !originalAssetId &&
+          (meta.width !== canvas.width || meta.height !== canvas.height)
+        )
+          throw bookletConflict(
+            "Original dimensions differ from the exact prepared request; do not resize.",
+          );
+        if (
+          !originalAssetId &&
+          input.mime !==
+            `image/${request.data.items[0].input.prepared.settings.format}`
+        )
+          throw bookletConflict(
+            "Original format differs from the exact prepared request.",
+          );
+        operation = {
+          _id: work.callId,
+          sources: work.sources.map(
+            ({ artifactId, revisionId, contentHash }) => ({
+              artifactId,
+              revisionId,
+              sha256: contentHash,
+            }),
+          ),
+        };
       } else {
         if (!originalAssetId) await c.entitled(p, s);
         const generation = await db
@@ -307,7 +370,9 @@ export function bookletMedia(
           (!originalAssetId &&
             !["authorized", "unknown"].includes(generation.state))
         )
-          throw bookletConflict("An authorized generation receipt is required.");
+          throw bookletConflict(
+            "An authorized generation receipt is required.",
+          );
         operation = generation;
       }
       if (

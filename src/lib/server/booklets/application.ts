@@ -1247,7 +1247,10 @@ export function bookletApplication(
         );
         const decision = matches.length === 1 ? matches[0] : undefined;
         const response = confirmedHumanResponse(decision);
-        const checked = response.status === "submitted" ? checkReply(human.turn!, response.response) : null;
+        const checked =
+          response.status === "submitted"
+            ? checkReply(human.turn!, response.response)
+            : null;
         const answered = checked?.ok ? checked.reply : null;
         const active = activeStatuses.includes(statusOf.get(human.runId) ?? "");
         let status: BookletConversation["turns"][number]["status"];
@@ -1261,9 +1264,13 @@ export function bookletApplication(
           (decision.form?.expiration_time ?? Infinity) * 1000 < Date.now()
         )
           status = "expired";
-        else if (latest?._id === human.runId && ["submitting", "unknown"].includes(decision.status))
+        else if (
+          latest?._id === human.runId &&
+          ["submitting", "unknown"].includes(decision.status)
+        )
           status = "confirming";
-        else status = decision.status === "pending" && active ? "open" : "closed";
+        else
+          status = decision.status === "pending" && active ? "open" : "closed";
         return {
           requestId: human.requestId,
           createdAt: createdAt.toISOString(),
@@ -1279,7 +1286,13 @@ export function bookletApplication(
         !confirming &&
         !turns.some((t) => t.status === "open" || t.status === "preparing");
       let activity: BookletConversation["activity"] = null;
-      if (confirming || (latest && ["unknown", "needs-review", "settlement-blocked"].includes(latest.status)))
+      if (
+        confirming ||
+        (latest &&
+          ["unknown", "needs-review", "settlement-blocked"].includes(
+            latest.status,
+          ))
+      )
         activity = "confirming";
       else if (turns.some((turn) => turn.status === "preparing"))
         activity = "preparing-question";
@@ -1287,34 +1300,62 @@ export function bookletApplication(
         if (latest.applicationWait) activity = "retry";
         else if (latest.status === "queued") activity = "queued";
         else {
-          const work = await db.collection<{ service: string }>("bookletWork").findOne({
-            ownerId: actor.uid,
-            productionId,
-            runId: latest._id,
-            status: "dispatching",
-          }, { sort: { updatedAt: -1 }, projection: { service: 1 } });
+          const work = await db
+            .collection<{ service: string }>("bookletWork")
+            .findOne(
+              {
+                ownerId: actor.uid,
+                productionId,
+                runId: latest._id,
+                status: "dispatching",
+              },
+              { sort: { updatedAt: -1 }, projection: { service: 1 } },
+            );
           const activities = new Map<string, BookletConversation["activity"]>([
-            ["story-planner", "story"], ["manuscript", "story"],
-            ["art-director", "art"], ["page-composer", "layout"],
-            ["image-executor", "images"], ["quality-reviewer", "review"],
+            ["story-planner", "story"],
+            ["manuscript", "story"],
+            ["art-director", "art"],
+            ["page-composer", "layout"],
+            ["image-executor", "images"],
+            ["quality-reviewer", "review"],
           ]);
           activity = activities.get(work?.service ?? "") ?? "working";
         }
       }
       let reader: BookletConversation["reader"] = null;
       if (p.currentManifestRevisionId) {
-        const manifest = await repo.getRevision(productionId, p.currentManifestRevisionId);
+        const manifest = await repo.getRevision(
+          productionId,
+          p.currentManifestRevisionId,
+        );
         if (manifest.content.kind === "book-manifest") {
-          const cover = p.subjects.find((subject) => subject.pageRole === "cover")?.id;
-          const layoutIds = new Set(p.subjects.flatMap((subject) =>
-            subject.artifacts.filter((artifact) => artifact.kind === "book-layout").map((artifact) => artifact.id),
-          ));
-          const layoutSource = manifest.sources.find((source) => layoutIds.has(source.artifactId));
-          const layout = layoutSource ? (await repo.getRevision(productionId, layoutSource.revisionId)).content : null;
-          const lettering = new Map(layout?.kind === "book-layout" ? layout.pages.map((page) => [
-            page.id,
-            page.panels.flatMap((panel) => panel.lettering.map((span) => span.text)),
-          ]) : []);
+          const cover = p.subjects.find(
+            (subject) => subject.pageRole === "cover",
+          )?.id;
+          const layoutIds = new Set(
+            p.subjects.flatMap((subject) =>
+              subject.artifacts
+                .filter((artifact) => artifact.kind === "book-layout")
+                .map((artifact) => artifact.id),
+            ),
+          );
+          const layoutSource = manifest.sources.find((source) =>
+            layoutIds.has(source.artifactId),
+          );
+          const layout = layoutSource
+            ? (await repo.getRevision(productionId, layoutSource.revisionId))
+                .content
+            : null;
+          const lettering = new Map(
+            layout?.kind === "book-layout"
+              ? layout.pages.map((page) => [
+                  page.id,
+                  page.panels.flatMap((panel) =>
+                    panel.lettering.map((span) => span.text),
+                  ),
+                ])
+              : [],
+          );
           reader = {
             direction: p.brief.language.direction,
             width: p.creativeConfigSnapshot.canvas.width,
@@ -1390,14 +1431,19 @@ export function bookletApplication(
   }
 
   function isStale(
-    p: { subjects: { artifacts: { id: string; currentRevisionId: string | null }[] }[] },
+    p: {
+      subjects: {
+        artifacts: { id: string; currentRevisionId: string | null }[];
+      }[];
+    },
     targets: { artifactId: string; revisionId: string }[],
   ) {
     return targets.some(
       (t) =>
         !p.subjects.some((s) =>
           s.artifacts.some(
-            (a) => a.id === t.artifactId && a.currentRevisionId === t.revisionId,
+            (a) =>
+              a.id === t.artifactId && a.currentRevisionId === t.revisionId,
           ),
         ),
     );

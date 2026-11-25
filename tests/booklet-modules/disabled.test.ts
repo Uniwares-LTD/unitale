@@ -43,8 +43,11 @@ const db = new Proxy(
 test("disabled booklets module refuses every application and admin entry point", async () => {
   const { bookletApplication } =
     await import("../../src/lib/server/booklets/application");
-  const { bookletAdminView, updateBookletDefaultPackage, updateBookletRetryDefaults } =
-    await import("../../src/lib/server/booklets/admin");
+  const {
+    bookletAdminView,
+    updateBookletDefaultPackage,
+    updateBookletRetryDefaults,
+  } = await import("../../src/lib/server/booklets/admin");
   const app = bookletApplication(
     db,
     { uid: "owner", authTime: 1 },
