@@ -347,6 +347,13 @@ unstaged and untracked work. Use `--dry-run` to inspect which paths selected
 each check, including historical revision pairs. File-level tools check
 existing changed files. Shared or unclassified inputs select broader tests.
 A manual UI item needs browser evidence for the changed interaction.
+For Unitale's theme or conversation components, verify English and Arabic
+rendering at phone and desktop widths in light and dark mode. For
+`manual:composer-keyboard`, focus the story composer with Tab, inspect the
+outer focus indication, and verify keyboard entry and submission in the owned
+Booklet browser fixture. Record the observed result alongside the report.
+Booklet model and persistence checks include the read-only model diagram
+verification in `check:docs`.
 
 Each invocation prints an ignored directory under `output/validation/runs/`.
 Paste its `report.md` into the PR verification section, with any manual checks

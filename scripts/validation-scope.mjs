@@ -139,14 +139,24 @@ export function select(files, present = () => true) {
     for (const [pattern, names] of rules)
       if (
         pattern.test(path) &&
-        !(extra.length && path.startsWith("src/project/")) &&
+        !(
+          extra.length &&
+          /^src\/(?:project\/|lib\/server\/booklets\/|app\/api\/(?:admin\/)?booklets\/)/.test(
+            path,
+          )
+        ) &&
         !(path.startsWith("src/") && /\.(css|md|mdx)$/.test(path))
       ) {
         for (const name of names) add(name, path);
         matched = true;
       }
     if (!matched && !extra.length)
-      for (const name of fullChecks) add(name, path);
+      for (const name of [
+        ...fullChecks,
+        "test:booklet-modules",
+        "test:booklet-compat",
+      ])
+        add(name, path);
   }
   for (const [name, pattern] of [
     ["format:files", /\.(?:[cm]?[jt]sx?|json|css|md|ya?ml)$/],
