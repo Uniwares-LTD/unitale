@@ -25,6 +25,7 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
       actions: read
@@ -66,6 +67,7 @@ jobs:
       activation_decision: ${{ steps.release.outputs.activation_decision }}
       next_action: ${{ steps.release.outputs.next_action }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Read tracked environment configuration

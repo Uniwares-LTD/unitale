@@ -17,6 +17,7 @@ jobs:
   prepare:
     if: (inputs.environment == 'staging' && github.ref == 'refs/heads/_staging') || (inputs.environment == 'prod' && github.ref == 'refs/heads/_prod')
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       TARGET: ${{ inputs.environment }}
       GH_TOKEN: ${{ github.token }}

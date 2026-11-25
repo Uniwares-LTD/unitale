@@ -77,6 +77,8 @@ and remain separately authorized.
 
 ## Validation and review
 
+Use `npm run validate:changed` for local PR evidence. Follow [local PR verification](../README.md#local-pr-verification) for exact-head reports and manual checks.
+
 [package.json](../package.json) owns check commands. Run affected checks after
 relevant source, configuration, dependency or environment changes; read their
 complete output. Use typecheck, lint, tests and check:env as relevant.

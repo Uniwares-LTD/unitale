@@ -20,6 +20,13 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Run advisory quality checks locally for the PR diff and attach their report.
+  Manual full validation remains available. Deployment-relevant PRs retain the
+  disposable Linux check on repositories where the workflow is enabled.
+
+- Add CI cancellation and tiered job timeouts to bound obsolete or stalled runs.
+- Deployment tests now exercise the candidate migration report and host activation gate in the disposable Linux fixture.
+
 - Publish the immutable candidate in a separate job so a targeted release retry
   after verified migrations can reuse the original image. Rerun only the
   `release` job when continuing a blocked release.

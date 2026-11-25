@@ -53,7 +53,7 @@ async function UnitaleHome({ appName, hasSession }: ProjectHomeProps) {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="h-11">
-                  <Link href="/runs">{translate("mde63e03a3514")}</Link>
+                  <Link href="/books">{translate("mde63e03a3514")}</Link>
                 </Button>
               </div>
             )

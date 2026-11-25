@@ -2258,6 +2258,12 @@ persistence fields. The separate 100-item manifest source/asset transport limit
 finding remains unchanged, as requested; it still needs resolution before accepting
 larger packages through the complete MCP production path.
 
+## Owned books library — Issue 20 split, 2026-11-26
+
+Reuse the existing owned booklet picker for the `/books` library route and existing
+persistence for automatic saving. This adds library navigation and search without
+changing storage, credit rules, reader components or demo fixtures.
+
 
 ## Issue 20 local component preview — 2026-11-25
 

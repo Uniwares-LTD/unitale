@@ -1,24 +1,33 @@
 name: "Advisory quality reports"
 on:
-  push:
   pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "deploy/**"
+      - "scripts/deploy/**"
+      - "tests/deploy/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "project.config.json"
+      - "package*.json"
+      - "scripts/*migration*"
+      - "src/lib/server/migration*"
+      - "scripts/runtime-settings.cjs"
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   quality:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - name: Report host configuration impact
-        if: github.event_name == 'pull_request'
-        continue-on-error: true
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: python3 scripts/deploy/configuration-impact.py "$BASE_SHA" "$HEAD_SHA"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
@@ -34,24 +43,44 @@ jobs:
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - run: npm ci
         continue-on-error: true
-      - run: npm run validate
+      - id: validation
+        run: npm run validate
         continue-on-error: true
       - name: Summarize real outcomes
         if: always()
+        env:
+          REPORT_DIR: ${{ steps.validation.outputs.report_dir }}
         run: |
-          # Literal JavaScript/template text must not be expanded by the shell.
-          # shellcheck disable=SC2016
-          node -e 'const fs=require("fs"); const p="output/validation/results.json"; const rows=fs.existsSync(p)?JSON.parse(fs.readFileSync(p)):[]; fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, rows.length?rows.map(x=>`${x.name}: ${x.outcome} (exit ${x.exitCode})`).join("\n"):"Validation did not finish; results unavailable."); if(!rows.length || rows.some(x=>x.exitCode)) console.log("::warning::Advisory quality checks have warnings; inspect the artifact.");'
+          if [[ -n "$REPORT_DIR" && -f "$REPORT_DIR/report.md" ]]; then
+            cat "$REPORT_DIR/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Validation report unavailable.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
+        if: always() && steps.validation.outputs.report_dir != ''
         with:
           name: quality-${{ github.sha }}
-          path: output/validation/
+          path: |
+            ${{ steps.validation.outputs.report_dir }}/results.json
+            ${{ steps.validation.outputs.report_dir }}/run.json
           if-no-files-found: warn
 
   deployment:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Report host configuration impact
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/deploy/configuration-impact.py "$BASE_SHA" "$HEAD_SHA"
       - name: Exercise deployment in disposable Linux container
-        run: node scripts/deploy/test-runner.mjs
+        run: |
+          docker info --format '{{.ServerVersion}}'
+          node scripts/deploy/test-runner.mjs
