@@ -219,64 +219,42 @@ test("disposable database: reporting performs zero writes and protected batch ho
     await repl.stop();
   }
 });
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { createInterface } from "node:readline";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { tmpdir } from "node:os";
 
-test("packaged protected protocol waits for verified backup, applies exact source checksums and supports read-only original verifiers", async (t) => {
-  // This suite must also work on a clean checkout, before any worker build.
-  const build = spawnSync(process.execPath, ["scripts/build-migrations.mjs"], {
-    encoding: "utf8",
-    timeout: 60_000,
-    windowsHide: true,
-  });
-  assert.equal(build.status, 0, build.stderr || String(build.error));
-  const manifest = JSON.parse(
-    readFileSync("dist/migration-manifest.json", "utf8"),
-  );
+test("packaged protected protocol waits for verified backup, applies exact source checksums and supports read-only original verifiers", async () => {
   const repl = await MongoMemoryReplSet.create({
     binary: { downloadDir: ".cache/mongodb-data-operations-binaries" },
     replSet: { count: 1 },
   });
   const client = new MongoClient(repl.getUri());
-  // Register before any further setup can fail and leave MongoDB's pipes open.
-  t.after(async () => {
-    await client.close();
-    await repl.stop();
-  });
   const database = "data_operations_protocol";
   const db = client.db(database);
-  // Project-owned bespoke migrations are outside this automatic-batch fixture.
-  // Model them as already applied in this disposable database.
-  const before = await migrationStatus(db, manifest);
-  const prior = before.pending
-    .filter((m) => before.bespoke.includes(m.id))
-    .map((m) => ({
-      _id: m.id,
+  const manifest = JSON.parse(
+    readFileSync("dist/migration-manifest.json", "utf8"),
+  );
+  const pending = manifest.migrations.map(
+    (m: { id: string; checksum: string }) => ({
+      id: m.id,
       checksum: m.checksum,
-      appliedAt: new Date(0),
-      durationMs: 0,
-    }));
-  if (prior.length)
-    await db.collection("migrations").insertMany(prior as never);
-  const status = await migrationStatus(db, manifest);
-  const pending = status.pending.map(({ id, checksum }) => ({ id, checksum }));
+    }),
+  );
   const request = {
     version: 1,
     planId: "a".repeat(64),
     migrationRequest: {
       database,
       manifestDigest: fingerprint(manifest),
-      ledgerDigest: status.ledgerDigest,
+      ledgerDigest: fingerprint([]),
       pending,
     },
   };
   const children: ReturnType<typeof spawn>[] = [];
   const directory = await import("node:fs/promises").then((fs) =>
-    fs.mkdtemp(resolve(tmpdir(), "migration-protocol-")),
+    fs.mkdtemp(resolve("output/migration-protocol-")),
   );
   function start(mode: string) {
     const child = spawn(
@@ -295,10 +273,6 @@ test("packaged protected protocol waits for verified backup, applies exact sourc
       },
     );
     children.push(child);
-    let stderr = "";
-    child.stderr!.setEncoding("utf8").on("data", (chunk) => {
-      stderr += chunk;
-    });
     const lines = createInterface({ input: child.stdout! })[
       Symbol.asyncIterator
     ]();
@@ -309,7 +283,7 @@ test("packaged protected protocol waits for verified backup, applies exact sourc
       exit,
       async next() {
         const value = await lines.next();
-        assert.equal(value.done, false, stderr);
+        assert.equal(value.done, false);
         return JSON.parse(value.value);
       },
     };
@@ -324,10 +298,7 @@ test("packaged protected protocol waits for verified backup, applies exact sourc
     });
     const runner = start("--protected");
     assert.equal((await runner.next()).type, "ready");
-    assert.equal(
-      await db.collection("migrations").countDocuments(),
-      prior.length,
-    );
+    assert.equal(await db.collection("migrations").countDocuments(), 0);
     assert.equal(await db.collection("control").countDocuments(), 1);
     runner.child.stdin!.write(
       JSON.stringify({
@@ -356,10 +327,7 @@ test("packaged protected protocol waits for verified backup, applies exact sourc
         id: row._id,
         checksum: row.checksum,
       })),
-      [
-        ...prior.map((row) => ({ id: row._id, checksum: row.checksum })),
-        ...pending,
-      ],
+      pending,
     );
     const verifier = start("--verify");
     const inspected = await verifier.next();
@@ -373,7 +341,7 @@ test("packaged protected protocol waits for verified backup, applies exact sourc
     assert.equal((await replay.exit)[0], 1);
     assert.equal(
       await db.collection("migrations").countDocuments(),
-      prior.length + pending.length,
+      pending.length,
     );
   } finally {
     for (const child of children)
@@ -381,6 +349,8 @@ test("packaged protected protocol waits for verified backup, applies exact sourc
         child.kill();
         await once(child, "exit");
       }
+    await client.close();
+    await repl.stop();
     await import("node:fs/promises").then((fs) =>
       fs.rm(directory, { recursive: true, force: true }),
     );
