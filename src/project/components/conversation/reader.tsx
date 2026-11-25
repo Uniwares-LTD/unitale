@@ -73,8 +73,11 @@ export function ConversationReader({
     if (!event.currentTarget.contains(event.target as Node)) return;
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
+    const navigationDirection = getComputedStyle(event.currentTarget).direction;
     move(
-      event.key === (direction === "rtl" ? "ArrowLeft" : "ArrowRight") ? 1 : -1,
+      event.key === (navigationDirection === "rtl" ? "ArrowLeft" : "ArrowRight")
+        ? 1
+        : -1,
     );
   }
   if (!pages.length) return null;

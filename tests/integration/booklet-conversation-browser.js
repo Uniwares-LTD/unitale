@@ -124,8 +124,8 @@ async (page) => {
     await page.unroute(conversationApi, holdCompletedView);
   }
 
-  await button("Read your book").click();
   const reader = page.getByRole("dialog");
+  await reader.waitFor(); // Completion opens the finished-book preview automatically.
   await reader.getByText("Cover", { exact: true }).waitFor();
   const checkDownload = async (expectedSha256) => {
     const link = reader.getByRole("link", { name: "Download", exact: true });
@@ -153,7 +153,7 @@ async (page) => {
   require(await reader.getByRole("button", { name: "Next page" }).isDisabled(), "Reader moved after its last page");
   await page.keyboard.press("Escape");
 
-  await page.getByText("Progress and history", { exact: true }).click();
+  await button("Book details").click();
   await page.getByText("History", { exact: true }).waitFor();
   const status = await page.request.get(conversation + "?probe=1");
   require(status.ok(), "The owned conversation could not be reopened");
