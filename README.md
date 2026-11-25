@@ -332,11 +332,36 @@ when running outside Docker.
 | `npm run worker:ai`                 | Start AI dispatch and recovery using configured resources.                                                                                                                                                        |
 | `npm run test:integration`          | Test the production build against isolated local auth/database services.                                                                                                                                          |
 | `npm run check:skills`              | Verify local skill references and retained notices against their recorded hashes.                                                                                                                                 |
+| `npm run validate:changed`          | Select local PR checks from the merge-base diff. Add `-- --dry-run` to inspect selection.                                                                                                                         |
 | `npm run validate`                  | Run all local quality checks and write an advisory report to `output/validation/results.json`.                                                                                                                    |
 | `npm run icons:generate`            | Render `src/app/icon.svg` into install icons.                                                                                                                                                                     |
 | `npm run android:generate`          | Regenerate Bubblewrap using `ANDROID_HOST` / `ANDROID_PACKAGE_NAME` from `.env.local` or process environment, and version fields from `android/config.json`. Add `-- --release` to reject placeholder identities. |
 
 Individual checks retain their real exit codes. The aggregate `validate` command reports warnings and exits successfully even if quality checks fail; it does not certify the build or runtime. Next.js type checking is deliberately separate from the build, following the agreed advisory policy. Always inspect the report. Dependency advisories can be inspected with `npm audit`; do not force a framework downgrade just to silence an advisory.
+
+### Local PR verification
+
+Run `npm run validate:changed -- --base origin/main --head HEAD` in a clean
+checkout for commit-specific evidence. Omit `--head` to include staged,
+unstaged and untracked work. Use `--dry-run` to inspect which paths selected
+each check, including historical revision pairs. File-level tools check
+existing changed files. Shared or unclassified inputs select broader tests.
+A manual UI item needs browser evidence for the changed interaction.
+
+Each invocation prints an ignored directory under `output/validation/runs/`.
+Paste its `report.md` into the PR verification section, with any manual checks
+and skips. `run.json` records the scope and completion state; `results.json`
+is an incremental snapshot. The full validator retains its advisory exit
+behavior and shared compatibility snapshot. Use the printed run directory
+when comparing concurrent or interrupted runs. The default per-check time
+limit is five minutes, allowing headroom over a 45-second local migration
+fixture run. Set `VALIDATE_CHECK_TIMEOUT_MS` for a slower machine.
+Account workers announce their files; timeouts list outstanding files.
+
+Hosted full quality runs are manual. Deployment-related PRs use the disposable
+Linux job once per revision where validation is enabled. For unusually large
+PRs, check the Actions path-filter result and run the disposable deployment
+suite locally if a relevant CI job was missed.
 
 ## Current application surface
 

@@ -25,6 +25,7 @@
     "diagnostics": "node scripts/diagnostics-client.mjs",
     "check:skills": "node scripts/check-skills.mjs",
     "validate": "node scripts/validate.mjs",
+    "validate:changed": "node scripts/validate.mjs --changed",
     "audit:quality": "npm audit --json",
     "check:workflows": "node scripts/check-deploy-tools.mjs workflows",
     "check:shell": "node scripts/check-deploy-tools.mjs shell",

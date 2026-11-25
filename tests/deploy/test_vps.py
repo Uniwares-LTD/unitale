@@ -132,12 +132,14 @@ commit=os.environ['GITHUB_SHA']
 if '/git/ref/' in endpoint:
     print('f'*40 if os.environ.get('STALE_AFTER_BUILD')=='1' and Path('/tmp/docker-built').exists() else os.environ['MOCK_REMOTE_SHA'])
 elif '/workflows/' in endpoint:
-    print(json.dumps({'workflow_runs':[{'head_sha':commit,'status':'completed','id':1}]}))
+    print(json.dumps({'workflow_runs':[{'head_sha':commit,'status':'completed','conclusion':'success','id':1}]}))
 elif endpoint.endswith('/artifacts'):
     print(json.dumps({'artifacts':[{'name':'quality-'+commit,'expired':False,'id':2}]}))
 elif endpoint.endswith('/zip'):
     data=io.BytesIO()
-    with zipfile.ZipFile(data,'w') as z: z.writestr('results.json',json.dumps([{'name':'lint','exitCode':1,'outcome':'warning'}]))
+    with zipfile.ZipFile(data,'w') as z:
+        z.writestr('run.json',json.dumps({'head':commit,'complete':True,'local':False,'mode':'full'}))
+        z.writestr('results.json',json.dumps([{'name':'lint','exitCode':1,'outcome':'warning'}]))
     sys.stdout.buffer.write(data.getvalue())
 else: sys.exit(1)
 ''',

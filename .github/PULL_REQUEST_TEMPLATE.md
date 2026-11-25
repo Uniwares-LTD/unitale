@@ -7,7 +7,10 @@ What changed and why. Link related work with ordinary references (for example
 
 ## Verification
 
-Checks run, read-only review, documentation impact and known limitations.
+Run `npm run validate:changed -- --base origin/main --head HEAD` on the clean PR head.
+Paste the concise local report from the directory printed by the command. Include
+the tested SHA, scope, commands, durations, outcomes, manual verification and
+material skips. Refresh affected evidence when the PR head changes.
 
 ## Template changelog
 
