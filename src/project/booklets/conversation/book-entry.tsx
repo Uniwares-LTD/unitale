@@ -371,7 +371,10 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                 )}
                 <div className="flex flex-col">
                   {missing > 0 ? (
-                    <Button asChild className="min-h-(--control-touch-sm) w-full">
+                    <Button
+                      asChild
+                      className="min-h-(--control-touch-sm) w-full"
+                    >
                       <Link href="/credits">{t("m040985b8ff7e")}</Link>
                     </Button>
                   ) : (

@@ -123,12 +123,16 @@ export function WaitRow({
                   )}
                 >
                   {done && <Check className="size-2.5" strokeWidth={4} />}
-                  {current && <span className="size-1.5 rounded-full bg-primary" />}
+                  {current && (
+                    <span className="size-1.5 rounded-full bg-primary" />
+                  )}
                 </span>
                 <span
                   className={cn(
                     "w-full truncate px-0.5 text-caption",
-                    current ? "font-medium text-foreground" : "text-muted-foreground",
+                    current
+                      ? "font-medium text-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
                   {label}

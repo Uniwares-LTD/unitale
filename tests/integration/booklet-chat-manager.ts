@@ -501,7 +501,9 @@ async function tick(db: Db, selected?: AiJob) {
           productionId,
           ownerId: p.ownerId,
         },
-        { $set: { service: stages[Math.floor(elapsed / pace)], updatedAt: now } },
+        {
+          $set: { service: stages[Math.floor(elapsed / pace)], updatedAt: now },
+        },
       );
       return;
     }
@@ -596,7 +598,8 @@ async function tick(db: Db, selected?: AiJob) {
               ...part,
               text:
                 replyLength === "short"
-                  ? (part.text.match(/^[\s\S]*?[.!?؟](?=\s|$)/)?.[0] ?? part.text)
+                  ? (part.text.match(/^[\s\S]*?[.!?؟](?=\s|$)/)?.[0] ??
+                    part.text)
                   : part.text +
                     "\n\n" +
                     copy(

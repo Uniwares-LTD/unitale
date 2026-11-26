@@ -39,7 +39,9 @@ function keyboardOccludesDock() {
 
 // Direction of the first letter that has one (same rule as dir="auto").
 function typedDirection(text: string): "ltr" | "rtl" | undefined {
-  const first = text.match(/[A-Za-z\u00C0-\u024F]|[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u)?.[0];
+  const first = text.match(
+    /[A-Za-z\u00C0-\u024F]|[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u,
+  )?.[0];
   if (!first) return undefined;
   return /[A-Za-z\u00C0-\u024F]/u.test(first) ? "ltr" : "rtl";
 }
