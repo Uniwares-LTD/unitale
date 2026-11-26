@@ -344,7 +344,9 @@ function syncClaudeRouting(root, enabled, { write, source, warnings, changed }) 
 }
 
 const contractStart = '<!-- handbook-session-contract:start -->';
-const contractBlock = /<!-- handbook-session-contract:start -->\n([\s\S]*?)\n<!-- handbook-session-contract:end ([a-f0-9]{64}) -->\n?/;
+// Blank lines inside the markers keep the block stable under Markdown formatters such as
+// Prettier; earlier blocks without them still match and are rewritten on the next sync.
+const contractBlock = /<!-- handbook-session-contract:start -->\n+([\s\S]*?)\n+<!-- handbook-session-contract:end ([a-f0-9]{64}) -->\n?/;
 // AGENTS.md is the one file every client loads, so the contract is inlined, not linked.
 function syncSessionContract(root, enabled, { write, source, warnings, changed }) {
   const relative = 'AGENTS.md';
@@ -368,7 +370,7 @@ function syncSessionContract(root, enabled, { write, source, warnings, changed }
       warnings.push(`${routingGuide}: expected a Session contract section within ${contractLimit} characters; preserved ${relative}.`);
       return;
     }
-    wanted = `${contractStart}\n${section}\n<!-- handbook-session-contract:end ${sha(section)} -->\n`;
+    wanted = `${contractStart}\n\n${section}\n\n<!-- handbook-session-contract:end ${sha(section)} -->\n`;
   }
   const current = match ? match[0].replace(/\n?$/, '\n') : '';
   if (current === wanted) return;
