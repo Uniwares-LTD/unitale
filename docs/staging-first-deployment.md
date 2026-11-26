@@ -35,7 +35,9 @@ Both root steps use the **existing trusted root session**. Broad `sudo` from
 | **Gate 1** | Middle | ~25 min  | Root batch 1 (registration and base preparation), then the GHCR visibility switch about 10 minutes later                 |
 | **Gate 2** | End    | ~75 min  | Root batch 2 (AI update, ~10 min), then real-account acceptance once the agent has released and published the Dify suite |
 
-## Baseline (2026-11-26)
+## Prerequisites
+
+Baseline as of 2026-11-26. Gate 0 below supplies the remaining operator inputs.
 
 _Configured_ facts come from tracked files and are rechecked live at apply time.
 
@@ -54,7 +56,9 @@ _Configured_ facts come from tracked files and are rechecked live at apply time.
 
 Target hostname: `unitale-staging.uniwares.co.uk`.
 
-## P0 — agent, read-only, before Gate 0
+## Steps
+
+### P0 — agent, read-only, before Gate 0
 
 1. **Controller capabilities.** Send the controller's v2 `capabilities` request
    through the deploy account against the registered `unibase` project. The capability
@@ -66,7 +70,7 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
    `172.30.243.0/24`. Listener `34312`, free disk and the installed retention-policy
    checksum need root, so `run.sh` prints them in its preview (Gate 1).
 
-## Gate 0 — operator, start
+### Gate 0 — operator, start
 
 1. **Authorize in the session** each of the following by name. Merges use normal
    merge commits only ([adapter](../.agents/repository-adapter.md#publication-and-external-actions)).
@@ -97,7 +101,7 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
    app would not be adopted. The helper generates the MCP token and the encryption key.
    Persona completion stays disabled.
 
-## Agent phase A — unattended
+### Agent phase A — unattended
 
 | Step | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Mechanism                      | Stops on                                                   |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------- |
@@ -109,7 +113,7 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
 | A6   | Build `output/unitale-operator-package` (ignored):<br>• `build-control-bundle.py` on the merged commit (archive, manifest, SHA-256)<br>• `bootstrap-deploy.py` and `deploy-dispatch.py`<br>• the deploy public key<br>• `image_maintenance.py`, `install-image-maintenance.py` and the policy at the merged Infrastructure revision<br>• `SHA256SUMS`<br>• `run.sh` (see Gate 1)<br>The private host input stays in `.config\unitale` and is transferred separately                                                                                                                                                                                                                                                                                  | Local (Infrastructure tooling) | Builder rejection                                          |
 | A7   | `npm.cmd run db:migrate -- --manifest`: record the 10 declared migrations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Local                          | —                                                          |
 
-## Gate 1 — operator, middle
+### Gate 1 — operator, middle
 
 1. Copy from PowerShell. Use `ask` only on a first-ever connection, after comparing the
    fingerprint `SHA256:Jk5pHbF36TXs3PZ+50CuaX074dLjCd4/Gs7uIrU6vyc`.
@@ -149,7 +153,7 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
    publish creates the package. Then open GitHub → Uniwares-LTD → Packages → `unitale` →
    **Package settings → Change visibility → Public**.
 
-## Agent phase B — unattended
+### Agent phase B — unattended
 
 | Step | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Mechanism                      |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
@@ -157,7 +161,7 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
 | B2   | Confirm readiness reports the commit, run **Check deployment**, check DNS, tunnel ingress and the authorized domain, and compare against the P0 discovery                                                                                                                                                                                                                                                                                                                                                                                                                     | Existing workflows, read token |
 | B3   | AI preparation:<br>• Unitale PR setting `DIFY_MODE`, `MCP_ENABLED`, Dify endpoints and workspace, `MCP_CLIENTS_JSON` and `RUN_MCP_CLIENT_ID` (as in Unibase's runtime block); merge<br>• new control bundle from that commit<br>• root-only private input with `DIFY_MANAGEMENT_KEY`, `DIFY_CREDENTIAL_ENCRYPTION_KEY` and `MCP_TOKEN_DIFY` from the protected files<br>• `run-ai.sh` that stages the files the same way and runs `update-app-config.py --project unitale --expected-revision <installed> --bundle … --sha256 … --private-input …` as preview, then `APPLY=1` | PR, local                      |
 
-## Gate 2 — operator, end
+### Gate 2 — operator, end
 
 1. Copy the B3 package and private input as in Gate 1, then run `run-ai.sh` (preview, then `APPLY=1`) in the trusted root session. Say "AI installed".
 2. Wait while the agent runs these (about 30 minutes):
