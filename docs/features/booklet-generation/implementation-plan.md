@@ -1444,8 +1444,9 @@ existing components, and new components are reusable. See
   receipts, matched to native decisions as `human_response` matches them (never
   parsed from provider form text). Statuses are preparing, open, answered, stale,
   expired and closed. Replies go through the `reply` command, which runs
-  `checkReply` and the existing authentic decision submission. One tap commits a
-  single choice; multiple choices stay a draft until Send. An approval offers
+  `checkReply` and the existing authentic decision submission. Choices stay a
+  pressed-state draft until Send; a single choice holds one option, and a typed
+  note (where the question allows text) is sent with it. An approval offers
   Approve, or a change request typed in the composer and labelled with its target.
   The page has a wait row, a New response control and an offline notice.
 - **Default package**: the `bookletSettings` row (see the model guide), read with the
@@ -1490,8 +1491,8 @@ Choice, Waiting, Review, Header, Button, Icon button, Text area and Mascot.
 **Reusable components** in `src/project/components/conversation/`:
 - `Composer` (entry and dock sizes; Enter, Shift+Enter and IME rules; Send pending);
 - `ConversationDock` (the question dock surface);
-- `ChoiceGroup` (single choice commits on tap, multiple choice is a pressed-state
-  draft; the odd last option spans; optional artwork for style choices);
+- `ChoiceGroup` (choices are a pressed-state draft until Send, single keeps one;
+  the odd last option spans; optional artwork for style choices);
 - `AgentMessage`, `UserMessage`, `WaitRow`, `NewResponseButton` and
   `MilestoneDivider`;
 - `InspirationList`.

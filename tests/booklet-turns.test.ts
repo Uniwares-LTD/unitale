@@ -65,7 +65,9 @@ test("replies must answer the turn's interaction", () => {
   assert.equal(ok(turn(question("text")), answer(["a"], "x")), false);
   assert.equal(ok(turn(question("single")), answer(["a"])), true);
   assert.equal(ok(turn(question("single")), answer(["a", "b"])), false);
-  assert.equal(ok(turn(question("single")), answer(["a"], "and more")), false);
+  assert.equal(ok(turn(question("single")), answer(["a"], "and more")), true);
+  assert.equal(ok(turn(question("single", false)), answer(["a"], "and more")), false);
+  assert.equal(ok(turn(question("single")), answer([], "")), false);
   assert.equal(ok(turn(question("single")), answer([], "Someone else")), true);
   assert.equal(ok(turn(question("single", false)), answer([], "Someone else")), false);
   assert.equal(ok(turn(question("single")), answer(["z"])), false);

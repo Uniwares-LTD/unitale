@@ -135,11 +135,11 @@ export function ConversationReader({
                 <bdi>{title}</bdi>
               </DialogTitle>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3 max-[599px]:hidden">
               <div
                 role="group"
                 aria-label={t("mbc34ad4a9d8c")}
-                className="flex rounded-full bg-muted/40 p-1 max-[599px]:hidden"
+                className="flex rounded-full bg-muted/40 p-1"
               >
                 <Button
                   type="button"
@@ -162,16 +162,6 @@ export function ConversationReader({
                   {t("m70aa44634ac4")}
                 </Button>
               </div>
-              <Button
-                asChild
-                variant="outline"
-                className="min-h-11 rounded-full"
-              >
-                <a href={illustration.src} download={illustration.alt}>
-                  <Download aria-hidden="true" />
-                  {downloadLabel}
-                </a>
-              </Button>
             </div>
           </div>
           <div
@@ -258,6 +248,13 @@ export function ConversationReader({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Button asChild variant="link" className="min-h-11 px-0">
                 <Link href="/books">{t("m1ad84286274b")}</Link>
+              </Button>
+              {/* The current page's picture, named so nobody expects the whole book. */}
+              <Button asChild variant="ghost" className="min-h-11">
+                <a href={illustration.src} download={illustration.alt}>
+                  <Download aria-hidden="true" />
+                  {downloadLabel}
+                </a>
               </Button>
               {onRequestChanges && (
                 <Button

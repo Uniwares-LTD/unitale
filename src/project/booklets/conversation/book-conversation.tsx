@@ -14,16 +14,6 @@ import { api, ApiError } from "@/lib/client/api";
 import { Notice } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
 import { useGuardedNavigation, useLeaveGuard } from "@/components/leave-guard";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ChoiceGroup } from "@/project/components/conversation/choice-group";
 import {
   Composer,
@@ -378,7 +368,7 @@ export function BookConversation({
           <li key={turn.requestId} className="space-y-6">
             <AgentMessage
               name={agentName}
-              greet={revealTurn?.requestId === turn.requestId}
+              working={revealTurn?.requestId === turn.requestId && revealing}
             >
               <TurnParts
                 productionId={data.productionId}
@@ -397,13 +387,24 @@ export function BookConversation({
             )}
           </li>
         ))}
+        {working && !revealing && !confirming && (
+          // The next reply's own slot: its glowing mascot becomes that reply's
+          // header when the text starts streaming in below it.
+          <li role="status" aria-live="polite">
+            <AgentMessage name={agentName} working>
+              <WaitRow steps={bookSteps(data.activity)}>
+                {waitCopy[data.activity ?? "working"]}
+              </WaitRow>
+            </AgentMessage>
+          </li>
+        )}
         {reader && (
           <li>
             <ConversationReader
               title={data.title}
               heading={t("me75f834e009a")}
               openLabel={t("m920487473fe6")}
-              downloadLabel={t("md6eafe823591")}
+              downloadLabel={t("mc2f0e5ba6cce")}
               previousLabel={t("m1208ec01f223")}
               nextLabel={t("mca000000000f")}
               direction={reader.direction}
@@ -496,13 +497,6 @@ export function BookConversation({
 
       {/* Unitale dock layer (20); the dock stays above the transcript. */}
       <div className="sticky bottom-0 z-20 bg-background pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        {(working || revealing) && !confirming && (
-          <div className="mb-2" role="status" aria-live="polite">
-            <WaitRow steps={bookSteps(data.activity)}>
-              {waitCopy[data.activity ?? "working"]}
-            </WaitRow>
-          </div>
-        )}
         {unread && (
           <div className="mb-2 flex justify-center">
             <NewResponseButton
@@ -528,10 +522,6 @@ export function BookConversation({
             reviewDrafts={reviewDrafts}
             setReviewDrafts={setReviewDrafts}
             onSend={sendReply}
-            onShowLatest={() => {
-              pinned.current = true;
-              toLatest();
-            }}
           />
         )}
       </div>
@@ -567,7 +557,6 @@ function ReplyDock({
   reviewDrafts,
   setReviewDrafts,
   onSend,
-  onShowLatest,
 }: {
   productionId: string;
   turn: Turn | null;
@@ -579,7 +568,6 @@ function ReplyDock({
   reviewDrafts: ReviewDrafts;
   setReviewDrafts: Dispatch<SetStateAction<ReviewDrafts>>;
   onSend: (turn: Turn, reply: BookletReply) => Promise<null | SendProblem>;
-  onShowLatest: () => void;
 }) {
   const t = useTranslations("ui");
   const artwork = useBookArtworkLabels();
@@ -590,7 +578,7 @@ function ReplyDock({
     null,
   );
   const [attempt, setAttempt] = useState<BookletReply | null>(null);
-  const [confirmApprove, setConfirmApprove] = useState(false);
+  const [focused, setFocused] = useState(false);
   const interaction = turn ? interactionOf(turn.turn) : null;
   const approval = interaction?.type === "approval" ? interaction : null;
   const multiple =
@@ -603,12 +591,10 @@ function ReplyDock({
   const answerable = !!turn && !working && !sending && !unconfirmed;
   const targetId = approval?.target.revisionId;
   const currentReview = targetId ? reviewDrafts[targetId] : undefined;
-  const previousReview = Object.values(reviewDrafts).findLast(
-    (item) => item.revisionId !== targetId,
-  );
-  // A draft left on an approved review can only move here or be discarded.
-  const movingDraft = !!approval && !!previousReview && !currentReview;
   const draftText = approval ? (currentReview?.text ?? "") : draft;
+  // Approving and asking for changes never overlap: while the owner types (or
+  // has unsent text), Approve steps aside, so nothing typed can be skipped.
+  const editing = !!approval && (focused || !!draftText.trim());
 
   async function submit(reply: BookletReply) {
     if (!turn || !answerable) return;
@@ -626,12 +612,11 @@ function ReplyDock({
     }
   }
   function approve() {
-    if (!approval) return;
-    setConfirmApprove(false);
+    if (!approval || draftText.trim()) return;
     void submit({ version: 1, kind: "approve", target: approval.target });
   }
   function sendTyped() {
-    if (movingDraft || unconfirmed) return;
+    if (unconfirmed) return;
     const text = draftText.trim();
     if (approval) {
       if (text)
@@ -673,96 +658,15 @@ function ReplyDock({
   } satisfies Record<ReplyProblem | SendProblem, string>;
   const canSend =
     answerable &&
-    !movingDraft &&
     (approval ? !!draftText.trim() : !!draftText.trim() || choices.length > 0);
 
   return (
     <ConversationDock>
-      {movingDraft && (
-        <AlertDialog open>
-          <AlertDialogContent
-            // Escape must not silently keep or drop the draft.
-            onEscapeKeyDown={(event) => event.preventDefault()}
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              field.current?.focus({ preventScroll: true });
-            }}
-          >
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("mca7ac70f6eba")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("m53da3a4bf8f7", {
-                  subject: isolate(previousReview.subject),
-                })}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                onClick={() => {
-                  setReviewDrafts((current) => {
-                    const next = { ...current };
-                    delete next[previousReview.revisionId];
-                    return next;
-                  });
-                  // After the dialog's scroll lock lifts, show the review being edited.
-                  setTimeout(onShowLatest);
-                }}
-              >
-                {t("mcb30147eec19")}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  setReviewDrafts((current) => {
-                    const next = { ...current };
-                    delete next[previousReview.revisionId];
-                    next[approval.target.revisionId] = {
-                      revisionId: approval.target.revisionId,
-                      subject: approval.subject,
-                      text: previousReview.text,
-                    };
-                    return next;
-                  });
-                  setTimeout(onShowLatest);
-                }}
-              >
-                {t("m572a32cc7d3a")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-      {approval && (
-        <AlertDialog open={confirmApprove} onOpenChange={setConfirmApprove}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("mf1978b9031c8")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("mdc1aefdce45e", { subject: isolate(approval.subject) })}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("me76fd2add010")}</AlertDialogCancel>
-              <Button type="button" variant="outline" onClick={approve}>
-                {t("m0a3b47ffebca")}
-              </Button>
-              <AlertDialogAction
-                onClick={() => {
-                  setConfirmApprove(false);
-                  sendTyped();
-                }}
-              >
-                {t("m2b7718337a3a")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
       {interaction && interaction.type !== "approval" && (
         <ChoiceGroup
           legendId="book-question"
           legend={interaction.prompt}
           hint={multiple ? t("m4f853b02689c") : undefined}
-          mode={multiple ? "multiple" : "single"}
           selected={choices}
           disabled={!answerable}
           artworkLabels={artwork}
@@ -777,14 +681,9 @@ function ReplyDock({
               : interaction.options
           }
           onChoose={(id) => {
-            // A simple single choice commits with one tap.
+            // A tap only selects; Send commits, so a mistaken tap can change.
             if (!multiple) {
-              void submit({
-                version: 1,
-                kind: "answer",
-                choices: [id],
-                text: "",
-              });
+              setChoices((current) => (current[0] === id ? [] : [id]));
               return;
             }
             setChoices((current) =>
@@ -796,28 +695,23 @@ function ReplyDock({
         />
       )}
       {approval && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <p
-              id="book-change-target"
-              className="min-w-0 text-supporting text-muted-foreground [overflow-wrap:anywhere]"
-            >
-              {t("mf77904fc58de", { subject: isolate(approval.subject) })}
-            </p>
-          </div>
-          <Button
-            type="button"
-            className="min-h-(--control-touch-md) w-full rounded-(--x-unitale-radius-card) text-body font-semibold shadow-none"
-            aria-describedby="book-change-target"
-            disabled={!answerable}
-            // A typed but unsent change is confirmed before approving past it.
-            onClick={() =>
-              draftText.trim() ? setConfirmApprove(true) : approve()
-            }
-          >
-            {t("mb3f9b4ef46c3")}
-          </Button>
-        </div>
+        <p
+          id="book-change-target"
+          className="min-w-0 text-supporting text-muted-foreground [overflow-wrap:anywhere]"
+        >
+          {t("mf77904fc58de", { subject: isolate(approval.subject) })}
+        </p>
+      )}
+      {approval && !editing && (
+        <Button
+          type="button"
+          className="min-h-(--control-touch-md) w-full rounded-(--x-unitale-radius-card) text-body font-semibold shadow-none motion-safe:animate-in motion-safe:fade-in"
+          aria-describedby="book-change-target"
+          disabled={!answerable}
+          onClick={approve}
+        >
+          {t("mb3f9b4ef46c3")}
+        </Button>
       )}
       {problem && (
         <div className="flex flex-wrap items-center gap-2" role="alert">
@@ -837,36 +731,46 @@ function ReplyDock({
           )}
         </div>
       )}
-      <Composer
-        id="book-reply"
-        size="dock"
-        inputRef={field}
-        value={draftText}
-        onChange={updateDraft}
-        onSend={sendTyped}
-        canSend={canSend}
-        pending={sending}
-        readOnly={movingDraft || unconfirmed}
-        disabled={!typingAllowed}
-        maxLength={2000}
-        label={approval ? t("m5801a5064e61") : t("m74a41190a3b4")}
-        describedBy={approval ? "book-change-target" : undefined}
-        labelledBy={
-          interaction && interaction.type !== "approval"
-            ? "book-question"
-            : undefined
-        }
-        sendLabel={t("mf6f4688ff23d")}
-        placeholder={
-          !typingAllowed
-            ? t("mc2bc01335874")
-            : approval
-              ? t("m5801a5064e61")
-              : turn
-                ? t("mcd617a801ef0")
-                : t("m4a70ac5bf862")
-        }
-      />
+      <div
+        onFocus={() => setFocused(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget))
+            setFocused(false);
+        }}
+      >
+        <Composer
+          id="book-reply"
+          size="dock"
+          inputRef={field}
+          value={draftText}
+          onChange={updateDraft}
+          onSend={sendTyped}
+          canSend={canSend}
+          pending={sending}
+          readOnly={unconfirmed}
+          // Typing a change is its own mode: the field takes the emphasis.
+          className={editing ? "border-2 border-primary" : undefined}
+          disabled={!typingAllowed}
+          maxLength={2000}
+          label={approval ? t("m5801a5064e61") : t("m74a41190a3b4")}
+          describedBy={approval ? "book-change-target" : undefined}
+          labelledBy={
+            interaction && interaction.type !== "approval"
+              ? "book-question"
+              : undefined
+          }
+          sendLabel={t("mf6f4688ff23d")}
+          placeholder={
+            !typingAllowed
+              ? t("mc2bc01335874")
+              : approval
+                ? t("m5801a5064e61")
+                : turn
+                  ? t("mcd617a801ef0")
+                  : t("m4a70ac5bf862")
+          }
+        />
+      </div>
     </ConversationDock>
   );
 }

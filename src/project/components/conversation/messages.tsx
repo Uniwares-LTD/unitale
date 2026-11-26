@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils";
 
 const mascot = "/images/unitale-mascot-face.svg";
 
-// `working` bobs and glows; `greet` waves once. Both are still under reduced motion.
-function MascotFace({ mood }: { mood?: "working" | "greet" }) {
+// `working` bobs and glows; it is still under reduced motion.
+function MascotFace({ working }: { working?: boolean }) {
   return (
     <Image
-      data-unitale-mascot={mood}
+      data-unitale-mascot={working ? "working" : undefined}
       src={mascot}
       alt=""
       aria-hidden="true"
@@ -27,26 +27,33 @@ function MascotFace({ mood }: { mood?: "working" | "greet" }) {
   );
 }
 
-/** One agent turn; reveals with the package's reveal timing, instantly under reduced motion. */
+/**
+ * One agent turn. The same header is the working row while the agent works
+ * and the reply's header once it streams in, so the one mascot stays put and
+ * the text flows below it. The body reveals with the package's reveal timing,
+ * instantly under reduced motion.
+ */
 export function AgentMessage({
   name,
-  greet = false,
+  working = false,
   children,
 }: {
   name: string;
-  /** The newest reply: the mascot waves once as it arrives. */
-  greet?: boolean;
+  /** The agent is working on, or still streaming, this turn: the mascot glows. */
+  working?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-(--x-unitale-duration-reveal)">
+    <div>
       <div className="mb-2 flex items-center gap-2">
-        <MascotFace mood={greet ? "greet" : undefined} />
+        <MascotFace working={working} />
         <span className="text-caption text-muted-foreground">
           <bdi>{name}</bdi>
         </span>
       </div>
-      {children}
+      <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-(--x-unitale-duration-reveal)">
+        {children}
+      </div>
     </div>
   );
 }
@@ -73,7 +80,7 @@ export function UserMessage({
 }
 
 /**
- * Current-work line while the agent works. Copy must describe real activity;
+ * Current-work line under the working agent header. Copy must describe real activity;
  * no percentages. `steps` shows the book's real stages, the current one lit.
  */
 export function WaitRow({
@@ -85,12 +92,12 @@ export function WaitRow({
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex min-h-(--control-touch-sm) items-center gap-2 text-supporting text-muted-foreground">
-        <MascotFace mood="working" />
-        <span data-unitale-activity className="min-w-0">
-          {children}
-        </span>
-      </div>
+      <p
+        data-unitale-activity
+        className="min-w-0 text-supporting text-muted-foreground"
+      >
+        {children}
+      </p>
       {steps && (
         <ol aria-label={steps.label} className="flex items-start">
           {steps.labels.map((label, index) => {

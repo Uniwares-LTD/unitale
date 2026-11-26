@@ -14,8 +14,8 @@ export type ChoiceOption = {
 
 /**
  * Unitale single and multiple choice (design package: Single & multiple choice;
- * Unibase selection). A single, reversible choice commits on one tap; multiple
- * choices are a draft shown with aria-pressed until the composer's Send. Two
+ * Unibase selection). Choices are a draft shown with aria-pressed until the
+ * composer's Send; a single choice holds one option, a tap again clears it. Two
  * columns, the odd last option spans both. Selecting is never approval or
  * payment consent.
  */
@@ -24,7 +24,6 @@ export function ChoiceGroup({
   legend,
   hint,
   options,
-  mode,
   selected = [],
   onChoose,
   disabled = false,
@@ -36,9 +35,8 @@ export function ChoiceGroup({
   /** Short instruction under the legend, e.g. that several may be chosen. */
   hint?: string;
   options: readonly ChoiceOption[];
-  mode: "single" | "multiple";
   selected?: readonly string[];
-  /** Single: commit this option. Multiple: toggle it in the draft. */
+  /** Toggle this option in the draft (single keeps at most one). */
   onChoose: (id: string) => void;
   disabled?: boolean;
   artworkLabels?: ArtworkLabels;
@@ -77,7 +75,7 @@ export function ChoiceGroup({
               <Button
                 type="button"
                 variant={pressed ? "default" : "outline"}
-                aria-pressed={mode === "multiple" ? pressed : undefined}
+                aria-pressed={pressed}
                 onClick={() => onChoose(option.id)}
                 className={cn(
                   "h-auto min-h-(--control-touch-sm) rounded-(--x-unitale-radius-card) shadow-none whitespace-normal text-body",
