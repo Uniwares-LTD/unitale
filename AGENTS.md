@@ -1,5 +1,28 @@
 # Engineering guidance
 
+<!-- handbook-session-contract:start -->
+## Session contract
+
+Apply before the first action of every request. The full rules are the Handbook's
+`docs/guidance/communication.md` at the task revision.
+
+- Start: run the Handbook check, then read every file it lists in `mustRead`.
+- Workflow: choose the skill for each request and load it in this session before its
+  first action. Choose again when a lookup turns into writing, creating, issue changes
+  or publishing. Naming a skill without loading it does not count. Routes: guide or
+  runbook → maintain-docs; issue create, update or comment → manage-issues; implement,
+  commit or PR → work-on-task; plan or spec → compile-feature-spec; review →
+  review-change. Casual questions and read-only lookups need no skill.
+- Replies: a brief or decision for a person leads with the outcome, then the applicable
+  headings in this order: Information, Decisions made, Verification, ⛔ Blockers,
+  ❓ Questions for you, ✋ Approval needed, Suggested next actions, Where to look.
+  A single question or approval opens with that heading. Casual answers and agent
+  handoffs need no headings.
+- Authority: pushes, PRs, merges, releases, deployments, new issues and access or
+  project configuration changes need explicit approval for that action; commits follow
+  the repository adapter.
+<!-- handbook-session-contract:end 0fdd1f99e0a6638388946f611075cd41a139139f5aaa17f3dc4e2b50f5335f5f -->
+
 ## Start here
 
 At task start run `npm run handbook:check` (or `node scripts/handbook.mjs check`)
