@@ -50,10 +50,11 @@ export async function BookLibrary({
           name="search"
           defaultValue={search}
           maxLength={80}
-          // Typed text sets its own direction (Arabic in the English page, and back).
+          // Typed text sets its own direction (Arabic in the English page, and back);
+          // the empty box keeps the page direction so its hint stays on the start side.
           dir="auto"
           placeholder={t("mbb8b8340acfa")}
-          className="min-h-11 rounded-full"
+          className="min-h-11 rounded-full placeholder-shown:[direction:inherit]"
         />
         <Button
           type="submit"
