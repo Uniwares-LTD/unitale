@@ -163,6 +163,23 @@ export function BookConversation({
     working: t("ma5f833424699"),
     confirming: t("m08d20ade842d"),
   };
+  // The book's real stages, in the order the Manager runs them.
+  const stageOrder = ["story", "art", "layout", "images", "review"] as const;
+  const bookSteps = (activity: (typeof data)["activity"]) => {
+    const current = stageOrder.indexOf(activity as (typeof stageOrder)[number]);
+    if (current < 0) return undefined;
+    return {
+      label: t("m585ee1d48321"),
+      labels: [
+        t("me9e509dcd358"),
+        t("m75df3579c730"),
+        t("ma511909161e1"),
+        t("m1e6245009d67"),
+        t("maff0766a5290"),
+      ],
+      current,
+    };
+  };
 
   const refresh = useCallback(() => {
     if (refreshing.current) return refreshing.current;
@@ -358,7 +375,10 @@ export function BookConversation({
         </li>
         {data.turns.map((turn) => (
           <li key={turn.requestId} className="space-y-6">
-            <AgentMessage name={agentName}>
+            <AgentMessage
+              name={agentName}
+              greet={revealTurn?.requestId === turn.requestId}
+            >
               <TurnParts
                 productionId={data.productionId}
                 turn={turn.turn}
@@ -475,7 +495,9 @@ export function BookConversation({
       <div className="sticky bottom-0 z-20 bg-background pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {(working || revealing) && !confirming && (
           <div className="mb-2" role="status" aria-live="polite">
-            <WaitRow>{waitCopy[data.activity ?? "working"]}</WaitRow>
+            <WaitRow steps={bookSteps(data.activity)}>
+              {waitCopy[data.activity ?? "working"]}
+            </WaitRow>
           </div>
         )}
         {unread && (

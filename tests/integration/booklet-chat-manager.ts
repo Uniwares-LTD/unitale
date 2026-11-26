@@ -29,6 +29,18 @@ if (!/^mongodb:\/\/(127\.0\.0\.1|localhost):\d+\//.test(uri))
   throw new Error("Pass the fixture's loopback MongoDB URI.");
 const lease = "local-scripted-manager";
 const illustratedDemo = process.env.UNITALE_DEMO_STORYBOOK === "1";
+// Local preview switches, both off by default so existing tests keep their timing.
+// UNITALE_FAKE_PACE_MS: walk the book's work through each stage for this long.
+// UNITALE_FAKE_REPLY=short|long: trim replies to one sentence or add a paragraph.
+const pace = Math.max(0, Number(process.env.UNITALE_FAKE_PACE_MS) || 0);
+const replyLength = process.env.UNITALE_FAKE_REPLY;
+const stages = [
+  "story-planner",
+  "art-director",
+  "page-composer",
+  "image-executor",
+  "quality-reviewer",
+];
 type Step =
   | "revision"
   | "audience"
@@ -460,7 +472,7 @@ async function tick(db: Db, selected?: AiJob) {
       {
         $set: {
           runId: current._id,
-          service: "image-executor",
+          service: pace > 0 ? stages[0] : "image-executor",
           status: "dispatching",
           updatedAt: now,
         },
@@ -479,11 +491,21 @@ async function tick(db: Db, selected?: AiJob) {
     state.step === "production" ||
     (state.step === "artwork" && reply?.kind === "changes")
   ) {
-    if (
-      state.producingSince &&
-      now.getTime() - state.producingSince.getTime() < 4000
-    )
+    const elapsed = state.producingSince
+      ? now.getTime() - state.producingSince.getTime()
+      : Infinity;
+    if (pace > 0 && elapsed < pace * stages.length) {
+      await db.collection("bookletWork").updateOne(
+        {
+          callId: fingerprint([productionId, "local-artwork"]),
+          productionId,
+          ownerId: p.ownerId,
+        },
+        { $set: { service: stages[Math.floor(elapsed / pace)], updatedAt: now } },
+      );
       return;
+    }
+    if (pace === 0 && elapsed < 4000) return;
     const pageId = p.creativeConfigSnapshot.includeCover
       ? "local-cover"
       : "local-page-1";
@@ -564,6 +586,26 @@ async function tick(db: Db, selected?: AiJob) {
     return;
   }
 
+  if (replyLength === "short" || replyLength === "long")
+    turn = {
+      ...turn,
+      parts: turn.parts.map((part) =>
+        part.type !== "prose"
+          ? part
+          : {
+              ...part,
+              text:
+                replyLength === "short"
+                  ? (part.text.match(/^[\s\S]*?[.!?؟](?=\s|$)/)?.[0] ?? part.text)
+                  : part.text +
+                    "\n\n" +
+                    copy(
+                      "A longer note, so you can check how a long reply reads. Every page of your book is planned with care: the story comes first, then the pictures, then the layout, and a last review makes sure everything fits together. You can ask for changes at any step, and nothing is final until you approve it.",
+                      "ملاحظة أطول لتجربة طريقة عرض الرد الطويل. نخطط لكل صفحة من كتابك بعناية: القصة أولًا، ثم الرسوم، ثم تنسيق الصفحات، وأخيرًا مراجعة تتأكد من تناسق كل شيء. يمكنك طلب تغييرات في أي خطوة، ولا يصبح شيء نهائيًا قبل موافقتك.",
+                    ),
+            },
+      ),
+    };
   const question = turn.parts.find(
     (part) => part.type === "question" || part.type === "approval",
   );
