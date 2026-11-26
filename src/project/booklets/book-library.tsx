@@ -69,9 +69,10 @@ export async function BookLibrary({
             <li key={book.id}>
               <Link
                 href={`/books/${encodeURIComponent(book.id)}`}
-                className="group block overflow-hidden rounded-(--x-unitale-radius-card) bg-card shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring"
+                className="group flex overflow-hidden rounded-(--x-unitale-radius-card) bg-card shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring min-[600px]:block"
               >
-                <div className="flex aspect-[4/3] items-center justify-center overflow-hidden bg-muted/30 p-5">
+                {/* Phones: a small cover beside the title so several books fit on one screen. */}
+                <div className="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden bg-muted/30 p-2 min-[600px]:aspect-[4/3] min-[600px]:h-auto min-[600px]:w-auto min-[600px]:p-5">
                   {book.cover ? (
                     <ResultImage
                       src={book.cover}
@@ -83,12 +84,12 @@ export async function BookLibrary({
                     />
                   ) : (
                     <BookOpen
-                      className="size-16 text-muted-foreground"
+                      className="size-10 text-muted-foreground min-[600px]:size-16"
                       aria-hidden="true"
                     />
                   )}
                 </div>
-                <div className="space-y-2 p-5">
+                <div className="min-w-0 flex-1 space-y-1 p-4 min-[600px]:space-y-2 min-[600px]:p-5">
                   <p className="text-caption text-muted-foreground">
                     {book.completed ? t("me87c89d0003f") : t("mc1f88e9d6c41")}
                   </p>
@@ -98,7 +99,7 @@ export async function BookLibrary({
                   >
                     {book.title}
                   </h2>
-                  <p className="pt-2 text-supporting text-primary">
+                  <p className="pt-1 text-supporting text-primary min-[600px]:pt-2">
                     {book.completed ? t("m920487473fe6") : t("mb82ec4ab9b03")}
                   </p>
                 </div>
