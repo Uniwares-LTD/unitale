@@ -24,7 +24,7 @@ Repeat for each cohesive, verifiable outcome. Prefer automatic continuation.
 - Requirements and prerequisites:
 - Implementation boundaries, decisions and exclusions:
 - Acceptance, verification commands and manual evidence:
-- Review scope: two consecutive clean read-only passes; the final checkpoint covers
+- Review scope: two clean read-only reviews of the same state. The final checkpoint covers
   the complete integrated diff against the issue base.
 - Continuation: automatic, or a named human gate with reason and required action.
 

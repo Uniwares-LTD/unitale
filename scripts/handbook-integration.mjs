@@ -58,6 +58,10 @@ function document(root, reference) {
 }
 function configAt(root) {
   const config = JSON.parse(read(local(root, 'handbook.json').target));
+  if (config.claudeSessionStartRouting !== undefined &&
+      (config.kind !== 'consumer' || typeof config.claudeSessionStartRouting !== 'boolean')) {
+    throw new Error('claudeSessionStartRouting must be a boolean in consumer handbook.json.');
+  }
   if (config.version !== 1 || !['source', 'consumer'].includes(config.kind) || !Array.isArray(config.technologySkills) || config.technologySkills.some(name => typeof name !== 'string' || !/^[a-z0-9-]+$/.test(name))) throw new Error('Invalid handbook.json: require version 1, kind source|consumer, and technologySkills array.');
   return config;
 }
@@ -120,6 +124,10 @@ export function checkReadiness(root) {
     catch (error) { warnings.push(`Skill ${name}: ${error.message}`); }
   }
   if (config.kind === 'consumer') warnings.push(...bootstrapWarnings(root));
+  if (config.kind === 'consumer') {
+    try { syncClaudeRouting(root, config.claudeSessionStartRouting === true, { warnings, changed: [] }); }
+    catch (error) { warnings.push(`Claude workflow routing: ${error.message}`); }
+  }
   return { ready: warnings.length === 0, warnings };
 }
 function metadata(text, name) {
@@ -242,7 +250,86 @@ export function syncEntrypoints(root, { write = false, source } = {}) {
   }
   if (config.kind === 'consumer') warnings.push(...bootstrapWarnings(root));
   syncGates(root, { write, source: config.kind === 'consumer' ? source : undefined, warnings, changed });
+  if (config.kind === 'consumer') syncClaudeRouting(root, config.claudeSessionStartRouting === true, { write, source, warnings, changed });
   return { warnings, changed };
+}
+
+const routingMarker = 'Handbook workflow routing';
+const routingGuide = 'docs/guidance/communication.md';
+const routingLimit = 10000;
+const routingHeading = '## Workflow adherence\n';
+const validRoutingText = section => section?.startsWith(routingHeading) &&
+  section.slice(routingHeading.length).trim().length > 0 && section.length + 1 < routingLimit;
+
+function routingHook(section) {
+  // The reviewed routing text is data to a fixed Node program, with no shell expansion.
+  return { hooks: [{ type: 'command', command: 'node', args: [
+    '-e', 'process.stdout.write(Buffer.from(process.argv[2], "base64").toString("utf8") + "\\n")',
+    routingMarker + ':' + sha(section), Buffer.from(section).toString('base64')
+  ] }] };
+}
+
+function routingEntry(entry) {
+  return Array.isArray(entry?.hooks) && entry.hooks.some(hook =>
+    Array.isArray(hook?.args) && hook.args.some(arg => typeof arg === 'string' && arg.startsWith(routingMarker + ':')));
+}
+
+function intactRouting(entry) {
+  const encoded = entry?.hooks?.[0]?.args?.[3];
+  if (typeof encoded !== 'string' || encoded.length > routingLimit * 4) return false;
+  const section = Buffer.from(encoded, 'base64').toString('utf8');
+  if (!validRoutingText(section)) return false;
+  const expected = routingHook(section);
+  const hook = entry.hooks[0];
+  return Object.keys(entry).length === 1 && entry.hooks.length === 1 &&
+    Object.keys(hook).length === 3 && hook.type === 'command' && hook.command === 'node' &&
+    JSON.stringify(hook.args) === JSON.stringify(expected.hooks[0].args);
+}
+
+function syncClaudeRouting(root, enabled, { write, source, warnings, changed }) {
+  const relative = '.claude/settings.json';
+  const target = local(root, relative).target;
+  const settings = existsSync(target) ? JSON.parse(read(target)) : {};
+  if (settings.hooks !== undefined && (!settings.hooks || typeof settings.hooks !== 'object' || Array.isArray(settings.hooks))) {
+    warnings.push(relative + ': hooks must be an object; reconcile manually.');
+    return;
+  }
+  const starts = settings.hooks?.SessionStart ?? [];
+  if (!Array.isArray(starts)) { warnings.push(relative + ': SessionStart must be a list.'); return; }
+  const managed = starts.filter(routingEntry);
+  if (managed.some(entry => !intactRouting(entry))) {
+    warnings.push(relative + ': preserved customized Handbook workflow routing hook; reconcile it manually.');
+    return;
+  }
+  let wanted;
+  if (enabled && source) {
+    const guide = path.join(source, routingGuide);
+    const section = existsSync(guide) ? read(guide).split(/^(?=#{1,2} )/m)
+      .find(part => part.startsWith(routingHeading))?.trim() : '';
+    if (!validRoutingText(section)) {
+      warnings.push(routingGuide + ': expected a Workflow adherence section under 10000 characters; preserved existing routing.');
+      return;
+    }
+    wanted = routingHook(section);
+  } else if (enabled && !managed.length) {
+    warnings.push(relative + ': run handbook:sync with a reviewed source to install workflow routing.');
+    return;
+  } else if (enabled) {
+    wanted = managed[0];
+  }
+  if (managed.length === (wanted ? 1 : 0) && (!wanted || JSON.stringify(managed[0]) === JSON.stringify(wanted))) return;
+  warnings.push(relative + ': Handbook workflow routing drift.');
+  if (!write) return;
+  const next = starts.filter(entry => !routingEntry(entry));
+  if (wanted) next.push(wanted);
+  const hooks = { ...settings.hooks };
+  if (next.length) hooks.SessionStart = next;
+  else delete hooks.SessionStart;
+  if (Object.keys(hooks).length) settings.hooks = hooks;
+  else delete settings.hooks;
+  mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, JSON.stringify(settings, null, 2) + '\n');
+  if (!changed.includes(relative)) changed.push(relative);
 }
 
 export const gatesFile = '.agents/gated-commands.json';
