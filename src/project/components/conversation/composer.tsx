@@ -6,7 +6,8 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { ArrowUp, LoaderCircle } from "lucide-react";
+import { useLocale } from "next-intl";
+import { ArrowRight, ArrowUp, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,13 @@ function keyboardOccludesDock() {
       '[data-slot="composer"][data-size="dock"]',
     )
   );
+}
+
+// Direction of the first letter that has one (same rule as dir="auto").
+function typedDirection(text: string): "ltr" | "rtl" | undefined {
+  const first = text.match(/[A-Za-z\u00C0-\u024F]|[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u)?.[0];
+  if (!first) return undefined;
+  return /[A-Za-z\u00C0-\u024F]/u.test(first) ? "ltr" : "rtl";
 }
 
 export function useDockKeyboardOpen() {
@@ -110,6 +118,11 @@ export function Composer({
   footer?: ReactNode;
   className?: string;
 }) {
+  // The page direction, matching the root layout.
+  const pageDir = useLocale() === "ar" ? "rtl" : "ltr";
+  // Send and Edit follow the language being typed: Arabic puts Send on the
+  // left, English on the right. An empty box follows the page.
+  const dir = typedDirection(value) ?? pageDir;
   const send = () => {
     if (canSend && !pending) onSend();
   };
@@ -117,7 +130,9 @@ export function Composer({
     if (
       event.key !== "Enter" ||
       event.shiftKey ||
-      event.nativeEvent.isComposing
+      event.nativeEvent.isComposing ||
+      // A held entry idea starts a paid book; only a click on the arrow does that.
+      (size === "entry" && readOnly)
     )
       return;
     event.preventDefault();
@@ -139,6 +154,12 @@ export function Composer({
           aria-hidden="true"
           className="animate-spin motion-reduce:animate-none"
         />
+      ) : size === "entry" ? (
+        // Entry moves forward to the book; the chat dock keeps its up arrow.
+        <ArrowRight
+          aria-hidden="true"
+          className={cn(dir === "rtl" && "rotate-180")}
+        />
       ) : (
         <ArrowUp aria-hidden="true" />
       )}
@@ -148,6 +169,7 @@ export function Composer({
     <div
       data-slot="composer"
       data-size={size}
+      dir={dir}
       className={cn(
         "border border-input shadow-none",
         "has-[textarea:focus-visible]:outline-(length:--x-unitale-focus-width) has-[textarea:focus-visible]:outline-offset-(--x-unitale-focus-offset) has-[textarea:focus-visible]:outline-ring has-[textarea:focus-visible]:outline-solid",
@@ -192,7 +214,11 @@ export function Composer({
       </div>
       {size === "entry" && (
         <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">{footer}</div>
+          {/* Footer (hint or Edit) at the start, Send at the end; the hint
+              keeps the page's own direction. */}
+          <div className="min-w-0" dir={pageDir}>
+            {footer}
+          </div>
           {action}
         </div>
       )}

@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { Pencil } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/client/api";
@@ -210,6 +211,8 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
   const pack = entry?.package ?? null;
   const missing = pack ? pack.credits - (entry?.availableCredits ?? 0) : 0;
   const recovering = pendingStart && (!entry || problem !== null);
+  // Same condition under which the card shows "Start my book".
+  const canStart = !!pack && missing <= 0 && !recovering;
   return (
     <div
       data-slot="book-entry"
@@ -244,18 +247,29 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
           inputRef={field}
           value={idea}
           onChange={setIdea}
-          onSend={send}
-          canSend={!consent && !!idea.trim()}
+          // Once held, the arrow does what "Start my book" does.
+          onSend={consent ? start : send}
+          canSend={consent ? canStart : !!idea.trim()}
+          pending={starting}
           readOnly={consent}
           maxLength={4000}
           label={t("mb3ba025e2ecd")}
           describedBy={!consent ? "book-idea-hint" : undefined}
           placeholder={t("m4966873a89fb")}
-          sendLabel={t("mf6f4688ff23d")}
+          sendLabel={consent ? t("m6d9b2dbc225a") : t("mf6f4688ff23d")}
           footer={
             consent && !pendingStart ? (
-              <Button variant="ghost" onClick={edit} disabled={starting}>
-                {t("mfd1d3a3672ed")}
+              // Round pen in Send's place: edit the held idea.
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-(--control-touch-sm) rounded-full"
+                onClick={edit}
+                disabled={starting}
+                aria-label={t("mfd1d3a3672ed")}
+                title={t("mfd1d3a3672ed")}
+              >
+                <Pencil aria-hidden="true" />
               </Button>
             ) : null
           }
@@ -265,7 +279,8 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
             id="book-idea-hint"
             className="mt-3 text-center text-supporting text-muted-foreground"
           >
-            {t("m79a2b7be2cdc")}
+            {/* Signed out, Send leads to sign-in; say so beside Send. */}
+            {!signedIn && idea.trim() ? t("mcd5053d9a549") : t("m79a2b7be2cdc")}
           </p>
         )}
       </div>
@@ -292,7 +307,8 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
         <Card
           aria-labelledby="book-consent-title"
           size="sm"
-          className="gap-2 bg-transparent shadow-none ring-0 motion-safe:animate-in motion-safe:fade-in"
+          // Raised like the idea box so the next step stands out.
+          className="gap-2 rounded-(--x-unitale-radius-dialog) bg-card shadow-(--x-unitale-shadow-raised) ring-0 motion-safe:animate-in motion-safe:fade-in"
         >
           <CardHeader>
             <CardTitle
@@ -353,9 +369,9 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                     }
                   />
                 )}
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col">
                   {missing > 0 ? (
-                    <Button asChild className="min-h-(--control-touch-sm)">
+                    <Button asChild className="min-h-(--control-touch-sm) w-full">
                       <Link href="/credits">{t("m040985b8ff7e")}</Link>
                     </Button>
                   ) : (
@@ -363,7 +379,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                     <SubmitButton
                       pending={starting}
                       onClick={start}
-                      className="min-h-(--control-touch-sm)"
+                      className="min-h-(--control-touch-sm) w-full"
                     >
                       {problem === "pending" || problem === "failed"
                         ? t("md8b8392e2c54")
@@ -388,12 +404,6 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
             field.current?.focus();
           }}
         />
-      )}
-
-      {!signedIn && idea.trim() && (
-        <p className="text-center text-supporting text-muted-foreground">
-          {t("mcd5053d9a549")}
-        </p>
       )}
     </div>
   );
