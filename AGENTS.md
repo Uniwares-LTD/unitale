@@ -1,6 +1,7 @@
 # Engineering guidance
 
 <!-- handbook-session-contract:start -->
+
 ## Session contract
 
 Apply before the first action of every request. The full rules are the Handbook's
@@ -21,6 +22,7 @@ Apply before the first action of every request. The full rules are the Handbook'
 - Authority: pushes, PRs, merges, releases, deployments, new issues and access or
   project configuration changes need explicit approval for that action; commits follow
   the repository adapter.
+
 <!-- handbook-session-contract:end 0fdd1f99e0a6638388946f611075cd41a139139f5aaa17f3dc4e2b50f5335f5f -->
 
 ## Start here
