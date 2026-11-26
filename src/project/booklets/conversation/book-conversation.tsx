@@ -13,7 +13,7 @@ import {
 import { api, ApiError } from "@/lib/client/api";
 import { Notice } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
-import { useLeaveGuard } from "@/components/leave-guard";
+import { useGuardedNavigation, useLeaveGuard } from "@/components/leave-guard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -110,6 +110,7 @@ export function BookConversation({
   useLeaveGuard({
     dirty: !!draft.trim() || Object.keys(reviewDrafts).length > 0,
   });
+  const guarded = useGuardedNavigation();
 
   const clearSubmittedDraft = useCallback((reply: BookletReply) => {
     if (reply.kind === "answer" && reply.text) {
@@ -352,7 +353,7 @@ export function BookConversation({
           variant="ghost"
           className="min-h-11 text-muted-foreground"
         >
-          <Link href="/books">
+          <Link href="/books" onNavigate={guarded("/books")}>
             <Library aria-hidden="true" />
             {t("m1ad84286274b")}
           </Link>
@@ -408,7 +409,10 @@ export function BookConversation({
               direction={reader.direction}
               hasCover={!!cover}
               autoOpen={
-                data.completed && !initial.completed && completionReady && !unread
+                data.completed &&
+                !initial.completed &&
+                completionReady &&
+                !unread
               }
               onRequestChanges={() => setDetailsOpen(true)}
               pageLabel={(index) =>
