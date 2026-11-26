@@ -200,7 +200,8 @@ the admin boundary; public-page catalogs remain in `messages/`.
 
 [README](../README.md) owns setup; [architecture](architecture.md) owns current behavior;
 [implementation plan](implementation-plan.md) owns accepted milestones and remaining acceptance.
-[Deployment](deployment.md) owns application operations; [agent tooling](agent-tooling.md)
+[Deployment](deployment.md) owns application operations; the [first staging runbook](staging-first-deployment.md)
+orders #21's one-time installation across operator gates and agent phases; [agent tooling](agent-tooling.md)
 owns integration procedures and provenance; the [repository adapter](../.agents/repository-adapter.md)
 owns local constraints and Handbook exceptions. Root [instructions](../AGENTS.md)
 own task-start routing and short decision-point reminders; this map owns navigation.
