@@ -258,6 +258,54 @@ html[data-project="unitale"]
     background-position: 0% 0;
   }
 }
+/* The mascot breathes and glows while it works and waves once at a new reply;
+   the current stage ring glows. Motion only; still under reduced motion. */
+@media screen and (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  html[data-project="unitale"] [data-unitale-mascot="working"] {
+    animation: unitale-mascot-work 2.4s ease-in-out infinite;
+  }
+  html[data-project="unitale"] [data-unitale-mascot="greet"] {
+    transform-origin: 50% 85%;
+    animation: unitale-mascot-wave 1.1s var(--x-unitale-ease-standard) 1;
+  }
+  html[data-project="unitale"] [data-unitale-step="current"] {
+    animation: unitale-step-glow 1.8s ease-in-out infinite;
+  }
+}
+@keyframes unitale-mascot-work {
+  0%,
+  100% {
+    transform: translateY(0);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    transform: translateY(-3px);
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--primary) 55%, transparent));
+  }
+}
+@keyframes unitale-mascot-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  60% {
+    transform: rotate(-14deg);
+  }
+  40%,
+  80% {
+    transform: rotate(10deg);
+  }
+}
+@keyframes unitale-step-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 0%, transparent);
+  }
+}
 html[data-project="unitale"] [data-unitale-artwork-viewer]:fullscreen {
   inset: 0;
   --tw-translate-x: 0px;
