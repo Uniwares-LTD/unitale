@@ -680,10 +680,7 @@
     "m53329aa02b0b": "Illustration for page {page}",
     "med9a8912b07a": "Cover of {title}",
     "mca7ac70f6eba": "Move your draft to this review?",
-    "mfa4bd7ea2dcc": "Your draft is for {subject}. You can keep it there or move it to the current review.",
-    "mbbcc810f654f": "Keep draft",
     "m572a32cc7d3a": "Move draft",
-    "mc6e5edcb50eb": "Review draft",
     "m92ef50192b46": "A reply is being confirmed",
     "m8fec81657ba8": "Check reply",
     "mee06dd885c12": "Fullscreen is not available in this browser.",
@@ -705,7 +702,13 @@
     "mbb8b8340acfa": "Search your books",
     "mc309b48f250f": "More books",
     "me87c89d0003f": "Ready to read",
-    "mf8806e8297c6": "Your first story starts here"
+    "mf8806e8297c6": "Your first story starts here",
+    "m53da3a4bf8f7": "Your unsent change was for {subject}, which is already approved. Move it to this review or discard it.",
+    "mcb30147eec19": "Discard draft",
+    "mf1978b9031c8": "Send your change first?",
+    "mdc1aefdce45e": "You typed a change for {subject} but haven’t sent it.",
+    "m0a3b47ffebca": "Approve anyway",
+    "m2b7718337a3a": "Send change"
   },
   "locale": {
     "heading": "Language and region",

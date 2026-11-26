@@ -528,6 +528,10 @@ export function BookConversation({
             reviewDrafts={reviewDrafts}
             setReviewDrafts={setReviewDrafts}
             onSend={sendReply}
+            onShowLatest={() => {
+              pinned.current = true;
+              toLatest();
+            }}
           />
         )}
       </div>
@@ -563,6 +567,7 @@ function ReplyDock({
   reviewDrafts,
   setReviewDrafts,
   onSend,
+  onShowLatest,
 }: {
   productionId: string;
   turn: Turn | null;
@@ -574,6 +579,7 @@ function ReplyDock({
   reviewDrafts: ReviewDrafts;
   setReviewDrafts: Dispatch<SetStateAction<ReviewDrafts>>;
   onSend: (turn: Turn, reply: BookletReply) => Promise<null | SendProblem>;
+  onShowLatest: () => void;
 }) {
   const t = useTranslations("ui");
   const artwork = useBookArtworkLabels();
@@ -584,7 +590,7 @@ function ReplyDock({
     null,
   );
   const [attempt, setAttempt] = useState<BookletReply | null>(null);
-  const [keepDraft, setKeepDraft] = useState(false);
+  const [confirmApprove, setConfirmApprove] = useState(false);
   const interaction = turn ? interactionOf(turn.turn) : null;
   const approval = interaction?.type === "approval" ? interaction : null;
   const multiple =
@@ -600,8 +606,8 @@ function ReplyDock({
   const previousReview = Object.values(reviewDrafts).findLast(
     (item) => item.revisionId !== targetId,
   );
-  const movingDraft =
-    !!approval && !!previousReview && !currentReview && !keepDraft;
+  // A draft left on an approved review can only move here or be discarded.
+  const movingDraft = !!approval && !!previousReview && !currentReview;
   const draftText = approval ? (currentReview?.text ?? "") : draft;
 
   async function submit(reply: BookletReply) {
@@ -618,6 +624,11 @@ function ReplyDock({
     else if (!result) {
       setChoices([]);
     }
+  }
+  function approve() {
+    if (!approval) return;
+    setConfirmApprove(false);
+    void submit({ version: 1, kind: "approve", target: approval.target });
   }
   function sendTyped() {
     if (movingDraft || unconfirmed) return;
@@ -668,13 +679,10 @@ function ReplyDock({
   return (
     <ConversationDock>
       {movingDraft && (
-        <AlertDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setKeepDraft(true);
-          }}
-        >
+        <AlertDialog open>
           <AlertDialogContent
+            // Escape must not silently keep or drop the draft.
+            onEscapeKeyDown={(event) => event.preventDefault()}
             onCloseAutoFocus={(event) => {
               event.preventDefault();
               field.current?.focus({ preventScroll: true });
@@ -683,13 +691,25 @@ function ReplyDock({
             <AlertDialogHeader>
               <AlertDialogTitle>{t("mca7ac70f6eba")}</AlertDialogTitle>
               <AlertDialogDescription>
-                {t("mfa4bd7ea2dcc", {
+                {t("m53da3a4bf8f7", {
                   subject: isolate(previousReview.subject),
                 })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{t("mbbcc810f654f")}</AlertDialogCancel>
+              <AlertDialogCancel
+                onClick={() => {
+                  setReviewDrafts((current) => {
+                    const next = { ...current };
+                    delete next[previousReview.revisionId];
+                    return next;
+                  });
+                  // After the dialog's scroll lock lifts, show the review being edited.
+                  setTimeout(onShowLatest);
+                }}
+              >
+                {t("mcb30147eec19")}
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
                   setReviewDrafts((current) => {
@@ -702,9 +722,36 @@ function ReplyDock({
                     };
                     return next;
                   });
+                  setTimeout(onShowLatest);
                 }}
               >
                 {t("m572a32cc7d3a")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {approval && (
+        <AlertDialog open={confirmApprove} onOpenChange={setConfirmApprove}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("mf1978b9031c8")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("mdc1aefdce45e", { subject: isolate(approval.subject) })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("me76fd2add010")}</AlertDialogCancel>
+              <Button type="button" variant="outline" onClick={approve}>
+                {t("m0a3b47ffebca")}
+              </Button>
+              <AlertDialogAction
+                onClick={() => {
+                  setConfirmApprove(false);
+                  sendTyped();
+                }}
+              >
+                {t("m2b7718337a3a")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -757,29 +804,15 @@ function ReplyDock({
             >
               {t("mf77904fc58de", { subject: isolate(approval.subject) })}
             </p>
-            {previousReview && !currentReview && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-(--control-touch-sm) shrink-0"
-                disabled={!answerable}
-                onClick={() => setKeepDraft(false)}
-              >
-                {t("mc6e5edcb50eb")}
-              </Button>
-            )}
           </div>
           <Button
             type="button"
             className="min-h-(--control-touch-md) w-full rounded-(--x-unitale-radius-card) text-body font-semibold shadow-none"
             aria-describedby="book-change-target"
             disabled={!answerable}
+            // A typed but unsent change is confirmed before approving past it.
             onClick={() =>
-              void submit({
-                version: 1,
-                kind: "approve",
-                target: approval.target,
-              })
+              draftText.trim() ? setConfirmApprove(true) : approve()
             }
           >
             {t("mb3f9b4ef46c3")}
