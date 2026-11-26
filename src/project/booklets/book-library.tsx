@@ -50,6 +50,8 @@ export async function BookLibrary({
           name="search"
           defaultValue={search}
           maxLength={80}
+          // Typed text sets its own direction (Arabic in the English page, and back).
+          dir="auto"
           placeholder={t("mbb8b8340acfa")}
           className="min-h-11 rounded-full"
         />
