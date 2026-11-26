@@ -46,10 +46,12 @@ Read the generated [bootstrap](handbook.md) for shared guidance access and
 ## GitHub access
 
 Follow Handbook's [GitHub access policy](https://github.com/Uniwares-LTD/handbook/blob/main/docs/work-policy.md#github-access)
-at the task revision: plain Git, then working capable GitHub MCP, then CLI.
+at the task revision. All GitHub writes use locally authenticated tools: plain Git,
+then a locally authenticated GitHub MCP, then CLI. The hosted connector is read-only.
 If CLI lacks configuration or access, stop that operation and guide repair.
-Chrome requires explicit approval for an exact action unsupported by all three.
-Run Git/MCP/gh and helpers/tests invoking them outside the sandbox from the first
+Chrome needs explicit approval and is only for rare read-only actions; report
+writes no local tool can perform as blockers. Run Git/local MCP/gh and helpers/tests
+invoking them outside the sandbox from the first
 attempt. Required helper previews/readback and local authority still apply.
 
 ## Publication and external actions
