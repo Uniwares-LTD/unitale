@@ -7,10 +7,12 @@ import tempfile
 import unittest
 
 BASH = shutil.which('bash') if os.name != 'nt' else 'C:/Program Files/Git/bin/bash.exe'
+BASH_SUPPORTED = bool(BASH and Path(BASH).is_file() and subprocess.run(
+    [BASH, '-c', 'test "${BASH_VERSINFO[0]}" -ge 4'], capture_output=True).returncode == 0)
 REPO = Path(__file__).resolve().parents[2]
 
 
-@unittest.skipUnless(BASH and Path(BASH).is_file(), 'Bash unavailable')
+@unittest.skipUnless(BASH_SUPPORTED, 'Requires Bash 4+ for the release shell')
 class ReleaseSequenceTests(unittest.TestCase):
     def run_release(self, failure='', mode='', retained=False, activation='proceed'):
         with tempfile.TemporaryDirectory() as temporary:

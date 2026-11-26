@@ -318,16 +318,21 @@ sys.exit(subprocess.run(['bash','/repo/scripts/deploy/vps.sh','deploy','staging'
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return (ROOT / "staging/current").resolve()
 
-    def test_rejected_activation_keeps_current_release_running(self):
+    def test_failed_activation_gate_keeps_current_release_running(self):
         previous = self.release("a" * 40)
         operations = Path("/tmp/docker-operations")
-        operations.write_text("")
-        result = self.run_host("deploy", commit="b" * 40, REJECT_ACTIVATION="1")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Fixture activation rejected", result.stderr)
-        self.assertEqual((ROOT / "staging/current").resolve(), previous)
-        self.assertNotIn('"up"', operations.read_text())
-        self.assertNotIn('"down"', operations.read_text())
+        for extra, message in (
+            ({"REJECT_ACTIVATION": "1"}, "Fixture activation rejected"),
+            ({"UNIWARES_DATA_GATE": ""}, "UNSUPPORTED_CAPABILITY: data activation gate required"),
+        ):
+            with self.subTest(message=message):
+                operations.write_text("")
+                result = self.run_host("deploy", commit="b" * 40, **extra)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
+                self.assertEqual((ROOT / "staging/current").resolve(), previous)
+                self.assertNotIn('"up"', operations.read_text())
+                self.assertNotIn('"down"', operations.read_text())
 
     def test_failed_readiness_restores_matching_configuration_and_image(self):
         previous = self.release("a" * 40)
