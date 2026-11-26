@@ -382,7 +382,6 @@ export function BookConversation({
               <TurnParts
                 productionId={data.productionId}
                 turn={turn.turn}
-                answered={turn.status !== "open" && turn.status !== "preparing"}
                 revealCount={
                   revealTurn?.requestId === turn.requestId && revealing
                     ? count
@@ -711,6 +710,7 @@ function ReplyDock({
         <ChoiceGroup
           legendId="book-question"
           legend={interaction.prompt}
+          hint={multiple ? t("m4f853b02689c") : undefined}
           mode={multiple ? "multiple" : "single"}
           selected={choices}
           disabled={!answerable}

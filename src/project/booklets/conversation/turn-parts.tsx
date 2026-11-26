@@ -33,18 +33,16 @@ export function useBookArtworkLabels(): ArtworkLabels {
   };
 }
 
-// Non-interactive parts render in the history in the Manager's order. The one
-// interactive part (question, styles or approval) is rendered by the dock while
-// open; once answered, only its prompt stays in the history.
+// Parts render in the history in the Manager's order. The one interactive part
+// (question, styles or approval) is answered in the dock; its prompt also stays
+// in the history so a question-only turn never shows an empty agent row.
 export function TurnParts({
   productionId,
   turn,
-  answered,
   revealCount,
 }: {
   productionId: string;
   turn: BookletTurn;
-  answered: boolean;
   revealCount?: number;
 }) {
   const artwork = useBookArtworkLabels();
@@ -68,7 +66,6 @@ export function TurnParts({
         key={index}
         productionId={productionId}
         part={part}
-        answered={answered}
         artwork={artwork}
       />,
     );
@@ -79,12 +76,10 @@ export function TurnParts({
 function Part({
   productionId,
   part,
-  answered,
   artwork,
 }: {
   productionId: string;
   part: BookletTurnPart;
-  answered: boolean;
   artwork: ArtworkLabels;
 }) {
   switch (part.type) {
@@ -177,11 +172,11 @@ function Part({
       );
     case "question":
     case "styles":
-      return answered ? (
+      return (
         <p dir="auto" className={`${prose} font-medium`}>
           {part.prompt}
         </p>
-      ) : null;
+      );
     case "approval":
       return null;
   }
@@ -221,21 +216,40 @@ export function ReplyText({
       ? interactive.options
       : [];
   // Locale list formatting; labels are Manager content, never joined by hand.
-  return format.list(
-    [
-      ...reply.choices.map(
-        (id) => options.find((o) => o.id === id)?.label ?? id,
-      ),
-      ...(reply.text ? [reply.text] : []),
-    ].map((value, index) => <ReplyValue key={index} value={value} />),
-    { type: "unit" },
+  // Typed text goes on its own line so a list word ("و", "and") never joins
+  // two answers in different scripts.
+  const chosen = reply.choices.map(
+    (id) => options.find((o) => o.id === id)?.label ?? id,
+  );
+  return (
+    <>
+      {chosen.length > 0 &&
+        format.list(
+          chosen.map((value, index) => (
+            <ReplyValue key={index} value={value} />
+          )),
+          { type: "unit" },
+        )}
+      {reply.text && (
+        <ReplyValue
+          value={reply.text}
+          className={chosen.length > 0 ? "mt-1 block" : undefined}
+        />
+      )}
+    </>
   );
 }
 
 /** Keep each answer independent of the surrounding sentence and numeric ranges LTR. */
-function ReplyValue({ value }: { value: string }) {
+function ReplyValue({
+  value,
+  className,
+}: {
+  value: string;
+  className?: string;
+}) {
   return (
-    <bdi>
+    <bdi className={className}>
       {value.split(/(\p{N}+(?:\s*[-–—]\s*\p{N}+)+)/u).map((part, index) =>
         index % 2 ? (
           <bdi key={index} dir="ltr">

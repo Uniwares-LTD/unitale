@@ -22,6 +22,7 @@ export type ChoiceOption = {
 export function ChoiceGroup({
   legendId,
   legend,
+  hint,
   options,
   mode,
   selected = [],
@@ -32,6 +33,8 @@ export function ChoiceGroup({
 }: {
   legendId: string;
   legend: string;
+  /** Short instruction under the legend, e.g. that several may be chosen. */
+  hint?: string;
   options: readonly ChoiceOption[];
   mode: "single" | "multiple";
   selected?: readonly string[];
@@ -43,10 +46,22 @@ export function ChoiceGroup({
 }) {
   const media = options.some((option) => option.image);
   return (
-    <fieldset disabled={disabled} className="min-w-0">
+    <fieldset
+      disabled={disabled}
+      aria-describedby={hint && !compact ? `${legendId}-hint` : undefined}
+      className="min-w-0"
+    >
       <legend id={legendId} dir="auto" className="mb-2 text-body font-semibold">
         {legend}
       </legend>
+      {hint && !compact && (
+        <p
+          id={`${legendId}-hint`}
+          className="-mt-1 mb-2 text-supporting text-muted-foreground"
+        >
+          {hint}
+        </p>
+      )}
       {options.length > 0 && !compact && (
         <div
           className={cn(
