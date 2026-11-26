@@ -54,6 +54,16 @@ export function ConversationReader({
   const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(false);
   const [spread, setSpread] = useState(false);
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 600px)");
+    const update = () => setWide(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  // Two pages side by side are too small to read on a phone.
+  const twoUp = spread && wide;
   const position = useRef(0);
   const openedPath = useRef("");
   const current = Math.max(0, Math.min(index, pages.length - 1));
@@ -66,9 +76,9 @@ export function ConversationReader({
       return () => cancelAnimationFrame(frame);
     }
   }, [autoOpen]);
-  const visible = readerRange(current, pages.length, spread, hasCover);
+  const visible = readerRange(current, pages.length, twoUp, hasCover);
   const move = (delta: -1 | 1) =>
-    setIndex(readerStep(current, pages.length, spread, delta, hasCover));
+    setIndex(readerStep(current, pages.length, twoUp, delta, hasCover));
   function onKeyDown(event: KeyboardEvent) {
     if (!event.currentTarget.contains(event.target as Node)) return;
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -129,7 +139,7 @@ export function ConversationReader({
               <div
                 role="group"
                 aria-label={t("mbc34ad4a9d8c")}
-                className="flex rounded-full bg-muted/40 p-1"
+                className="flex rounded-full bg-muted/40 p-1 max-[599px]:hidden"
               >
                 <Button
                   type="button"
@@ -170,7 +180,7 @@ export function ConversationReader({
           >
             <div
               className={
-                spread && visible.length > 1
+                twoUp && visible.length > 1
                   ? "grid grid-cols-2 gap-2 sm:gap-5"
                   : "mx-auto max-w-xl"
               }
@@ -201,7 +211,7 @@ export function ConversationReader({
                         ))}
                       </div>
                     )}
-                    {spread && visible.length > 1 && (
+                    {twoUp && visible.length > 1 && (
                       <p className="px-4 pb-3 text-center text-caption text-muted-foreground">
                         {pageLabel(pageIndex)}
                       </p>

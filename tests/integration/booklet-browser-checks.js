@@ -127,7 +127,7 @@ async (page) => {
   results.push("next steps follow server eligibility (" + (working ? "active Run" : "continue offered") + ")");
 
   // 10.5: on-demand history inside the Run page.
-  await page.getByText("Runs for this book", { exact: true }).click();
+  await page.getByText("Book-making steps", { exact: true }).click();
   await page.getByText(/This run ·/).waitFor();
   await page.getByText("Versions of this book", { exact: true }).click();
   await page.getByText("Current version", { exact: true }).waitFor();

@@ -123,12 +123,14 @@ export function BookDetails({
           )}
           {view && (
             <>
-              <p className="text-supporting text-muted-foreground">
-                {t("m82f68bf17e33", {
-                  accepted: view.pages.accepted,
-                  total: view.pages.total,
-                })}
-              </p>
+              {!view.completed && (
+                <p className="text-supporting text-muted-foreground">
+                  {t("m82f68bf17e33", {
+                    accepted: view.pages.accepted,
+                    total: view.pages.total,
+                  })}
+                </p>
+              )}
               <BookletActions view={view} refresh={refresh} />
               <BookletHistoryPanel
                 view={view}

@@ -208,12 +208,12 @@ export function BookletHistoryPanel({
       <h3 id={`${prefix}-history`} className="font-medium">
         {t("m0e7696009337")}
       </h3>
-      {section("runs", t("m85226e143424"))}
+      {section("runs", t("m535d3eff217d"))}
       {section("versions", t("m56f6713d80de"))}
       {artifacts.length > 0 &&
         section(
           "revisions",
-          t("m28619f03da52"),
+          t("m72a0cee2a5cd"),
           <div className="pt-3">
             <Select
               value={artifactId}

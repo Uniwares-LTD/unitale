@@ -245,7 +245,7 @@ export function ArtworkViewer({
           className="text-caption text-muted-foreground"
           role={notice ? "status" : undefined}
         >
-          {notice || t("m4535cee1ed67")}
+          {notice || t("m7b7c94c28ff9")}
         </p>
       </DialogContent>
     </Dialog>
