@@ -75,7 +75,10 @@ After an interrupted lock, inspect its PID and remove it only after confirming n
 ## Clients and lightweight acceptance
 
 Codex discovery uses .agents/skills. Claude uses CLAUDE.md imports and .claude/skills.
-Markdown references install no hooks, permissions, subagents or dependencies.
+Skill references install no hooks, permissions, subagents or dependencies.
+Source-aware sync separately installs the managed read-only Claude `reviewer` in
+.claude/agents. It reads the shared reviewer at the task's retained revision.
+The optional reviewer tier (`agentTierPilot`) is not enabled.
 
 ### Optional deployment skills
 

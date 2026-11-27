@@ -29,6 +29,10 @@ Merging is not deployment; link the exact release and migration status evidence.
 
 ## Test flow
 
+Follow Manual QA plans in `docs/guidance/engineering.md` at the retained Handbook
+revision. For a heavy flow, identify setup owners and prerequisites. For
+records-only verification, name the authorized verifier.
+
 "None", or the role, starting state, actions and expected result for acceptance.
 Keep these scenarios separate from deployment actions. Promotion PRs link back here.
 

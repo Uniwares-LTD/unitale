@@ -5,7 +5,7 @@
     "APP_ENV": "staging",
     "APP_NAME": "Unitale",
     "APP_STYLE": "classic",
-    "APP_ORIGIN": null,
+    "APP_ORIGIN": "https://unitale-staging.uniwares.co.uk",
     "AUTH_MODE": "firebase",
     "FIREBASE_PROJECT_ID": "uniwares-base",
     "MONGODB_DATABASE": "unitale_staging",
@@ -18,17 +18,17 @@
   "deployment": {
     "imageRepository": "ghcr.io/uniwares-ltd/unitale",
     "port": 34312,
-    "ingressSubnet": "172.23.251.128/28",
-    "redisImage": null,
-    "nginxImage": null,
-    "adminImage": null
+    "ingressSubnet": "172.30.243.0/24",
+    "redisImage": "redis@sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+    "nginxImage": "nginx@sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951",
+    "adminImage": "node@sha256:2c87ef9bd3c6a3bd4b472b4bec2ce9d16354b0c574f736c476489d09f560a203"
   },
   "ssh": {
-    "host": null,
-    "user": null,
+    "host": "vps-ae0a9d01.vps.ovh.net",
+    "user": "uniwares-deploy-user",
     "cloudflaredVersion": null,
     "cloudflaredSha256": null,
-    "transport": null
+    "transport": "direct"
   },
   "google": {
     "projectId": "uniwares-base",
@@ -41,16 +41,16 @@
     "projectId": "6a869d84e65675f845fa22eb",
     "clusterName": "kids-booklet",
     "mongoUser": "unitale_staging",
-    "vpsEgressCidr": null
+    "vpsEgressCidr": "51.195.218.185/32"
   },
   "shared": {
-    "ownerRepository": null,
-    "ownerRef": null,
-    "routeWorkflow": "shared-app-routes.yml",
-    "tunnelId": null,
-    "cloudflareAccountId": null,
-    "cloudflareZoneId": null,
-    "routeMode": null
+    "ownerRepository": "karpishe-experiments/agentic-poc",
+    "ownerRef": "master",
+    "routeWorkflow": null,
+    "tunnelId": "3d383dc7-335b-4989-b0f2-d1f32a7092f2",
+    "cloudflareAccountId": "9fe70413989f2aca355a77e318b068b1",
+    "cloudflareZoneId": "68aa89fafe2e8f40c6cf028ff83dd6d0",
+    "routeMode": "owner-managed"
   },
   "ghcr": {
     "pullUser": null

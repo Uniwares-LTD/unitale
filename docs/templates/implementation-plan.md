@@ -24,11 +24,14 @@ Repeat for each cohesive, verifiable outcome. Prefer automatic continuation.
 - Requirements and prerequisites:
 - Implementation boundaries, decisions and exclusions:
 - Acceptance, verification commands and manual evidence:
-- Review scope: two consecutive clean read-only passes; the final checkpoint covers
+- Review scope: two clean read-only reviews of the same state. The final checkpoint covers
   the complete integrated diff against the issue base.
 - Continuation: automatic, or a named human gate with reason and required action.
 
 ## Verified progress and resume
+
+Record the approved plan and governing PRD fingerprints using the large-work
+handoff procedure. Keep all approved instructions above this final heading.
 
 Update this section during execution, not as a speculative work log. Record completed
 checkpoints, source/diff identity, current validation, review results, remaining gates
