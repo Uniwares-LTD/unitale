@@ -71,6 +71,9 @@ export function BookDetails({
     style: t("m7e744141b40e"),
     reference: t("m1a11982bb733"),
     "page-plan": t("m3d92cbd77e0d"),
+    "page-spec": t("m3d92cbd77e0d"),
+    "image-spec": t("ma15000000003"),
+    "book-layout": t("ma15000000002"),
     "page-image": t("md99d69879e52"),
     "book-manifest": t("md4425bec974a"),
   };
@@ -103,7 +106,7 @@ export function BookDetails({
         className="max-h-[90svh] overflow-y-auto bg-card shadow-none ring-0 sm:max-w-3xl"
       >
         <DialogTitle className="min-h-11 pe-12 font-heading text-section-title">
-          {t("m395409137696")}
+          {t("m9f17d3680bca")}
         </DialogTitle>
         <div className="space-y-4">
           {failed && (

@@ -18,6 +18,7 @@ import {
   type BookletHistory,
   type BookletView,
 } from "./application-contract";
+import { subjectNames } from "./booklet-actions";
 
 type Kind = BookletHistory["kind"];
 type Page = { items: BookletHistory["items"]; next: string | null };
@@ -39,6 +40,11 @@ export function BookletHistoryPanel({
   const [failed, setFailed] = useState<Partial<Record<Kind, string>>>({});
   const [loading, setLoading] = useState<Kind | null>(null);
   const [artifactId, setArtifactId] = useState("");
+  const subjectName = subjectNames(
+    view.subjects,
+    t("mfa8d84566676"),
+    (page) => t("ma15000000001", { page }),
+  );
   const artifacts = view.subjects.flatMap((s) =>
     s.artifacts.map((a) => ({ id: a.id, subject: s, kind: a.kind })),
   );
@@ -228,11 +234,7 @@ export function BookletHistoryPanel({
               <SelectContent>
                 {artifacts.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    <bdi>
-                      {a.subject.pageRole === "cover"
-                        ? t("mfa8d84566676")
-                        : a.subject.label}
-                    </bdi>
+                    <bdi>{subjectName(a.subject)}</bdi>
                     {" · "}
                     {kindLabel(a.kind)}
                   </SelectItem>

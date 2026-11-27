@@ -36,6 +36,23 @@ import {
 } from "./application-contract";
 
 type Revision = BookletView["actions"]["revisions"][number];
+type Subject = { id: string; label: string; pageRole: "cover" | "story" | null };
+
+/** Readable subject names: the server label can be an internal id, so pages
+ * are named by their place among the story pages. */
+export function subjectNames(
+  subjects: readonly Subject[],
+  cover: string,
+  page: (number: number) => string,
+) {
+  const story = subjects.filter((s) => s.pageRole === "story").map((s) => s.id);
+  return (s: Subject) =>
+    s.pageRole === "cover"
+      ? cover
+      : s.pageRole === "story"
+        ? page(story.indexOf(s.id) + 1)
+        : s.label;
+}
 type Pending = {
   command: BookletProductionCommand;
   reason: "sending" | "unknown";
@@ -70,6 +87,19 @@ export function BookletActions({
   const selected = actions.revisions.find((r) => r.category === category);
   const scope = JSON.stringify([category, [...subjects].sort(), view.version]);
   const busy = pending !== null;
+  const subjectName = subjectNames(
+    selected?.subjects ?? [],
+    t("mfa8d84566676"),
+    (page) => t("ma15000000001", { page }),
+  );
+  // A finished book offers only "Request changes"; its own legend says so.
+  const onlyRevisions =
+    !notice &&
+    !pending &&
+    !actions.running &&
+    !actions.resume &&
+    !actions.retry &&
+    !actions.continue;
 
   const categoryLabel: Record<Revision["category"], string> = {
     story: t("me9e509dcd358"),
@@ -188,7 +218,10 @@ export function BookletActions({
       aria-labelledby={`${prefix}-actions`}
       className="space-y-4 border-t pt-4"
     >
-      <h3 id={`${prefix}-actions`} className="font-medium">
+      <h3
+        id={`${prefix}-actions`}
+        className={onlyRevisions ? "sr-only" : "font-medium"}
+      >
         {t("mdd00d3d3e9f7")}
       </h3>
       {notice && (
@@ -304,9 +337,7 @@ export function BookletActions({
                       }
                     />
                     <FieldLabel htmlFor={`${prefix}-s-${s.id}`}>
-                      <bdi>
-                        {s.pageRole === "cover" ? t("mfa8d84566676") : s.label}
-                      </bdi>
+                      <bdi>{subjectName(s)}</bdi>
                     </FieldLabel>
                   </Field>
                 ))}
