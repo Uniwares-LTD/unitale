@@ -102,6 +102,43 @@ async function main() {
       console.log(`Runs ${enabled ? "enabled" : "disabled"}`);
       return;
     }
+    // `wallet <n>`: lower the admin's balance to n credits (low-credit checks).
+    if (process.argv[3] === "wallet") {
+      const target = Number(process.argv[4]);
+      const { readWallet, adjustCredits } =
+        await import("../../src/lib/server/store/credits");
+      const { balance } = await readWallet(db, admin._id);
+      if (!(target >= 0) || balance <= target)
+        throw new Error(`Balance is ${balance}; pass a smaller target.`);
+      await adjustCredits(
+        db,
+        { uid: admin._id, authTime: Math.floor(Date.now() / 1000) },
+        admin._id,
+        `fixture-wallet-${Date.now()}`,
+        { amount: balance - target, direction: "deduct", reason: "Fixture" },
+      );
+      console.log(`Balance set to ${target}`);
+      return;
+    }
+    // `package short|long|unavailable|mina`: switch the default package
+    // (price-changed and unavailable checks).
+    if (process.argv[3] === "package") {
+      const found = await db
+        .collection<{ _id: string }>("commerceCatalogs")
+        .findOne({
+          _id: { $regex: new RegExp(`fixture-${process.argv[4]}$`) } as never,
+        });
+      if (!found) throw new Error("No such fixture package.");
+      const id = found._id;
+      await db
+        .collection("bookletSettings")
+        .updateOne(
+          { _id: "default-package" as never },
+          { $set: { catalogId: id, updatedAt: new Date() } },
+        );
+      console.log(`Default package is ${id}`);
+      return;
+    }
     // `settle failed|succeeded`: give the newest booklet attempt a verified
     // terminal outcome (as the worker would) so recovery controls can be checked.
     const settle = process.argv[3] === "settle" ? process.argv[4] : null;
@@ -166,23 +203,21 @@ async function main() {
       if (!source) throw new Error("Seed the base fixture first.");
       const { _id: unusedId, ...policy } = source;
       void unusedId;
-      await db
-        .collection("bookletWorkflowPolicies")
-        .updateOne(
-          { profileId: profile.id, profileRevision: 3 },
-          {
-            $setOnInsert: {
-              ...policy,
-              profileRevision: 3,
-              capacity: {
-                ...source.capacity,
-                revision: 3,
-                canvases: [demoCanvas],
-              },
+      await db.collection("bookletWorkflowPolicies").updateOne(
+        { profileId: profile.id, profileRevision: 3 },
+        {
+          $setOnInsert: {
+            ...policy,
+            profileRevision: 3,
+            capacity: {
+              ...source.capacity,
+              revision: 3,
+              canvases: [demoCanvas],
             },
           },
-          { upsert: true },
-        );
+        },
+        { upsert: true },
+      );
       let catalog = await db
         .collection<{ _id: string }>("commerceCatalogs")
         .findOne({ _id: "consumption:fixture-mina" });
@@ -229,8 +264,20 @@ async function main() {
       legacyInputs: [],
       // Optional: a reply typed after its question expired (Continue).
       inputs: [
-        { name: "late_reply_for", label: "Expired question", kind: "text", required: false, maxLength: 36 },
-        { name: "late_reply", label: "Late reply", kind: "paragraph", required: false, maxLength: 2000 },
+        {
+          name: "late_reply_for",
+          label: "Expired question",
+          kind: "text",
+          required: false,
+          maxLength: 36,
+        },
+        {
+          name: "late_reply",
+          label: "Late reply",
+          kind: "paragraph",
+          required: false,
+          maxLength: 2000,
+        },
       ],
       pricing: null,
       recovery: null,
