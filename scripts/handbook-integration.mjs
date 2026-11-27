@@ -37,7 +37,7 @@ function local(root, reference) {
   let current = root;
   for (const part of relative.split(path.sep)) {
     current = path.join(current, part);
-    if (existsSync(current) && lstatSync(current).isSymbolicLink()) throw new Error('Symlink references are not supported.');
+    if (lstatSync(current, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error('Symlink references are not supported.');
   }
   return { target, anchor };
 }
@@ -62,6 +62,9 @@ function configAt(root) {
     if (config[key] !== undefined && (config.kind !== 'consumer' || typeof config[key] !== 'boolean')) {
       throw new Error(`${key} must be a boolean in consumer handbook.json.`);
     }
+  }
+  if (config.agentTierPilot !== undefined && typeof config.agentTierPilot !== 'boolean') {
+    throw new Error('agentTierPilot must be a boolean in handbook.json.');
   }
   if (config.version !== 1 || !['source', 'consumer'].includes(config.kind) || !Array.isArray(config.technologySkills) || config.technologySkills.some(name => typeof name !== 'string' || !/^[a-z0-9-]+$/.test(name))) throw new Error('Invalid handbook.json: require version 1, kind source|consumer, and technologySkills array.');
   return config;
@@ -175,15 +178,97 @@ function sharedEntry(meta) {
 function claudeEntry(meta) {
   return entry(meta, `Read and follow the canonical local entrypoint\n[${meta.name}](../../../.agents/skills/${meta.name}/SKILL.md).\nResolve its relative references from that canonical file, not this wrapper.\nFor shared guidance, retain the task's Handbook revision through continuation.\nThis reference grants no hooks, tools, permissions, or delegation authority.`);
 }
-function agentEntry(meta) {
-  const text = `---\nname: ${meta.name}\ndescription: ${JSON.stringify(meta.description)}\ntools: Read, Grep, Glob, Bash\n---\n\nFollow the canonical role [${meta.name}](../../.agents/agents/${meta.name}.md).\nStay read-only: run only inspection commands; never edit files, commit, push, comment or\nchange issues or project metadata. This reference grants no permissions or authority.\n`;
+const reviewerContract = '.agents/agents/reviewer.md';
+const reviewerWrapper = '.claude/agents/reviewer.md';
+const sharedReviewerRoute = 'Resolve the shared Handbook reviewer from the task handoff.';
+
+function otherNativeReviewer(root, reviewerPath) {
+  const directory = local(root, '.claude/agents').target;
+  if (!existsSync(directory)) return;
+  for (const item of readdirSync(directory, { recursive: true, withFileTypes: true })) {
+    if (!item.isFile() || !item.name.endsWith('.md')) continue;
+    const file = path.join(item.parentPath, item.name);
+    if (file === reviewerPath) continue;
+    const front = read(file).match(/^---[ \t]*\n([\s\S]*?)^---[ \t]*$/m);
+    if (front?.index === 0 && /^name\s*:\s*(?:reviewer|"reviewer"|'reviewer')(?:[ \t]+#.*)?[ \t]*$/m.test(front[1])) {
+      return path.relative(root, file);
+    }
+  }
+}
+
+function agentEntry(meta, { shared = false, pilot = false } = {}) {
+  const model = pilot ? 'model: sonnet\n' : '';
+  const route = shared ? [
+    sharedReviewerRoute,
+    'Use the retained Handbook path and full revision. Read `.agents/agents/reviewer.md`',
+    'with `git -C PATH show REVISION:.agents/agents/reviewer.md` or from its validated',
+    'resource snapshot. Resolve its references from that same revision.',
+    'Return a missing baseline to the parent before reviewing.'
+  ].join('\n') : `Follow the canonical role [${meta.name}](../../.agents/agents/${meta.name}.md).`;
+  const text = `---\nname: ${meta.name}\ndescription: ${JSON.stringify(meta.description)}\n${model}tools: Read, Grep, Glob, Bash\n---\n\n${route}\nStay read-only: run only inspection commands; never edit files, commit, push, comment or\nchange issues or project metadata. This reference grants no permissions or authority.\n`;
   return text + `<!-- handbook-managed:${sha(text)} -->\n`;
 }
+
+function syncSharedReviewer(root, { source, bootstrapReady, write, pilot, put, warnings }) {
+  try {
+    const localRole = local(root, reviewerContract).target;
+    const wrapperPath = local(root, reviewerWrapper).target;
+    const nativeCollision = otherNativeReviewer(root, wrapperPath);
+    if (existsSync(localRole) || nativeCollision) {
+      const owner = nativeCollision ? `the reviewer name in ${nativeCollision}` : 'reviewer';
+      warnings.push(`Consumer owns ${owner}; reconcile any duplicate and use a read-only handoff for shared Handbook review.`);
+      return Boolean(nativeCollision);
+    }
+    if (!source) {
+      if (!existsSync(wrapperPath)) return;
+      const wrapper = read(wrapperPath);
+      const managed = wrapper.match(/^([\s\S]*?)<!-- handbook-managed:([a-f0-9]{64}) -->\n/);
+      if (wrapper.includes(sharedReviewerRoute) && (!managed || sha(managed[1]) !== managed[2])) {
+        warnings.push('Preserved customized shared reviewer; reconcile it manually.');
+      } else if (managed?.[1].includes(sharedReviewerRoute) && /^model: sonnet$/m.test(managed[1]) !== pilot) {
+        warnings.push('Shared reviewer pilot drift; run handbook:sync with a reviewed source.');
+      }
+      return;
+    }
+    const sharedRole = local(source, reviewerContract).target;
+    const contract = existsSync(sharedRole) ? read(sharedRole) : '';
+    if (!contract.trim()) {
+      warnings.push('Source lacks the shared reviewer contract; preserved existing reviewer entrypoints.');
+    } else if (bootstrapReady || !write) {
+      const meta = metadata(contract, 'reviewer');
+      if (!put(reviewerWrapper, agentEntry(meta, { shared: true, pilot }))) {
+        warnings.push('Reconcile reviewer entrypoint drift or use a read-only handoff for shared Handbook review.');
+      }
+    }
+  } catch (error) {
+    warnings.push(`Shared reviewer: ${error.message} Use a read-only handoff for shared Handbook review.`);
+    return true;
+  }
+}
+
+function reviewerPilot(root, requested, warnings) {
+  if (!requested) return false;
+  try {
+    for (const file of ['.claude/settings.json', '.claude/settings.local.json']) {
+      const settings = local(root, file).target;
+      if (existsSync(settings) && JSON.parse(read(settings)).env?.CLAUDE_CODE_SUBAGENT_MODEL) {
+        warnings.push(`Reviewer tier pilot deferred to the configured Claude subagent model in ${file}.`);
+        return false;
+      }
+    }
+    return true;
+  } catch (error) {
+    warnings.push(`Reviewer tier pilot could not verify Claude settings: ${error.message}`);
+  }
+  return false;
+}
+
 export function syncEntrypoints(root, { write = false, source } = {}) {
   root = path.resolve(root);
   const warnings = [], changed = [];
   let config;
   try { config = configAt(root); } catch (error) { return { warnings: [error.message], changed }; }
+  const pilot = reviewerPilot(root, config.agentTierPilot === true, warnings);
   // An empty skill tree means a wrong --root or --source; never sync or report orphans from it.
   const hasSkills = base => existsSync(path.join(base, '.agents/skills')) && readdirSync(path.join(base, '.agents/skills'), { withFileTypes: true }).some(item => item.isDirectory());
   if (config.kind === 'consumer' && source ? !hasSkills(source) : !hasSkills(root)) throw new Error('No skills found under .agents/skills; check --root and --source before syncing.');
@@ -204,6 +289,7 @@ export function syncEntrypoints(root, { write = false, source } = {}) {
     changed.push(relative);
     return true;
   };
+  let bootstrapReady = false;
   // Consumer upgrades explicitly select a committed resource snapshot as source.
   if (config.kind === 'consumer' && source) {
     source = realpathSync(source);
@@ -212,7 +298,7 @@ export function syncEntrypoints(root, { write = false, source } = {}) {
     const bootstrap = path.join(source, bootstrapSource);
     // Never migrate wrappers unless their prerequisite exists and is intact.
     const bootstrapText = existsSync(bootstrap) ? read(bootstrap) : '';
-    const bootstrapReady = Boolean(bootstrapText.trim()) && put(bootstrapFile, managed(bootstrapText));
+    bootstrapReady = Boolean(bootstrapText.trim()) && put(bootstrapFile, managed(bootstrapText));
     if (existsSync(bootstrap) && !bootstrapText.trim()) warnings.push(`Empty ${bootstrapSource}; preserve existing entrypoints and repair the source.`);
     if (!existsSync(bootstrap)) warnings.push(`Source lacks ${bootstrapSource}; preserve existing entrypoints and use a compatible reviewed snapshot.`);
     if (!bootstrapReady) warnings.push('Consumer skill migration deferred until the managed bootstrap is synchronized.');
@@ -222,6 +308,8 @@ export function syncEntrypoints(root, { write = false, source } = {}) {
       if (bootstrapReady || !write) put(`.agents/skills/${name}/SKILL.md`, sharedEntry(meta));
     }
   }
+  const preserveNativeReviewer = config.kind === 'consumer' &&
+    syncSharedReviewer(root, { source, bootstrapReady, write, pilot, put, warnings });
   const directory = local(root, '.agents/skills').target;
   if (existsSync(directory)) for (const item of readdirSync(directory, { withFileTypes: true })) {
     if (!item.isDirectory()) continue;
@@ -235,11 +323,14 @@ export function syncEntrypoints(root, { write = false, source } = {}) {
   const roles = local(root, '.agents/agents').target;
   if (existsSync(roles)) for (const item of readdirSync(roles, { withFileTypes: true })) {
     if (!item.isFile() || !item.name.endsWith('.md')) continue;
+    if (preserveNativeReviewer && item.name === 'reviewer.md') continue;
     const text = read(path.join(roles, item.name));
     if (!text.startsWith('---\n')) continue;
     let meta;
     try { meta = metadata(text, item.name.slice(0, -3)); } catch (error) { warnings.push(`${item.name}: ${error.message}`); continue; }
-    put(`.claude/agents/${meta.name}.md`, agentEntry(meta));
+    put(`.claude/agents/${meta.name}.md`, agentEntry(meta, {
+      pilot: config.kind === 'source' && meta.name === 'reviewer' && pilot
+    }));
   }
   const claudeDir = local(root, '.claude/skills').target;
   if (existsSync(claudeDir)) for (const item of readdirSync(claudeDir, { withFileTypes: true })) {

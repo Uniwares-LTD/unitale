@@ -152,7 +152,7 @@
   },
   "supportFiles": {
     "CLAUDE.md": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
-    ".agents/handbook.md": "03cc50c32d14fd233728dbe48c00f4f565fd91657c670b154270aebd55283ddb",
+    ".agents/handbook.md": "7d8ab05e653b63c3a7a6fd881ad361a54620b3f3c1351a85712d0ea46261b723",
     ".claude/skills/build-ui/SKILL.md": "46c8dcd9cb3c966bf5060da30f97eeccd5d900f0808cc6accaf2def4f3d6718c",
     ".claude/skills/capture-project-learnings/SKILL.md": "53569f9ce6ba678021d5ea9c6dbfd313c4051081155f3bcd0b51226909e6c2bd",
     ".claude/skills/compile-feature-spec/SKILL.md": "e9dba7a32d13cbd2a62ee2d7f96a5fdb5b6b122c3b7a251cbb7a840478b4686d",
