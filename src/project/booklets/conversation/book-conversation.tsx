@@ -489,6 +489,11 @@ export function BookConversation({
                 alt: page.cover
                   ? t("med9a8912b07a", { title: isolate(data.title) })
                   : t("m53329aa02b0b", { page: index + 1 - cover }),
+                download: `${data.title} – ${
+                  page.cover
+                    ? t("mfa8d84566676")
+                    : t("ma15000000001", { page: index + 1 - cover })
+                }`,
                 width: reader.width,
                 height: reader.height,
                 text: page.text,

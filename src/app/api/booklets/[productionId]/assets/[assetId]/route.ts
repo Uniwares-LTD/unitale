@@ -1,6 +1,7 @@
 import { requestBookletApplication } from "@/lib/server/booklets/application-request";
 import { endpoint } from "@/lib/server/http";
 import { requireVerified } from "@/lib/server/session";
+import { pictureDisposition } from "@/project/booklets/download-name";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,10 @@ export async function GET(
       headers: {
         "Content-Type": original.mime,
         "Content-Length": String(original.bytes.length),
-        "Content-Disposition": "inline",
+        "Content-Disposition": pictureDisposition(
+          new URL(request.url).searchParams.get("download"),
+          original.mime,
+        ),
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },

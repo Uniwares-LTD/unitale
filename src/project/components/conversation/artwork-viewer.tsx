@@ -25,7 +25,15 @@ export type Artwork = {
   alt: string;
   width: number;
   height: number;
+  /** Saved file name without type; the server adds the real one. */
+  download?: string;
 };
+
+/** Asks the picture route for a named download with its real file type. */
+export function downloadHref(image: Artwork) {
+  const name = image.download ?? image.alt;
+  return `${image.src}${image.src.includes("?") ? "&" : "?"}download=${encodeURIComponent(name)}`;
+}
 export type ArtworkLabels = { open: string; zoomIn: string; zoomOut: string };
 
 export function ArtworkViewer({
@@ -235,7 +243,7 @@ export function ArtworkViewer({
             </Button>
           </div>
           <Button asChild variant="outline" className="min-h-11">
-            <a href={image.src} download={image.alt}>
+            <a href={downloadHref(image)} download>
               <Download aria-hidden="true" />
               {t("md6eafe823591")}
             </a>
