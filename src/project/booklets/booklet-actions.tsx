@@ -87,8 +87,9 @@ export function BookletActions({
   const selected = actions.revisions.find((r) => r.category === category);
   const scope = JSON.stringify([category, [...subjects].sort(), view.version]);
   const busy = pending !== null;
+  // Number pages from the whole book, not only the parts this change offers.
   const subjectName = subjectNames(
-    selected?.subjects ?? [],
+    view.subjects,
     t("mfa8d84566676"),
     (page) => t("ma15000000001", { page }),
   );

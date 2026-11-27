@@ -62,7 +62,13 @@ export function ArtworkViewer({
   // Touch points for two-finger pinch, and the point a zoom keeps in place.
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ distance: number; zoom: number } | null>(null);
-  const anchor = useRef<{ x: number; y: number; ratio: number } | null>(null);
+  const anchor = useRef<{
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+    ratio: number;
+  } | null>(null);
   const position = useRef(0);
   const openedPath = useRef("");
   useLayoutEffect(() => {
@@ -70,8 +76,10 @@ export function ArtworkViewer({
     const at = anchor.current;
     if (!box || !at) return;
     anchor.current = null;
-    box.scrollLeft = (box.scrollLeft + at.x) * at.ratio - at.x;
-    box.scrollTop = (box.scrollTop + at.y) * at.ratio - at.y;
+    // Use the scroll from before the zoom: zooming out shrinks the picture
+    // first, and the browser would already have clamped the live value.
+    box.scrollLeft = (at.left + at.x) * at.ratio - at.x;
+    box.scrollTop = (at.top + at.y) * at.ratio - at.y;
   }, [zoom]);
   /** Zooms while keeping one point still: the given screen point (pinch)
    * or the middle of the picture (buttons). */
@@ -83,6 +91,8 @@ export function ArtworkViewer({
     anchor.current = {
       x: point ? point.x - rect.left : box.clientWidth / 2,
       y: point ? point.y - rect.top : box.clientHeight / 2,
+      left: box.scrollLeft,
+      top: box.scrollTop,
       ratio: next / zoom,
     };
     setZoom(next);
