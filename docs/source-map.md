@@ -82,6 +82,8 @@ and the adapter; the table does not require unrelated suites for every task.
   The default conversation package setting is in `src/lib/server/booklets/settings.ts`.
   The conversation turn/reply contract is `src/project/booklets/turn-contract.ts`
   (tested by `tests/booklet-turns.test.ts`); `repository-v2.ts` `requestHuman` binds it.
+  The owned library is `src/app/books/page.tsx` and `src/project/booklets/book-library.tsx`;
+  it reuses the facade’s bounded, owner-checked picker and existing persisted books.
   The conversation pages are `src/app/books/new` and `src/app/books/[id]`, with booklet
   client components in `src/project/booklets/conversation/` composed from the reusable
   Unitale conversation components in `src/project/components/conversation/`. The facade's `entry`,
