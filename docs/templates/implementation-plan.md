@@ -30,6 +30,9 @@ Repeat for each cohesive, verifiable outcome. Prefer automatic continuation.
 
 ## Verified progress and resume
 
+Record the approved plan and governing PRD fingerprints using the large-work
+handoff procedure. Keep all approved instructions above this final heading.
+
 Update this section during execution, not as a speculative work log. Record completed
 checkpoints, source/diff identity, current validation, review results, remaining gates
 and next action. Relevant changes reset review counts and stale affected evidence.
