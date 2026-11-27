@@ -261,9 +261,15 @@ export function BookConversation({
       growth.disconnect();
     };
   }, []);
-  // Opening a conversation shows its latest turn.
+  // Opening a conversation shows its latest turn. On a link visit the router
+  // scrolls to the top after this page mounts, so follow once more next frame.
   useLayoutEffect(() => {
     toLatest();
+    const frame = requestAnimationFrame(() => {
+      pinned.current = true;
+      toLatest();
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
   useLayoutEffect(() => {
     const completed = data.completed && !transcript.current.completed;
