@@ -7,14 +7,15 @@
 ## Branches
 
 - Integration branch: main
-- Deployment branches: none
+- Deployment branches: _staging (from main)
 
 Confirmed by the repository owner on 2026-11-15. Tracking uses the Uniwares
 organization project #2; see [tracking.json](tracking.json).
 
-Unitale has no deployment branches yet. The `_staging`/`_prod` release workflows and
-[deployment guidance](../docs/deployment.md) came over from the Unibase template; do
-not promote to those branches until the owner records them here. The `upstream`
+The owner approved `_staging` on 2026-11-27 for the
+[first staging deployment](../docs/staging-first-deployment.md) (#21). `_prod` is not
+recorded; do not promote to it until the owner records it here. The release workflows and
+[deployment guidance](../docs/deployment.md) came over from the Unibase template. The `upstream`
 remote is Unibase and is used only for template updates: never push or open pull
 requests there. Preserve existing work branches; see the [adapter](repository-adapter.md).
 

@@ -26,14 +26,15 @@ Three constraints force short middle sittings:
    release ([deployment guide](deployment.md#guided-setup-helper) and
    [AI configuration update](https://github.com/Uniwares-LTD/infrastructure/blob/main/docs/operations.md#optional-ai-configuration-update)).
 
-Both root steps use the **existing trusted root session**. Broad `sudo` from
+All root steps use the **existing trusted root session** (owner, 2026-11-27). Broad `sudo` from
 `uniwares-ops-admin` is not available, because its password is disabled by design.
 
-| Sitting    | When   | Duration | Content                                                                                                                  |
-| ---------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Gate 0** | Start  | ~30 min  | Authorizations, OAuth console, Dify management access, budget                                                            |
-| **Gate 1** | Middle | ~25 min  | Root batch 1 (registration and base preparation), then the GHCR visibility switch about 10 minutes later                 |
-| **Gate 2** | End    | ~75 min  | Root batch 2 (AI update, ~10 min), then real-account acceptance once the agent has released and published the Dify suite |
+| Sitting     | When   | Duration | Content                                                                                                                  |
+| ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Gate 0**  | Start  | ~30 min  | Authorizations, OAuth console, Dify management access, budget                                                            |
+| **Gate 1**  | Middle | ~25 min  | Root batch 1 (registration and base preparation), then the GHCR visibility switch about 10 minutes later                 |
+| **Gate 2**  | End    | ~75 min  | Root batch 2 (AI update, ~10 min), then real-account acceptance once the agent has released and published the Dify suite |
+| **Phase C** | Final  | ~30 min  | Unitale OpenAI and Dify credentials, then root batch 3 (management key update)                                           |
 
 ## Prerequisites
 
@@ -49,7 +50,7 @@ _Configured_ facts come from tracked files and are rechecked live at apply time.
 | Repository secrets, GHCR package, `_staging` | None exist                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | srv1 registration                            | Unitale is absent from Infrastructure `config/approval-targets.json`, the image-retention policy and the inventory                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Controller capabilities                      | Inventory (2026-10-31): `operation-lock-v1`, `plans-v2`, `github-oidc-v1`, `image-retention-v1`. Unitale's [contract](../deploy/contract.json) also requires **`data-operations-v1`**, **installed**: P0 capabilities readback on 2026-11-26 returned all five                                                                                                                                                                                                                                                            |
-| Subnet `172.23.251.128/28`                   | **Conflicts** with `minio_default` `172.23.0.0/16`. Proposed replacement: `172.30.243.0/24`. P0 (2026-11-26): no Docker network or route in `172.30.243.0/24`, nothing listening on `34312`, 110 GiB free on `/`. Recheck at Gate 1                                                                                                                                                                                                                                                                                       |
+| Ingress subnet                               | `172.30.243.0/24` in [staging.json](../deploy/environments/staging.json). It replaces `172.23.251.128/28`, which conflicts with `minio_default` `172.23.0.0/16`. P0 (2026-11-26): no Docker network or route in `172.30.243.0/24`, nothing listening on `34312`, 110 GiB free on `/`. Recheck at Gate 1                                                                                                                                                                                                                   |
 | Public bindings to copy                      | _Configured_ in the [Unibase profile](https://github.com/Uniwares-LTD/unibase/blob/main/deploy/environments/staging.json):<br>• `ssh.host` `vps-ae0a9d01.vps.ovh.net`, `ssh.user` `uniwares-deploy-user`, `ssh.transport` `direct`<br>• `shared.ownerRepository` `karpishe-experiments/agentic-poc`, `shared.ownerRef` `master`, `shared.routeMode` `owner-managed`, `shared.routeWorkflow` `null`<br>• tunnel, account and zone IDs<br>• `atlas.vpsEgressCidr` `51.195.218.185/32`<br>• pinned Redis/Nginx/admin digests |
 | Shared credentials on this workstation       | `%USERPROFILE%\.config\unibase` holds the Firebase Admin, Atlas, Cloudflare read and deploy key files. The operator key is `%USERPROFILE%\.ssh\uniwares-ops-admin`                                                                                                                                                                                                                                                                                                                                                        |
 | Tunnel route owner                           | agentic-poc Terraform (only `unibase_staging_hostname` today). See [related workstream](#related-workstream)                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -125,6 +126,10 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
    scp @opts "$env:USERPROFILE\.config\unitale\unitale\staging\unitale-staging-host-input.json" "${dest}:~/unitale-operator-package/private-input.json"
    ```
 
+   Send the **prepared** host input under `unitale\staging`, which A5 step 4 completes
+   with the Redis password. The base file of the same name at the top of
+   `.config\unitale` lacks it.
+
 2. In the **existing trusted root session** on srv1:
 
    ```bash
@@ -182,11 +187,51 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
    Stay within the cap. On an unknown paid outcome, stop and let the agent reconcile
    before any retry. The agent records spend, G01–G17 and E1–E6.
 
+### Phase C — separate Unitale LLM and Dify credentials (final)
+
+Outcome: Unitale stops sharing Unibase's Dify management credential and OpenAI key,
+so its permissions and spend are tracked on their own (owner, 2026-11-27). The Dify
+execution key, MCP token and encryption key are already Unitale's own and stay unchanged.
+The shared OpenAI key is held by the official `langgenius/openai` and
+`langgenius/openai_tool` plugins in the shared workspace `ffac910f-2786-490e-90d8-07243d49741b`.
+
+Running this phase before the Gate 2 import avoids a second import and keeps acceptance
+spend off the shared key. Running it last adds a root sitting and a re-import.
+
+1. **Agent, read-only:** report the live Dify version and whether it can pin one app's
+   OpenAI models to a named credential without changing Unibase's apps. The
+   [compatibility record](features/booklet-generation/dify-compatibility.md) reports
+   1.17.1 from source only, not from the installed server.
+2. **Owner, manual:**
+   - In OpenAI, create a Unitale staging project with its own API key and a budget limit.
+     Keep the key in the secure Credentials channel as `App / openai-unitale-staging`.
+   - In Dify, create a Unitale management credential. Save it as
+     `%USERPROFILE%\.config\unitale\unitale\staging\staging-dify-management.txt`,
+     keeping the shared copy until the readback passes.
+3. **Choose the route from step 1:**
+   - **Pinning is supported:** add the Unitale key as a named credential on both plugins
+     and select it for Unitale's apps only.
+   - **Pinning is not supported:** a dedicated Unitale workspace is needed. Dify is owned
+     by Infrastructure ([infrastructure#14](https://github.com/Uniwares-LTD/infrastructure/issues/14)),
+     so the owner decides it there first. Then a Unitale PR sets the new `DIFY_WORKSPACE_ID`,
+     the official plugins are installed in that workspace with the Unitale key, and the
+     agent re-imports the six specialists and the Manager through the import journal.
+     The app issues a new execution key.
+4. **Owner, root:** install the new management key with a `run-ai.sh` package built as in
+   B3 (preview, then `APPLY=1`).
+5. **Agent:** promote and run Check, repeat the identity, tool-binding and permission
+   readback, then run one short journey within the cap.
+
+Stop if a Unibase app changes behavior or the credential type is unclear. Record the
+route, the new credential names (never values) and the readback in #21.
+
 ## Verify
 
 - Release and Check succeed, and readiness reports the `_staging` commit.
 - Existing services match P0 discovery.
 - Checkpoint 12 evidence is recorded in #21.
+- After phase C, Unitale's test journey appears only in the Unitale OpenAI project, and
+  Unibase staging still passes **Check Unibase deployment**.
 
 ## Troubleshooting
 
