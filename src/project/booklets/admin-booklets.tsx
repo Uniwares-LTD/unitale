@@ -205,19 +205,28 @@ function PolicyCard({ policy }: { policy: Policy }) {
   const [expected, setExpected] = useState(policy.retryDefaults);
   const [version, setVersion] = useState(policy.retryDefaultsVersion);
   const [state, setState] = useState(policy.retryDefaultsState);
-  const [values, setValues] = useState<Record<keyof Defaults, string>>({
-    paidLlm: String(policy.retryDefaults?.paidLlm ?? 2),
-    paidImage: String(policy.retryDefaults?.paidImage ?? 0),
-    nonPaid: String(policy.retryDefaults?.nonPaid ?? 3),
+  const shown = (defaults: Defaults | null) => ({
+    paidLlm: String(defaults?.paidLlm ?? 2),
+    paidImage: String(defaults?.paidImage ?? 0),
+    nonPaid: String(defaults?.nonPaid ?? 3),
   });
+  // The values on screen when the page opened or last saved; edits are compared with these.
+  const [baseline, setBaseline] = useState(() => shown(policy.retryDefaults));
+  const [values, setValues] = useState(baseline);
   const [errors, setErrors] = useState<Partial<Record<keyof Defaults, string>>>(
     {},
   );
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const id = (key: string) => `${policy.id}-${key}`;
+  const changed = fields.some(
+    ({ key }) => values[key].trim() !== baseline[key],
+  );
+  // Missing or invalid stored defaults can be saved as shown, to repair them.
+  const canSave = changed || state !== "valid";
 
-  async function save() {
+  async function save(): Promise<SaveResult> {
+    if (pending) return "unknown";
     const found: Partial<Record<keyof Defaults, string>> = {};
     const next = {} as Defaults;
     for (const { key } of fields) {
@@ -230,7 +239,7 @@ function PolicyCard({ policy }: { policy: Policy }) {
     const first = fields.find(({ key }) => found[key]);
     if (first) {
       document.getElementById(id(first.key))?.focus();
-      return;
+      return "failed";
     }
     setPending(true);
     setNotice(null);
@@ -242,17 +251,23 @@ function PolicyCard({ policy }: { policy: Policy }) {
       setExpected(result.retryDefaults);
       setVersion(result.retryDefaultsVersion);
       setState("valid");
+      setBaseline(shown(result.retryDefaults));
+      setValues(shown(result.retryDefaults));
       toast.confirm("Retry defaults saved for new productions.");
+      return "saved";
     } catch (error) {
       setNotice(
         error instanceof ApiError
           ? error.message
           : "The settings couldn’t be saved. Reload and check them.",
       );
+      return error instanceof ApiError ? "failed" : "unknown";
     } finally {
       setPending(false);
     }
   }
+
+  useLeaveGuard({ dirty: changed, save });
 
   return (
     <Card className="shadow-none">
@@ -266,7 +281,9 @@ function PolicyCard({ policy }: { policy: Policy }) {
           configuration {policy.configurationRevision}
           {" · "}
           <StatusBadge tone={policy.current ? "success" : "neutral"}>
-            {policy.current ? "Current configuration" : "Earlier configuration"}
+            {policy.current
+              ? "Uses the orchestrator’s current configuration"
+              : "Uses an earlier orchestrator configuration"}
           </StatusBadge>
         </CardDescription>
       </CardHeader>
@@ -293,11 +310,19 @@ function PolicyCard({ policy }: { policy: Policy }) {
           <div>
             <dt className="text-muted-foreground">Saved retry defaults</dt>
             <dd>
-              {state === "valid" && expected
-                ? `${expected.paidLlm} / ${expected.paidImage} / ${expected.nonPaid}`
-                : state === "invalid"
-                  ? "Invalid: save valid values to repair. New productions cannot start until then."
-                  : "Not set: new productions cannot start"}
+              {state === "valid" && expected ? (
+                <ul>
+                  {fields.map(({ key, label }) => (
+                    <li key={key}>
+                      {label}: {expected[key]}
+                    </li>
+                  ))}
+                </ul>
+              ) : state === "invalid" ? (
+                "Invalid: save valid values to repair. New productions cannot start until then."
+              ) : (
+                "Not set: new productions cannot start"
+              )}
             </dd>
           </div>
         </dl>
@@ -311,7 +336,7 @@ function PolicyCard({ policy }: { policy: Policy }) {
           className="grid gap-4 sm:grid-cols-3"
           onSubmit={(event) => {
             event.preventDefault();
-            void save();
+            if (canSave) void save();
           }}
         >
           {fields.map(({ key, label, help }) => (
@@ -339,7 +364,9 @@ function PolicyCard({ policy }: { policy: Policy }) {
             </Field>
           ))}
           <div className="sm:col-span-3">
-            <SubmitButton pending={pending}>Save retry defaults</SubmitButton>
+            <SubmitButton pending={pending} disabled={!canSave}>
+              Save retry defaults
+            </SubmitButton>
           </div>
         </form>
       </CardContent>

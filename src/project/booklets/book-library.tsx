@@ -8,7 +8,7 @@ import { ResultImage } from "@/components/media-fallback";
 export async function BookLibrary({
   books,
   search,
-  next,
+  nextPages,
 }: {
   books: {
     id: string;
@@ -19,12 +19,13 @@ export async function BookLibrary({
     cover: string | null;
   }[];
   search: string;
-  next: string | null;
+  /** Page count for "More books"; null when everything is shown. */
+  nextPages: number | null;
 }) {
   const t = await getTranslations("ui");
   const more = new URLSearchParams({
     ...(search ? { search } : {}),
-    ...(next ? { cursor: next } : {}),
+    ...(nextPages ? { pages: String(nextPages) } : {}),
   });
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -134,9 +135,11 @@ export async function BookLibrary({
           </p>
         </div>
       )}
-      {next && (
+      {nextPages && (
         <Button asChild variant="outline" className="min-h-11">
-          <Link href={`/books?${more}`}>{t("mc309b48f250f")}</Link>
+          <Link href={`/books?${more}`} scroll={false}>
+            {t("mc309b48f250f")}
+          </Link>
         </Button>
       )}
     </div>
