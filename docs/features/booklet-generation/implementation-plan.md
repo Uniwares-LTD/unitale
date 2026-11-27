@@ -1448,7 +1448,22 @@ existing components, and new components are reusable. See
   pressed-state draft until Send; a single choice holds one option, and a typed
   note (where the question allows text) is sent with it. An approval offers
   Approve, or a change request typed in the composer and labelled with its target.
-  The page has a wait row, a New response control and an offline notice.
+  The page has a wait row, a New response control and an offline notice. A reply
+  sent while offline is resent automatically, with its original idempotency key,
+  when the connection returns. A book that cannot move on from its page (its last
+  question expired, or nothing is running, asking or confirming) shows one honest
+  notice with a link to the library, and the library labels it Paused.
+- **Late reply after a timed-out question** (local only, pending Manager support):
+  when the last question expired, the composer stays open. Send uses `continue`
+  with the optional, additive `lateReply {requestId, text}`. The server accepts it
+  only for the latest question, only once its native decision expired unanswered,
+  and only when the orchestrator definition declares the optional inputs
+  `late_reply_for` and `late_reply`; it checks this before any flow is saved. The
+  successor Run carries those two inputs, the conversation shows the expired turn
+  as answered with the typed text, and the `human_response` read returns it as
+  `submitted` with `late: true`. The real Manager DSL still needs those start
+  variables and prompt logic (owner decision). Model unaffected: it reuses existing
+  Run inputs and adds no collection, field or index.
 - **Default package**: the `bookletSettings` row (see the model guide), read with the
   balance through `GET /api/booklets?section=default`. This preview predates the
   10C.2 editor.

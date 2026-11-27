@@ -14,6 +14,8 @@ export async function BookLibrary({
     id: string;
     title: string;
     completed: boolean;
+    /** Expired or stopped: the card says so instead of "In progress". */
+    paused: boolean;
     cover: string | null;
   }[];
   search: string;
@@ -94,7 +96,11 @@ export async function BookLibrary({
                 </div>
                 <div className="min-w-0 flex-1 space-y-1 p-4 min-[600px]:space-y-2 min-[600px]:p-5">
                   <p className="text-caption text-muted-foreground">
-                    {book.completed ? t("me87c89d0003f") : t("mc1f88e9d6c41")}
+                    {book.completed
+                      ? t("me87c89d0003f")
+                      : book.paused
+                        ? t("me159b06187d3")
+                        : t("mc1f88e9d6c41")}
                   </p>
                   <h2
                     dir="auto"
@@ -103,7 +109,11 @@ export async function BookLibrary({
                     {book.title}
                   </h2>
                   <p className="pt-1 text-supporting text-primary min-[600px]:pt-2">
-                    {book.completed ? t("m920487473fe6") : t("mb82ec4ab9b03")}
+                    {book.completed
+                      ? t("m920487473fe6")
+                      : book.paused
+                        ? t("mf7a90ea11a44")
+                        : t("mb82ec4ab9b03")}
                   </p>
                 </div>
               </Link>

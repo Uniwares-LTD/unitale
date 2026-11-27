@@ -6,6 +6,7 @@ import { moduleEnabled } from "@/lib/project";
 import { pageSession } from "@/lib/server/session";
 import { requestBookletApplication } from "@/lib/server/booklets/application-request";
 import { BookLibrary } from "@/project/booklets/book-library";
+import { conversationPaused } from "@/project/booklets/application-contract";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("ui"))("m1ad84286274b") };
@@ -31,6 +32,7 @@ export default async function Page({
     books.push({
       ...row,
       completed: conversation.completed,
+      paused: conversationPaused(conversation),
       cover: cover
         ? `/api/booklets/${encodeURIComponent(row.id)}/assets/${encodeURIComponent(cover.assetId)}`
         : null,

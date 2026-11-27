@@ -634,7 +634,6 @@
     "m263fecfcce38": "You’re offline. We’ll keep trying.",
     "mad9d3e727b8e": "This question changed. Reload to see the latest.",
     "mbdc090ec61e3": "Reload",
-    "m4c79f58190b0": "This question has expired.",
     "md49bc7868bc1": "This conversation has stopped.",
     "m0d93a6d0a477": "New response",
     "ma5f833424699": "Working on your book…",
@@ -701,7 +700,13 @@
     "mc309b48f250f": "More books",
     "me87c89d0003f": "Ready to read",
     "mf8806e8297c6": "Your first story starts here",
-    "mc2f0e5ba6cce": "Download page"
+    "mc2f0e5ba6cce": "Download page",
+    "m6e8f58c8b8f3": "You’re offline. We’ll send your answer when you’re back.",
+    "m47bfa636e9a3": "Back online.",
+    "m28220663726d": "This question timed out. Your answers so far are saved.",
+    "m1a313d9b59e5": "Write your answer below and we’ll carry on from here.",
+    "me159b06187d3": "Paused",
+    "mf7a90ea11a44": "See what happened"
   },
   "locale": {
     "heading": "Language and region",

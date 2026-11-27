@@ -227,7 +227,11 @@ async function main() {
       domainAdapter: { id: "booklet", version: "2" },
       responseMode: "raw-v1",
       legacyInputs: [],
-      inputs: [],
+      // Optional: a reply typed after its question expired (Continue).
+      inputs: [
+        { name: "late_reply_for", label: "Expired question", kind: "text", required: false, maxLength: 36 },
+        { name: "late_reply", label: "Late reply", kind: "paragraph", required: false, maxLength: 2000 },
+      ],
       pricing: null,
       recovery: null,
     });

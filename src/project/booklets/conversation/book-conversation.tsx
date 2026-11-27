@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useRef,
   useState,
@@ -34,6 +35,8 @@ import {
 import {
   bookletConversationSchema,
   bookletReplyResultSchema,
+  bookletRunReferenceSchema,
+  conversationPaused,
   type BookletConversation,
 } from "../application-contract";
 import {
@@ -82,6 +85,8 @@ export function BookConversation({
   const [sending, setSending] = useState(false);
   const [awaiting, setAwaiting] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [reconnected, setReconnected] = useState(false);
+  const lostConnection = useRef(false);
   const [unread, setUnread] = useState(false);
   const [completionReady, setCompletionReady] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -122,6 +127,9 @@ export function BookConversation({
   // A saved manifest stays readable while a paid/included revision is active.
   const working = data.working || preparing || awaiting;
   const confirming = data.activity === "confirming";
+  const expired = last?.status === "expired";
+  // Nothing the person can do here moves the book on (expired or stopped).
+  const paused = conversationPaused(data) && !awaiting && !sending;
   const reader = data.reader;
   const cover = Number(reader?.pages[0].cover ?? false);
   const revealTurn =
@@ -264,6 +272,26 @@ export function BookConversation({
       });
   }, [data.turns.length, working, count, data.completed, revealing]);
 
+  // A reply sent while offline goes by itself once the connection returns;
+  // its per-turn key makes a resend safe if the first one did arrive.
+  const resendPending = useEffectEvent(() => {
+    const pending = pendingReply.current;
+    if (pending && !sending && requestedTurn(data, pending)?.status === "open")
+      void sendReply(pending.turn, pending.reply);
+  });
+  useEffect(() => {
+    if (offline) {
+      lostConnection.current = true;
+      return;
+    }
+    if (!lostConnection.current) return;
+    lostConnection.current = false;
+    setReconnected(true);
+    resendPending();
+    const timer = setTimeout(() => setReconnected(false), 4000);
+    return () => clearTimeout(timer);
+  }, [offline]);
+
   async function sendReply(turn: Turn, reply: BookletReply) {
     setSending(true);
     try {
@@ -317,6 +345,38 @@ export function BookConversation({
       setRetryAvailable(false);
       await refresh();
       return "unknown" as const;
+    } finally {
+      setSending(false);
+    }
+  }
+  // After expiry the typed text restarts the agent, which reads it as the
+  // answer (one key per expired question, reused on retry).
+  async function sendLate(turn: Turn, text: string) {
+    setSending(true);
+    try {
+      await api(
+        `/api/booklets/${encodeURIComponent(data.productionId)}`,
+        bookletRunReferenceSchema,
+        {
+          method: "POST",
+          timeoutMs: 30000,
+          body: {
+            action: "continue",
+            key: keyFor(`${turn.requestId}:late`),
+            lateReply: { requestId: turn.requestId, text },
+          },
+        },
+      );
+      setDraft("");
+      pinned.current = true;
+      setAwaiting(true);
+      await refresh();
+      return null;
+    } catch (error) {
+      await refresh();
+      return error instanceof ApiError && error.code === "BOOKLET_CONFLICT"
+        ? ("changed" as const)
+        : ("failed" as const);
     } finally {
       setSending(false);
     }
@@ -387,7 +447,7 @@ export function BookConversation({
             )}
           </li>
         ))}
-        {working && !revealing && !confirming && (
+        {working && !revealing && !confirming && !expired && (
           // The next reply's own slot: its glowing mascot becomes that reply's
           // header when the text starts streaming in below it.
           <li role="status" aria-live="polite">
@@ -442,13 +502,18 @@ export function BookConversation({
       </div>
 
       {(offline ||
+        reconnected ||
         confirming ||
         last?.status === "stale" ||
-        last?.status === "expired" ||
-        (!working && !open && !data.completed)) && (
+        paused) && (
         <div className="mb-4">
           {offline ? (
-            <Notice tone="warning" title={t("m263fecfcce38")} />
+            <Notice
+              tone="warning"
+              title={unconfirmed ? t("m6e8f58c8b8f3") : t("m263fecfcce38")}
+            />
+          ) : reconnected && !paused ? (
+            <Notice tone="success" title={t("m47bfa636e9a3")} />
           ) : confirming ? (
             <Notice tone="warning" title={t("m08d20ade842d")}>
               {t("maa1257a275bb")}
@@ -463,14 +528,29 @@ export function BookConversation({
                 {t("mbdc090ec61e3")}
               </Button>
             </Notice>
-          ) : last?.status === "expired" ? (
-            <Notice tone="warning" title={t("m4c79f58190b0")} />
           ) : (
-            <Notice tone="info" title={t("md49bc7868bc1")} />
+            // Expired or stopped: say so plainly and offer the way out.
+            <Notice
+              tone={expired ? "warning" : "info"}
+              title={expired ? t("m28220663726d") : t("md49bc7868bc1")}
+            >
+              {expired && <p>{t("m1a313d9b59e5")}</p>}
+              <Button
+                asChild
+                variant="outline"
+                // The alert underlines and tints every link; keep a normal button.
+                className="mt-2 min-h-11 text-foreground! no-underline!"
+              >
+                <Link href="/books" onNavigate={guarded("/books")}>
+                  <Library aria-hidden="true" />
+                  {t("m1ad84286274b")}
+                </Link>
+              </Button>
+            </Notice>
           )}
         </div>
       )}
-      {unconfirmed && (
+      {unconfirmed && !offline && (
         <div className="mb-3">
           <Notice tone="warning" title={t("m92ef50192b46")}>
             <Button
@@ -509,21 +589,24 @@ export function BookConversation({
             />
           </div>
         )}
-        {(!data.completed || open || working || confirming) && (
-          <ReplyDock
-            key={open?.requestId ?? "none"}
-            productionId={data.productionId}
-            turn={revealing ? null : open}
-            working={working || revealing || confirming}
-            sending={sending}
-            unconfirmed={unconfirmed}
-            draft={draft}
-            setDraft={setDraft}
-            reviewDrafts={reviewDrafts}
-            setReviewDrafts={setReviewDrafts}
-            onSend={sendReply}
-          />
-        )}
+        {(!data.completed || open || working || confirming) &&
+          (!paused || expired) && (
+            <ReplyDock
+              key={open?.requestId ?? (expired ? "late" : "none")}
+              productionId={data.productionId}
+              turn={revealing ? null : open}
+              working={working || revealing || confirming}
+              sending={sending}
+              unconfirmed={unconfirmed}
+              draft={draft}
+              setDraft={setDraft}
+              reviewDrafts={reviewDrafts}
+              setReviewDrafts={setReviewDrafts}
+              onSend={sendReply}
+              late={expired && !working ? last : null}
+              onSendLate={sendLate}
+            />
+          )}
       </div>
     </div>
   );
@@ -557,6 +640,8 @@ function ReplyDock({
   reviewDrafts,
   setReviewDrafts,
   onSend,
+  late,
+  onSendLate,
 }: {
   productionId: string;
   turn: Turn | null;
@@ -568,6 +653,9 @@ function ReplyDock({
   reviewDrafts: ReviewDrafts;
   setReviewDrafts: Dispatch<SetStateAction<ReviewDrafts>>;
   onSend: (turn: Turn, reply: BookletReply) => Promise<null | SendProblem>;
+  // The expired last question: Send continues the book with the typed text.
+  late: Turn | null;
+  onSendLate: (turn: Turn, text: string) => Promise<null | SendProblem>;
 }) {
   const t = useTranslations("ui");
   const artwork = useBookArtworkLabels();
@@ -588,7 +676,7 @@ function ReplyDock({
     !interaction ||
     !!approval ||
     (interaction.type === "question" && interaction.freeText);
-  const answerable = !!turn && !working && !sending && !unconfirmed;
+  const answerable = (!!turn || !!late) && !working && !sending && !unconfirmed;
   const targetId = approval?.target.revisionId;
   const currentReview = targetId ? reviewDrafts[targetId] : undefined;
   const draftText = approval ? (currentReview?.text ?? "") : draft;
@@ -618,6 +706,14 @@ function ReplyDock({
   function sendTyped() {
     if (unconfirmed) return;
     const text = draftText.trim();
+    if (late && !turn) {
+      if (!text || !answerable) return;
+      setProblem(null);
+      void onSendLate(late, text).then(
+        (result) => result && setProblem(result),
+      );
+      return;
+    }
     if (approval) {
       if (text)
         void submit({
@@ -658,7 +754,9 @@ function ReplyDock({
   } satisfies Record<ReplyProblem | SendProblem, string>;
   const canSend =
     answerable &&
-    (approval ? !!draftText.trim() : !!draftText.trim() || choices.length > 0);
+    (approval || late
+      ? !!draftText.trim()
+      : !!draftText.trim() || choices.length > 0);
 
   return (
     <ConversationDock>
@@ -765,7 +863,7 @@ function ReplyDock({
               ? t("mc2bc01335874")
               : approval
                 ? t("m5801a5064e61")
-                : turn
+                : turn || late
                   ? t("mcd617a801ef0")
                   : t("m4a70ac5bf862")
           }

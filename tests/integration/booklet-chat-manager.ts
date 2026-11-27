@@ -178,7 +178,16 @@ async function tick(db: Db, selected?: AiJob) {
   }
   if (state.step === "done") return;
   let reply: BookletReply | null = null;
-  if (state.requestId) {
+  // A Continue after expiry carries the owner's late text for this question
+  // (what the real Manager reads from `human_response`).
+  if (state.requestId && current.inputs.late_reply_for === state.requestId) {
+    reply = {
+      version: 1,
+      kind: "answer",
+      choices: [],
+      text: String(current.inputs.late_reply),
+    };
+  } else if (state.requestId) {
     const receipt = await db.collection("bookletRepositoryWrites").findOne({
       productionId,
       "result.humanRequest.requestId": state.requestId,
@@ -190,6 +199,33 @@ async function tick(db: Db, selected?: AiJob) {
       nodeId: "human",
       "form.form_content": form,
     });
+    if (
+      decision &&
+      decision.jobId === current._id &&
+      (decision.status === "expired" ||
+        (decision.form?.expiration_time ?? Infinity) * 1000 < Date.now())
+    ) {
+      // Assumed Manager timeout branch: end this attempt so Continue can start
+      // the next one (to confirm against the real Manager DSL).
+      await db
+        .collection("bookletProductions")
+        .updateOne(
+          { _id: productionId as never },
+          { $set: { mutationLease: null } },
+        );
+      await db.collection<AiJob>("aiJobs").updateOne(
+        { _id: current._id },
+        {
+          $set: {
+            status: "succeeded",
+            lease: null,
+            terminationEvidence: "provider-completed",
+          },
+        },
+      );
+      console.log(`Question expired; ended ${productionId.slice(0, 12)}`);
+      return;
+    }
     if (decision?.status !== "submitted") return;
     reply = bookletReplySchema.parse(decision.intent!.response);
   }
