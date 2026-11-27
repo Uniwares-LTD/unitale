@@ -858,7 +858,12 @@ export function bookletApplication(
         // Refuse before anything is created: a refusal after the draft exists
         // keeps the request (pending), but a closed page would orphan it.
         if (!(await readSettings(db)).settings.runs.enabled)
-          throw bookletConflict("Runs are disabled. Try again later.");
+          // "Unavailable", not a price conflict: the quote itself is still valid.
+          throw new AppError(
+            "BOOKLET_UNAVAILABLE",
+            "Runs are disabled. Try again later.",
+            409,
+          );
         // The paid start rechecks atomically; this only avoids an unpaid draft.
         if (
           (await readWallet(db, actor.uid, { actor })).available <

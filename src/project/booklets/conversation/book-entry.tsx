@@ -71,7 +71,8 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [pendingStart, setPendingStart] =
     useState<BookletIdeaStartCommand | null>(null);
-  useLeaveGuard({ dirty: !pendingStart && !!idea.trim() });
+  // Only an unsent idea can be lost; a held one waits in this tab.
+  useLeaveGuard({ dirty: !consent && !!idea.trim() });
 
   useEffect(() => {
     const saved = readDraft();
@@ -371,12 +372,18 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                 )}
                 <div className="flex flex-col">
                   {missing > 0 ? (
-                    <Button
-                      asChild
-                      className="min-h-(--control-touch-sm) w-full"
-                    >
-                      <Link href="/credits">{t("m040985b8ff7e")}</Link>
-                    </Button>
+                    <>
+                      <Button
+                        asChild
+                        className="min-h-(--control-touch-sm) w-full"
+                      >
+                        <Link href="/credits">{t("m040985b8ff7e")}</Link>
+                      </Button>
+                      {/* Credits has no return link yet; the held idea survives. */}
+                      <p className="mt-2 text-center text-supporting text-muted-foreground">
+                        {t("m8ecddedf4242")}
+                      </p>
+                    </>
                   ) : (
                     // Pending keeps the label; the request key makes a retry safe.
                     <SubmitButton

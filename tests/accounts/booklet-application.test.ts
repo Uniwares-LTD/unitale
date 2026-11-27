@@ -1289,7 +1289,7 @@ test("booklet application facade", async (t) => {
           await assert.rejects(
             app.start(command),
             (error: unknown) =>
-              (error as { code?: string }).code === "BOOKLET_CONFLICT" &&
+              (error as { code?: string }).code === "BOOKLET_UNAVAILABLE" &&
               /Runs are disabled/.test((error as Error).message),
           );
           assert.equal(await db.collection("bookletBooks").countDocuments(), 0);
