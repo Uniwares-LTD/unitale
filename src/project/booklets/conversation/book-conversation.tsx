@@ -233,23 +233,34 @@ export function BookConversation({
     return () => clearInterval(timer);
   }, [working, confirming, unconfirmed, openId, refresh]);
 
-  // Follow new messages only while the reader is at the end; otherwise offer
-  // a New response control instead of moving them.
-  useEffect(() => {
-    const onScroll = () => {
-      const bottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 120;
-      pinned.current = bottom;
-      if (bottom) setUnread(false);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
   // The sticky dock sits in flow at the page end, so the page bottom shows the
   // latest message fully above it.
   const toLatest = () =>
     window.scrollTo({ top: document.documentElement.scrollHeight });
+  // Follow new messages only while the reader is at the end; otherwise offer
+  // a New response control instead of moving them.
+  useEffect(() => {
+    // The browser reports a scroll before it reports growth, so measure "at the
+    // end" against the height last seen; growth alone never unpins the reader.
+    let height = document.documentElement.scrollHeight;
+    const onScroll = () => {
+      const bottom = window.innerHeight + window.scrollY >= height - 120;
+      pinned.current = bottom;
+      if (bottom) setUnread(false);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    // Content can still grow after a turn lands (the dock gains its choices or
+    // Approve once the message finishes, a picture loads); keep following it.
+    const growth = new ResizeObserver(() => {
+      if (pinned.current) toLatest();
+      height = document.documentElement.scrollHeight;
+    });
+    growth.observe(document.body);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      growth.disconnect();
+    };
+  }, []);
   // Opening a conversation shows its latest turn.
   useLayoutEffect(() => {
     toLatest();
