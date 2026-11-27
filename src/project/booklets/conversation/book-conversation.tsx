@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type RefObject,
   type SetStateAction,
 } from "react";
 import { api, ApiError } from "@/lib/client/api";
@@ -121,6 +122,7 @@ export function BookConversation({
     }
   }, []);
 
+  const refocusReply = useRef(false);
   const open = data.turns.findLast((turn) => turn.status === "open") ?? null;
   const last = data.turns.at(-1) ?? null;
   const preparing = data.turns.some((turn) => turn.status === "preparing");
@@ -142,6 +144,13 @@ export function BookConversation({
     revealTurn?.turn.parts.flatMap((part) =>
       part.type === "prose" ? [part.text] : [],
     ) ?? [];
+  // Screen readers hear the new turn's text and then its question.
+  const spoken = [
+    ...prose,
+    ...(revealTurn?.turn.parts.flatMap((part) =>
+      part.type === "question" || part.type === "styles" ? [part.prompt] : [],
+    ) ?? []),
+  ].join(" ");
   const groupCount = prose.reduce(
     (sum, part) => sum + wordGroups(part).length,
     0,
@@ -150,6 +159,7 @@ export function BookConversation({
     revealTurn?.requestId ?? null,
     groupCount,
   );
+  const waiting = working && !revealing && !confirming && !expired;
   const waitCopy = {
     queued: t("mab589cc2e969"),
     "preparing-question": t("mb45ce3c3ef0b"),
@@ -464,10 +474,12 @@ export function BookConversation({
             )}
           </li>
         ))}
-        {working && !revealing && !confirming && !expired && (
+        {waiting && (
           // The next reply's own slot: its glowing mascot becomes that reply's
-          // header when the text starts streaming in below it.
-          <li role="status" aria-live="polite">
+          // header when the text starts streaming in below it. The announcer
+          // below speaks its text, since a region added already filled is
+          // often silent.
+          <li>
             <AgentMessage name={agentName} working>
               <WaitRow steps={bookSteps(data.activity)}>
                 {waitCopy[data.activity ?? "working"]}
@@ -520,7 +532,11 @@ export function BookConversation({
         )}
       </ol>
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {revealTurn && !revealing ? prose.join(" ") : ""}
+        {waiting
+          ? waitCopy[data.activity ?? "working"]
+          : revealTurn && !revealing
+            ? spoken
+            : ""}
       </div>
 
       {(offline ||
@@ -627,6 +643,7 @@ export function BookConversation({
               onSend={sendReply}
               late={expired && !working ? last : null}
               onSendLate={sendLate}
+              refocusRef={refocusReply}
             />
           )}
       </div>
@@ -664,6 +681,7 @@ function ReplyDock({
   onSend,
   late,
   onSendLate,
+  refocusRef,
 }: {
   productionId: string;
   turn: Turn | null;
@@ -678,6 +696,7 @@ function ReplyDock({
   // The expired last question: Send continues the book with the typed text.
   late: Turn | null;
   onSendLate: (turn: Turn, text: string) => Promise<null | SendProblem>;
+  refocusRef: RefObject<boolean>;
 }) {
   const t = useTranslations("ui");
   const artwork = useBookArtworkLabels();
@@ -705,6 +724,22 @@ function ReplyDock({
   // Approving and asking for changes never overlap: while the owner types (or
   // has unsent text), Approve steps aside, so nothing typed can be skipped.
   const editing = !!approval && (focused || !!draftText.trim());
+  // After a keyboard send, focus returns to the next turn's first control (a
+  // choice, or Approve) once it is answerable. The flag lives above the dock,
+  // which remounts per question. Approve comes before the field, which would
+  // hide it on focus.
+  useEffect(() => {
+    if (!refocusRef.current || !answerable) return;
+    refocusRef.current = false;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    field.current
+      ?.closest("[data-slot=conversation-dock]")
+      ?.querySelector<HTMLElement>(
+        "button:not(:disabled), textarea:not(:disabled)",
+      )
+      ?.focus();
+  }, [answerable, refocusRef]);
 
   async function submit(reply: BookletReply) {
     if (!turn || !answerable) return;
@@ -715,6 +750,9 @@ function ReplyDock({
     }
     setProblem(null);
     setAttempt(checked.reply);
+    // Send and Approve turn off while the book works, which drops a keyboard
+    // user's focus to the page; the next turn's first control takes it.
+    refocusRef.current = !!document.activeElement?.matches(":focus-visible");
     const result = await onSend(turn, checked.reply);
     if (result && result !== "unknown") setProblem(result);
     else if (!result) {
