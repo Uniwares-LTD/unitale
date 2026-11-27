@@ -97,7 +97,8 @@ Refresh generated inventories/assets and skill hashes only for reviewed changes.
 
 Use a separate read-only review of the final diff against the task contract.
 Fix actionable in-scope defects and report stale/missing evidence honestly.
-No local reviewer role is installed; delegation needs session authorization.
+Source-aware sync installs the managed shared `reviewer` in `.claude/agents`;
+there is no consumer-owned reviewer role. Delegation needs session authorization.
 Preserve proportional checks, no arbitrary retry limit and advisory quality policy
 when applying imported workflows.
 

@@ -46,6 +46,12 @@ for (const name of skills) {
     `---\nname: ${name}\ndescription: Fixture ${name}\n---\nFixture procedure.\n`,
   );
 }
+// Source-aware sync installs the managed Claude reviewer from the shared contract.
+mkdirSync(path.join(source, ".agents/agents"), { recursive: true });
+writeFileSync(
+  path.join(source, ".agents/agents/reviewer.md"),
+  "---\nname: reviewer\ndescription: Fixture reviewer\n---\nFixture review contract.\n",
+);
 mkdirSync(path.join(source, "docs"));
 writeFileSync(
   path.join(source, "docs/consumer-bootstrap.md"),
