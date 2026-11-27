@@ -577,7 +577,7 @@
     "m07d417d868a4": "Nothing to show yet.",
     "m962e64b76196": "Start again",
     "m00d60e31a4e6": "Run",
-    "m0dbde8fd9594": "This run",
+    "m0dbde8fd9594": "Current",
     "mdd167905de0d": "Version",
     "ma74487de8969": "Current version",
     "m6bc311a6a9aa": "Continued from this version",
@@ -669,7 +669,6 @@
     "m1e6245009d67": "Pictures",
     "maff0766a5290": "Review",
     "mcab3e11d26dc": "Waiting to retry the current step…",
-    "m395409137696": "Progress and history",
     "me75f834e009a": "Your book is ready",
     "m920487473fe6": "Read your book",
     "mb04fcdfc3287": "Open artwork",
@@ -707,7 +706,10 @@
     "m28220663726d": "This question timed out. Your answers so far are saved.",
     "m1a313d9b59e5": "Write your answer below and we’ll carry on from here.",
     "me159b06187d3": "Paused",
-    "mf7a90ea11a44": "See what happened"
+    "mf7a90ea11a44": "See what happened",
+    "ma15000000001": "Page {page}",
+    "ma15000000002": "Book layout",
+    "ma15000000003": "Picture plan"
   },
   "locale": {
     "heading": "Language and region",

@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArtworkViewer, type Artwork } from "./artwork-viewer";
+import { ArtworkViewer, downloadHref, type Artwork } from "./artwork-viewer";
 import { readerRange, readerStep } from "./reader-position";
 
 export function ConversationReader({
@@ -190,7 +190,8 @@ export function ConversationReader({
                         zoomIn: t("m0e47f09a748f"),
                         zoomOut: t("mbc7b631a689b"),
                       }}
-                      className="rounded-none [&_img]:max-h-[52svh]"
+                      // Phones: a shorter picture leaves room for the page's words.
+                      className="rounded-none [&_img]:max-h-[52svh] max-[599px]:[&_img]:max-h-[38svh]"
                     />
                     {text.length > 0 && (
                       <div className="space-y-3 px-4 py-5 text-reading [overflow-wrap:anywhere] sm:px-6">
@@ -251,7 +252,7 @@ export function ConversationReader({
               </Button>
               {/* The current page's picture, named so nobody expects the whole book. */}
               <Button asChild variant="ghost" className="min-h-11">
-                <a href={illustration.src} download={illustration.alt}>
+                <a href={downloadHref(illustration)} download>
                   <Download aria-hidden="true" />
                   {downloadLabel}
                 </a>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   Download,
@@ -25,7 +25,15 @@ export type Artwork = {
   alt: string;
   width: number;
   height: number;
+  /** Saved file name without type; the server adds the real one. */
+  download?: string;
 };
+
+/** Asks the picture route for a named download with its real file type. */
+export function downloadHref(image: Artwork) {
+  const name = image.download ?? image.alt;
+  return `${image.src}${image.src.includes("?") ? "&" : "?"}download=${encodeURIComponent(name)}`;
+}
 export type ArtworkLabels = { open: string; zoomIn: string; zoomOut: string };
 
 export function ArtworkViewer({
@@ -51,8 +59,51 @@ export function ArtworkViewer({
     left: number;
     top: number;
   } | null>(null);
+  // Touch points for two-finger pinch, and the point a zoom keeps in place.
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+  const anchor = useRef<{
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+    ratio: number;
+  } | null>(null);
   const position = useRef(0);
   const openedPath = useRef("");
+  useLayoutEffect(() => {
+    const box = viewport.current;
+    const at = anchor.current;
+    if (!box || !at) return;
+    anchor.current = null;
+    // Use the scroll from before the zoom: zooming out shrinks the picture
+    // first, and the browser would already have clamped the live value.
+    box.scrollLeft = (at.left + at.x) * at.ratio - at.x;
+    box.scrollTop = (at.top + at.y) * at.ratio - at.y;
+  }, [zoom]);
+  /** Zooms while keeping one point still: the given screen point (pinch)
+   * or the middle of the picture (buttons). */
+  function zoomTo(value: number, point?: { x: number; y: number }) {
+    const next = Math.min(4, Math.max(1, value));
+    const box = viewport.current;
+    if (next === zoom || !box) return setZoom(next);
+    const rect = box.getBoundingClientRect();
+    anchor.current = {
+      x: point ? point.x - rect.left : box.clientWidth / 2,
+      y: point ? point.y - rect.top : box.clientHeight / 2,
+      left: box.scrollLeft,
+      top: box.scrollTop,
+      ratio: next / zoom,
+    };
+    setZoom(next);
+  }
+  function spread() {
+    const [a, b] = [...pointers.current.values()];
+    return {
+      distance: Math.hypot(a.x - b.x, a.y - b.y),
+      middle: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+    };
+  }
   useEffect(() => {
     const changed = () =>
       setFullscreen(document.fullscreenElement === dialog.current);
@@ -139,12 +190,25 @@ export function ArtworkViewer({
           dir="ltr"
           className={cn(
             "h-[63svh] max-h-[63svh] min-w-0 overflow-auto overscroll-contain rounded-(--x-unitale-radius-media) bg-muted/40",
-            zoom > 1 && "cursor-grab touch-none active:cursor-grabbing",
+            // Fitted: the page may still scroll up and down, pinch is ours.
+            zoom > 1
+              ? "cursor-grab touch-none active:cursor-grabbing"
+              : "touch-pan-y",
           )}
           tabIndex={0}
           aria-label={image.alt}
           onDoubleClick={fit}
           onPointerDown={(event) => {
+            if (event.pointerType === "touch")
+              pointers.current.set(event.pointerId, {
+                x: event.clientX,
+                y: event.clientY,
+              });
+            if (pointers.current.size === 2) {
+              drag.current = null;
+              pinch.current = { distance: spread().distance, zoom };
+              return;
+            }
             if (zoom <= 1 || event.button !== 0) return;
             event.preventDefault();
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -156,17 +220,35 @@ export function ArtworkViewer({
             };
           }}
           onPointerMove={(event) => {
+            if (pointers.current.has(event.pointerId))
+              pointers.current.set(event.pointerId, {
+                x: event.clientX,
+                y: event.clientY,
+              });
+            if (pinch.current && pointers.current.size === 2) {
+              const now = spread();
+              if (pinch.current.distance > 0)
+                zoomTo(
+                  (pinch.current.zoom * now.distance) / pinch.current.distance,
+                  now.middle,
+                );
+              return;
+            }
             if (!drag.current) return;
             event.currentTarget.scrollLeft =
               drag.current.left - (event.clientX - drag.current.x);
             event.currentTarget.scrollTop =
               drag.current.top - (event.clientY - drag.current.y);
           }}
-          onPointerUp={() => {
+          onPointerUp={(event) => {
             drag.current = null;
+            pointers.current.delete(event.pointerId);
+            if (pointers.current.size < 2) pinch.current = null;
           }}
-          onPointerCancel={() => {
+          onPointerCancel={(event) => {
             drag.current = null;
+            pointers.current.delete(event.pointerId);
+            if (pointers.current.size < 2) pinch.current = null;
           }}
           onLostPointerCapture={() => {
             drag.current = null;
@@ -189,7 +271,7 @@ export function ArtworkViewer({
               className="size-11"
               aria-label={labels.zoomOut}
               disabled={zoom <= 1}
-              onClick={() => setZoom((value) => Math.max(1, value - 0.5))}
+              onClick={() => zoomTo(Math.ceil(zoom * 2 - 1) / 2)}
             >
               <ZoomOut aria-hidden="true" />
             </Button>
@@ -206,7 +288,7 @@ export function ArtworkViewer({
               className="size-11"
               aria-label={labels.zoomIn}
               disabled={zoom >= 4}
-              onClick={() => setZoom((value) => Math.min(4, value + 0.5))}
+              onClick={() => zoomTo(Math.floor(zoom * 2 + 1) / 2)}
             >
               <ZoomIn aria-hidden="true" />
             </Button>
@@ -235,7 +317,7 @@ export function ArtworkViewer({
             </Button>
           </div>
           <Button asChild variant="outline" className="min-h-11">
-            <a href={image.src} download={image.alt}>
+            <a href={downloadHref(image)} download>
               <Download aria-hidden="true" />
               {t("md6eafe823591")}
             </a>
