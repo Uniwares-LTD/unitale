@@ -61,7 +61,18 @@ export const bookletProductionCommandSchema = z.discriminatedUnion("action", [
     acceptedCredits: count,
   }),
   z.strictObject({ action: z.literal("retry"), key, callId: id }),
-  z.strictObject({ action: z.literal("continue"), key }),
+  z.strictObject({
+    action: z.literal("continue"),
+    key,
+    // Optional, additive: text typed after the last question expired. The next
+    // Manager attempt reads it as that question's `human_response`.
+    lateReply: z
+      .strictObject({
+        requestId: z.uuid(),
+        text: z.string().trim().min(1).max(2000),
+      })
+      .optional(),
+  }),
   // Starts the saved committed step that has no Run yet (idempotent by flow).
   z.strictObject({ action: z.literal("resume") }),
   // The owner's typed reply to one conversation turn (checked against it).
@@ -74,7 +85,9 @@ export const bookletProductionCommandSchema = z.discriminatedUnion("action", [
 ]);
 
 export type BookletStartCommand = z.infer<typeof bookletStartCommandSchema>;
-export type BookletIdeaStartCommand = z.infer<typeof bookletIdeaStartCommandSchema>;
+export type BookletIdeaStartCommand = z.infer<
+  typeof bookletIdeaStartCommandSchema
+>;
 export type BookletProductionCommand = z.infer<
   typeof bookletProductionCommandSchema
 >;
@@ -242,6 +255,11 @@ export type BookletPackagePage = z.infer<typeof bookletPackagePageSchema>;
 export type BookletRunReference = z.infer<typeof bookletRunReferenceSchema>;
 export type BookletRevisionQuote = z.infer<typeof bookletRevisionQuoteSchema>;
 export type BookletRetryResult = z.infer<typeof bookletRetryResultSchema>;
+// BOOKLET_START_PENDING when the account already has its maximum of books in
+// progress; books waiting for the owner's review count. Retrying soon cannot
+// help, so the browser shows its own translated advice for this message.
+export const bookletBusyMessage =
+  "Several of your books are still in progress. Finish or review one of them, then start this book.";
 // Refusals that happen before any charge: the browser may unlock editing.
 // Everything else (including BOOKLET_START_PENDING and transport failures)
 // keeps the exact request for a same-key retry.
@@ -272,6 +290,8 @@ export const bookletConversationSchema = z.object({
   productionId: id,
   title: z.string(),
   idea: z.string(),
+  // The book's language tag: agent text is in it, whatever the UI language.
+  language: z.string(),
   state: z.enum(["draft", "in-progress", "completed", "closed"]),
   // An attempt is queued or running and no question is open.
   working: z.boolean(),
@@ -318,6 +338,21 @@ export const bookletConversationSchema = z.object({
   ),
 });
 export type BookletConversation = z.infer<typeof bookletConversationSchema>;
+/**
+ * The person cannot move this unfinished book on from its page: its last
+ * question expired, or nothing is running, asking or being confirmed.
+ */
+export function conversationPaused(c: BookletConversation) {
+  if (c.completed) return false;
+  const last = c.turns.at(-1);
+  if (last?.status === "expired") return true;
+  if (last?.status === "stale") return false;
+  return (
+    !c.working &&
+    c.activity === null &&
+    !c.turns.some((t) => t.status === "open" || t.status === "preparing")
+  );
+}
 export const bookletReplyResultSchema = z.object({
   status: z.enum(["submitting", "submitted"]),
 });

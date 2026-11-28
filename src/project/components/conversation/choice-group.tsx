@@ -14,16 +14,17 @@ export type ChoiceOption = {
 
 /**
  * Unitale single and multiple choice (design package: Single & multiple choice;
- * Unibase selection). A single, reversible choice commits on one tap; multiple
- * choices are a draft shown with aria-pressed until the composer's Send. Two
+ * Unibase selection). Choices are a draft shown with aria-pressed until the
+ * composer's Send; a single choice holds one option, a tap again clears it. Two
  * columns, the odd last option spans both. Selecting is never approval or
  * payment consent.
  */
 export function ChoiceGroup({
   legendId,
   legend,
+  lang,
+  hint,
   options,
-  mode,
   selected = [],
   onChoose,
   disabled = false,
@@ -32,10 +33,13 @@ export function ChoiceGroup({
 }: {
   legendId: string;
   legend: string;
+  /** Language of the question and options when it differs from the UI. */
+  lang?: string;
+  /** Short instruction under the legend, e.g. that several may be chosen. */
+  hint?: string;
   options: readonly ChoiceOption[];
-  mode: "single" | "multiple";
   selected?: readonly string[];
-  /** Single: commit this option. Multiple: toggle it in the draft. */
+  /** Toggle this option in the draft (single keeps at most one). */
   onChoose: (id: string) => void;
   disabled?: boolean;
   artworkLabels?: ArtworkLabels;
@@ -43,10 +47,29 @@ export function ChoiceGroup({
 }) {
   const media = options.some((option) => option.image);
   return (
-    <fieldset disabled={disabled} className="min-w-0">
-      <legend id={legendId} dir="auto" className="mb-2 text-body font-semibold">
+    <fieldset
+      disabled={disabled}
+      aria-describedby={hint && !compact ? `${legendId}-hint` : undefined}
+      className="min-w-0"
+    >
+      {/* Full width, so the question's own direction aligns it (a shrunk
+          legend sits at the fieldset's start edge instead). */}
+      <legend
+        id={legendId}
+        dir="auto"
+        lang={lang}
+        className="mb-2 w-full text-body font-semibold"
+      >
         {legend}
       </legend>
+      {hint && !compact && (
+        <p
+          id={`${legendId}-hint`}
+          className="-mt-1 mb-2 text-supporting text-muted-foreground"
+        >
+          {hint}
+        </p>
+      )}
       {options.length > 0 && !compact && (
         <div
           className={cn(
@@ -62,10 +85,11 @@ export function ChoiceGroup({
               <Button
                 type="button"
                 variant={pressed ? "default" : "outline"}
-                aria-pressed={mode === "multiple" ? pressed : undefined}
+                aria-pressed={pressed}
                 onClick={() => onChoose(option.id)}
                 className={cn(
-                  "h-auto min-h-(--control-touch-sm) whitespace-normal text-body",
+                  "h-auto min-h-(--control-touch-sm) rounded-(--x-unitale-radius-card) shadow-none whitespace-normal text-body",
+                  !pressed && "bg-muted/20 hover:bg-muted/40",
                   option.image
                     ? "w-full flex-col items-stretch gap-0 overflow-hidden p-0 text-start"
                     : "px-4 py-2.5",
@@ -81,9 +105,9 @@ export function ChoiceGroup({
                     className="aspect-square w-full object-cover"
                   />
                 )}
-                <span dir="auto" className={cn(option.image && "px-3 py-2")}>
+                <bdi lang={lang} className={cn(option.image && "px-3 py-2")}>
                   {option.label}
-                </span>
+                </bdi>
               </Button>
             );
             return (

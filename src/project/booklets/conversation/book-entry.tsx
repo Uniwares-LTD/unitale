@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { ExternalLink, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/client/api";
 import { signInPath } from "@/lib/return-path";
@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Composer } from "@/project/components/conversation/composer";
 import { InspirationList } from "@/project/components/conversation/inspiration-list";
 import {
+  bookletBusyMessage,
   bookletEntrySchema,
   bookletIdeaStartCommandSchema,
   bookletRunReferenceSchema,
@@ -40,13 +41,16 @@ function writeDraft(value: string | null) {
   }
 }
 
-type Problem = "failed" | "pending" | "price" | "credits" | "unavailable";
+type Problem =
+  "failed" | "pending" | "busy" | "price" | "credits" | "unavailable";
 
 function readPendingStart(storageKey: string | null) {
   if (!storageKey) return null;
   try {
     const saved = sessionStorage.getItem(storageKey);
-    return saved ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved)) : null;
+    return saved
+      ? bookletIdeaStartCommandSchema.parse(JSON.parse(saved))
+      : null;
   } catch {
     return null;
   }
@@ -68,7 +72,8 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [pendingStart, setPendingStart] =
     useState<BookletIdeaStartCommand | null>(null);
-  useLeaveGuard({ dirty: !pendingStart && !!idea.trim() });
+  // Only an unsent idea can be lost; a held one waits in this tab.
+  useLeaveGuard({ dirty: !consent && !!idea.trim() });
 
   useEffect(() => {
     const saved = readDraft();
@@ -97,6 +102,17 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
   useEffect(() => {
     if (consent && !entry && !pendingStart) loadEntry();
   }, [consent, entry, pendingStart]);
+  // Back from buying credits in the other tab: show the new balance.
+  const short =
+    !!entry?.package && entry.package.credits > entry.availableCredits;
+  useEffect(() => {
+    if (!consent || !short) return;
+    const onVisible = () => {
+      if (!document.hidden) loadEntry();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [consent, short]);
 
   const inspirations = [
     {
@@ -195,7 +211,10 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
         clearPending();
         setEntry(null);
       }
-      if (code === "BOOKLET_START_PENDING") setProblem("pending");
+      if (code === "BOOKLET_START_PENDING")
+        setProblem(
+          (error as Error).message === bookletBusyMessage ? "busy" : "pending",
+        );
       else if (code === "INSUFFICIENT_CREDITS") setProblem("credits");
       else if (code === "BOOKLET_CONFLICT") setProblem("price");
       else if (code === "BOOKLET_UNAVAILABLE") setProblem("unavailable");
@@ -208,27 +227,35 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
   const pack = entry?.package ?? null;
   const missing = pack ? pack.credits - (entry?.availableCredits ?? 0) : 0;
   const recovering = pendingStart && (!entry || problem !== null);
+  // Same condition under which the card shows "Start my book".
+  const canStart = !!pack && missing <= 0 && !recovering;
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 py-6 sm:py-12">
+    <div
+      data-slot="book-entry"
+      className="mx-auto flex w-full max-w-xl flex-col gap-8 py-4 sm:py-8"
+    >
       <header className="text-center">
+        <p className="mb-5 font-heading text-section-title text-muted-foreground">
+          <bdi>Unitale</bdi>
+        </p>
         <h1 className="font-heading text-display">
           <span className="block">{t("m262c2d549b96")}</span>
           <span className="block">{t("me524c3dd7e43")}</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-md text-reading text-muted-foreground">
+        <p className="mx-auto mt-4 max-w-md text-body text-muted-foreground">
           {t("mec401c187075")}
         </p>
       </header>
 
-      <div className="relative">
+      <div className="relative mt-4">
         {/* Static mascot face only (decorative); the 3D mascot is deferred. */}
         <Image
           src="/images/unitale-mascot-face.svg"
           alt=""
           aria-hidden="true"
-          width={64}
-          height={64}
-          className="absolute -top-14 end-8 size-16 sm:end-12"
+          width={48}
+          height={48}
+          className="pointer-events-none absolute -top-10 end-6 size-12 sm:end-8"
         />
         <Composer
           id="book-idea"
@@ -236,33 +263,54 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
           inputRef={field}
           value={idea}
           onChange={setIdea}
-          onSend={send}
-          canSend={!consent && !!idea.trim()}
+          // Once held, the arrow does what "Start my book" does.
+          onSend={consent ? start : send}
+          canSend={consent ? canStart : !!idea.trim()}
+          pending={starting}
           readOnly={consent}
           maxLength={4000}
           label={t("mb3ba025e2ecd")}
+          describedBy={!consent ? "book-idea-hint" : undefined}
           placeholder={t("m4966873a89fb")}
-          sendLabel={t("mf6f4688ff23d")}
+          sendLabel={consent ? t("m0ee71f4dfb02") : t("mf6f4688ff23d")}
           footer={
             consent && !pendingStart ? (
-              <Button variant="ghost" onClick={edit} disabled={starting}>
-                {t("mfd1d3a3672ed")}
+              // Round pen in Send's place: edit the held idea.
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-(--control-touch-sm) rounded-full"
+                onClick={edit}
+                disabled={starting}
+                aria-label={t("mfd1d3a3672ed")}
+                title={t("mfd1d3a3672ed")}
+              >
+                <Pencil aria-hidden="true" />
               </Button>
-            ) : !consent ? (
-              <p className="text-supporting text-muted-foreground">
-                {t("m79a2b7be2cdc")}
-              </p>
             ) : null
           }
         />
+        {!consent && (
+          <p
+            id="book-idea-hint"
+            className="mt-3 text-center text-supporting text-muted-foreground"
+          >
+            {/* Signed out, Send leads to sign-in; say so beside Send. */}
+            {!signedIn && idea.trim() ? t("mcd5053d9a549") : t("m79a2b7be2cdc")}
+          </p>
+        )}
       </div>
 
       {recovering && (
         <Notice
           tone="warning"
-          title={t(
-            problem === "pending" ? "me079e4adcff9" : "m08d20ade842d",
-          )}
+          title={
+            problem === "busy"
+              ? t("ma43eb39b6d6a")
+              : problem === "pending"
+                ? t("me079e4adcff9")
+                : t("m6b8971f87e59")
+          }
         >
           <SubmitButton
             pending={starting}
@@ -278,7 +326,9 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
         // pages, price and balance instead of an AlertDialog.
         <Card
           aria-labelledby="book-consent-title"
-          className="motion-safe:animate-in motion-safe:fade-in"
+          size="sm"
+          // Raised like the idea box so the next step stands out.
+          className="gap-2 rounded-(--x-unitale-radius-dialog) bg-card shadow-(--x-unitale-shadow-raised) ring-0 motion-safe:animate-in motion-safe:fade-in"
         >
           <CardHeader>
             <CardTitle
@@ -288,7 +338,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
               {t("mee15ab57a7fb")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {!entry && !loadFailed && (
               <div className="space-y-2" aria-label={t("mba3bbbe10d8b")}>
                 <Skeleton className="h-4 w-2/3" />
@@ -309,7 +359,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
             {pack && (
               <>
                 <div>
-                  <p className="text-reading">
+                  <p className="text-body">
                     {pack.includeCover
                       ? t("m2625981f6078", { pages: pack.storyPages })
                       : t("me047ec3372f2", { pages: pack.storyPages })}
@@ -323,35 +373,57 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                 </div>
                 {problem && (
                   <Notice
-                    tone={problem === "pending" ? "warning" : "error"}
+                    tone={
+                      problem === "pending" || problem === "busy"
+                        ? "warning"
+                        : "error"
+                    }
                     title={
-                      problem === "pending"
-                        ? t("me079e4adcff9")
-                        : problem === "price"
-                          ? t("m589bd2ada19a")
-                          : problem === "credits"
-                            ? t("m06db853045c4", {
-                                missing: Math.max(1, missing),
-                              })
-                            : problem === "unavailable"
-                              ? t("m391e8b97689b")
-                              : t("m3d3a090b7c87")
+                      problem === "busy"
+                        ? t("ma43eb39b6d6a")
+                        : problem === "pending"
+                          ? t("me079e4adcff9")
+                          : problem === "price"
+                            ? t("m589bd2ada19a")
+                            : problem === "credits"
+                              ? t("m06db853045c4", {
+                                  missing: Math.max(1, missing),
+                                })
+                              : problem === "unavailable"
+                                ? t("m391e8b97689b")
+                                : t("m3d3a090b7c87")
                     }
                   />
                 )}
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col">
                   {missing > 0 ? (
-                    <Button asChild className="min-h-(--control-touch-sm)">
-                      <Link href="/credits">{t("m040985b8ff7e")}</Link>
-                    </Button>
+                    <>
+                      <Button
+                        asChild
+                        className="min-h-(--control-touch-sm) w-full"
+                      >
+                        {/* Credits has no return link, so it opens beside this
+                            tab: the held idea stays here, and the balance is
+                            read again when the person comes back. */}
+                        <a href="/credits" target="_blank" rel="noopener">
+                          {t("m040985b8ff7e")}
+                          <ExternalLink aria-hidden="true" />
+                        </a>
+                      </Button>
+                      <p className="mt-2 text-center text-supporting text-muted-foreground">
+                        {t("m693036881436")}
+                      </p>
+                    </>
                   ) : (
                     // Pending keeps the label; the request key makes a retry safe.
                     <SubmitButton
                       pending={starting}
                       onClick={start}
-                      className="min-h-(--control-touch-sm)"
+                      className="min-h-(--control-touch-sm) w-full"
                     >
-                      {problem === "pending" || problem === "failed"
+                      {problem === "pending" ||
+                      problem === "busy" ||
+                      problem === "failed"
                         ? t("md8b8392e2c54")
                         : t("m6d9b2dbc225a")}
                     </SubmitButton>
@@ -374,12 +446,6 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
             field.current?.focus();
           }}
         />
-      )}
-
-      {!signedIn && idea.trim() && (
-        <p className="text-center text-supporting text-muted-foreground">
-          {t("mcd5053d9a549")}
-        </p>
       )}
     </div>
   );

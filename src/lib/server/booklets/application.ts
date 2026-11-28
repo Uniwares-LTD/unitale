@@ -31,6 +31,7 @@ import {
   type BookletEntry,
   type BookletReplyResult,
   bookletHistoryKinds,
+  bookletBusyMessage,
 } from "../../../project/booklets/application-contract";
 import { checkReply } from "../../../project/booklets/turn-contract";
 import { humanRequestV2Schema } from "./documents-v2";
@@ -43,7 +44,11 @@ import { bookletRepositoryV2 } from "./repository-v2";
 import { bookletLifecycleV2 } from "./lifecycle-v2";
 import { enqueueBookletRun } from "./runs";
 import { bookletMedia } from "./media";
-import { confirmedHumanResponse, readBookletDocumentV2 } from "./read-v2";
+import {
+  confirmedHumanResponse,
+  lateReplies,
+  readBookletDocumentV2,
+} from "./read-v2";
 import { readSettings } from "../settings";
 import { accessPermitsSession, accountAccess } from "../store/access";
 import { readWallet } from "../store/credits";
@@ -324,6 +329,7 @@ export function bookletApplication(
     runKey: string,
     workflowId: string,
     predecessorId: string | null,
+    inputs: Record<string, string> = {},
   ): Promise<BookletRunReference> {
     try {
       const p = await repo.getProduction(productionId);
@@ -337,7 +343,7 @@ export function bookletApplication(
         workflowId,
         orchestratorId: config.orchestratorId,
         configurationRevision: config.configurationRevision,
-        inputs: {},
+        inputs,
         predecessorId,
       });
       return { productionId, runId: run.id };
@@ -346,7 +352,11 @@ export function bookletApplication(
       // resume it. A new key would be refused while this flow stays active.
       if (error instanceof AppError && error.status < 500)
         throw pending(
-          "This step is saved, but it couldn’t start yet. Try again.",
+          // The per-account cap counts books paused for the owner's review,
+          // so this refusal lasts until one of them finishes.
+          error.code === "AI_CONCURRENCY_LIMIT"
+            ? bookletBusyMessage
+            : "This step is saved, but it couldn’t start yet. Try again.",
         );
       throw error;
     }
@@ -507,14 +517,58 @@ export function bookletApplication(
   async function continueWith(
     productionId: string,
     key: string,
+    lateReply?: { requestId: string; text: string },
   ): Promise<BookletRunReference> {
     const p = await repo.getProduction(productionId);
     const runKey = flowKey(fingerprint([p.orderId, "continue", key]));
     const prior = await existingRun(runKey, productionId);
     if (prior) return prior;
+    const inputs = lateReply ? await lateInputs(productionId, lateReply) : {};
     const predecessorId = successorOf(await latestRun(productionId));
     const workflowId = await lifecycle.continue(productionId, key);
-    return enqueue(productionId, runKey, workflowId, predecessorId);
+    return enqueue(productionId, runKey, workflowId, predecessorId, inputs);
+  }
+
+  /** A late reply answers only the last question, and only once it expired. */
+  async function lateInputs(
+    productionId: string,
+    late: { requestId: string; text: string },
+  ) {
+    const human = (await humanRequests(productionId)).at(-1)?.human;
+    if (human?.requestId !== late.requestId)
+      throw bookletConflict("Only the latest question can take a late reply.");
+    const matches = (await nativeDecisions([human])).filter(
+      (d) =>
+        d.jobId === human.runId &&
+        d.form?.form_content === human.formContent + placeholder,
+    );
+    const decision = matches.length === 1 ? matches[0] : undefined;
+    if (
+      !decision ||
+      confirmedHumanResponse(decision).status === "submitted" ||
+      !(
+        decision.status === "expired" ||
+        (decision.form?.expiration_time ?? Infinity) * 1000 < Date.now()
+      )
+    )
+      throw bookletConflict("This question can still be answered directly.");
+    // Refuse before any flow is saved when the Manager can't receive it.
+    const p = await repo.getProduction(productionId);
+    const config = await configuration(
+      db,
+      p.creativeConfigSnapshot.executionProfileId,
+      p.creativeConfigSnapshot.executionProfileRevision,
+    );
+    const manager = await db
+      .collection<OrchestratorRecord>("orchestrators")
+      .findOne(
+        { _id: config.orchestratorId, revision: config.configurationRevision },
+        { projection: { "definition.inputs": 1 } },
+      );
+    const names = manager?.definition.inputs.map((field) => field.name) ?? [];
+    if (!lateInputNames.every((name) => names.includes(name)))
+      throw bookletConflict("This Manager can't read a late reply yet.");
+    return { late_reply_for: late.requestId, late_reply: late.text };
   }
 
   /** Enqueues the order's committed flow that has no Run (start, continuation
@@ -809,7 +863,12 @@ export function bookletApplication(
         // Refuse before anything is created: a refusal after the draft exists
         // keeps the request (pending), but a closed page would orphan it.
         if (!(await readSettings(db)).settings.runs.enabled)
-          throw bookletConflict("Runs are disabled. Try again later.");
+          // "Unavailable", not a price conflict: the quote itself is still valid.
+          throw new AppError(
+            "BOOKLET_UNAVAILABLE",
+            "Runs are disabled. Try again later.",
+            409,
+          );
         // The paid start rechecks atomically; this only avoids an unpaid draft.
         if (
           (await readWallet(db, actor.uid, { actor })).available <
@@ -1206,7 +1265,7 @@ export function bookletApplication(
           };
         }
         case "continue":
-          return continueWith(productionId, command.key);
+          return continueWith(productionId, command.key, command.lateReply);
         case "resume":
           return resumeFlow(productionId);
         case "reply":
@@ -1228,7 +1287,7 @@ export function bookletApplication(
       if (!book) throw bookletMissing();
       const asked = await humanRequests(productionId);
       const runIds = [...new Set(asked.map((a) => a.human.runId))];
-      const [jobs, decisions, latest] = await Promise.all([
+      const [jobs, decisions, latest, late] = await Promise.all([
         aiJobs(db)
           .find(
             { _id: { $in: runIds }, uid: actor.uid },
@@ -1237,6 +1296,7 @@ export function bookletApplication(
           .toArray(),
         nativeDecisions(asked.map((a) => a.human)),
         latestRun(productionId),
+        lateReplies(db, actor.uid, productionId, asked.map((a) => a.human.requestId)),
       ]);
       const statusOf = new Map(jobs.map((j) => [j._id, j.status]));
       const turns = asked.map(({ human, createdAt }) => {
@@ -1248,7 +1308,13 @@ export function bookletApplication(
         const decision = matches.length === 1 ? matches[0] : undefined;
         const response = confirmedHumanResponse(decision);
         const checked = response.status === "submitted" ? checkReply(human.turn!, response.response) : null;
-        const answered = checked?.ok ? checked.reply : null;
+        const lateText = late.get(human.requestId);
+        // Text typed after expiry (on Continue) is this question's answer.
+        const answered = checked?.ok
+          ? checked.reply
+          : lateText !== undefined
+            ? { version: 1 as const, kind: "answer" as const, choices: [], text: lateText }
+            : null;
         const active = activeStatuses.includes(statusOf.get(human.runId) ?? "");
         let status: BookletConversation["turns"][number]["status"];
         if (answered) status = "answered";
@@ -1331,6 +1397,7 @@ export function bookletApplication(
         productionId,
         title: book.title,
         idea: p.brief.idea,
+        language: p.brief.language.tag,
         state: p.lifecycleState,
         working,
         activity,
@@ -1447,6 +1514,9 @@ export function bookletApplication(
 
 // The native Human Input appends this placeholder to the retained form body.
 const placeholder = "\n{{#$output.response#}}";
+// Optional Manager inputs (paragraph text) that carry a reply typed after its
+// question expired; see continueWith.
+const lateInputNames = ["late_reply_for", "late_reply"];
 const activeStatuses: string[] = ["queued", "dispatching", "running", "paused"];
 // The conversational entry collects only the idea. The brief still requires an
 // audience, so it carries this fixed marker and the Manager asks the owner.

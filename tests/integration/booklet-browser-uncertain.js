@@ -14,7 +14,7 @@ async (page) => {
   await page.waitForURL(/\/runs\/[^/]+$/);
   await page.getByText("The latest step is being confirmed", { exact: true }).waitFor({ timeout: 30000 });
   assert(
-    await page.getByText("Saved work is shown below. Nothing is repeated or charged again while the outcome is confirmed.").isVisible(),
+    await page.getByText("Saved work is shown above. Nothing is repeated or charged again while the outcome is confirmed.").isVisible(),
     "uncertainty explanation shown",
   );
   assert(!(await page.getByRole("button", { name: "Continue booklet" }).isVisible()), "no continue while uncertain");

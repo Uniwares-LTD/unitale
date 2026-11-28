@@ -18,7 +18,8 @@ import type {
 export const assetUrl = (productionId: string, assetId: string) =>
   `/api/booklets/${encodeURIComponent(productionId)}/assets/${encodeURIComponent(assetId)}`;
 
-const prose = "text-reading whitespace-pre-line [overflow-wrap:anywhere]";
+const prose = "text-body whitespace-pre-line [overflow-wrap:anywhere]";
+const reviewCard = "gap-3 bg-muted/20 shadow-none ring-0";
 // The role's weight replaces CardTitle's own font-medium.
 const cardTitle =
   "font-heading text-card-title font-(number:--text-card-title--font-weight)";
@@ -32,19 +33,20 @@ export function useBookArtworkLabels(): ArtworkLabels {
   };
 }
 
-// Non-interactive parts render in the history in the Manager's order. The one
-// interactive part (question, styles or approval) is rendered by the dock while
-// open; once answered, only its prompt stays in the history.
+// Parts render in the history in the Manager's order. The one interactive part
+// (question, styles or approval) is answered in the dock; its prompt also stays
+// in the history so a question-only turn never shows an empty agent row.
 export function TurnParts({
   productionId,
   turn,
-  answered,
   revealCount,
+  lang,
 }: {
   productionId: string;
   turn: BookletTurn;
-  answered: boolean;
   revealCount?: number;
+  /** The book's language, so screen readers voice the agent text in it. */
+  lang?: string;
 }) {
   const artwork = useBookArtworkLabels();
   let remaining = revealCount;
@@ -67,23 +69,24 @@ export function TurnParts({
         key={index}
         productionId={productionId}
         part={part}
-        answered={answered}
         artwork={artwork}
       />,
     );
   }
-  return <div className="space-y-4">{rendered}</div>;
+  return (
+    <div lang={lang} className="space-y-4">
+      {rendered}
+    </div>
+  );
 }
 
 function Part({
   productionId,
   part,
-  answered,
   artwork,
 }: {
   productionId: string;
   part: BookletTurnPart;
-  answered: boolean;
   artwork: ArtworkLabels;
 }) {
   switch (part.type) {
@@ -97,7 +100,7 @@ function Part({
       return <MilestoneDivider label={part.label} />;
     case "overview":
       return (
-        <Card>
+        <Card className={reviewCard}>
           <CardHeader>
             <CardTitle dir="auto" className={cardTitle}>
               {part.title}
@@ -111,7 +114,7 @@ function Part({
                     {fact.label}
                   </dt>
                   <dd dir="auto" className="text-body [overflow-wrap:anywhere]">
-                    {fact.value}
+                    <ReplyValue value={fact.value} />
                   </dd>
                 </div>
               ))}
@@ -121,7 +124,7 @@ function Part({
       );
     case "synopsis":
       return (
-        <Card>
+        <Card className={reviewCard}>
           <CardHeader>
             <CardTitle dir="auto" className={cardTitle}>
               {part.title}
@@ -137,7 +140,7 @@ function Part({
     case "character":
     case "location":
       return (
-        <Card>
+        <Card className={reviewCard}>
           <CardContent className="grid gap-4 sm:grid-cols-[10rem_1fr]">
             {part.assetId && (
               <ArtworkViewer
@@ -171,16 +174,16 @@ function Part({
             height: 640,
           }}
           labels={artwork}
-          className="max-w-md"
+          className="mx-auto w-full [&_img]:max-h-[65svh]"
         />
       );
     case "question":
     case "styles":
-      return answered ? (
+      return (
         <p dir="auto" className={`${prose} font-medium`}>
           {part.prompt}
         </p>
-      ) : null;
+      );
     case "approval":
       return null;
   }
@@ -212,7 +215,7 @@ export function ReplyText({
         <span className="mb-1 block text-caption text-muted-foreground">
           {t("mf63615fc3c6f", { subject })}
         </span>
-        <span dir="auto">{reply.text}</span>
+        <ReplyValue value={reply.text} />
       </>
     );
   const options =
@@ -220,13 +223,49 @@ export function ReplyText({
       ? interactive.options
       : [];
   // Locale list formatting; labels are Manager content, never joined by hand.
-  return format.list(
-    [
-      ...reply.choices.map(
-        (id) => options.find((o) => o.id === id)?.label ?? id,
-      ),
-      ...(reply.text ? [reply.text] : []),
-    ],
-    { type: "unit" },
+  // Typed text goes on its own line so a list word ("و", "and") never joins
+  // two answers in different scripts.
+  const chosen = reply.choices.map(
+    (id) => options.find((o) => o.id === id)?.label ?? id,
+  );
+  return (
+    <>
+      {chosen.length > 0 &&
+        format.list(
+          chosen.map((value, index) => (
+            <ReplyValue key={index} value={value} />
+          )),
+          { type: "unit" },
+        )}
+      {reply.text && (
+        <ReplyValue
+          value={reply.text}
+          className={chosen.length > 0 ? "mt-1 block" : undefined}
+        />
+      )}
+    </>
+  );
+}
+
+/** Keep each answer independent of the surrounding sentence and numeric ranges LTR. */
+function ReplyValue({
+  value,
+  className,
+}: {
+  value: string;
+  className?: string;
+}) {
+  return (
+    <bdi className={className}>
+      {value.split(/(\p{N}+(?:\s*[-–—]\s*\p{N}+)+)/u).map((part, index) =>
+        index % 2 ? (
+          <bdi key={index} dir="ltr">
+            {part}
+          </bdi>
+        ) : (
+          part
+        ),
+      )}
+    </bdi>
   );
 }

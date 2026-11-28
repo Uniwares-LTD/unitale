@@ -46,10 +46,22 @@ for (const name of skills) {
     `---\nname: ${name}\ndescription: Fixture ${name}\n---\nFixture procedure.\n`,
   );
 }
+// Source-aware sync installs the managed Claude reviewer from the shared contract.
+mkdirSync(path.join(source, ".agents/agents"), { recursive: true });
+writeFileSync(
+  path.join(source, ".agents/agents/reviewer.md"),
+  "---\nname: reviewer\ndescription: Fixture reviewer\n---\nFixture review contract.\n",
+);
 mkdirSync(path.join(source, "docs"));
 writeFileSync(
   path.join(source, "docs/consumer-bootstrap.md"),
   "# Fixture bootstrap\nRun handbook:check; retain the revision.\n",
+);
+// Sync inlines the session contract and installs startup routing by default.
+mkdirSync(path.join(source, "docs/guidance"));
+writeFileSync(
+  path.join(source, "docs/guidance/communication.md"),
+  "# Communication guidance\n\n## Session contract\n\nFixture contract.\n\n## Workflow adherence\n\nFixture routing.\n",
 );
 mkdirSync(path.join(source, "scripts"));
 writeFileSync(

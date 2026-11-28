@@ -9,6 +9,11 @@ async (page) => {
   };
   const button = (name) => page.getByRole("button", { name, exact: true });
   const reply = page.locator("#book-reply");
+  const send = button("Send");
+  // The screen-reader announcer repeats turn text; read the visible list.
+  const chat = page.getByRole("list", { name: "Conversation" });
+  // Approve steps aside while the reply box has focus or text.
+  const leaveReply = () => reply.evaluate((element) => element.blur());
   const capture = (name) => page.screenshot({ path: `output/playwright/10c4-${name}.png` });
   let sent = 0;
   page.on("pageerror", (error) => errors.push(error.message));
@@ -31,8 +36,12 @@ async (page) => {
   await page.keyboard.press("Shift");
   await button("My child").waitFor();
   await capture("question");
+  // Choices are a draft until Send.
   await button("My child").click();
+  require(await button("My child").getAttribute("aria-pressed") === "true", "Single choice is not a draft");
+  await send.click();
   await page.getByRole("button", { name: /^4.5$/ }).click();
+  await send.click();
   await button("Kindness").click();
   await button("Curiosity").click();
   require(await button("Kindness").getAttribute("aria-pressed") === "true", "Multiple choice is not a draft");
@@ -62,24 +71,19 @@ async (page) => {
   const approve = button("Approve this version");
   await approve.waitFor();
   await capture("outline");
-  await button("Request changes").click();
+  await reply.click();
   await reply.fill("Set the story by the sea.");
   await reply.press("Enter");
-  await page.getByText(/Updated with your note/).waitFor();
+  await chat.getByText(/Updated with your note/).waitFor();
+  await leaveReply();
   await approve.waitFor();
-  await reply.fill("Please keep the stars very bright.");
   await approve.click();
-  await page.getByText("Preparing your artwork…", { exact: true }).waitFor();
+  await chat.getByText("Preparing your artwork…", { exact: true }).waitFor();
   await capture("production");
 
-  const move = page.getByRole("alertdialog", { name: "Move your draft to this review?" });
-  await move.getByRole("button", { name: "Keep draft" }).click();
-  require(await reply.inputValue() === "", "An unsent draft was silently retargeted");
-  await button("Review draft").click();
-  await move.getByRole("button", { name: "Move draft" }).click();
-  require(await reply.inputValue() === "Please keep the stars very bright.", "The moved draft was lost");
-
   const illustration = page.getByRole("button", { name: /Open artwork.*The opening illustration/ });
+  await approve.waitFor(); // The artwork review has settled.
+  await reply.fill("Please keep the stars very bright.");
   await illustration.scrollIntoViewIfNeeded();
   await illustration.focus();
   const beforeZoom = await page.evaluate(() => window.scrollY);
@@ -96,10 +100,10 @@ async (page) => {
   require(await reply.inputValue() === "Please keep the stars very bright.", "Opening artwork cleared the draft");
   // Request a second cover. The fixture retains original-a for the first
   // version and original-b for the revised illustration.
-  await button("Request changes").click();
   await reply.fill("Brighten the sky in the opening illustration.");
   await reply.press("Enter");
   await illustration.nth(1).waitFor();
+  await leaveReply();
 
   const conversationApi = `${productionApi}?section=conversation`;
   let browsingEarlier = false;
@@ -124,11 +128,11 @@ async (page) => {
     await page.unroute(conversationApi, holdCompletedView);
   }
 
-  await button("Read your book").click();
   const reader = page.getByRole("dialog");
+  await reader.waitFor(); // Completion opens the finished-book preview automatically.
   await reader.getByText("Cover", { exact: true }).waitFor();
   const checkDownload = async (expectedSha256) => {
-    const link = reader.getByRole("link", { name: "Download", exact: true });
+    const link = reader.getByRole("link", { name: "Download page", exact: true });
     const [download] = await Promise.all([page.waitForEvent("download"), link.click()]);
     const stream = await download.createReadStream();
     const bytes = [];
@@ -138,7 +142,10 @@ async (page) => {
       return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
     }, bytes);
     require(digest === expectedSha256, "Downloaded bytes differ from the retained fixture original");
-    require(download.url() === new URL(await reader.getByRole("img").getAttribute("src"), origin).href, "Download did not use the displayed manifest page");
+    // The link names the saved file (?download=title – page) on the same asset.
+    const saved = new URL(download.url());
+    require(saved.origin + saved.pathname === new URL(await reader.getByRole("img").getAttribute("src"), origin).href, "Download did not use the displayed manifest page");
+    require(saved.searchParams.get("download")?.startsWith("A little dragon learns to share the stars."), "Download is not named after the book");
   };
   await checkDownload("6ba39f5e8928a00b6396ff8a91144123175fd201e1065c996eadf9d4cb363523");
   require(await reader.getByRole("button", { name: "Previous page" }).isDisabled(), "Reader moved before the cover");
@@ -153,7 +160,7 @@ async (page) => {
   require(await reader.getByRole("button", { name: "Next page" }).isDisabled(), "Reader moved after its last page");
   await page.keyboard.press("Escape");
 
-  await page.getByText("Progress and history", { exact: true }).click();
+  await button("Book details").click();
   await page.getByText("History", { exact: true }).waitFor();
   const status = await page.request.get(conversation + "?probe=1");
   require(status.ok(), "The owned conversation could not be reopened");

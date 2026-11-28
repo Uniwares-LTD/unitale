@@ -57,7 +57,8 @@ parts in Manager order and exactly one interaction: a question (`text`, `single`
 may also have prose, overview, synopsis, character, location, image cards and at most one
 milestone. A **reply** is `answer {choices, text}`, `approve {target}` or
 `changes {target, text}`, checked against its turn and sent as the raw-v1 response
-JSON. The repository binds shown revisions to request targets and images to that
+JSON. A single question takes at most one option, optionally with a typed note
+when it allows free text. The repository binds shown revisions to request targets and images to that
 revision's retained assets. It derives the generic `unibase-ui` fallback cards, so the
 shared Run card registry is unchanged and needs no Unibase extension. The Manager
 interprets replies; approval is never purchase consent and the app derives no state

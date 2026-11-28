@@ -534,7 +534,16 @@ export async function readBookletDocumentV2(
       } else if (decision?.status === "expired" ||
         (decision?.form?.expiration_time && decision.form.expiration_time * 1000 < Date.now())) status = "expired";
     }
-    document = { ...human, status, decisionId: decision?._id ?? null, response };
+    // After expiry, the owner's text typed on Continue answers this question.
+    const late = status === "expired"
+      ? (await lateReplies(db, actor.uid, productionId, [request.id])).get(request.id)
+      : undefined;
+    if (late !== undefined) {
+      status = "submitted";
+      response = { version: 1, kind: "answer", choices: [], text: late };
+    }
+    document = { ...human, status, decisionId: decision?._id ?? null, response,
+      ...(late !== undefined ? { late: true } : {}) };
   } else if (request.kind === "acceptance") {
     await repo.getProduction(productionId);
     const stored = await db.collection("bookletAcceptances").findOne({
@@ -681,4 +690,31 @@ export async function readBookletDocumentV2(
   if (size(response) > replyBytes)
     throw bookletConflict("Read section exceeds response capacity.");
   return z.json().parse(response);
+}
+
+/** Text typed after a question expired. The Continue command carries it to
+ * the successor Run as `late_reply_for`/`late_reply` inputs; the latest wins. */
+export async function lateReplies(
+  db: Db,
+  uid: string,
+  productionId: string,
+  requestIds: string[],
+) {
+  const replies = new Map<string, string>();
+  if (!requestIds.length) return replies;
+  const rows = await db
+    .collection<AiJob>("aiJobs")
+    .find(
+      {
+        uid,
+        "run.target.adapter": "booklet",
+        "run.target.id": productionId,
+        "inputs.late_reply_for": { $in: requestIds },
+      },
+      { projection: { inputs: 1 }, sort: { createdAt: 1 }, limit: 50 },
+    )
+    .toArray();
+  for (const row of rows)
+    replies.set(String(row.inputs.late_reply_for), String(row.inputs.late_reply));
+  return replies;
 }

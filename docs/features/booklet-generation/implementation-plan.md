@@ -1444,10 +1444,26 @@ existing components, and new components are reusable. See
   receipts, matched to native decisions as `human_response` matches them (never
   parsed from provider form text). Statuses are preparing, open, answered, stale,
   expired and closed. Replies go through the `reply` command, which runs
-  `checkReply` and the existing authentic decision submission. One tap commits a
-  single choice; multiple choices stay a draft until Send. An approval offers
+  `checkReply` and the existing authentic decision submission. Choices stay a
+  pressed-state draft until Send; a single choice holds one option, and a typed
+  note (where the question allows text) is sent with it. An approval offers
   Approve, or a change request typed in the composer and labelled with its target.
-  The page has a wait row, a New response control and an offline notice.
+  The page has a wait row, a New response control and an offline notice. A reply
+  sent while offline is resent automatically, with its original idempotency key,
+  when the connection returns. A book that cannot move on from its page (its last
+  question expired, or nothing is running, asking or confirming) shows one honest
+  notice with a link to the library, and the library labels it Paused.
+- **Late reply after a timed-out question** (local only, pending Manager support):
+  when the last question expired, the composer stays open. Send uses `continue`
+  with the optional, additive `lateReply {requestId, text}`. The server accepts it
+  only for the latest question, only once its native decision expired unanswered,
+  and only when the orchestrator definition declares the optional inputs
+  `late_reply_for` and `late_reply`; it checks this before any flow is saved. The
+  successor Run carries those two inputs, the conversation shows the expired turn
+  as answered with the typed text, and the `human_response` read returns it as
+  `submitted` with `late: true`. The real Manager DSL still needs those start
+  variables and prompt logic (owner decision). Model unaffected: it reuses existing
+  Run inputs and adds no collection, field or index.
 - **Default package**: the `bookletSettings` row (see the model guide), read with the
   balance through `GET /api/booklets?section=default`. This preview predates the
   10C.2 editor.
@@ -1490,8 +1506,8 @@ Choice, Waiting, Review, Header, Button, Icon button, Text area and Mascot.
 **Reusable components** in `src/project/components/conversation/`:
 - `Composer` (entry and dock sizes; Enter, Shift+Enter and IME rules; Send pending);
 - `ConversationDock` (the question dock surface);
-- `ChoiceGroup` (single choice commits on tap, multiple choice is a pressed-state
-  draft; the odd last option spans; optional artwork for style choices);
+- `ChoiceGroup` (choices are a pressed-state draft until Send, single keeps one;
+  the odd last option spans; optional artwork for style choices);
 - `AgentMessage`, `UserMessage`, `WaitRow`, `NewResponseButton` and
   `MilestoneDivider`;
 - `InspirationList`.
@@ -2263,3 +2279,26 @@ larger packages through the complete MCP production path.
 Reuse the existing owned booklet picker for the `/books` library route and existing
 persistence for automatic saving. This adds library navigation and search without
 changing storage, credit rules, reader components or demo fixtures.
+
+
+## Issue 20 local component preview — 2026-11-25
+
+Parham approved an additional local-only interaction pass on the existing component
+branch. Move technical progress/history into a header dialog, keep truthful working
+status visible with reduced-motion-safe emphasis, and centre conversation artwork.
+Extend the artwork dialog with fit, stepped zoom, pan and native fullscreen. Extend
+the reader with a completion popup, scrollable pages and cover-aware RTL book spreads;
+retain native original-image downloads and mounted-page position restoration.
+
+Completed-book changes still enter the existing revision quote
+and explicit consent controls. This does not change credit rules, storage schemas,
+public command/response contracts, provider behavior or accepted production policy.
+
+An opt-in disposable local fixture uses one authored English/Arabic sample story and
+five original illustrations. It visibly discloses prepared content and records change
+notes without claiming new AI-generated art. Default regression image bytes stay
+unchanged. Existing local user books are preserved; sample books are additive.
+
+Physical phones, assistive-technology acceptance and live Dify/staging remain separate
+checks. No push, PR update, deployment or live provider activation is authorized by
+this local preview request.

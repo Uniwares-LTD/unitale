@@ -88,7 +88,8 @@ export const bookletTurnSchema = z
     parts: z.array(bookletTurnPartSchema).min(1).max(20),
   })
   .superRefine((turn, ctx) => {
-    const issue = (message: string) => ctx.addIssue({ code: "custom", message });
+    const issue = (message: string) =>
+      ctx.addIssue({ code: "custom", message });
     // One reply answers one thing: exactly one question, style choice or approval.
     if (turn.parts.filter((p) => interactive.has(p.type)).length !== 1)
       issue("A turn needs exactly one question, style choice or approval.");
@@ -98,7 +99,9 @@ export const bookletTurnSchema = z
       if (part.type === "question") {
         if (!unique(part.options.map((o) => o.id)))
           issue("Question option IDs must be unique.");
-        if (part.kind === "text" ? part.options.length : part.options.length < 2)
+        if (
+          part.kind === "text" ? part.options.length : part.options.length < 2
+        )
           issue("Question options must match its kind.");
         if (part.kind === "text" && !part.freeText)
           issue("A text question accepts typed answers.");
@@ -124,7 +127,10 @@ export function turnReferences(turn: BookletTurn) {
       case "image":
         return [{ target: part.target, assetId: part.assetId }];
       case "styles":
-        return part.options.map((o) => ({ target: o.target, assetId: o.assetId }));
+        return part.options.map((o) => ({
+          target: o.target,
+          assetId: o.assetId,
+        }));
       default:
         return [];
     }
@@ -175,8 +181,12 @@ export function checkReply(
   if (!parsed.success) return { ok: false, reason: "unsupported" };
   const reply = parsed.data;
   const part = turn.parts.find(
-    (p): p is Extract<BookletTurnPart, { type: "question" | "styles" | "approval" }> =>
-      interactive.has(p.type),
+    (
+      p,
+    ): p is Extract<
+      BookletTurnPart,
+      { type: "question" | "styles" | "approval" }
+    > => interactive.has(p.type),
   )!;
   if (part.type === "approval") {
     if (reply.kind === "answer")
@@ -185,18 +195,20 @@ export function checkReply(
       ? { ok: true, reply }
       : { ok: false, reason: "different-version" };
   }
-  if (reply.kind !== "answer")
-    return { ok: false, reason: "answer-question" };
+  if (reply.kind !== "answer") return { ok: false, reason: "answer-question" };
   const kind = part.type === "styles" ? "single" : part.kind;
   const freeText = part.type === "styles" ? false : part.freeText;
   const offered = new Set(part.options.map((o) => o.id));
   if (!unique(reply.choices) || reply.choices.some((c) => !offered.has(c)))
     return { ok: false, reason: "offered-only" };
-  if (reply.text && !freeText)
-    return { ok: false, reason: "offered-only" };
+  if (reply.text && !freeText) return { ok: false, reason: "offered-only" };
   if (kind === "text" && (reply.choices.length || !reply.text))
     return { ok: false, reason: "type-answer" };
-  if (kind === "single" && reply.choices.length + (reply.text ? 1 : 0) !== 1)
+  // One option at most; a typed note may go with it (the Manager reads both).
+  if (
+    kind === "single" &&
+    (reply.choices.length > 1 || (!reply.choices.length && !reply.text))
+  )
     return { ok: false, reason: "choose-one" };
   if (kind === "multiple" && !reply.choices.length && !reply.text)
     return { ok: false, reason: "choose-some" };

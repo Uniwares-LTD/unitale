@@ -2343,6 +2343,27 @@ test("booklet MCP uses real transport, capabilities and repository transactions"
           assert.equal((await invoke("read_document", { kind: "human_response", id: human.requestId })).isError, true);
           await decisions.updateOne(decisionKey, { $set: { confirmedInputs: { response: JSON.stringify(reply) } } });
           assert.deepEqual((await app.conversation(production._id)).turns[0].reply, reply);
+          // After expiry, text typed on Continue answers the latest question only.
+          const late = { requestId: human.requestId, text: "Make it shorter, please." };
+          await assert.rejects(app.command(production._id, { action: "continue", key: randomUUID(), lateReply: late }),
+            /answered directly/);
+          await decisions.updateOne(decisionKey, { $set: { status: "pending", "form.expiration_time": 1 },
+            $unset: { confirmedInputs: "" } });
+          assert.equal((await app.conversation(production._id)).turns[0].status, "expired");
+          await assert.rejects(app.command(production._id, { action: "continue", key: randomUUID(),
+            lateReply: { ...late, requestId: randomUUID() } }), /latest question/);
+          // The successor Run carries it; the conversation and human_response show it.
+          await db.collection("aiJobs").insertOne({ _id: "late-successor" as never, uid: "owner", createdAt: new Date(),
+            run: { target: { adapter: "booklet", id: production._id } },
+            inputs: { late_reply_for: human.requestId, late_reply: late.text } });
+          const typed = { version: 1, kind: "answer", choices: [], text: late.text };
+          assert.deepEqual((await app.conversation(production._id)).turns.map((x) => [x.status, x.reply]),
+            [["answered", typed]]);
+          const lateRead = (await successful("read_document", { kind: "human_response", id: human.requestId })).value;
+          assert.deepEqual([lateRead.status, lateRead.response, lateRead.late], ["submitted", typed, true]);
+          await db.collection("aiJobs").deleteOne({ _id: "late-successor" as never });
+          await decisions.updateOne(decisionKey, { $set: { status: "submitted", "form.expiration_time": null,
+            confirmedInputs: { response: JSON.stringify(reply) } } });
         });
         await t.test("human requests bind native presentation and authenticated first-wins responses", async () => {
           const initial = await successful("context", {});

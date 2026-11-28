@@ -21,7 +21,11 @@ if (!/^mongodb:\/\/(127\.0\.0\.1|localhost):\d+\//.test(uri))
 const types = [
   { id: "booklet", schemaVersion: 1, fields: creativeFieldsSchema },
 ];
-const canvas = { width: 1024, height: 1024, mime: "image/png" as const };
+const canvas: {
+  width: number;
+  height: number;
+  mime: "image/png" | "image/webp";
+} = { width: 1024, height: 1024, mime: "image/png" };
 const languages = [
   { tag: "en", direction: "ltr" as const },
   { tag: "ar", direction: "rtl" as const },
@@ -98,6 +102,43 @@ async function main() {
       console.log(`Runs ${enabled ? "enabled" : "disabled"}`);
       return;
     }
+    // `wallet <n>`: lower the admin's balance to n credits (low-credit checks).
+    if (process.argv[3] === "wallet") {
+      const target = Number(process.argv[4]);
+      const { readWallet, adjustCredits } =
+        await import("../../src/lib/server/store/credits");
+      const { balance } = await readWallet(db, admin._id);
+      if (!(target >= 0) || balance <= target)
+        throw new Error(`Balance is ${balance}; pass a smaller target.`);
+      await adjustCredits(
+        db,
+        { uid: admin._id, authTime: Math.floor(Date.now() / 1000) },
+        admin._id,
+        `fixture-wallet-${Date.now()}`,
+        { amount: balance - target, direction: "deduct", reason: "Fixture" },
+      );
+      console.log(`Balance set to ${target}`);
+      return;
+    }
+    // `package short|long|unavailable|mina`: switch the default package
+    // (price-changed and unavailable checks).
+    if (process.argv[3] === "package") {
+      const found = await db
+        .collection<{ _id: string }>("commerceCatalogs")
+        .findOne({
+          _id: { $regex: new RegExp(`fixture-${process.argv[4]}$`) } as never,
+        });
+      if (!found) throw new Error("No such fixture package.");
+      const id = found._id;
+      await db
+        .collection("bookletSettings")
+        .updateOne(
+          { _id: "default-package" as never },
+          { $set: { catalogId: id, updatedAt: new Date() } },
+        );
+      console.log(`Default package is ${id}`);
+      return;
+    }
     // `settle failed|succeeded`: give the newest booklet attempt a verified
     // terminal outcome (as the worker would) so recovery controls can be checked.
     const settle = process.argv[3] === "settle" ? process.argv[4] : null;
@@ -149,6 +190,57 @@ async function main() {
       return;
     }
     const actor = { uid: admin._id, auth_time: Math.floor(Date.now() / 1000) };
+    // Add a distinct immutable demo package; never rewrite existing book terms.
+    if (process.argv[3] === "demo") {
+      const demoCanvas = {
+        width: 1024,
+        height: 1536,
+        mime: "image/webp" as const,
+      };
+      const source = await db
+        .collection("bookletWorkflowPolicies")
+        .findOne({ profileId: profile.id, profileRevision: 1 });
+      if (!source) throw new Error("Seed the base fixture first.");
+      const { _id: unusedId, ...policy } = source;
+      void unusedId;
+      await db.collection("bookletWorkflowPolicies").updateOne(
+        { profileId: profile.id, profileRevision: 3 },
+        {
+          $setOnInsert: {
+            ...policy,
+            profileRevision: 3,
+            capacity: {
+              ...source.capacity,
+              revision: 3,
+              canvases: [demoCanvas],
+            },
+          },
+        },
+        { upsert: true },
+      );
+      let catalog = await db
+        .collection<{ _id: string }>("commerceCatalogs")
+        .findOne({ _id: "consumption:fixture-mina" });
+      if (!catalog) {
+        const definition = pack("fixture-mina", 4, 20, 3);
+        definition.fields.canvas = demoCanvas;
+        const saved = await saveCatalogDraft(db, actor, definition, 0, types);
+        const preview = await previewCatalog(db, actor, saved.id, types);
+        await publishCatalog(db, actor, saved.id, 1, preview.hash, types);
+        catalog = { _id: saved.id };
+      }
+      await db
+        .collection("bookletSettings")
+        .updateOne(
+          { _id: "default-package" as never },
+          { $set: { catalogId: catalog._id, updatedAt: new Date() } },
+          { upsert: true },
+        );
+      console.log(
+        "Prepared Mina demo package selected; existing terms unchanged.",
+      );
+      return;
+    }
     // Profile revision 2 has no policy row: shown as an unavailable package.
     for (const definition of [
       pack("fixture-short", 4, 20),
@@ -170,7 +262,23 @@ async function main() {
       domainAdapter: { id: "booklet", version: "2" },
       responseMode: "raw-v1",
       legacyInputs: [],
-      inputs: [],
+      // Optional: a reply typed after its question expired (Continue).
+      inputs: [
+        {
+          name: "late_reply_for",
+          label: "Expired question",
+          kind: "text",
+          required: false,
+          maxLength: 36,
+        },
+        {
+          name: "late_reply",
+          label: "Late reply",
+          kind: "paragraph",
+          required: false,
+          maxLength: 2000,
+        },
+      ],
       pricing: null,
       recovery: null,
     });
@@ -205,7 +313,9 @@ async function main() {
       .findOne({ _id: { $regex: /fixture-short$/ } as never });
     if (!short) throw new Error("Default fixture package not found.");
     await db
-      .collection<{ _id: string; catalogId: string; updatedAt: Date }>("bookletSettings")
+      .collection<{ _id: string; catalogId: string; updatedAt: Date }>(
+        "bookletSettings",
+      )
       .updateOne(
         { _id: "default-package" },
         { $set: { catalogId: short._id, updatedAt: new Date() } },
