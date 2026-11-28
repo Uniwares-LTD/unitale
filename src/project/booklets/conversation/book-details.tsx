@@ -6,6 +6,7 @@ import { Notice } from "@/components/page-patterns";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/client/api";
+import { toast } from "@/components/toast";
 import { bookletViewSchema, type BookletView } from "../application-contract";
 import { BookletActions } from "../booklet-actions";
 import { BookletHistoryPanel } from "../booklet-history";
@@ -134,7 +135,15 @@ export function BookDetails({
                   })}
                 </p>
               )}
-              <BookletActions view={view} refresh={refresh} />
+              <BookletActions
+                view={view}
+                refresh={refresh}
+                onStarted={() => {
+                  // Back to the conversation, where the new work shows.
+                  onOpenChange(false);
+                  toast.confirm(t("m32fdaaa65269"));
+                }}
+              />
               <BookletHistoryPanel
                 view={view}
                 currentRunId={runId}

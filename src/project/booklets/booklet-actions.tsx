@@ -27,6 +27,7 @@ import {
 import {
   bookletEditableErrors,
   bookletRetryResultSchema,
+  bookletBusyMessage,
   bookletRevisionQuoteSchema,
   bookletRunReferenceSchema,
   type BookletProductionCommand,
@@ -63,9 +64,12 @@ type Pending = {
 export function BookletActions({
   view,
   refresh,
+  onStarted,
 }: {
   view: BookletView;
   refresh: () => void;
+  /** A step started for this book; the conversation now shows its work. */
+  onStarted?: () => void;
 }) {
   const t = useTranslations("ui");
   const router = useRouter();
@@ -111,8 +115,13 @@ export function BookletActions({
 
   function go(result: BookletRunReference) {
     setPending(null);
-    if (result.productionId === view.productionId) refresh();
-    else router.push(`/books/${encodeURIComponent(result.productionId)}`);
+    if (result.productionId === view.productionId) {
+      setQuote(null);
+      setCategory("");
+      setSubjects([]);
+      refresh();
+      onStarted?.();
+    } else router.push(`/books/${encodeURIComponent(result.productionId)}`);
   }
 
   async function send(command: BookletProductionCommand) {
@@ -163,7 +172,9 @@ export function BookletActions({
         // Saved but not started: the server says so; otherwise the outcome is unknown.
         message:
           known?.code === "BOOKLET_START_PENDING"
-            ? known.message
+            ? known.message === bookletBusyMessage
+              ? t("ma43eb39b6d6a")
+              : known.message
             : t("m3b35fbc959af"),
       });
     }
@@ -236,7 +247,7 @@ export function BookletActions({
         </Button>
       )}
       {actions.running && (
-        <p className="text-sm text-muted-foreground">{t("mca656448efa2")}</p>
+        <p className="text-sm text-muted-foreground">{t("m129cdc484def")}</p>
       )}
       {actions.resume && (
         <p className="text-sm text-muted-foreground">{t("m695aea77ebf3")}</p>
