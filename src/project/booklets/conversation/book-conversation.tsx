@@ -565,7 +565,7 @@ export function BookConversation({
             <Notice tone="success" title={t("m47bfa636e9a3")} />
           ) : confirming ? (
             <Notice tone="warning" title={t("m08d20ade842d")}>
-              {t("maa1257a275bb")}
+              {t("m8d854a95e855")}
             </Notice>
           ) : last?.status === "stale" ? (
             <Notice tone="warning" title={t("mad9d3e727b8e")}>
