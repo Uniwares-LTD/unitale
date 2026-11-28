@@ -20,6 +20,21 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
 
 ### Changes
 
+- Google sign-in with real Firebase now uses the popup on the project's default
+  `<projectId>.firebaseapp.com` auth domain in every environment, so deployed hosts no
+  longer need a Google OAuth JavaScript origin or redirect URI. Only the Auth Emulator
+  keeps the redirect flow. The `/__/auth/` proxy remains for one release as a fallback.
+
+- Adopt Handbook dc22bea: the AGENTS.md session-contract block keeps blank lines
+  inside its markers, so Prettier leaves it unchanged.
+
+- Adopt Handbook 127dfa4: AGENTS.md now carries the Handbook session contract (start
+  reads, skill routing, reply headings, authority), Claude startup routing injects the
+  full communication guide by default, and `handbook:check` lists every start read.
+
+- Test that a missing activation gate leaves the current release running. Release
+  shell tests now require Bash 4 or later, matching the shell script they exercise.
+
 - Run advisory quality checks locally for the PR diff and attach their report.
   Manual full validation remains available. Deployment-relevant PRs retain the
   disposable Linux check on repositories where the workflow is enabled.
@@ -62,7 +77,7 @@ release needs no action. Keep unreleased work under `## Unreleased` until releas
   including zero-pending batches and missing report copies.
   These planning decisions are now implemented locally; publication, installation
   and live migration acceptance remain separate gates.
-- Local real-Firebase Google sign-in uses the hosted popup helper and existing session exchange; emulator and hosted environments retain redirect sign-in. Only the exact local Firebase helper origin is added to the frame policy.
+- Local real-Firebase Google sign-in uses the hosted popup helper and existing session exchange (extended to hosted environments by the popup entry above). Only the exact Firebase helper origin is added to the frame policy.
 
 ### Upgrade notes
 
@@ -70,6 +85,15 @@ Publish reviewed Handbook and regenerate consumer references, then publish compa
 Infrastructure/application artifacts and update immutable executor/source pins. Install
 the approved controller and app-control data-operations-v1 capability before enabling
 new release clients. Validate approval claims and target restore recovery separately.
+
+Popup sign-in: deployed environments need only the app hostname in Firebase
+authorized domains. Existing per-host OAuth origin/redirect entries can stay; remove
+them after the fallback proxy is retired. The deployed CSP `frame-src` gains the exact
+`https://<projectId>.firebaseapp.com` origin.
+
+Handbook sync: after merging, derived projects run `npm run handbook:sync` from a
+reviewed Handbook snapshot at or after 127dfa4. Set `agentsSessionContract` or
+`claudeSessionStartRouting` to `false` in `handbook.json` to opt out.
 
 ## 0.5.0 — 2026-11-21
 

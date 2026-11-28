@@ -224,7 +224,7 @@ class Resources:
             else:
                 self.api.google("identitytoolkit", f"admin/v2/projects/{self.project}/defaultSupportedIdpConfigs/google.com?updateMask=enabled,clientId,clientSecret", "PATCH", body)
         elif not google or not google.get("enabled"):
-            pending.append("Configure Google OAuth consent/client and provider; authorize APP_ORIGIN/__/auth/handler")
+            pending.append("Configure Google OAuth consent/client and provider; add the app hostname to Firebase authorized domains (popup sign-in needs no per-host OAuth origin/redirect; a custom OAuth client needs https://<project>.firebaseapp.com/__/auth/handler)")
         return {"FIREBASE_API_KEY": public["apiKey"], "FIREBASE_APP_ID": public["appId"]}, pending
 
     def database(self, password, existing):

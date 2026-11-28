@@ -59,7 +59,7 @@ test("document CSP follows only local loopback emulator ports and excludes untru
   }
 });
 
-test("hosted Firebase frame admission is exact and restricted to local real Firebase", () => {
+test("hosted Firebase frame admission is exact and restricted to real Firebase", () => {
   const keys = [
     "APP_ENV",
     "AUTH_MODE",
@@ -86,9 +86,29 @@ test("hosted Firebase frame admission is exact and restricted to local real Fire
         "$1 https://popup-fixture.firebaseapp.com",
       ),
     );
+    // Deployed real Firebase uses the same popup frame source; emulators never do.
     for (const environment of ["staging", "production"]) {
       process.env.APP_ENV = environment;
-      assert.doesNotMatch(policy(), /firebaseapp\.com/);
+      assert.match(
+        policy(),
+        /; frame-src 'self' https:\/\/accounts\.google\.com https:\/\/popup-fixture\.firebaseapp\.com;/,
+      );
+      const deployed = policy();
+      // Unset AUTH_MODE defaults to real Firebase outside local, as in auth config.
+      delete process.env.AUTH_MODE;
+      assert.equal(policy(), deployed);
+      process.env.AUTH_MODE = "emulator";
+      const emulatorPolicy = policy();
+      assert.doesNotMatch(emulatorPolicy, /firebaseapp\.com/);
+      // Only the exact frame source differs between deployed emulator and Firebase.
+      assert.equal(
+        deployed,
+        emulatorPolicy.replace(
+          /(frame-src[^;]*)/,
+          "$1 https://popup-fixture.firebaseapp.com",
+        ),
+      );
+      process.env.AUTH_MODE = "firebase";
     }
     delete process.env.APP_ENV;
     assert.match(policy(), / https:\/\/popup-fixture\.firebaseapp\.com(?:;|$)/);

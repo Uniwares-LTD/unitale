@@ -435,8 +435,9 @@ Publication alone does not prove live readiness or authorize data restoration.
    Collect missing inputs once. GitHub's secrets API cannot retrieve values; children
    inherit no source-repo secrets. Keep operator/provider administration access separate.
 3. **Provider consoles/owner workflows:** register the web app in shared staging
-   Firebase; configure authorized domain, sign-in and matching OAuth origin/redirect
-   entries without removing existing apps. Create the app database user with scoped
+   Firebase; configure the authorized domain and sign-in methods without removing
+   existing apps. Popup sign-in on `<project>.firebaseapp.com` needs no per-host
+   Google OAuth origin or redirect entry. Create the app database user with scoped
    `readWrite` and approve destination egress. The existing tunnel owner adds the
    hostname pointing to private app Nginx. Select optional integrations explicitly;
    use a separate Dify starter app and per-app/environment credentials for AI.
@@ -478,8 +479,8 @@ Add `--providers` for read-only provider discovery. After reviewing that exact o
 repeat the same command with `--apply-preview <previewDigest>` to reconcile supported
 Firebase web registration/authorized-domain and Atlas scoped-user operations. A read
 credential may fail on writes; obtain write-capable setup access or perform the named
-provider action. Atlas network access is never broadened automatically. OAuth origin,
-redirect/consent and tunnel-owner operations remain explicit operator checkpoints.
+provider action. Atlas network access is never broadened automatically. OAuth consent
+and tunnel-owner operations remain explicit operator checkpoints.
 
 Provider apply retains destination web/database/host-input files and public operation
 markers. Rerun preview without `--providers` to prepare local generated credentials.
