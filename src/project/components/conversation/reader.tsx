@@ -127,7 +127,7 @@ export function ConversationReader({
                 window.scrollTo({ top: position.current, behavior: "instant" });
             });
           }}
-          className="flex max-h-[94svh] min-w-0 flex-col gap-0 overflow-hidden bg-card p-0 text-card-foreground shadow-none ring-0 sm:max-w-5xl motion-reduce:animate-none"
+          className="flex h-[94svh] min-w-0 flex-col gap-0 overflow-hidden bg-card p-0 text-card-foreground shadow-none ring-0 sm:max-w-5xl motion-reduce:animate-none"
         >
           <div className="shrink-0 space-y-4 border-b border-border/60 px-5 pt-5 pb-4 sm:px-8">
             <div className="flex min-h-11 min-w-0 items-center pe-12">
@@ -165,14 +165,14 @@ export function ConversationReader({
             </div>
           </div>
           <div
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/15 p-4 sm:px-8 sm:py-6"
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-muted/15 p-4 sm:px-8 sm:py-6"
             dir={direction}
           >
             <div
               className={
                 twoUp && visible.length > 1
-                  ? "grid grid-cols-2 gap-2 sm:gap-5"
-                  : "mx-auto max-w-xl"
+                  ? "grid flex-1 grid-cols-2 gap-2 sm:gap-5"
+                  : "mx-auto flex w-full max-w-xl flex-1 flex-col"
               }
             >
               {visible.map((pageIndex) => {
@@ -181,7 +181,7 @@ export function ConversationReader({
                 return (
                   <article
                     key={page.src + pageIndex}
-                    className="min-w-0 overflow-hidden rounded-(--x-unitale-radius-media) bg-card shadow-sm"
+                    className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-(--x-unitale-radius-media) bg-card shadow-sm"
                   >
                     <ArtworkViewer
                       image={art}
@@ -190,8 +190,10 @@ export function ConversationReader({
                         zoomIn: t("m0e47f09a748f"),
                         zoomOut: t("mbc7b631a689b"),
                       }}
-                      // Phones: a shorter picture leaves room for the page's words.
-                      className="rounded-none [&_img]:max-h-[52svh] max-[599px]:[&_img]:max-h-[38svh]"
+                      // The reader has a fixed height and the picture takes the room
+                      // the page's words leave, so the words stay above the footer.
+                      // A zero basis keeps long pages scrolling instead of clipping.
+                      className="min-h-[24svh] grow basis-0 rounded-none [&_img]:h-full [&_img]:max-h-[52svh] max-[599px]:[&_img]:max-h-[38svh]"
                     />
                     {text.length > 0 && (
                       <div className="space-y-3 px-4 py-5 text-reading [overflow-wrap:anywhere] sm:px-6">
