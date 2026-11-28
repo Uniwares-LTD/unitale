@@ -91,6 +91,15 @@ export function BookConversation({
   const [unread, setUnread] = useState(false);
   const [completionReady, setCompletionReady] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // The library's "Make changes" link opens Book details once, then drops
+  // the hint so a reload or Back does not open it again.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("details") !== "changes") return;
+    url.searchParams.delete("details");
+    window.history.replaceState(window.history.state, "", url);
+    queueMicrotask(() => setDetailsOpen(true));
+  }, []);
   // The draft survives while the agent works and across turns until sent.
   const [draft, setDraft] = useState("");
   const [reviewDrafts, setReviewDrafts] = useState<ReviewDrafts>({});
@@ -491,8 +500,17 @@ export function BookConversation({
           // below speaks its text, since a region added already filled is
           // often silent.
           <li>
-            <AgentMessage name={agentName} working>
-              <WaitRow steps={bookSteps(data.activity)}>
+            <AgentMessage name={agentName} working large>
+              <WaitRow
+                steps={bookSteps(data.activity)}
+                artwork={
+                  data.activity === "art" ||
+                  data.activity === "layout" ||
+                  data.activity === "images"
+                    ? t("mdd7a38647d5f")
+                    : undefined
+                }
+              >
                 {waitCopy[data.activity ?? "working"]}
               </WaitRow>
             </AgentMessage>
@@ -524,6 +542,17 @@ export function BookConversation({
                       total: reader.pages.length - cover,
                     })
               }
+              spreadLabel={(first, last) =>
+                t("m7d46a0a44195", {
+                  first: first + 1 - cover,
+                  last: last + 1 - cover,
+                  total: reader.pages.length - cover,
+                })
+              }
+              downloadPageLabel={(index) =>
+                t("m9d825c70b9fe", { page: index + 1 - cover })
+              }
+              narrowNote={t("m93344d2f5a77")}
               pages={reader.pages.map((page, index) => ({
                 src: assetUrl(data.productionId, page.assetId),
                 alt: page.cover

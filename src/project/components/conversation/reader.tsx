@@ -31,6 +31,9 @@ export function ConversationReader({
   previousLabel,
   nextLabel,
   pageLabel,
+  spreadLabel,
+  downloadPageLabel,
+  narrowNote,
   pages,
   direction,
   autoOpen = false,
@@ -44,6 +47,12 @@ export function ConversationReader({
   previousLabel: string;
   nextLabel: string;
   pageLabel: (index: number) => string;
+  /** Names an open spread, for example "Pages 3–4 of 8". */
+  spreadLabel: (first: number, last: number) => string;
+  /** Names one page's download, so a spread offers each of its pages. */
+  downloadPageLabel: (index: number) => string;
+  /** Says why Book view is missing on a narrow screen. */
+  narrowNote: string;
   pages: readonly (Artwork & { text: readonly string[] })[];
   direction: "ltr" | "rtl";
   hasCover?: boolean;
@@ -91,7 +100,8 @@ export function ConversationReader({
     );
   }
   if (!pages.length) return null;
-  const illustration = pages[current];
+  // An open book: two pages on one sheet. The cover and a last odd page stay alone.
+  const pair = twoUp && visible.length > 1;
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-(--x-unitale-radius-card) bg-muted/20 px-5 py-4">
       <div className="space-y-1">
@@ -129,12 +139,19 @@ export function ConversationReader({
           }}
           className="flex h-[94svh] min-w-0 flex-col gap-0 overflow-hidden bg-card p-0 text-card-foreground shadow-none ring-0 sm:max-w-5xl motion-reduce:animate-none"
         >
-          <div className="shrink-0 space-y-4 border-b border-border/60 px-5 pt-5 pb-4 sm:px-8">
-            <div className="flex min-h-11 min-w-0 items-center pe-12">
+          {/* Wide screens: title and view choice share one row, leaving the
+              pages more height. */}
+          <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 border-b border-border/60 px-5 pt-5 pb-4 pe-16 sm:px-8 sm:pe-16">
+            <div className="flex min-h-11 min-w-0 flex-1 basis-60 items-center">
               <DialogTitle className="min-w-0 font-heading text-section-title [overflow-wrap:anywhere]">
                 <bdi>{title}</bdi>
               </DialogTitle>
             </div>
+            {/* Two pages side by side are too small on a phone; say why the
+                choice is missing instead of offering one that does nothing. */}
+            <p className="basis-full text-caption text-muted-foreground min-[600px]:hidden">
+              {narrowNote}
+            </p>
             <div className="flex flex-wrap items-center gap-3 max-[599px]:hidden">
               <div
                 role="group"
@@ -165,23 +182,36 @@ export function ConversationReader({
             </div>
           </div>
           <div
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-muted/15 p-4 sm:px-8 sm:py-6"
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-muted/15 p-4 sm:px-8 sm:py-5"
             dir={direction}
           >
             <div
+              data-unitale-spread={pair ? "" : undefined}
               className={
-                twoUp && visible.length > 1
-                  ? "grid flex-1 grid-cols-2 gap-2 sm:gap-5"
+                pair
+                  ? "relative mx-auto grid w-full max-w-4xl flex-1 grid-cols-2 overflow-hidden rounded-(--x-unitale-radius-media) bg-card shadow-(--x-unitale-shadow-raised)"
                   : "mx-auto flex w-full max-w-xl flex-1 flex-col"
               }
             >
+              {pair && (
+                // The fold between the pages; symmetric, so it needs no mirroring.
+                <span
+                  aria-hidden="true"
+                  data-unitale-spine
+                  className="pointer-events-none absolute inset-y-0 inset-x-0 z-10 mx-auto w-20"
+                />
+              )}
               {visible.map((pageIndex) => {
                 const page = pages[pageIndex];
                 const { text, ...art } = page;
                 return (
                   <article
                     key={page.src + pageIndex}
-                    className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-(--x-unitale-radius-media) bg-card shadow-sm"
+                    className={
+                      pair
+                        ? "flex min-w-0 flex-col gap-1 px-5 pt-5 sm:px-7 sm:pt-7"
+                        : "flex min-w-0 flex-1 flex-col overflow-hidden rounded-(--x-unitale-radius-media) bg-card p-3 shadow-sm sm:p-4"
+                    }
                   >
                     <ArtworkViewer
                       image={art}
@@ -193,21 +223,17 @@ export function ConversationReader({
                       // The reader has a fixed height and the picture takes the room
                       // the page's words leave, so the words stay above the footer.
                       // A zero basis keeps long pages scrolling instead of clipping.
-                      className="min-h-[24svh] grow basis-0 rounded-none [&_img]:h-full [&_img]:max-h-[52svh] max-[599px]:[&_img]:max-h-[38svh]"
+                      // The frame hugs the picture at its own shape: no letterbox.
+                      className="flex min-h-[24svh] grow basis-0 items-center justify-center rounded-(--x-unitale-radius-media) [&_img]:h-full [&_img]:max-h-[60svh] [&_img]:w-auto [&_img]:max-w-full [&_img]:rounded-(--x-unitale-radius-media) [&_img]:shadow-sm [&_img]:ring-1 [&_img]:ring-border/50 max-[599px]:[&_img]:max-h-[42svh]"
                     />
                     {text.length > 0 && (
-                      <div className="space-y-3 px-4 py-5 text-reading [overflow-wrap:anywhere] sm:px-6">
+                      <div className="space-y-3 px-1 py-4 text-reading [overflow-wrap:anywhere] sm:px-2">
                         {text.map((line, i) => (
                           <p key={i} className="whitespace-pre-wrap">
                             {line}
                           </p>
                         ))}
                       </div>
-                    )}
-                    {twoUp && visible.length > 1 && (
-                      <p className="px-4 pb-3 text-center text-caption text-muted-foreground">
-                        {pageLabel(pageIndex)}
-                      </p>
                     )}
                   </article>
                 );
@@ -234,7 +260,9 @@ export function ConversationReader({
                 aria-live="polite"
                 aria-atomic="true"
               >
-                {pageLabel(current)}
+                {pair
+                  ? spreadLabel(visible[0], visible[1])
+                  : pageLabel(current)}
               </output>
               <Button
                 type="button"
@@ -252,13 +280,23 @@ export function ConversationReader({
               <Button asChild variant="link" className="min-h-11 px-0">
                 <Link href="/books">{t("m1ad84286274b")}</Link>
               </Button>
-              {/* The current page's picture, named so nobody expects the whole book. */}
-              <Button asChild variant="ghost" className="min-h-11">
-                <a href={downloadHref(illustration)} download>
-                  <Download aria-hidden="true" />
-                  {downloadLabel}
-                </a>
-              </Button>
+              {/* The shown page's picture, named so nobody expects the whole
+                  book; an open spread offers each of its two pages. */}
+              <div className="flex flex-wrap gap-1">
+                {visible.map((pageIndex) => (
+                  <Button
+                    key={pageIndex}
+                    asChild
+                    variant="ghost"
+                    className="min-h-11"
+                  >
+                    <a href={downloadHref(pages[pageIndex])} download>
+                      <Download aria-hidden="true" />
+                      {pair ? downloadPageLabel(pageIndex) : downloadLabel}
+                    </a>
+                  </Button>
+                ))}
+              </div>
               {onRequestChanges && (
                 <Button
                   type="button"

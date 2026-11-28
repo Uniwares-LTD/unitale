@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { ArrowDown, Check } from "lucide-react";
+import { ArrowDown, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,17 +12,24 @@ import { cn } from "@/lib/utils";
 
 const mascot = "/images/unitale-mascot-face.svg";
 
-// `working` bobs and glows; it is still under reduced motion.
-function MascotFace({ working }: { working?: boolean }) {
+// `working` bobs and glows; it is still under reduced motion. `large` is the
+// waiting slot, where the mascot is the main sign that the book is being made.
+function MascotFace({
+  working,
+  large,
+}: {
+  working?: boolean;
+  large?: boolean;
+}) {
   return (
     <Image
       data-unitale-mascot={working ? "working" : undefined}
       src={mascot}
       alt=""
       aria-hidden="true"
-      width={28}
-      height={28}
-      className="size-7 shrink-0"
+      width={large ? 56 : 28}
+      height={large ? 56 : 28}
+      className={cn("shrink-0", large ? "size-14" : "size-7")}
     />
   );
 }
@@ -36,17 +43,20 @@ function MascotFace({ working }: { working?: boolean }) {
 export function AgentMessage({
   name,
   working = false,
+  large = false,
   children,
 }: {
   name: string;
   /** The agent is working on, or still streaming, this turn: the mascot glows. */
   working?: boolean;
+  /** A bigger mascot for the waiting slot. */
+  large?: boolean;
   children: ReactNode;
 }) {
   return (
     <div>
-      <div className="mb-2 flex items-center gap-2">
-        <MascotFace working={working} />
+      <div className={cn("mb-2 flex items-center", large ? "gap-3" : "gap-2")}>
+        <MascotFace working={working} large={large} />
         <span className="text-caption text-muted-foreground">
           <bdi>{name}</bdi>
         </span>
@@ -81,20 +91,25 @@ export function UserMessage({
 
 /**
  * Current-work line under the working agent header. Copy must describe real activity;
- * no percentages. `steps` shows the book's real stages, the current one lit.
+ * no percentages. `steps` shows the book's real stages: done ones checked, the
+ * current one lit. `artwork` holds a placeholder where pictures will appear while
+ * they are being made. Everything stays readable when motion is reduced.
  */
 export function WaitRow({
   children,
   steps,
+  artwork,
 }: {
   children: ReactNode;
   steps?: { label: string; labels: string[]; current: number };
+  /** Accessible name of the picture placeholder; omitted when no art is in progress. */
+  artwork?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-4 rounded-(--x-unitale-radius-card) bg-muted/30 px-4 py-4 sm:px-5">
       <p
         data-unitale-activity
-        className="min-w-0 text-supporting text-muted-foreground"
+        className="min-w-0 text-body font-medium text-foreground"
       >
         {children}
       </p>
@@ -107,14 +122,14 @@ export function WaitRow({
               <li
                 key={label}
                 aria-current={current ? "step" : undefined}
-                className="relative flex min-w-0 flex-1 flex-col items-center gap-1 text-center"
+                className="relative flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center"
               >
                 {index > 0 && (
                   // Connector from the previous step; logical so RTL mirrors it.
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "absolute end-1/2 top-2 h-0.5 w-full -translate-y-1/2",
+                      "absolute end-1/2 top-3.5 h-0.5 w-full -translate-y-1/2",
                       index <= steps.current ? "bg-primary" : "bg-border",
                     )}
                   />
@@ -123,23 +138,26 @@ export function WaitRow({
                   aria-hidden="true"
                   data-unitale-step={current ? "current" : undefined}
                   className={cn(
-                    "relative grid size-4 place-items-center rounded-full border-2",
+                    "relative grid size-7 place-items-center rounded-full border-2",
                     done && "border-primary bg-primary text-primary-foreground",
-                    current && "border-primary bg-card",
+                    current &&
+                      "border-primary bg-card text-primary ring-4 ring-primary/20",
                     !done && !current && "border-border bg-card",
                   )}
                 >
-                  {done && <Check className="size-2.5" strokeWidth={4} />}
+                  {done && <Check className="size-4" strokeWidth={3} />}
                   {current && (
-                    <span className="size-1.5 rounded-full bg-primary" />
+                    <span className="size-2.5 rounded-full bg-primary" />
                   )}
                 </span>
                 <span
                   className={cn(
-                    "w-full truncate px-0.5 text-caption",
+                    "w-full truncate px-0.5",
                     current
-                      ? "font-medium text-foreground"
-                      : "text-muted-foreground",
+                      ? "text-label font-semibold text-foreground"
+                      : done
+                        ? "text-caption text-foreground"
+                        : "text-caption text-muted-foreground",
                   )}
                 >
                   {label}
@@ -148,6 +166,27 @@ export function WaitRow({
             );
           })}
         </ol>
+      )}
+      {artwork && (
+        // Where the pictures will land; it claims no progress.
+        <div
+          role="img"
+          aria-label={artwork}
+          className="grid grid-cols-2 gap-3 sm:max-w-md"
+        >
+          {[0, 1].map((frame) => (
+            <div
+              key={frame}
+              data-unitale-art-skeleton
+              className="relative grid aspect-2/3 place-items-center overflow-hidden rounded-(--x-unitale-radius-media) bg-muted"
+            >
+              <ImageIcon
+                aria-hidden="true"
+                className="size-8 text-muted-foreground/70"
+              />
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

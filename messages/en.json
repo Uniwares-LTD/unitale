@@ -558,7 +558,6 @@
     "mc0cbfcd14937": "We couldn’t confirm the result",
     "m3b35fbc959af": "Checking again repeats the same request. It never starts work or charges twice.",
     "mdd00d3d3e9f7": "Next steps",
-    "mca656448efa2": "The booklet is working. To stop it, use Cancel run. Work that is already accepted is kept, and cancelling is not a refund.",
     "m400a4fd58c2a": "Retry failed step",
     "m9939bc8e6272": "Continue booklet",
     "mcb5d9f987803": "Request changes",
@@ -622,7 +621,6 @@
     "m06db853045c4": "You need {missing} more credits to start this book.",
     "m3d3a090b7c87": "We couldn’t start your book. Your idea is kept; try again.",
     "m040985b8ff7e": "Get credits",
-    "m8ecddedf4242": "Your idea is kept. Come back here after you buy credits.",
     "m6d9b2dbc225a": "Start my book",
     "m0ee71f4dfb02": "Start with this idea",
     "m288f7ad20405": "A little inspiration, if you need it",
@@ -710,7 +708,16 @@
     "mf7a90ea11a44": "See what happened",
     "ma15000000001": "Page {page}",
     "ma15000000002": "Book layout",
-    "ma15000000003": "Picture plan"
+    "ma15000000003": "Picture plan",
+    "m7d46a0a44195": "Pages {first}–{last} of {total}",
+    "m9d825c70b9fe": "Download page {page}",
+    "m93344d2f5a77": "Book view needs a wider screen. Turn your phone sideways to see two pages at once.",
+    "mdd7a38647d5f": "Your pictures will appear here",
+    "m129cdc484def": "Your book is being worked on. Follow it in the conversation; work that is already accepted is kept.",
+    "m32fdaaa65269": "Work on your book has started. Follow it in the conversation.",
+    "m693036881436": "Credits open in a new tab. Your idea stays here, and your balance updates when you come back.",
+    "m3b7ea51793e9": "Clear search",
+    "ma43eb39b6d6a": "Several of your books are still in progress. Finish or review one of them, then try again."
   },
   "locale": {
     "heading": "Language and region",
