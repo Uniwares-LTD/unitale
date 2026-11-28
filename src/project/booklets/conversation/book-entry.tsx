@@ -257,7 +257,7 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
           label={t("mb3ba025e2ecd")}
           describedBy={!consent ? "book-idea-hint" : undefined}
           placeholder={t("m4966873a89fb")}
-          sendLabel={consent ? t("m6d9b2dbc225a") : t("mf6f4688ff23d")}
+          sendLabel={consent ? t("m0ee71f4dfb02") : t("mf6f4688ff23d")}
           footer={
             consent && !pendingStart ? (
               // Round pen in Send's place: edit the held idea.

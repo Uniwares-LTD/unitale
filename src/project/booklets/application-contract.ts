@@ -285,6 +285,8 @@ export const bookletConversationSchema = z.object({
   productionId: id,
   title: z.string(),
   idea: z.string(),
+  // The book's language tag: agent text is in it, whatever the UI language.
+  language: z.string(),
   state: z.enum(["draft", "in-progress", "completed", "closed"]),
   // An attempt is queued or running and no question is open.
   working: z.boolean(),

@@ -239,8 +239,18 @@ export function BookConversation({
   const openId = open?.requestId;
   useEffect(() => {
     if (!working && !confirming && !unconfirmed && !openId) return;
-    const timer = setInterval(() => void refresh(), 2000);
-    return () => clearInterval(timer);
+    // A hidden tab skips the reads; coming back catches up at once.
+    const timer = setInterval(() => {
+      if (!document.hidden) void refresh();
+    }, 2000);
+    const onVisible = () => {
+      if (!document.hidden) void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [working, confirming, unconfirmed, openId, refresh]);
 
   // The sticky dock sits in flow at the page end, so the page bottom shows the
@@ -460,6 +470,7 @@ export function BookConversation({
               <TurnParts
                 productionId={data.productionId}
                 turn={turn.turn}
+                lang={data.language}
                 revealCount={
                   revealTurn?.requestId === turn.requestId && revealing
                     ? count
@@ -632,6 +643,7 @@ export function BookConversation({
             <ReplyDock
               key={open?.requestId ?? (expired ? "late" : "none")}
               productionId={data.productionId}
+              language={data.language}
               turn={revealing ? null : open}
               working={working || revealing || confirming}
               sending={sending}
@@ -670,6 +682,7 @@ function keyFor(requestId: string) {
 
 function ReplyDock({
   productionId,
+  language,
   turn,
   working,
   sending,
@@ -684,6 +697,7 @@ function ReplyDock({
   refocusRef,
 }: {
   productionId: string;
+  language: string;
   turn: Turn | null;
   working: boolean;
   sending: boolean;
@@ -824,6 +838,7 @@ function ReplyDock({
         <ChoiceGroup
           legendId="book-question"
           legend={interaction.prompt}
+          lang={language}
           hint={multiple ? t("m4f853b02689c") : undefined}
           selected={choices}
           disabled={!answerable}

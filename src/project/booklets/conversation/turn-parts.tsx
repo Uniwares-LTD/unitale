@@ -40,10 +40,13 @@ export function TurnParts({
   productionId,
   turn,
   revealCount,
+  lang,
 }: {
   productionId: string;
   turn: BookletTurn;
   revealCount?: number;
+  /** The book's language, so screen readers voice the agent text in it. */
+  lang?: string;
 }) {
   const artwork = useBookArtworkLabels();
   let remaining = revealCount;
@@ -70,7 +73,11 @@ export function TurnParts({
       />,
     );
   }
-  return <div className="space-y-4">{rendered}</div>;
+  return (
+    <div lang={lang} className="space-y-4">
+      {rendered}
+    </div>
+  );
 }
 
 function Part({

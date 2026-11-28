@@ -1392,6 +1392,7 @@ export function bookletApplication(
         productionId,
         title: book.title,
         idea: p.brief.idea,
+        language: p.brief.language.tag,
         state: p.lifecycleState,
         working,
         activity,

@@ -22,6 +22,7 @@ export type ChoiceOption = {
 export function ChoiceGroup({
   legendId,
   legend,
+  lang,
   hint,
   options,
   selected = [],
@@ -32,6 +33,8 @@ export function ChoiceGroup({
 }: {
   legendId: string;
   legend: string;
+  /** Language of the question and options when it differs from the UI. */
+  lang?: string;
   /** Short instruction under the legend, e.g. that several may be chosen. */
   hint?: string;
   options: readonly ChoiceOption[];
@@ -49,7 +52,14 @@ export function ChoiceGroup({
       aria-describedby={hint && !compact ? `${legendId}-hint` : undefined}
       className="min-w-0"
     >
-      <legend id={legendId} dir="auto" className="mb-2 text-body font-semibold">
+      {/* Full width, so the question's own direction aligns it (a shrunk
+          legend sits at the fieldset's start edge instead). */}
+      <legend
+        id={legendId}
+        dir="auto"
+        lang={lang}
+        className="mb-2 w-full text-body font-semibold"
+      >
         {legend}
       </legend>
       {hint && !compact && (
@@ -95,7 +105,7 @@ export function ChoiceGroup({
                     className="aspect-square w-full object-cover"
                   />
                 )}
-                <bdi className={cn(option.image && "px-3 py-2")}>
+                <bdi lang={lang} className={cn(option.image && "px-3 py-2")}>
                   {option.label}
                 </bdi>
               </Button>
