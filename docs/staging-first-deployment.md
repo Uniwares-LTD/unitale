@@ -31,7 +31,7 @@ All root steps use the **existing trusted root session** (owner, 2026-11-27). Br
 
 | Sitting     | When   | Duration | Content                                                                                                                  |
 | ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Gate 0**  | Start  | ~30 min  | Authorizations, OAuth console, Dify management access, budget                                                            |
+| **Gate 0**  | Start  | ~30 min  | Authorizations, Dify management access, budget                                                                           |
 | **Gate 1**  | Middle | ~25 min  | Root batch 1 (registration and base preparation), then the GHCR visibility switch about 10 minutes later                 |
 | **Gate 2**  | End    | ~75 min  | Root batch 2 (AI update, ~10 min), then real-account acceptance once the agent has released and published the Dify suite |
 | **Phase C** | Final  | ~30 min  | Unitale OpenAI and Dify credentials, then root batch 3 (management key update)                                           |
@@ -86,9 +86,9 @@ Target hostname: `unitale-staging.uniwares.co.uk`.
    US$3 proposal.
 3. **Queue ownership:** confirm that local AI workers against `unitale_staging` stay
    stopped from Gate 1 until acceptance ends. The hosted staging worker then owns the queue.
-4. **Google OAuth** (Google Cloud console, project `uniwares-base` → Credentials → the
-   Firebase web client): add JavaScript origin `https://unitale-staging.uniwares.co.uk`
-   and redirect `https://unitale-staging.uniwares.co.uk/__/auth/handler`. Keep existing entries.
+4. **Google sign-in:** none for this host. Since Unibase #82 (imported 2026-11-28), Google
+   sign-in uses the popup on `uniwares-base.firebaseapp.com`, so no per-host OAuth
+   JavaScript origin or redirect entry is needed; A5 adds the Firebase authorized domain.
 5. **Dify management access.** Save it as a single-line file
    `%USERPROFILE%\.config\unitale\unitale\staging\staging-dify-management.txt`, using one of:
    - **Reuse the shared key** (default): copy

@@ -1,8 +1,10 @@
 # Base application architecture
 
-Local real-Firebase Google sign-in selects the hosted popup helper through the public
-`googleSignInMethod` enum. The same validated project-domain policy controls local
-`frame-src`; other CSP directives and hosted/emulator redirect behavior are unchanged.
+Real-Firebase Google sign-in (local, staging and production) selects the hosted popup
+helper on `<projectId>.firebaseapp.com` through the public `googleSignInMethod` enum,
+so deployed hosts need no OAuth origin or redirect registration. The same validated
+project-domain policy controls `frame-src`; other CSP directives are unchanged. Only
+the Auth Emulator keeps the redirect flow.
 Popup users pass through the existing verified-token/CSRF session exchange. See
 [local setup](../README.md#local-google-popup-sign-in).
 
@@ -63,7 +65,7 @@ See [design-system maintenance and testing](design-system.md).
 
 The server-only reader explicitly selects APP_NAME, APP_STYLE, APP_ENV, and APP_ORIGIN. It returns separate public and server configuration objects. The application name crosses into the shell and the validated default style goes to the appearance provider. The client-safe public schema reads no environment variables and strips unknown properties. Server validation rejects malformed origins, credentials in URLs, path/query/fragment suffixes, and HTTP in staging/production. Error messages identify settings without reflecting supplied values.
 
-The Next.js instrumentation hook checks application, database, authentication and payment configuration at startup. The command-line validator loads Next.js environment files and uses the same pure parsers. `src/lib/config/database.ts` validates MONGODB_URI/MONGODB_DATABASE independently of Firebase; `src/lib/server/database-config.ts` reads only those private settings, and `mongo.ts` reuses the connection pool. Index setup uses the database parser directly; bootstrap and maintenance validate their required database/auth settings separately. Local development defaults to demo Firebase authentication and loopback MongoDB. The authentication form receives only the Firebase browser allowlist (project ID, app ID, public API key, same-origin auth domain, and local emulator URL); database configuration and Admin credentials stay server-only.
+The Next.js instrumentation hook checks application, database, authentication and payment configuration at startup. The command-line validator loads Next.js environment files and uses the same pure parsers. `src/lib/config/database.ts` validates MONGODB_URI/MONGODB_DATABASE independently of Firebase; `src/lib/server/database-config.ts` reads only those private settings, and `mongo.ts` reuses the connection pool. Index setup uses the database parser directly; bootstrap and maintenance validate their required database/auth settings separately. Local development defaults to demo Firebase authentication and loopback MongoDB. The authentication form receives only the Firebase browser allowlist (project ID, app ID, public API key, auth domain (`<projectId>.firebaseapp.com` for real Firebase, the app host for the emulator), sign-in method, and local emulator URL); database configuration and Admin credentials stay server-only.
 
 ## Project extensions
 
@@ -196,9 +198,9 @@ maintenance. Quality warnings remain advisory; required behavior must still work
 
 ## Accounts and profile ownership
 
-The browser SDK handles Google redirect and explicit email registration/login. Unverified accounts stay in the temporary verification flow with resend and account switching. After verification, a recent ID token is exchanged for a five-day HttpOnly, SameSite=Lax cookie, Secure with a __Host- name on HTTPS. Browser SDK state is cleared after exchange. Firebase Admin checks session revocation on every protected data access. Protected profile reads and updates require a verified email, and MongoDB selectors always use the session UID.
+The browser SDK handles Google sign-in (popup on the default Firebase auth domain; redirect only with the Auth Emulator) and explicit email registration/login. Unverified accounts stay in the temporary verification flow with resend and account switching. After verification, a recent ID token is exchanged for a five-day HttpOnly, SameSite=Lax cookie, Secure with a __Host- name on HTTPS. Browser SDK state is cleared after exchange. Firebase Admin checks session revocation on every protected data access. Protected profile reads and updates require a verified email, and MongoDB selectors always use the session UID.
 
-Firebase persistence is selected during SDK initialization, before redirect processing. A recent tab-scoped Google-attempt marker permits completing a Google user already restored by the SDK when the separate redirect result is empty; unrelated or stale SDK state is never reused. An incomplete redirect displays an explicit error. Local browser emulator URLs use the application's loopback hostname so localhost and 127.0.0.1 do not create different sites for helper storage; the Admin emulator endpoint remains independently configured.
+Firebase persistence is selected during SDK initialization, before redirect processing (emulator redirect flow). A recent tab-scoped Google-attempt marker permits completing a Google user already restored by the SDK when the separate redirect result is empty; unrelated or stale SDK state is never reused. An incomplete redirect displays an explicit error. Local browser emulator URLs use the application's loopback hostname so localhost and 127.0.0.1 do not create different sites for helper storage; the Admin emulator endpoint remains independently configured.
 
 `src/lib/server/profiles.ts` owns profile access through a reused official MongoDB driver pool. `scripts/db-indexes.ts` provisions the unique UID index. Profiles contain only UID, email, display name, color mode, style preference and update timestamp. Strict mutation schemas reject supplied ownership fields. Account edits display name and shows read-only email; Preferences edits color mode and design style. Their separate Server Actions use fresh authorization and an expected-account guard, updating only their own fields so stale tabs cannot overwrite the other section; explicit HTTP clients use `/api/profile`. Server reads call the profile module directly.
 

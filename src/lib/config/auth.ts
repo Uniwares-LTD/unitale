@@ -2,7 +2,7 @@ import { project } from "../project";
 import { z } from "zod";
 import {
   firebaseProjectIdSchema,
-  localFirebaseAuthDomain,
+  firebasePopupAuthDomain,
 } from "./google-sign-in";
 
 const schema = z.object({
@@ -68,11 +68,7 @@ export function parseAuthConfig(
   // are different sites even though they reach the same machine.
   if (browserEmulator && ["localhost", "127.0.0.1"].includes(appHost))
     browserEmulator.hostname = appHost;
-  const popupDomain = localFirebaseAuthDomain(
-    environment,
-    config.mode,
-    config.projectId,
-  );
+  const popupDomain = firebasePopupAuthDomain(config.mode, config.projectId);
   return {
     public: {
       apiKey: config.apiKey,

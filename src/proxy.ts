@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { moduleEnabled, moduleForPath } from "./lib/project";
-import { localFirebaseAuthDomain } from "./lib/config/google-sign-in";
+import { firebasePopupAuthDomain } from "./lib/config/google-sign-in";
 
 // Sonner 2.0.8 inserts an empty style element before filling it with this stylesheet.
 export const sonnerStyleHashes = [
@@ -32,11 +32,19 @@ export function proxy(request: NextRequest) {
     emulatorPort > 0 && emulatorPort <= 65535
       ? ` http://127.0.0.1:${emulatorPort} http://localhost:${emulatorPort}`
       : "";
-  const popupDomain = localFirebaseAuthDomain(
-    process.env.APP_ENV,
-    process.env.AUTH_MODE,
-    process.env.FIREBASE_PROJECT_ID,
-  );
+  // Match the auth config default: unset AUTH_MODE is real Firebase outside
+  // local. An invalid implicit project ID adds no frame source; startup
+  // configuration validation rejects it separately.
+  const authMode = process.env.AUTH_MODE ?? (local ? "emulator" : "firebase");
+  let popupDomain: string | null = null;
+  try {
+    popupDomain = firebasePopupAuthDomain(
+      authMode,
+      process.env.FIREBASE_PROJECT_ID,
+    );
+  } catch (error) {
+    if (process.env.AUTH_MODE) throw error;
+  }
   const dev = process.env.NODE_ENV === "development";
   const helper = path.startsWith("/__/auth/");
   const csp = [

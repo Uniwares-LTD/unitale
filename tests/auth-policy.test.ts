@@ -80,7 +80,7 @@ const realFirebase = {
   FIREBASE_API_KEY: "fixture-key",
   FIREBASE_APP_ID: "fixture-app",
 };
-test("only local real Firebase selects hosted popup auth, independent of scheme and port", () => {
+test("real Firebase selects hosted popup auth in every environment; emulators redirect", () => {
   for (const origin of [
     "http://localhost:3000",
     "http://localhost:3100",
@@ -112,8 +112,15 @@ test("only local real Firebase selects hosted popup auth, independent of scheme 
       environment,
       "https://app.example:8443",
     );
-    assert.equal(config.public.googleSignInMethod, "redirect");
-    assert.equal(config.public.authDomain, "app.example:8443");
+    assert.equal(config.public.googleSignInMethod, "popup");
+    assert.equal(config.public.authDomain, "popup-fixture.firebaseapp.com");
+    const unset: Record<string, string> = { ...realFirebase };
+    delete unset.AUTH_MODE;
+    assert.equal(
+      parseAuthConfig(unset, environment, "https://app.example:8443").public
+        .googleSignInMethod,
+      "popup",
+    );
   }
   assert.throws(() =>
     parseAuthConfig(
