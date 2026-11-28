@@ -398,18 +398,18 @@ Use the demo Firebase project and local MongoDB database defaults in [.env.examp
 
 For a real environment, configure the public Firebase project ID, API key and app ID, `AUTH_MODE=firebase`, the application's HTTPS origin, a scoped MongoDB URI/database, and Firebase Admin Application Default Credentials. Remove `FIREBASE_AUTH_EMULATOR_HOST`; startup rejects emulator configuration outside local demo projects. Keep service-account files outside Git and pass their path through `GOOGLE_APPLICATION_CREDENTIALS`.
 
-For staging/production, enable Email/Password and Google in Firebase Authentication. Add the application hostname to authorized domains and `https://YOUR_HOST/__/auth/handler` as an authorized Google OAuth redirect URI. The browser receives the application hostname as `authDomain`; the narrow `/__/auth/` proxy forwards helper traffic to the configured project's Firebase Hosting domain without application cookies. Keep the default Firebase-hosted verification/reset email action handler and authorize the application return URL. Configure Firebase password policy and email-enumeration protection in the project console. Live Google OAuth, email delivery, and Atlas connectivity require verification with the intended environment's configuration; emulator results do not prove live activation.
+For staging/production, enable Email/Password and Google in Firebase Authentication and add the application hostname to authorized domains. Google sign-in uses a popup on the project's default `<FIREBASE_PROJECT_ID>.firebaseapp.com` auth domain, whose OAuth handler Firebase already registers, so no per-host OAuth JavaScript origin or redirect URI is needed. The narrow `/__/auth/` proxy stays for one release as a fallback and is unused by popup sign-in. Keep the default Firebase-hosted verification/reset email action handler and authorize the application return URL. Configure Firebase password policy and email-enumeration protection in the project console. Live Google OAuth, email delivery, and Atlas connectivity require verification with the intended environment's configuration; emulator results do not prove live activation.
 
 ### Local Google popup sign-in
 
 Unitale’s [adoption and prepared HTTPS launch](docs/features/local-google-popup/adoption.md)
 record the project integration route and verified real-account acceptance.
 
-With `APP_ENV=local` and `AUTH_MODE=firebase`, Google sign-in opens the configured
-project's hosted Firebase popup helper. The browser uses
+With `AUTH_MODE=firebase` (local, staging and production), Google sign-in opens the
+configured project's hosted Firebase popup helper. The browser uses
 `<FIREBASE_PROJECT_ID>.firebaseapp.com` as `authDomain`; only that validated HTTPS
-origin is added to local `frame-src`. A localhost OAuth callback is unnecessary.
-Local emulators and staging/production retain the existing redirect flow.
+origin is added to `frame-src`. A localhost OAuth callback is unnecessary.
+Only the local Auth Emulator retains the redirect flow.
 
 Keep `FIREBASE_AUTH_EMULATOR_HOST` unset in real-Firebase mode. Use the direct
 Next CLI (`node node_modules/next/dist/bin/next dev --port 3100`) with a complete

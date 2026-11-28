@@ -1,5 +1,11 @@
 # Local Google popup sign-in
 
+> **Extended 2026-11-28:** the owner adopted popup sign-in on the default
+> `<projectId>.firebaseapp.com` auth domain for staging and production too, removing the
+> per-host Google OAuth origin/redirect step. The exact-host `frame-src` source now applies
+> whenever `AUTH_MODE=firebase`; the Auth Emulator keeps redirect. The `/__/auth/` proxy and
+> redirect code remain for one release as a fallback. The local-only contract below is history.
+
 ## Contract and boundaries
 
 Accepted for implementation on 2026-11-21. User requested a minimal standalone

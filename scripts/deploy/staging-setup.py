@@ -191,7 +191,7 @@ def preview(root, project, revision, directory, environment="staging"):
         'manualOrAgentCheckpoints': [
             'Verify provider permissions; discovery credentials alone do not establish write access',
             'Create/reconcile destination Firebase web registration and Auth authorized domain; preserve shared project settings',
-            'Verify Google OAuth JavaScript origin and /__/auth/handler redirect in the provider console',
+            'Verify Google sign-in opens the Firebase popup on <project>.firebaseapp.com (no per-host OAuth origin/redirect registration needed)',
             'Create/reconcile destination Atlas readWrite user and approved host network access; retain its password',
             'Verify host routes, Docker networks and listener allocation through protected operator discovery',
             'Apply hostname route through the existing tunnel owner workflow',

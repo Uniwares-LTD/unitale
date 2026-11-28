@@ -12,8 +12,10 @@ The exact upstream revision is `02517797c9ecd1d8e9696cd1b68c9b976f2105db`, recor
 `template:update` in `project.source.json`. It includes the reviewed popup implementation
 from Unibase PR #64 plus docs/guidance closeouts #65/#66. Local real-Firebase uses the
 validated hosted Firebase helper and the existing fresh-token/CSRF session exchange.
-Emulator/staging/production retain redirects. Only the approved exact local helper
-origin is added to `frame-src`; other CSP directives are unchanged.
+Emulator/staging/production retained redirects at that adoption. Since the 2026-11-28
+import of Unibase #82, real Firebase uses the popup in every environment and only the
+Auth Emulator redirects; the exact helper origin is in `frame-src` wherever
+`AUTH_MODE=firebase`. Other CSP directives are unchanged.
 
 Project identity, deployment bindings, dependencies and Booklet implementation/model
 are unchanged by this main import. No deployment, migration, provider edit, new
