@@ -3,8 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Pencil } from "lucide-react";
-import Link from "next/link";
+import { ExternalLink, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/client/api";
 import { signInPath } from "@/lib/return-path";
@@ -16,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Composer } from "@/project/components/conversation/composer";
 import { InspirationList } from "@/project/components/conversation/inspiration-list";
 import {
+  bookletBusyMessage,
   bookletEntrySchema,
   bookletIdeaStartCommandSchema,
   bookletRunReferenceSchema,
@@ -41,7 +41,8 @@ function writeDraft(value: string | null) {
   }
 }
 
-type Problem = "failed" | "pending" | "price" | "credits" | "unavailable";
+type Problem =
+  "failed" | "pending" | "busy" | "price" | "credits" | "unavailable";
 
 function readPendingStart(storageKey: string | null) {
   if (!storageKey) return null;
@@ -101,6 +102,17 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
   useEffect(() => {
     if (consent && !entry && !pendingStart) loadEntry();
   }, [consent, entry, pendingStart]);
+  // Back from buying credits in the other tab: show the new balance.
+  const short =
+    !!entry?.package && entry.package.credits > entry.availableCredits;
+  useEffect(() => {
+    if (!consent || !short) return;
+    const onVisible = () => {
+      if (!document.hidden) loadEntry();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [consent, short]);
 
   const inspirations = [
     {
@@ -199,7 +211,10 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
         clearPending();
         setEntry(null);
       }
-      if (code === "BOOKLET_START_PENDING") setProblem("pending");
+      if (code === "BOOKLET_START_PENDING")
+        setProblem(
+          (error as Error).message === bookletBusyMessage ? "busy" : "pending",
+        );
       else if (code === "INSUFFICIENT_CREDITS") setProblem("credits");
       else if (code === "BOOKLET_CONFLICT") setProblem("price");
       else if (code === "BOOKLET_UNAVAILABLE") setProblem("unavailable");
@@ -290,7 +305,11 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
         <Notice
           tone="warning"
           title={
-            problem === "pending" ? t("me079e4adcff9") : t("m6b8971f87e59")
+            problem === "busy"
+              ? t("ma43eb39b6d6a")
+              : problem === "pending"
+                ? t("me079e4adcff9")
+                : t("m6b8971f87e59")
           }
         >
           <SubmitButton
@@ -354,19 +373,25 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                 </div>
                 {problem && (
                   <Notice
-                    tone={problem === "pending" ? "warning" : "error"}
+                    tone={
+                      problem === "pending" || problem === "busy"
+                        ? "warning"
+                        : "error"
+                    }
                     title={
-                      problem === "pending"
-                        ? t("me079e4adcff9")
-                        : problem === "price"
-                          ? t("m589bd2ada19a")
-                          : problem === "credits"
-                            ? t("m06db853045c4", {
-                                missing: Math.max(1, missing),
-                              })
-                            : problem === "unavailable"
-                              ? t("m391e8b97689b")
-                              : t("m3d3a090b7c87")
+                      problem === "busy"
+                        ? t("ma43eb39b6d6a")
+                        : problem === "pending"
+                          ? t("me079e4adcff9")
+                          : problem === "price"
+                            ? t("m589bd2ada19a")
+                            : problem === "credits"
+                              ? t("m06db853045c4", {
+                                  missing: Math.max(1, missing),
+                                })
+                              : problem === "unavailable"
+                                ? t("m391e8b97689b")
+                                : t("m3d3a090b7c87")
                     }
                   />
                 )}
@@ -377,11 +402,16 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                         asChild
                         className="min-h-(--control-touch-sm) w-full"
                       >
-                        <Link href="/credits">{t("m040985b8ff7e")}</Link>
+                        {/* Credits has no return link, so it opens beside this
+                            tab: the held idea stays here, and the balance is
+                            read again when the person comes back. */}
+                        <a href="/credits" target="_blank" rel="noopener">
+                          {t("m040985b8ff7e")}
+                          <ExternalLink aria-hidden="true" />
+                        </a>
                       </Button>
-                      {/* Credits has no return link yet; the held idea survives. */}
                       <p className="mt-2 text-center text-supporting text-muted-foreground">
-                        {t("m8ecddedf4242")}
+                        {t("m693036881436")}
                       </p>
                     </>
                   ) : (
@@ -391,7 +421,9 @@ export function BookEntry({ ownerId }: { ownerId: string | null }) {
                       onClick={start}
                       className="min-h-(--control-touch-sm) w-full"
                     >
-                      {problem === "pending" || problem === "failed"
+                      {problem === "pending" ||
+                      problem === "busy" ||
+                      problem === "failed"
                         ? t("md8b8392e2c54")
                         : t("m6d9b2dbc225a")}
                     </SubmitButton>

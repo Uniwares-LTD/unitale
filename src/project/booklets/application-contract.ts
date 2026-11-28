@@ -255,6 +255,11 @@ export type BookletPackagePage = z.infer<typeof bookletPackagePageSchema>;
 export type BookletRunReference = z.infer<typeof bookletRunReferenceSchema>;
 export type BookletRevisionQuote = z.infer<typeof bookletRevisionQuoteSchema>;
 export type BookletRetryResult = z.infer<typeof bookletRetryResultSchema>;
+// BOOKLET_START_PENDING when the account already has its maximum of books in
+// progress; books waiting for the owner's review count. Retrying soon cannot
+// help, so the browser shows its own translated advice for this message.
+export const bookletBusyMessage =
+  "Several of your books are still in progress. Finish or review one of them, then start this book.";
 // Refusals that happen before any charge: the browser may unlock editing.
 // Everything else (including BOOKLET_START_PENDING and transport failures)
 // keeps the exact request for a same-key retry.

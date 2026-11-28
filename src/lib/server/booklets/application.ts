@@ -31,6 +31,7 @@ import {
   type BookletEntry,
   type BookletReplyResult,
   bookletHistoryKinds,
+  bookletBusyMessage,
 } from "../../../project/booklets/application-contract";
 import { checkReply } from "../../../project/booklets/turn-contract";
 import { humanRequestV2Schema } from "./documents-v2";
@@ -351,7 +352,11 @@ export function bookletApplication(
       // resume it. A new key would be refused while this flow stays active.
       if (error instanceof AppError && error.status < 500)
         throw pending(
-          "This step is saved, but it couldn’t start yet. Try again.",
+          // The per-account cap counts books paused for the owner's review,
+          // so this refusal lasts until one of them finishes.
+          error.code === "AI_CONCURRENCY_LIMIT"
+            ? bookletBusyMessage
+            : "This step is saved, but it couldn’t start yet. Try again.",
         );
       throw error;
     }
